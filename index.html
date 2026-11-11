@@ -6495,6 +6495,13 @@ async function init() {
       S.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const mine = S.players.find(p => p.id === S.uid); S.doc = mine ? { ...mine } : S.doc || {}; delete S.doc.id;
       S.ready = true; renderAccount(); renderDaily(); renderFriends();
+      if (!S.asked && !(S.doc && S.doc.displayName)) {
+        S.asked = true;
+        setTimeout(() => {
+          const n = (window.prompt('Welcome! What name should show on the friends board? (Use the name your friends know you by)') || '').trim().slice(0, 30);
+          if (n.length >= 2) { const nd = { ...(S.doc || {}), displayName: n }; S.db.doc('players/' + S.uid).set(nd).then(() => { S.doc = nd; renderAccount(); renderFriends(); }).catch(() => {}); }
+        }, 1200);
+      }
     }, () => { S.ready = true; S.db = null; renderAccount(); renderFriends(); });
     setTimeout(() => { if (!S.ready) { S.ready = true; renderFriends(); } }, 10000);
   } catch { S.db = null; renderAccount(); renderFriends(); }
