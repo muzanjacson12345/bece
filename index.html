@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
 <meta name="description" content="Practise for BECE with Social Studies and Creative Arts quizzes, flashcards, revision notes and essay guides for JHS 1–3.">
 <meta name="theme-color" content="#f7f8f3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121a15" media="(prefers-color-scheme: dark)">
@@ -6325,11 +6327,12 @@ const App = window.App, o = App.el, $ = id => document.getElementById(id);
 const LVL = 200, BONUS = { completion: 20, perfect: 20, perStreakDay: 5, streakCap: 25 };
 const SUBJ = { soc: 'Social Studies', art: 'Creative Arts', mat: 'Mathematics' };
 const today = () => new Date().toISOString().slice(0, 10);
+const weekStart = () => { const d = new Date(), k = (d.getUTCDay() + 6) % 7; return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - k)).toISOString().slice(0, 10); };
 const yesterday = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
 const lv = e => ({ level: Math.floor(e / LVL) + 1, into: e % LVL });
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const ago = t => { const s = Math.max(0, (Date.now() - t) / 1e3); return s < 60 ? 'just now' : s < 3600 ? `${Math.floor(s / 60)}m ago` : s < 86400 ? `${Math.floor(s / 3600)}h ago` : `${Math.floor(s / 86400)}d ago`; };
-const S = { db: null, user: null, uid: null, doc: null, players: [], names: {}, daily: null, ready: false };
+const S = { board: 'week', db: null, user: null, uid: null, doc: null, players: [], names: {}, daily: null, ready: false };
 
 function makeDaily() {
   const d = today(); let h = 0; for (const c of d) h = (h * 31 + c.charCodeAt(0)) >>> 0;
@@ -6406,7 +6409,7 @@ App.on('quiz:finished', async ev => {
     const subs = [...new Set(ev.questionIds.map(i => i.slice(0, 3)))];
     const subject = subs.length === 1 ? SUBJ[subs[0]] || 'mixed subjects' : 'mixed subjects';
     const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: earned + bonusExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
-    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
+    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
     await S.db.doc('players/' + S.uid).set(next); S.doc = next;
     renderAccount(); renderDaily();
     showResult({ earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended });
@@ -6427,7 +6430,7 @@ function renderFriends() {
   const body = $('friends-body'); if (!body || App.screen !== 'friends') return;
   if (!S.db) { const c = o('div', 'card friends-gate'); c.append(o('h2', '', 'Friends board unavailable'), o('p', 'muted', 'Check your internet connection and reload the page to join the board. Quizzes and notes still work.')); body.replaceChildren(c); return; }
   if (!S.ready) { const w = o('div', 'skeleton-wrap'); for (let i = 0; i < 3; i++) w.append(o('div', 'skeleton')); body.replaceChildren(w); return; }
-  const m = view(), base = S.players.some(p => p.id === S.uid) ? S.players : [...S.players, { id: S.uid, ...(S.doc || {}) }], list = base.filter(p => (p.totalExp || 0) > 0 || p.id === S.uid).sort((a, b) => (b.totalExp || 0) - (a.totalExp || 0));
+  const m = view(), base = S.players.some(p => p.id === S.uid) ? S.players : [...S.players, { id: S.uid, ...(S.doc || {}) }], wk = weekStart(), val = p => S.board === 'week' ? (p.weekKey === wk ? p.weekExp || 0 : 0) : (p.totalExp || 0), list = base.filter(p => val(p) > 0 || p.id === S.uid).sort((a, b) => val(b) - val(a));
   const myRank = list.findIndex(p => p.id === S.uid) + 1, ex = m ? m.totalExp : 0, { level, into } = lv(ex);
   const mine = o('section', 'card my-stats'), tiles = o('div', 'stat-tiles');
   const tile = (a, b) => { const x = o('div', 'stat-tile'); x.append(o('strong', '', a), o('span', '', b)); return x; };
@@ -6437,8 +6440,12 @@ function renderFriends() {
   const save = o('button', 'btn btn-ghost btn-sm', 'Save name'); save.type = 'submit'; form.append(lab, inp, save);
   form.onsubmit = async e => { e.preventDefault(); save.disabled = true; try { const nd = { ...(S.doc || {}), displayName: inp.value.trim() }; await S.db.doc('players/' + S.uid).set(nd); S.doc = nd; App.toast('Name updated.', 'good'); } catch (er) { App.toast(er.message || 'Couldn\u2019t save.', 'warn'); } finally { save.disabled = false; } };
   mine.append(o('p', 'eyebrow', 'Your progress'), tiles, mt, form);
-  const lb = o('section', 'card leaderboard'), head = o('div', 'section-heading'), hd = o('div');
+  let lbNote = ''; const lb = o('section', 'card leaderboard'), head = o('div', 'section-heading'), hd = o('div');
   hd.append(o('p', 'eyebrow', 'The friends board'), o('h2', '', 'Who\u2019s putting in the work?')); head.append(hd);
+  const tg = o('div', 'button-row');
+  [['week', 'This week'], ['all', 'All time']].forEach(([k, t]) => { const b = o('button', 'btn btn-sm ' + (S.board === k ? 'btn-primary' : 'btn-ghost'), t); b.type = 'button'; b.setAttribute('aria-pressed', String(S.board === k)); b.onclick = () => { S.board = k; renderFriends(); }; tg.append(b); });
+  head.append(tg);
+  if (S.board === 'week') lbNote = 'Weekly board resets every Monday. EXP counts from this update onward.';
   const ol = o('ol', 'board-list');
   list.forEach((p, i) => {
     const li = o('li', p.id === S.uid ? 'is-me' : ''), w = o('div', 'board-who'), n = o('strong', '', nameOf(p.id));
@@ -6446,9 +6453,9 @@ function renderFriends() {
     const live = p.lastDay === today() || p.lastDay === yesterday();
     li.append(o('span', 'board-rank', i < 3 ? ['\u{1F947}', '\u{1F948}', '\u{1F949}'][i] : String(i + 1)));
     w.append(n, o('span', '', `Level ${lv(p.totalExp || 0).level}${live && p.streak ? ` \xB7 \u{1F525} ${p.streak}` : ''}${p.dailyDone && p.dailyDone.day === today() ? ' \xB7 daily \u2713' : ''}`));
-    li.append(w, o('span', 'board-exp', `${p.totalExp || 0} EXP`)); ol.append(li);
+    li.append(w, o('span', 'board-exp', `${val(p)} EXP`)); ol.append(li);
   });
-  lb.append(head, ol);
+  lb.append(head, ol); if (lbNote) lb.append(o('p', 'muted', lbNote));
   if (list.length < 2) {
     const h = o('div', 'board-hint'); h.append(o('p', '', 'It\u2019s just you so far. Share this page\u2019s link so friends can join.')); lb.append(h);
   }
@@ -6486,6 +6493,7 @@ async function connectFirebase() {
 }
 
 async function init() {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   S.daily = makeDaily(); renderAccount(); renderDaily();
   App.on('screen', s => { if (s === 'friends') renderFriends(); });
   try {
