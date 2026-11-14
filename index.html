@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -305,8 +305,9 @@ html[data-theme='dark'] {
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 * { margin: 0; padding: 0; }
-html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--nav-h) + 12px + env(safe-area-inset-top)); }
+html { width: 100%; max-width: 100%; overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--nav-h) + 12px + env(safe-area-inset-top)); }
 body {
+  width: 100%; max-width: 100%; overflow-x: hidden; overflow-x: clip; touch-action: pan-x pan-y;
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--bg);
@@ -889,7 +890,7 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
   .hero-copy { position: relative; z-index: 1; }
   .hero h1 { font-size: clamp(46px, 13vw, 64px); }
   .lead { font-size: 16px; margin: 16px 0 22px; }
-  .hero-art { position: absolute; right: -12px; top: 8px; width: 42%; max-width: 190px; opacity: .55; pointer-events: none; }
+  .hero-art { position: absolute; right: 0; top: 8px; width: 42%; max-width: 190px; opacity: .55; pointer-events: none; }
   .art-note { display: none; }
   .hero-actions .btn { flex: 1 1 100%; }
   .snapshot { grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -7330,6 +7331,7 @@ async function connectFirebase() {
 
 
 async function init() {
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   S.daily = makeDaily(); renderAccount(); renderDaily();
   App.on('screen', s => { if (s === 'friends') renderFriends(); });
