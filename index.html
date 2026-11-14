@@ -14,31 +14,208 @@
 <meta property="og:description" content="Build confidence for BECE with interactive practice, flashcards and GES revision notes for Social Studies and Creative Arts.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23315d47'/%3E%3Ctext x='16' y='22' font-family='Georgia' font-size='18' fill='%23f7f8f3' text-anchor='middle'%3Em%3C/text%3E%3C/svg%3E">
 <script>
-// Applies the saved (or device) colour theme before styles load to avoid a flash of the wrong palette.
+// Theme engine. Two independent choices:
+//   1. Mode   – light, dark or auto (follows the device).
+//   2. Colour – a full palette (page background, cards, text, borders, buttons, logo, artwork)
+//               generated from one colour, separately for light and dark, so nothing is left behind in the old green.
+// Runs before the stylesheet is parsed so the right palette is on screen from the very first paint.
 (() => {
-  const media = window.matchMedia('(prefers-color-scheme: dark)');
-  let preference = null;
-  try { preference = localStorage.getItem('bece_theme'); } catch {}
-  if (!['light', 'dark'].includes(preference)) preference = null;
+  const root = document.documentElement;
+  const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
 
-  function apply(theme) {
-    document.documentElement.dataset.theme = theme;
-    const toggle = document.getElementById('theme-toggle');
-    if (!toggle) return;
-    const dark = theme === 'dark';
-    toggle.setAttribute('aria-pressed', String(dark));
-    toggle.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+  /* ---------- colour maths ---------- */
+  const hsl2rgb = (h, s, l) => {
+    h = ((h % 360) + 360) % 360; s = clamp(s, 0, 100) / 100; l = clamp(l, 0, 100) / 100;
+    const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [f(0), f(8), f(4)].map(v => Math.round(v * 255));
+  };
+  const toHex = c => '#' + c.map(v => clamp(Math.round(v), 0, 255).toString(16).padStart(2, '0')).join('');
+  const hsl = (h, s, l) => toHex(hsl2rgb(h, s, l));
+  const fromHex = x => { x = x.replace('#', ''); return [0, 2, 4].map(i => parseInt(x.slice(i, i + 2), 16)); };
+  const rgb2hsl = ([r, g, b]) => {
+    r /= 255; g /= 255; b /= 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    let h = 0, s = 0;
+    if (d) { s = d / (1 - Math.abs(2 * l - 1)); h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; if (h < 0) h += 360; }
+    return [h, s * 100, l * 100];
+  };
+  const lum = hex => { const [r, g, b] = fromHex(hex).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g + .0722 * b; };
+  const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+  const mix = (a, b, t) => { const A = fromHex(a), B = fromHex(b); return toHex(A.map((v, i) => v + (B[i] - v) * t)); };
+
+  /* ---------- colour presets ---------- */
+  // Keys keep their original names ("blue", "pink"…) so profiles saved before this update still work.
+  const PRESETS = {
+    green:  { name: 'Forest', hex: null },
+    blue:   { name: 'Ocean',  hex: '#2b5fa8' },
+    indigo: { name: 'Indigo', hex: '#4f46c8' },
+    purple: { name: 'Grape',  hex: '#7a4bb5' },
+    pink:   { name: 'Rose',   hex: '#b4235a' },
+    red:    { name: 'Cherry', hex: '#b42318' },
+    orange: { name: 'Sunset', hex: '#c2410c' },
+    gold:   { name: 'Honey',  hex: '#a16207' },
+    teal:   { name: 'Lagoon', hex: '#0f766e' },
+    slate:  { name: 'Slate',  hex: '#475569' },
+  };
+  // The original green design, kept exactly as it was (it is the stylesheet default, so it needs no override).
+  const FOREST = {
+    light: { bg: '#f7f8f3', surface: '#ffffff', surface2: '#eff3ea', line: '#dfe5d8', ink: '#1f3328', muted: '#5d6a5a', primary: '#315d47', accent: '#315d47', accentSoft: '#e5eedd', brand: '#315d47' },
+    dark:  { bg: '#111914', surface: '#18221c', surface2: '#203027', line: '#2f3e35', ink: '#e4ebe0', muted: '#a3b09f', primary: '#4d8150', accent: '#a6d197', accentSoft: '#243a2b', brand: '#315d47' },
+  };
+
+  function parse(key) {
+    const m = typeof key === 'string' && /^custom:(\d{1,3}):(\d{1,3})$/.exec(key);
+    if (m) { const h = clamp(+m[1], 0, 360), s = clamp(+m[2], 15, 100); return { key: `custom:${h}:${s}`, name: 'Custom', custom: true, h, s }; }
+    const p = PRESETS[key];
+    if (p && p.hex) { const [h, s] = rgb2hsl(fromHex(p.hex)); return { key, name: p.name, h, s: clamp(s, 15, 90), hex: p.hex }; }
+    return { key: 'green', name: PRESETS.green.name, isDefault: true, h: 150, s: 35 };
   }
 
-  apply(preference || (media.matches ? 'dark' : 'light'));
-  media.addEventListener('change', e => { if (!preference) apply(e.matches ? 'dark' : 'light'); });
+  /* ---------- palette generator ---------- */
+  function build(h, s, base) {
+    const c = clamp(s, 0, 100) / 100, W = '#ffffff';
+
+    // Light: tinted paper background, white cards, a strong readable accent.
+    const bgS = 14 + 20 * c;
+    let pL = base ? rgb2hsl(fromHex(base))[2] : 40, primary = base || hsl(h, s, pL);
+    while (contrast(primary, W) < 4.6 && pL > 12) { pL -= 1; primary = hsl(h, s, pL); }
+    const accentSoft = hsl(h, 28 + 22 * c, 91);
+    let aL = pL, accent = primary;
+    while (contrast(accent, accentSoft) < 4.8 && aL > 10) { aL -= 1; accent = hsl(h, s, aL); }
+    const bg = hsl(h, bgS, 96), surface2 = hsl(h, bgS + 3, 93);
+    const ink = hsl(h, 20 + 8 * c, 15), inkRGB = hsl2rgb(h, 30, 15).join(' ');
+    const light = {
+      bg, surface: W, surface2, surfaceWarm: mix('#f4f0e6', bg, .4),
+      ink, inkSoft: hsl(h, 14 + 4 * c, 24), muted: hsl(h, 8 + 6 * c, 37),
+      line: hsl(h, bgS, 87.5), lineStrong: hsl(h, bgS - 2, 79),
+      accent, accentSoft, primary, primaryHover: hsl(h, s, Math.max(8, Math.min(pL, aL) - 5)), ring: accent,
+      shadow: `0 1px 2px rgb(${inkRGB} / 4%), 0 8px 24px -12px rgb(${inkRGB} / 18%)`,
+      shadowHover: `0 14px 34px rgb(${inkRGB} / 14%)`,
+      brand: hsl(h, clamp(s * .75, 18, 55), 28), brandInk: hsl(h, 25, 96), brandDot: hsl(h, 30, 76),
+      heroEm: hsl(h, 14 + 8 * c, 52),
+      artDisc: hsl(h, bgS + 3, 90), artRing: hsl(h, bgS - 6, 77), artShadow: hsl(h, bgS - 3, 82), artPage: hsl(h, bgS + 10, 97.5), artEdge: hsl(h, bgS, 87), artLine: hsl(h, 14, 46),
+      artBook: hsl(h, 32, 30), artSide: hsl(h, 16, 56), artBookLine: hsl(h, 30, 20), artLeaf: hsl(h, 22, 47), artLeaf2: hsl(h, 22, 62),
+      scBg: hsl(h, bgS + 4, 92.5), scBorder: hsl(h, bgS, 86), scIconLine: hsl(h, bgS, 80), scIcon: hsl(h, 12 + 22 * c, 40),
+      chevron: hsl(h, 10, 50),
+    };
+
+    // Dark: deep tinted background, slightly lighter cards, a soft pastel accent for text.
+    const dS = 12 + 16 * c, dSoft = hsl(h, 22 + 16 * c, 19);
+    let dL = 42, dPrimary = hsl(h, 26 + 30 * c, dL);
+    while (contrast(dPrimary, W) < 4.6 && dL > 14) { dL -= 1; dPrimary = hsl(h, 26 + 30 * c, dL); }
+    let xL = 74, dAccent = hsl(h, 34 + 22 * c, xL);
+    while (contrast(dAccent, dSoft) < 6 && xL < 94) { xL += 1; dAccent = hsl(h, 34 + 22 * c, xL); }
+    const dbg = hsl(h, dS, 8);
+    const dark = {
+      bg: dbg, surface: hsl(h, dS - 2, 11.5), surface2: hsl(h, dS, 15.5), surfaceWarm: mix('#2a2820', dbg, .4),
+      ink: hsl(h, 14 + 4 * c, 91), inkSoft: hsl(h, 12, 82), muted: hsl(h, 9 + 4 * c, 66),
+      line: hsl(h, dS - 4, 20), lineStrong: hsl(h, dS - 6, 28),
+      accent: dAccent, accentSoft: dSoft, primary: dPrimary, primaryHover: hsl(h, 26 + 30 * c, dL + 6), ring: dAccent,
+      shadow: '0 1px 2px rgb(0 0 0 / 30%), 0 10px 30px -14px rgb(0 0 0 / 60%)',
+      shadowHover: '0 14px 34px rgb(0 0 0 / 45%)',
+      brand: light.brand, brandInk: light.brandInk, brandDot: light.brandDot,
+      heroEm: hsl(h, 22 + 10 * c, 72),
+      artDisc: hsl(h, dS, 15), artRing: hsl(h, dS - 4, 28), artShadow: hsl(h, dS, 11), artPage: hsl(h, 18, 87), artEdge: hsl(h, 14, 72), artLine: hsl(h, 14, 46),
+      artBook: hsl(h, 32, 30), artSide: hsl(h, 16, 56), artBookLine: hsl(h, 30, 20), artLeaf: hsl(h, 22, 47), artLeaf2: hsl(h, 22, 62),
+      scBg: hsl(h, dS + 2, 14.5), scBorder: hsl(h, dS - 2, 23), scIconLine: hsl(h, dS - 4, 29), scIcon: hsl(h, 22 + 14 * c, 72),
+      chevron: hsl(h, 10, 62),
+    };
+    return { light, dark };
+  }
+
+  const cache = new Map();
+  function palette(key) {
+    const info = parse(key);
+    if (!cache.has(info.key)) { if (cache.size > 120) cache.delete(cache.keys().next().value); cache.set(info.key, info.isDefault ? FOREST : build(info.h, info.s, info.hex)); }
+    return cache.get(info.key);
+  }
+
+  const chev = c => `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23${c.slice(1)}' stroke-width='1.8'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E")`;
+  const decls = P => [
+    ['bg', P.bg], ['surface', P.surface], ['surface-2', P.surface2], ['surface-warm', P.surfaceWarm], ['ink', P.ink], ['ink-soft', P.inkSoft], ['muted', P.muted],
+    ['line', P.line], ['line-strong', P.lineStrong], ['accent', P.accent], ['accent-soft', P.accentSoft], ['primary', P.primary], ['primary-hover', P.primaryHover], ['ring', P.ring],
+    ['shadow', P.shadow], ['shadow-hover', P.shadowHover], ['brand', P.brand], ['brand-ink', P.brandInk], ['brand-dot', P.brandDot], ['hero-em', P.heroEm],
+    ['art-disc', P.artDisc], ['art-ring', P.artRing], ['art-shadow', P.artShadow], ['art-page', P.artPage], ['art-edge', P.artEdge], ['art-line', P.artLine], ['art-book', P.artBook], ['art-side', P.artSide], ['art-book-line', P.artBookLine], ['art-leaf', P.artLeaf], ['art-leaf2', P.artLeaf2],
+    ['sc-bg', P.scBg], ['sc-border', P.scBorder], ['sc-icon-line', P.scIconLine], ['sc-icon', P.scIcon], ['chev', chev(P.chevron)],
+  ].map(([k, v]) => `--${k}:${v}`).join(';');
+
+  /* ---------- applying ---------- */
+  let accentKey = 'green', styleEl = null;
+  const mode = () => (pref || (media.matches ? 'dark' : 'light'));
+  const favicon = c => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='${c}'/><text x='16' y='22' font-family='Georgia' font-size='18' fill='#f7f8f3' text-anchor='middle'>m</text></svg>`);
+
+  function sync() {
+    const m = root.dataset.theme || 'light', P = palette(accentKey)[m];
+    document.querySelectorAll('meta[name="theme-color"]').forEach(t => t.setAttribute('content', P.bg));
+    const ic = document.querySelector('link[rel="icon"]'); if (ic) ic.setAttribute('href', favicon(P.brand));
+    document.dispatchEvent(new CustomEvent('bece:theme', { detail: { mode: m, accent: accentKey } }));
+  }
+  function setAccent(key, persist, quiet) {
+    const info = parse(key); accentKey = info.key;
+    if (info.isDefault) { root.removeAttribute('data-accent'); if (styleEl) styleEl.textContent = ''; }
+    else {
+      const pal = palette(info.key);
+      if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'accent-theme'; document.head.append(styleEl); }
+      // Doubled attribute selectors out-rank the stylesheet's own :root / [data-theme=dark] blocks regardless of source order.
+      styleEl.textContent = `html[data-accent]:not([data-theme='dark']){${decls(pal.light)}}html[data-accent][data-theme='dark']{${decls(pal.dark)}}`;
+      root.setAttribute('data-accent', info.custom ? 'custom' : info.key);
+    }
+    if (persist) { try { localStorage.setItem('bece.accent', info.key); } catch {} }
+    if (!quiet) sync();
+  }
+
+  /* ---------- light / dark mode ---------- */
+  const media = matchMedia('(prefers-color-scheme: dark)');
+  let pref = null;
+  try { pref = localStorage.getItem('bece_theme'); } catch {}
+  if (!['light', 'dark'].includes(pref)) pref = null;
+
+  function applyMode() {
+    const t = mode(); root.dataset.theme = t;
+    const tg = document.getElementById('theme-toggle');
+    if (tg) { tg.setAttribute('aria-pressed', String(t === 'dark')); tg.title = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'; }
+    sync();
+  }
+  media.addEventListener('change', () => { if (!pref) applyMode(); });
+
+  window.BeceTheme = {
+    get pref() { return pref || 'auto'; },
+    get mode() { return mode(); },
+    set(p) {
+      pref = p === 'light' || p === 'dark' ? p : null;
+      try { pref ? localStorage.setItem('bece_theme', pref) : localStorage.removeItem('bece_theme'); } catch {}
+      applyMode();
+    },
+    toggle() { this.set(mode() === 'dark' ? 'light' : 'dark'); },
+  };
+
+  /* ---------- public profile API (used by the Friends page) ---------- */
+  const AVATAR_GROUPS = [
+    { id: 'animals', label: 'Animals', items: ['🦁', '🐯', '🦊', '🐼', '🐸', '🦉', '🐙', '🦄', '🐨', '🐧', '🦈', '🐺', '🦋', '🐢', '🦖', '🐬', '🐻', '🐰', '🦒', '🦅', '🐝', '🦜', '🐘', '🦓'] },
+    { id: 'fun', label: 'Fun', items: ['🚀', '⚡', '🎯', '🌟', '🎮', '🔥', '👑', '💎', '🎧', '🎸', '⚽', '🏀', '🏆', '🎨', '🎭', '🧩', '🎲', '🛹', '🍉', '🍕', '🌈', '🌴', '🍦', '🎂'] },
+    { id: 'study', label: 'Study', items: ['📚', '🧠', '✏️', '🔬', '🌍', '🧮', '💡', '🎓', '📝', '🔭', '⏳', '📐', '🧪', '🗺️', '🏛️', '🎻', '📖', '🖊️', '🔢', '🧬'] },
+    { id: 'people', label: 'Characters', items: ['😎', '🤓', '🥳', '🤩', '😄', '🤠', '🥷', '🧙', '🦸', '🤖', '👻', '👽', '🧛', '🧜', '🧑‍🚀', '🧑‍🎓', '🦹', '🧞', '🤴', '👸'] },
+  ];
+  window.BeceProfile = {
+    AVATAR_GROUPS,
+    AVATARS: AVATAR_GROUPS.flatMap(g => g.items),
+    PRESETS,
+    COLORS: Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.hex])),
+    parse, palette,
+    customKey: (h, s) => `custom:${Math.round(clamp(h, 0, 360))}:${Math.round(clamp(s, 15, 100))}`,
+    applyAccent: key => setAccent(key, true),
+    get accent() { return accentKey; },
+  };
+
+  let saved = null;
+  try { saved = localStorage.getItem('bece.accent'); } catch {}
+  setAccent(saved, false, true);
+  applyMode();
   document.addEventListener('DOMContentLoaded', () => {
-    apply(document.documentElement.dataset.theme);
-    document.getElementById('theme-toggle').addEventListener('click', () => {
-      preference = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      apply(preference);
-      try { localStorage.setItem('bece_theme', preference); } catch {}
-    });
+    const tg = document.getElementById('theme-toggle');
+    tg.addEventListener('click', () => window.BeceTheme.toggle());
+    applyMode();
   });
 })();
 
@@ -72,6 +249,14 @@
   --warn-soft: #f7f0dc;
   --ring: #315d47;
   --shadow: 0 1px 2px rgb(31 51 40 / 4%), 0 8px 24px -12px rgb(31 51 40 / 18%);
+  --shadow-hover: 0 14px 34px rgb(30 50 40 / 12%);
+  /* Colours that used to be hardcoded green. The colour themes (see the theme engine) override all of these. */
+  --brand: #315d47; --brand-ink: #f7f8f3; --brand-dot: #c4d1ad;
+  --hero-em: #829773;
+  --art-disc: #e8eddf; --art-ring: #c4ceba; --art-shadow: #d2dac7; --art-page: #f9faf3; --art-edge: #e0e7d7; --art-line: #68816d;
+  --art-book: #35634d; --art-side: #7e9b7c; --art-book-line: #234b38; --art-leaf: #668866; --art-leaf2: #91a982;
+  --sc-bg: #eef2e8; --sc-border: #dce4d5; --sc-icon-line: #cdd9c3; --sc-icon: #52734c;
+  --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23738569' stroke-width='1.8'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E");
   --radius: 14px;
   --radius-sm: 10px;
   --nav-h: 64px;
@@ -104,6 +289,13 @@ html[data-theme='dark'] {
   --warn-soft: #393220;
   --ring: #a6d197;
   --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 10px 30px -14px rgb(0 0 0 / 60%);
+  --shadow-hover: 0 14px 34px rgb(0 0 0 / 45%);
+  --brand: #315d47; --brand-ink: #f7f8f3; --brand-dot: #c4d1ad;
+  --hero-em: #aec59e;
+  --art-disc: #1f2d23; --art-ring: #3c5143; --art-shadow: #172119; --art-page: #dfe6d6; --art-edge: #b8c5ad; --art-line: #68816d;
+  --art-book: #35634d; --art-side: #7e9b7c; --art-book-line: #234b38; --art-leaf: #668866; --art-leaf2: #91a982;
+  --sc-bg: #1f2d22; --sc-border: #344635; --sc-icon-line: #46593f; --sc-icon: #b2caa0;
+  --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%238fa28a' stroke-width='1.8'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E");
 }
 
 /* ---------- Base ---------- */
@@ -198,7 +390,7 @@ select, .select, input[type='text'], input[type='email'], input[type='password']
   border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 16px; font-weight: 400;
   transition: border-color .18s, box-shadow .18s;
 }
-select { appearance: none; padding-right: 40px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23738569' stroke-width='1.8'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+select { appearance: none; padding-right: 40px; background-image: var(--chev); background-repeat: no-repeat; background-position: right 14px center; }
 select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
 .meter { display: block; width: 100%; height: 8px; border: 0; border-radius: 99px; overflow: hidden; background: var(--surface-2); appearance: none; accent-color: var(--primary); }
 .meter::-webkit-progress-bar { background: var(--surface-2); border-radius: 99px; }
@@ -209,8 +401,8 @@ select:focus, input:focus, textarea:focus { outline: none; border-color: var(--a
 .site-nav { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); border-bottom: 1px solid var(--line); }
 .nav-inner { max-width: 1280px; margin: 0 auto; height: var(--nav-h); padding: 0 clamp(16px, 4vw, 32px); display: flex; align-items: center; gap: 24px; }
 .brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.brand-symbol { width: 36px; height: 36px; border-radius: 10px; background: #315d47; color: #f7f8f3; display: grid; place-items: center; font: 500 24px/1 var(--serif); letter-spacing: -2px; padding-bottom: 3px; }
-.brand-symbol span { color: #c4d1ad; }
+.brand-symbol { width: 36px; height: 36px; border-radius: 10px; background: var(--brand); color: var(--brand-ink); display: grid; place-items: center; font: 500 24px/1 var(--serif); letter-spacing: -2px; padding-bottom: 3px; }
+.brand-symbol span { color: var(--brand-dot); }
 .brand-text { font: 700 19px/1.05 var(--sans); letter-spacing: -.04em; }
 .brand-text > span { font-weight: 400; }
 .brand-text small { display: block; font-size: 9.5px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
@@ -234,16 +426,15 @@ html[data-theme='dark'] #theme-toggle .icon-moon { display: none; }
 /* ---------- Home ---------- */
 .hero { display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 40px; padding: 56px 0 40px; }
 .hero h1 { font: 400 clamp(46px, 6.4vw, 84px)/1.02 var(--serif); letter-spacing: -.035em; }
-.hero h1 span { color: #829773; font-style: italic; }
-html[data-theme='dark'] .hero h1 span { color: #aec59e; }
+.hero h1 span { color: var(--hero-em); font-style: italic; }
 .lead { font-size: 18px; line-height: 1.7; color: var(--muted); margin: 22px 0 28px; max-width: 500px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .hero-art { text-align: center; }
 .hero-art svg { width: 100%; max-width: 420px; margin: 0 auto; }
-.art-disc { fill: #e8eddf; } .art-ring { stroke: #c4ceba; } .art-shadow { fill: #d2dac7; }
-.art-page { fill: #f9faf3; stroke: #68816d; } .art-edge { fill: #e0e7d7; stroke: #68816d; }
-html[data-theme='dark'] .art-disc { fill: #1f2d23; } html[data-theme='dark'] .art-ring { stroke: #3c5143; } html[data-theme='dark'] .art-shadow { fill: #172119; }
-html[data-theme='dark'] .art-page { fill: #dfe6d6; } html[data-theme='dark'] .art-edge { fill: #b8c5ad; }
+.art-disc { fill: var(--art-disc); } .art-ring { stroke: var(--art-ring); } .art-shadow { fill: var(--art-shadow); }
+.art-page { fill: var(--art-page); stroke: var(--art-line); } .art-edge { fill: var(--art-edge); stroke: var(--art-line); }
+.art-book { fill: var(--art-book); } .art-side { fill: var(--art-side); stroke: var(--art-book-line); } .art-stem { stroke: var(--art-book); }
+.art-leaf { fill: var(--art-leaf); } .art-leaf2 { fill: var(--art-leaf2); } .art-spark { stroke: var(--art-leaf2); }
 .art-note { font: italic 17px var(--serif); color: var(--muted); display: inline-block; margin-top: -6px; transform: rotate(-5deg); }
 
 .snapshot { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
@@ -264,19 +455,18 @@ html[data-theme='dark'] .art-page { fill: #dfe6d6; } html[data-theme='dark'] .ar
 .daily-streak small { font-size: 12px; color: var(--muted); }
 
 .subject-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.subject-card { display: flex; flex-direction: column; padding: 28px; border-radius: var(--radius); background: #eef2e8; border: 1px solid #dce4d5; text-align: left; transition: transform .25s var(--ease), border-color .2s, box-shadow .25s; }
+.subject-card { display: flex; flex-direction: column; padding: 28px; border-radius: var(--radius); background: var(--sc-bg); border: 1px solid var(--sc-border); text-align: left; transition: transform .25s var(--ease), border-color .2s, box-shadow .25s; }
 .arts-card { background: #f3efe6; border-color: #e7e0d2; }
 .maths-card { background: #e9eff2; border-color: #d3dfe5; }
-html[data-theme='dark'] .subject-card { background: #1f2d22; border-color: #344635; }
 html[data-theme='dark'] .arts-card { background: #2b281f; border-color: #484131; }
 html[data-theme='dark'] .maths-card { background: #1d2a30; border-color: #34484f; }
 .subject-card:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: var(--shadow); }
 .subject-top { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
-.subject-icon { width: 46px; height: 46px; border: 1px solid #cdd9c3; border-radius: 50%; display: grid; place-items: center; }
-.subject-icon svg { width: 26px; stroke: #52734c; stroke-width: 1.3; }
+.subject-icon { width: 46px; height: 46px; border: 1px solid var(--sc-icon-line); border-radius: 50%; display: grid; place-items: center; }
+.subject-icon svg { width: 26px; stroke: var(--sc-icon); stroke-width: 1.3; }
 .arts-card .subject-icon { border-color: #ddd1b9; } .arts-card .subject-icon svg { stroke: #93815a; }
 .maths-card .subject-icon { border-color: #c3d4dc; } .maths-card .subject-icon svg { stroke: #4f7a8c; }
-html[data-theme='dark'] .subject-icon { border-color: #46593f; } html[data-theme='dark'] .subject-icon svg { stroke: #b2caa0; }
+html[data-theme='dark'] .arts-card .subject-icon { border-color: #554b36; }
 html[data-theme='dark'] .arts-card .subject-icon svg { stroke: #d5c193; }
 html[data-theme='dark'] .maths-card .subject-icon { border-color: #46606a; } html[data-theme='dark'] .maths-card .subject-icon svg { stroke: #a9cbd8; }
 .subject-index { font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
@@ -589,7 +779,7 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
 .dialog { margin: auto; border: 1px solid var(--line); border-radius: 18px; padding: 30px; width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; background: var(--surface); color: var(--ink); box-shadow: 0 30px 80px -20px rgb(0 0 0 / 40%); }
 .dialog[open] { animation: pop .26s var(--ease); }
 @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
-.dialog::backdrop { background: rgb(16 26 20 / 50%); backdrop-filter: blur(2px); }
+.dialog::backdrop { background: rgb(8 12 10 / 55%); backdrop-filter: blur(2px); }
 
 /* Keep closing surfaces rendered until their fade finishes. Native dialog
    focus, Escape handling and hidden states still update immediately. */
@@ -878,7 +1068,7 @@ button, .btn, select { min-height: 44px; }
 .segmented button { text-align: center; justify-content: center; }
 button:not(:disabled):active, .btn:active, .subject-card:active, .topic-item:active { transform: scale(.98); }
 button, .btn, .subject-card, .topic-item, .chip { transition: transform .15s var(--ease), background-color .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease); }
-.subject-card:hover { box-shadow: 0 14px 34px rgba(30, 50, 40, .12); transform: translateY(-2px); }
+.subject-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
 @media (max-width: 860px) {
   .notes-layout { gap: 18px; }
   .topic-list { padding: 2px 16px 10px; scroll-padding-inline: 16px; scroll-snap-type: x proximity; margin-inline: -16px; }
@@ -903,20 +1093,120 @@ button, .btn, .subject-card, .topic-item, .chip { transition: transform .15s var
   .tab-bar a.tab-extra { opacity: .7; font-weight: 500; }
   .tab-bar a.tab-extra:first-of-type, .tab-bar a[data-nav='friends'] + .tab-extra { border-left: 1px solid var(--line); border-radius: 0 10px 10px 0; }
 }
-.avatar { display: inline-grid; place-items: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; }
-.avatar-lg { width: 64px; height: 64px; font-size: 32px; flex: none; }
-.profile-head { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
-.profile-who { display: grid; gap: 2px; min-width: 0; } .profile-who strong { font-size: 1.35rem; overflow-wrap: anywhere; } .profile-who span { color: var(--muted); font-size: .95rem; }
-.profile-custom { margin-top: 18px; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); }
-.profile-custom summary { cursor: pointer; font-weight: 700; min-height: 32px; }
-.profile-custom p { margin: 14px 0 8px; font-size: .9rem; }
-.avatar-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
-.avatar-pick { aspect-ratio: 1; padding: 0; font-size: 22px; line-height: 1; border-radius: 12px; border: 2px solid transparent; background: var(--surface); cursor: pointer; }
-.avatar-pick.is-on, .color-pick.is-on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.color-grid { display: flex; gap: 12px; flex-wrap: wrap; }
-.color-pick { width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; border: 3px solid var(--surface); cursor: pointer; }
+/* ---------- Avatars ---------- */
+.av { --s: 40px; --av: var(--av-l, var(--accent)); --av-soft: var(--av-ls, var(--accent-soft)); width: var(--s); height: var(--s); flex: none; display: inline-grid; place-items: center; border-radius: 50%; background: var(--av-soft); color: var(--av); font-size: calc(var(--s) * .5); font-weight: 700; line-height: 1; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--av); user-select: none; }
+html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(--av-ds, var(--accent-soft)); }
+.board-list li.is-me .av { box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 4px var(--av); }
 .account-avatar { font-size: 1.1rem; line-height: 1; }
-@media (max-width: 480px) { .avatar-grid { grid-template-columns: repeat(4, 1fr); } .avatar-pick { font-size: 26px; } }
+
+/* ---------- Profile card ---------- */
+.profile-card { padding: 0; margin-bottom: 24px; overflow: hidden; }
+.pc-banner { position: relative; height: 116px; overflow: hidden; background: linear-gradient(115deg, var(--primary), color-mix(in srgb, var(--primary) 40%, var(--accent-soft))); }
+.pc-banner::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 88% 0%, rgb(255 255 255 / 26%), transparent 48%), radial-gradient(circle at 0% 100%, rgb(0 0 0 / 18%), transparent 50%); }
+.pc-doodles { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.pc-doodles span { position: absolute; font-size: 28px; line-height: 1; opacity: .24; transform: rotate(var(--r, 0deg)); filter: saturate(.7); transition: opacity .3s; }
+.pc-main { padding: 0 24px 24px; }
+.pc-head { display: flex; align-items: flex-start; gap: 18px; margin-top: -46px; position: relative; z-index: 2; }
+.pc-head .av { --s: 92px; flex: none; background: var(--av-soft); box-shadow: 0 0 0 5px var(--surface), 0 0 0 7px var(--av); }
+.pc-head .av.pop { animation: avpop .45s var(--ease); }
+@keyframes avpop { 0% { transform: scale(.82) rotate(-8deg); } 60% { transform: scale(1.08) rotate(3deg); } 100% { transform: none; } }
+.pc-who { flex: 1; min-width: 0; padding-top: 52px; display: grid; gap: 2px; }
+.pc-name { font-size: 1.45rem; line-height: 1.2; overflow-wrap: anywhere; }
+.pc-sub { color: var(--muted); font-size: .95rem; }
+.pc-bio { margin-top: 4px; font-size: .98rem; color: var(--ink-soft); overflow-wrap: anywhere; }
+.pc-bio:empty { display: none; }
+.pc-actions { padding-top: 56px; flex: none; }
+.pc-main .stat-tiles { margin-top: 22px; }
+.pc-main .meter { height: 10px; }
+
+/* ---------- Customiser ---------- */
+.cz { border-top: 1px solid var(--line); background: color-mix(in srgb, var(--surface-2) 55%, var(--surface)); padding: 22px 24px 20px; animation: arrive .3s var(--ease); }
+.cz-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.cz-head h2 { font: 600 clamp(20px, 2.4vw, 24px)/1.25 var(--sans); letter-spacing: -.02em; }
+.cz-head .eyebrow { margin-bottom: 4px; }
+.cz-status { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 3px 11px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); background: var(--surface); border: 1px solid var(--line); }
+.cz-status::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+.cz-status[data-state='saving']::before { background: var(--warn); animation: pulse 1s infinite; }
+.cz-status[data-state='error'] { color: var(--bad); border-color: var(--bad); }
+.cz-status[data-state='error']::before { background: var(--bad); }
+@keyframes pulse { 50% { opacity: .25; } }
+.cz-tabs { display: flex; width: 100%; margin-bottom: 18px; }
+.cz-tabs button { flex: 1; display: inline-flex; justify-content: center; align-items: center; gap: 7px; }
+.segmented button[aria-selected='true'] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / 12%); }
+.cz-panel { animation: arrive .25s var(--ease); }
+.cz-label { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 20px 0 10px; }
+.cz-label:first-child { margin-top: 0; }
+.cz-label small { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.cz-chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; margin: 0 -2px 6px; scrollbar-width: thin; }
+.cz-chips .chip { flex: none; }
+.emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; }
+.emoji-pick { aspect-ratio: 1; min-height: 0; padding: 0; display: grid; place-items: center; font-size: 28px; line-height: 1; border-radius: 15px; border: 2px solid transparent; background: var(--surface); box-shadow: 0 0 0 1px var(--line) inset; }
+.emoji-pick:hover { transform: translateY(-2px) scale(1.07); box-shadow: 0 0 0 1px var(--line-strong) inset, var(--shadow); }
+.emoji-pick.is-on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+.cz-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.cz-row input[type='text'] { flex: 1 1 180px; width: auto; }
+.cz-row + .cz-row { margin-top: 10px; }
+.cz-note { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.mode-seg { max-width: 420px; }
+.segmented.cz-tabs, .segmented.mode-seg { display: flex; }
+.cz-tabs button, .mode-seg button { white-space: nowrap; }
+.mode-seg button { display: inline-flex; gap: 7px; align-items: center; justify-content: center; }
+
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 12px; }
+.theme-tile { position: relative; display: grid; gap: 8px; padding: 7px 7px 10px; border-radius: 18px; border: 2px solid transparent; background: var(--surface); box-shadow: 0 0 0 1px var(--line) inset; text-align: center; min-height: 0; }
+.theme-tile:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px var(--line-strong) inset, var(--shadow); }
+.theme-tile[aria-pressed='true'] { border-color: var(--t-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--t-primary) 22%, transparent); }
+.tt-preview { display: grid; gap: 6px; align-content: start; height: 86px; padding: 9px; border-radius: 12px; background: var(--t-bg); border: 1px solid var(--t-line); overflow: hidden; }
+.tt-top { display: flex; align-items: center; gap: 5px; }
+.tt-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--t-primary); }
+.tt-line { display: block; height: 5px; border-radius: 3px; background: var(--t-ink); }
+.tt-line.muted { background: var(--t-muted); opacity: .6; }
+.tt-card { display: grid; gap: 5px; padding: 7px 8px; border-radius: 8px; background: var(--t-surface); border: 1px solid var(--t-line); }
+.tt-btn { display: block; width: 36px; height: 9px; border-radius: 5px; background: var(--t-primary); }
+.tt-name { font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.tt-check { position: absolute; top: -7px; right: -7px; width: 24px; height: 24px; border-radius: 50%; display: none; place-items: center; background: var(--t-primary); color: #fff; box-shadow: 0 0 0 3px var(--surface); }
+.tt-check .icon { width: 14px; height: 14px; stroke-width: 3; }
+.theme-tile[aria-pressed='true'] .tt-check { display: grid; }
+.tt-rainbow { width: 12px; height: 12px; border-radius: 50%; background: conic-gradient(#e11d48, #f59e0b, #84cc16, #06b6d4, #6366f1, #d946ef, #e11d48); }
+
+.cz-custom { margin-top: 14px; padding: 16px 18px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 14px; animation: arrive .25s var(--ease); }
+.cz-custom label { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
+.cz-custom label span { display: flex; justify-content: space-between; }
+.cz-custom output { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 500; }
+.rng { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; min-height: 28px; padding: 0; border: 0; border-radius: 99px; background: var(--rng-bg); background-clip: content-box; padding-block: 7px; cursor: pointer; }
+.rng::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 5px solid var(--rng-thumb, var(--primary)); box-shadow: 0 1px 5px rgb(0 0 0 / 35%); cursor: grab; }
+.rng::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 5px solid var(--rng-thumb, var(--primary)); box-shadow: 0 1px 5px rgb(0 0 0 / 35%); cursor: grab; }
+.rng::-moz-range-track { height: 14px; border-radius: 99px; background: var(--rng-bg); }
+.rng:focus { box-shadow: none; }
+.rng:focus-visible::-webkit-slider-thumb { outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 2px; }
+
+.bio-count { font-variant-numeric: tabular-nums; }
+.cz-panel .name-form { margin-top: 0; }
+.cz-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+
+/* ---------- Friends board with avatars ---------- */
+.board-list li { grid-template-columns: 34px auto 1fr auto; gap: 10px; }
+.board-bio { font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-box .stat-tiles { grid-template-columns: repeat(3, 1fr); }
+.friend-head { display: flex; align-items: center; gap: 16px; }
+.friend-head .av { --s: 64px; }
+.friend-head h2 { font-size: 1.4rem; line-height: 1.2; }
+.friend-head p { color: var(--muted); font-size: .95rem; margin-top: 2px; }
+@media (max-width: 640px) {
+  .pc-main { padding: 0 16px 18px; }
+  .pc-head .av { --s: 76px; }
+  .pc-head { margin-top: -38px; gap: 14px; }
+  .pc-who { padding-top: 44px; }
+  .pc-head { flex-wrap: wrap; }
+  .pc-actions { flex: 1 0 100%; padding: 0; }
+  .pc-actions .btn { width: 100%; }
+  .pc-banner { height: 96px; }
+  .cz { padding: 18px 16px 16px; }
+  .cz-tabs button { padding: 8px 4px; font-size: 13px; }
+  .theme-grid { grid-template-columns: repeat(2, 1fr); }
+  .emoji-grid { grid-template-columns: repeat(5, 1fr); }
+  .board-list li { grid-template-columns: 28px auto 1fr auto; gap: 8px; padding: 12px 4px; }
+}
 
 .tool-main { grid-column: 1 / -1; }
 .tool-main .tool-icon { background: var(--surface); }
@@ -983,7 +1273,7 @@ button, .btn, .subject-card, .topic-item, .chip { transition: transform .15s var
         <p class="caption">5 mixed questions · instant explanations</p>
       </div>
       <div class="hero-art" aria-hidden="true">
-        <svg viewBox="0 0 420 320" fill="none"><circle cx="217" cy="161" r="126" class="art-disc"/><circle cx="217" cy="161" r="99" class="art-ring" stroke-dasharray="3 7"/><path d="M86 231L218 256L344 204L215 182Z" class="art-shadow"/><path d="M95 213L218 238L329 192L209 168Z" class="art-page" stroke-width="2"/><path d="M95 213V224L218 249V238M218 249L329 203V192" class="art-edge" stroke-width="2"/><path d="M118 180L225 204L320 166L212 142Z" fill="#35634d"/><path d="M118 180V193L225 218L320 179V166M225 204V218" stroke="#234b38" stroke-width="2" fill="#7e9b7c"/><path d="M136 147L224 170L301 139L211 117Z" class="art-page" stroke-width="2"/><path d="M136 147V157L224 181L301 150V139M224 170V181" class="art-edge" stroke-width="2"/><path d="M201 130C177 106 189 83 202 78C216 95 217 115 201 130Z" fill="#668866"/><path d="M204 129C203 103 225 93 240 97C237 117 223 129 204 129Z" fill="#91a982"/><path d="M203 145V114" stroke="#35634d" stroke-width="3" stroke-linecap="round"/><path d="M105 95V111M97 103H113M315 95V107M309 101H321" stroke="#91a982" stroke-width="2" stroke-linecap="round"/><circle cx="304" cy="232" r="5" fill="#c0a76b"/><circle cx="127" cy="256" r="3" fill="#91a982"/></svg>
+        <svg viewBox="0 0 420 320" fill="none"><circle cx="217" cy="161" r="126" class="art-disc"/><circle cx="217" cy="161" r="99" class="art-ring" stroke-dasharray="3 7"/><path d="M86 231L218 256L344 204L215 182Z" class="art-shadow"/><path d="M95 213L218 238L329 192L209 168Z" class="art-page" stroke-width="2"/><path d="M95 213V224L218 249V238M218 249L329 203V192" class="art-edge" stroke-width="2"/><path d="M118 180L225 204L320 166L212 142Z" class="art-book"/><path d="M118 180V193L225 218L320 179V166M225 204V218" class="art-side" stroke-width="2"/><path d="M136 147L224 170L301 139L211 117Z" class="art-page" stroke-width="2"/><path d="M136 147V157L224 181L301 150V139M224 170V181" class="art-edge" stroke-width="2"/><path d="M201 130C177 106 189 83 202 78C216 95 217 115 201 130Z" class="art-leaf"/><path d="M204 129C203 103 225 93 240 97C237 117 223 129 204 129Z" class="art-leaf2"/><path d="M203 145V114" class="art-stem" stroke-width="3" stroke-linecap="round"/><path d="M105 95V111M97 103H113M315 95V107M309 101H321" class="art-spark" stroke-width="2" stroke-linecap="round"/><circle cx="304" cy="232" r="5" fill="#c0a76b"/><circle cx="127" cy="256" r="3" class="art-leaf2"/></svg>
         <span class="art-note">A little growth, every day.</span>
       </div>
     </section>
@@ -6598,7 +6888,7 @@ async function loadNames() {
 }
 
 function renderAccount() {
-  if (window.BeceProfile && S.doc && S.doc.color) BeceProfile.applyAccent(S.doc.color);
+  if (window.BeceProfile && S.doc && S.doc.color && BeceProfile.parse(S.doc.color).key !== BeceProfile.accent) BeceProfile.applyAccent(S.doc.color);
   const e = $('account-btn'); e.replaceChildren(); const m = view();
   if (!S.db) { e.append(o('span', 'account-name', 'Offline')); e.onclick = () => App.navigate('friends'); return; }
   if (!m) { e.append(o('span', 'account-name', 'Friends')); e.onclick = () => App.navigate('friends'); return; }
@@ -6657,7 +6947,7 @@ App.on('quiz:finished', async ev => {
     const subs = [...new Set(ev.questionIds.map(i => i.slice(0, 3)))];
     const subject = subs.length === 1 ? SUBJ[subs[0]] || 'mixed subjects' : 'mixed subjects';
     const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: earned + bonusExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
-    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.color ? { color: d.color } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
+    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
     await S.db.doc('players/' + S.uid).set(next); S.doc = next;
     renderAccount(); renderDaily();
     showResult({ earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended });
@@ -6675,6 +6965,12 @@ function showResult(e) {
 }
 
 
+function friendHead(p, title, box) {
+  const pal = window.BeceProfile.palette(p.color)[window.BeceTheme.mode], h = o('div', 'friend-head'), t = o('div');
+  box.style.setProperty('--accent', pal.accent); box.style.setProperty('--accent-soft', pal.accentSoft); box.style.setProperty('--primary', pal.primary);
+  t.append(title); if (p.bio) t.append(o('p', '', p.bio));
+  h.append(bubble(p, 64), t); return h;
+}
 function showFriend(p) {
   const old = $('friend-modal'); if (old) old.remove();
   const wk = weekStart(), live = p.lastDay === today() || p.lastDay === yesterday();
@@ -6696,7 +6992,241 @@ function showFriend(p) {
   const close = o('button', 'btn btn-ghost btn-sm', 'Close'); close.type = 'button';
   const onKey = e => { if (e.key === 'Escape') shut(); }, shut = () => { document.removeEventListener('keydown', onKey); m.remove(); };
   close.onclick = shut; m.onclick = e => { if (e.target === m) shut(); }; document.addEventListener('keydown', onKey);
-  box.append(title, tiles, mt, o('p', 'muted', dd), o('p', 'eyebrow', 'Recent sessions'), ul, close); m.append(box); document.body.append(m); close.focus();
+  box.append(friendHead(p, title, box), tiles, mt, o('p', 'muted', dd), o('p', 'eyebrow', 'Recent sessions'), ul, close); m.append(box); document.body.append(m); close.focus();
+}
+
+/* ---------- Profile card + customiser ----------
+   Built once and then updated in place, so typing a status or dragging a slider never loses focus
+   when the board refreshes in the background. Changes apply instantly and save a moment later. */
+const PF = window.BeceProfile;
+const BIO_IDEAS = ['Studying for BECE \u{1F4DA}', 'Streak hunter \u{1F525}', 'Maths is my thing \u2797', 'Coffee + notes \u2615', 'Come beat my score \u{1F60E}', 'Revision mode: ON \u26A1'];
+const HUE_TRACK = 'linear-gradient(90deg,' + Array.from({ length: 13 }, (_, i) => `hsl(${i * 30} 78% 50%)`).join(',') + ')';
+const DOODLES = [[3, 14, -14], [13, 58, 10], [23, 10, 18], [32, 56, -8], [43, 18, 6], [52, 60, -16], [61, 10, 12], [70, 54, -6], [79, 18, 16], [88, 58, -12], [95, 14, 8]];
+const firstEmoji = v => {
+  v = (v || '').trim(); if (!v) return '';
+  const g = window.Intl && Intl.Segmenter ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(v)][0].segment : Array.from(v)[0];
+  return /\p{Extended_Pictographic}/u.test(g) ? g : '';
+};
+const me = () => ({ id: S.uid, ...(S.doc || {}) });
+
+// An avatar bubble in the player's own colour. Both the light and dark shades are set, so it stays right when the mode changes.
+function paintBubble(b, p) {
+  const pal = PF.palette(p.color);
+  b.textContent = p.avatar || (nameOf(p.id) || '?').slice(0, 1).toUpperCase();
+  b.style.setProperty('--av-l', pal.light.accent); b.style.setProperty('--av-ls', pal.light.accentSoft);
+  b.style.setProperty('--av-d', pal.dark.accent); b.style.setProperty('--av-ds', pal.dark.accentSoft);
+}
+function bubble(p, size) { const b = o('span', 'av'); paintBubble(b, p); if (size) b.style.setProperty('--s', size + 'px'); return b; }
+
+// Changes show immediately, then save ~0.6s after the last tweak. `merge` means only the changed fields are written.
+function queueSave(patch) {
+  S.doc = { ...(S.doc || {}), ...patch }; S.pend = { ...(S.pend || {}), ...patch };
+  if (S.pc) S.pc.status('saving');
+  clearTimeout(S.saveT); S.saveT = setTimeout(flushSave, 650);
+}
+async function flushSave() {
+  S.saveT = 0;
+  const patch = S.pend; if (!patch || !S.db || !S.uid) return;
+  S.pend = null;
+  try {
+    await S.db.doc('players/' + S.uid).set(patch, { merge: true });
+    if (S.pc) S.pc.status(S.pend || S.saveT ? 'saving' : 'saved');
+  } catch (er) {
+    S.pend = { ...patch, ...(S.pend || {}) };
+    if (S.pc) S.pc.status('error');
+    App.toast(er.message || 'Couldn\u2019t save your profile. We\u2019ll try again.', 'warn');
+  }
+}
+
+function buildProfileCard() {
+  const el = o('section', 'card profile-card'), st = { tab: 'avatar', group: 'animals', lastAv: null, refresh: null, onTheme: null };
+  const tile = (a, b) => { const x = o('div', 'stat-tile'); x.append(o('strong', '', a), o('span', '', b)); return x; };
+
+  /* --- header: doubles as a live preview of everything below --- */
+  const banner = o('div', 'pc-banner'), doodles = o('div', 'pc-doodles'); banner.append(doodles);
+  const main = o('div', 'pc-main'), head = o('div', 'pc-head'), who = o('div', 'pc-who'), act = o('div', 'pc-actions');
+  const av = bubble(me()), nameEl = o('strong', 'pc-name'), subEl = o('span', 'pc-sub'), bioEl = o('p', 'pc-bio');
+  who.append(nameEl, subEl, bioEl);
+  const toggle = o('button', 'btn btn-sm'); toggle.type = 'button'; toggle.setAttribute('aria-controls', 'cz-panel');
+  act.append(toggle); head.append(av, who, act);
+  const tiles = o('div', 'stat-tiles'), meter = o('progress', 'meter');
+  main.append(head, tiles, meter); el.append(banner, main);
+
+  const paintDoodles = ch => doodles.replaceChildren(...DOODLES.map(([x, y, r]) => { const s = o('span', '', ch); s.style.cssText = `left:${x}%;top:${y}%;--r:${r}deg`; return s; }));
+  function paint() {
+    const d = me();
+    paintBubble(av, d);
+    const key = d.avatar || '';
+    if (st.lastAv !== key) {
+      paintDoodles(key || '\u2728');
+      if (st.lastAv !== null) { av.classList.remove('pop'); void av.offsetWidth; av.classList.add('pop'); }
+      st.lastAv = key;
+    }
+    nameEl.textContent = nameOf(S.uid); bioEl.textContent = d.bio || '';
+  }
+
+  /* --- customiser --- */
+  const cz = o('div', 'cz'); cz.id = 'cz-panel';
+  const hd = o('div', 'cz-head'), ht = o('div'), status = o('span', 'cz-status', 'All changes saved');
+  status.setAttribute('role', 'status'); status.dataset.state = 'saved';
+  ht.append(o('p', 'eyebrow', 'Make it yours'), o('h2', '', 'Customise your profile')); hd.append(ht, status);
+  const tabs = o('div', 'segmented cz-tabs'), panel = o('div', 'cz-panel');
+  tabs.setAttribute('role', 'tablist'); panel.setAttribute('role', 'tabpanel');
+  cz.append(hd, tabs, panel); el.append(cz);
+  const STATUS = { saved: 'All changes saved', saving: 'Saving\u2026', error: 'Couldn\u2019t save \u00B7 will retry' };
+  const setStatus = s => { status.dataset.state = s; status.textContent = STATUS[s]; };
+
+  const pick = a => { queueSave({ avatar: a }); paint(); renderAccount(); if (st.refresh) st.refresh(); };
+
+  function avatarPanel() {
+    const w = o('div'), grid = o('div', 'emoji-grid'), chips = o('div', 'cz-chips');
+    const mark = () => { const cur = me().avatar || ''; grid.querySelectorAll('.emoji-pick').forEach(b => { const on = b.textContent === cur; b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on)); }); };
+    const fill = () => {
+      grid.replaceChildren(...PF.AVATAR_GROUPS.find(g => g.id === st.group).items.map(a => {
+        const b = o('button', 'emoji-pick', a); b.type = 'button'; b.setAttribute('aria-label', 'Use ' + a); b.onclick = () => pick(a); return b;
+      })); mark();
+    };
+    PF.AVATAR_GROUPS.forEach(g => {
+      const c = o('button', 'chip', g.label); c.type = 'button'; c.setAttribute('aria-pressed', String(st.group === g.id));
+      c.onclick = () => { st.group = g.id; chips.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === c))); fill(); };
+      chips.append(c);
+    });
+    const row = o('div', 'cz-row'), rnd = o('button', 'btn btn-ghost btn-sm', '\u{1F3B2} Surprise me'), ini = o('button', 'btn btn-ghost btn-sm', 'Use my initial');
+    rnd.type = ini.type = 'button';
+    rnd.onclick = () => { const all = PF.AVATARS, cur = me().avatar; let a; do { a = all[Math.floor(Math.random() * all.length)]; } while (a === cur); pick(a); const g = PF.AVATAR_GROUPS.find(x => x.items.includes(a)); if (g && g.id !== st.group) { st.group = g.id; chips.querySelectorAll('.chip').forEach((x, i) => x.setAttribute('aria-pressed', String(PF.AVATAR_GROUPS[i].id === g.id))); fill(); } };
+    ini.onclick = () => pick('');
+    row.append(rnd, ini);
+    const own = o('form', 'cz-row'), inp = o('input'), go = o('button', 'btn btn-ghost btn-sm', 'Use it');
+    inp.type = 'text'; inp.placeholder = 'Paste or type an emoji'; inp.maxLength = 16; inp.setAttribute('aria-label', 'Type any emoji'); go.type = 'submit';
+    own.onsubmit = e => { e.preventDefault(); const em = firstEmoji(inp.value); if (!em) { App.toast('Type or paste a single emoji, like \u{1F432}', 'warn'); return; } pick(em); inp.value = ''; };
+    own.append(inp, go);
+    w.append(o('p', 'cz-label', 'Pick your face'), chips, grid, o('p', 'cz-label', 'Quick picks'), row, o('p', 'cz-label', 'Or use any emoji'), own);
+    st.refresh = mark; fill();
+    return w;
+  }
+
+  function themePanel() {
+    const w = o('div');
+    /* light / dark / auto */
+    const seg = o('div', 'segmented segmented-full mode-seg'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Light or dark mode');
+    const modeBtns = [['light', 'Light', 'sun'], ['dark', 'Dark', 'moon'], ['auto', 'Auto', null]].map(([k, t, i]) => {
+      const b = o('button'); b.type = 'button'; b.dataset.mode = k; if (i) b.append(App.icon(i)); b.append(document.createTextNode(t));
+      b.onclick = () => BeceTheme.set(k); seg.append(b); return b;
+    });
+    const paintModes = () => modeBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === BeceTheme.pref)));
+
+    /* colour presets, each previewed in the mode you are using right now */
+    const grid = o('div', 'theme-grid'), editor = o('div', 'cz-custom'); editor.hidden = true;
+    const paintTile = t => {
+      const P = PF.palette(t.dataset.key)[BeceTheme.mode], s = t.style;
+      s.setProperty('--t-bg', P.bg); s.setProperty('--t-surface', P.surface); s.setProperty('--t-line', P.line); s.setProperty('--t-ink', P.ink); s.setProperty('--t-muted', P.muted); s.setProperty('--t-primary', P.primary);
+    };
+    const makeTile = (key, name, custom) => {
+      const b = o('button', 'theme-tile'); b.type = 'button'; b.dataset.key = key; if (custom) b.dataset.custom = '1';
+      const pv = o('span', 'tt-preview'), top = o('span', 'tt-top'), card = o('span', 'tt-card'), l1 = o('i', 'tt-line'), l2 = o('i', 'tt-line'), l3 = o('i', 'tt-line muted');
+      l1.style.width = '38%'; l2.style.width = '78%'; l3.style.width = '52%';
+      top.append(o('i', 'tt-dot'), l1); card.append(l2, l3, o('i', 'tt-btn')); pv.append(top, card);
+      const nm = o('span', 'tt-name'); if (custom) nm.append(o('i', 'tt-rainbow')); nm.append(document.createTextNode(name));
+      const ck = o('span', 'tt-check'); ck.append(App.icon('check'));
+      b.append(pv, nm, ck); b.setAttribute('aria-label', name + ' colour theme'); paintTile(b); return b;
+    };
+    const presetTiles = Object.entries(PF.PRESETS).map(([k, v]) => { const t = makeTile(k, v.name, false); t.onclick = () => choose(k); return t; });
+    const curCustom = () => PF.parse(PF.accent).custom ? PF.accent : (st.customKey || 'custom:210:60');
+    const customTile = makeTile(curCustom(), 'Custom', true); customTile.onclick = () => choose(curCustom());
+    const tilesAll = [...presetTiles, customTile]; grid.append(...tilesAll);
+
+    /* custom colour sliders */
+    const rng = (min, max) => { const r = o('input', 'rng'); r.type = 'range'; r.min = min; r.max = max; r.step = 1; return r; };
+    const hueIn = rng(0, 360), satIn = rng(15, 100), hueOut = o('output'), satOut = o('output');
+    hueIn.setAttribute('aria-label', 'Colour'); satIn.setAttribute('aria-label', 'Vibrancy'); hueIn.style.setProperty('--rng-bg', HUE_TRACK);
+    const field = (t, out, inp) => { const l = o('label'), s = o('span'); s.append(document.createTextNode(t), out); l.append(s, inp); return l; };
+    editor.append(field('Colour', hueOut, hueIn), field('Vibrancy', satOut, satIn));
+    const paintSliders = () => {
+      const h = +hueIn.value, s = +satIn.value, P = PF.palette(PF.customKey(h, s))[BeceTheme.mode];
+      hueOut.textContent = h + '\u00B0'; satOut.textContent = s + '%';
+      satIn.style.setProperty('--rng-bg', `linear-gradient(90deg, hsl(${h} 15% 52%), hsl(${h} 95% 46%))`);
+      hueIn.style.setProperty('--rng-thumb', P.primary); satIn.style.setProperty('--rng-thumb', P.primary);
+    };
+    const live = () => {
+      const key = PF.customKey(+hueIn.value, +satIn.value); st.customKey = key;
+      PF.applyAccent(key); queueSave({ color: key }); customTile.dataset.key = key; paintSliders(); renderAccount();
+    };
+    hueIn.oninput = satIn.oninput = live;
+
+    const mark = () => {
+      const cur = PF.parse(PF.accent), isC = !!cur.custom;
+      tilesAll.forEach(t => t.setAttribute('aria-pressed', String(t.dataset.custom ? isC : t.dataset.key === cur.key)));
+      editor.hidden = !isC;
+      if (isC) { if (document.activeElement !== hueIn) hueIn.value = cur.h; if (document.activeElement !== satIn) satIn.value = cur.s; customTile.dataset.key = cur.key; st.customKey = cur.key; }
+      tilesAll.forEach(paintTile); paintSliders();
+    };
+    function choose(key) { PF.applyAccent(key); queueSave({ color: key }); mark(); renderAccount(); }
+    const surprise = o('button', 'btn btn-ghost btn-sm', '\u{1F3B2} Surprise me'); surprise.type = 'button';
+    surprise.onclick = () => { const ks = Object.keys(PF.PRESETS).filter(k => k !== PF.accent); choose(ks[Math.floor(Math.random() * ks.length)]); };
+
+    const lab = o('p', 'cz-label'); lab.append(document.createTextNode('Colour theme'), o('small', '', 'Recolours the whole app'));
+    w.append(o('p', 'cz-label', 'Appearance'), seg, lab, grid, editor, o('p', 'cz-note', 'Your colour also shows next to your name on the friends board, in both light and dark mode.'));
+    const r = o('div', 'cz-row'); r.style.marginTop = '14px'; r.append(surprise); w.append(r);
+    st.refresh = mark; st.onTheme = () => { paintModes(); tilesAll.forEach(paintTile); paintSliders(); };
+    paintModes(); mark();
+    return w;
+  }
+
+  function aboutPanel() {
+    const w = o('div'), d = me();
+    const form = o('form', 'name-form'), lab = o('label', '', 'Name on the board'), inp = o('input'), save = o('button', 'btn btn-ghost btn-sm', 'Save name');
+    inp.id = 'display-name'; inp.type = 'text'; inp.value = nameOf(S.uid); inp.maxLength = 30; inp.minLength = 2; inp.required = true; lab.htmlFor = 'display-name'; save.type = 'submit';
+    form.append(lab, inp, save);
+    form.onsubmit = e => { e.preventDefault(); const v = inp.value.trim(); if (v.length < 2) return; queueSave({ displayName: v }); paint(); renderAccount(); App.toast('Name updated.', 'good'); };
+
+    const bl = o('p', 'cz-label'), cnt = o('small', 'bio-count', `${(d.bio || '').length}/60`), bio = o('input');
+    bl.append(document.createTextNode('Status line'), cnt);
+    bio.type = 'text'; bio.id = 'bio-input'; bio.maxLength = 60; bio.placeholder = 'What are you revising for?'; bio.value = d.bio || ''; bio.setAttribute('aria-label', 'Status line');
+    const apply = v => { cnt.textContent = `${v.length}/60`; queueSave({ bio: v.trim() }); paint(); };
+    bio.oninput = () => apply(bio.value);
+    const ideas = o('div', 'chip-row'); ideas.style.marginTop = '12px';
+    BIO_IDEAS.forEach(t => { const c = o('button', 'chip', t); c.type = 'button'; c.onclick = () => { bio.value = t; apply(t); }; ideas.append(c); });
+    w.append(form, bl, bio, ideas, o('p', 'cz-note', 'Friends see your status when they open your stats.'));
+    st.refresh = () => { if (document.activeElement !== bio) { bio.value = me().bio || ''; cnt.textContent = `${bio.value.length}/60`; } if (document.activeElement !== inp) inp.value = nameOf(S.uid); };
+    return w;
+  }
+
+  const TABS = [['avatar', 'Avatar', '\u{1F642}'], ['theme', 'Theme', '\u{1F3A8}'], ['about', 'About me', '\u270D\uFE0F']];
+  function renderTabs() {
+    tabs.replaceChildren(...TABS.map(([id, label, emoji]) => {
+      const b = o('button', '', `${emoji} ${label}`); b.type = 'button'; b.setAttribute('role', 'tab'); b.id = 'cz-tab-' + id;
+      b.setAttribute('aria-selected', String(st.tab === id)); b.tabIndex = st.tab === id ? 0 : -1;
+      b.onclick = () => { st.tab = id; renderTabs(); renderPanel(); }; return b;
+    }));
+  }
+  tabs.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const i = TABS.findIndex(t => t[0] === st.tab), n = (i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length;
+    st.tab = TABS[n][0]; renderTabs(); renderPanel(); $('cz-tab-' + st.tab).focus(); e.preventDefault();
+  });
+  function renderPanel() {
+    st.refresh = null; st.onTheme = null;
+    panel.setAttribute('aria-labelledby', 'cz-tab-' + st.tab);
+    panel.replaceChildren(st.tab === 'avatar' ? avatarPanel() : st.tab === 'theme' ? themePanel() : aboutPanel());
+  }
+  document.addEventListener('bece:theme', () => { if (st.onTheme) st.onTheme(); });
+
+  function setOpen(v) {
+    S.czOpen = v; cz.hidden = !v; toggle.setAttribute('aria-expanded', String(v));
+    toggle.className = 'btn btn-sm ' + (v ? 'btn-ghost' : 'btn-primary'); toggle.textContent = v ? 'Done' : '\u2728 Customise';
+  }
+  toggle.onclick = () => { setOpen(cz.hidden); if (!cz.hidden) renderPanel(); };
+  renderTabs(); renderPanel(); setOpen(S.czOpen !== false);
+
+  return {
+    el, status: setStatus,
+    update(x) {
+      subEl.textContent = `Level ${x.level} \u00B7 ${x.ex} EXP`;
+      tiles.replaceChildren(tile(String(x.ex), 'Total EXP'), tile(`Lv ${x.level}`, `${LVL - x.into} EXP to next`), tile(`\u{1F525} ${x.streak}`, `Day streak \u00B7 best ${x.best}`), tile(x.rank ? `#${x.rank}` : '\u2014', `of ${plural(x.count, 'player')}`));
+      meter.max = LVL; meter.value = x.into; paint();
+      if (st.refresh && !S.pend && !S.saveT) st.refresh();
+    },
+  };
 }
 
 function renderFriends() {
@@ -6705,24 +7235,11 @@ function renderFriends() {
   if (!S.ready) { const w = o('div', 'skeleton-wrap'); for (let i = 0; i < 3; i++) w.append(o('div', 'skeleton')); body.replaceChildren(w); return; }
   const m = view(), base = S.players.some(p => p.id === S.uid) ? S.players : [...S.players, { id: S.uid, ...(S.doc || {}) }], wk = weekStart(), val = p => S.board === 'week' ? (p.weekKey === wk ? p.weekExp || 0 : 0) : (p.totalExp || 0), list = base.filter(p => val(p) > 0 || p.id === S.uid).sort((a, b) => val(b) - val(a));
   const myRank = list.findIndex(p => p.id === S.uid) + 1, ex = m ? m.totalExp : 0, { level, into } = lv(ex);
-  const mine = o('section', 'card my-stats'), tiles = o('div', 'stat-tiles');
-  const tile = (a, b) => { const x = o('div', 'stat-tile'); x.append(o('strong', '', a), o('span', '', b)); return x; };
-  tiles.append(tile(String(ex), 'Total EXP'), tile(`Lv ${level}`, `${LVL - into} EXP to next`), tile(`\u{1F525} ${m ? m.streak : 0}`, `Day streak \xB7 best ${m ? m.bestStreak : 0}`), tile(myRank ? `#${myRank}` : '\u2014', `of ${plural(list.length, 'player')}`));
-  const mt = o('progress', 'meter'); mt.max = LVL; mt.value = into;
-  const form = o('form', 'name-form'), lab = o('label', '', 'Your name on the board'), inp = o('input'); inp.id = 'display-name'; inp.value = nameOf(S.uid); inp.maxLength = 30; inp.minLength = 2; inp.required = true; lab.htmlFor = 'display-name';
-  const save = o('button', 'btn btn-ghost btn-sm', 'Save name'); save.type = 'submit'; form.append(lab, inp, save);
-  form.onsubmit = async e => { e.preventDefault(); save.disabled = true; try { const nd = { ...(S.doc || {}), displayName: inp.value.trim() }; await S.db.doc('players/' + S.uid).set(nd); S.doc = nd; App.toast('Name updated.', 'good'); } catch (er) { App.toast(er.message || 'Couldn\u2019t save.', 'warn'); } finally { save.disabled = false; } };
-  const PF = window.BeceProfile || { AVATARS: [], COLORS: {}, applyAccent() {} }, myAv = S.doc && S.doc.avatar, myCol = (S.doc && S.doc.color) || 'green';
-  const ph = o('div', 'profile-head'), pw = o('div', 'profile-who');
-  pw.append(o('strong', '', nameOf(S.uid)), o('span', '', `Level ${level} \xB7 ${ex} EXP`));
-  ph.append(o('span', 'avatar avatar-lg', myAv || nameOf(S.uid).slice(0, 1).toUpperCase()), pw);
-  const cust = o('details', 'profile-custom'); cust.open = !!S.custOpen; cust.ontoggle = () => { S.custOpen = cust.open; };
-  const saveProfile = async patch => { try { const nd = { ...(S.doc || {}), ...patch }; await S.db.doc('players/' + S.uid).set(nd); S.doc = nd; renderAccount(); renderFriends(); } catch (er) { App.toast(er.message || 'Couldn\u2019t save.', 'warn'); } };
-  const ag = o('div', 'avatar-grid'), cg = o('div', 'color-grid');
-  PF.AVATARS.forEach(a => { const b = o('button', 'avatar-pick' + (myAv === a ? ' is-on' : ''), a); b.type = 'button'; b.setAttribute('aria-label', 'Use ' + a); b.onclick = () => saveProfile({ avatar: a }); ag.append(b); });
-  Object.keys(PF.COLORS).forEach(k => { const b = o('button', 'color-pick' + (myCol === k ? ' is-on' : '')); b.type = 'button'; b.style.background = PF.COLORS[k] || '#315d47'; b.setAttribute('aria-label', k + ' colour'); b.onclick = () => { PF.applyAccent(k); saveProfile({ color: k }); }; cg.append(b); });
-  cust.append(o('summary', '', 'Customise your profile'), o('p', 'muted', 'Pick your face'), ag, o('p', 'muted', 'Pick your colour'), cg, form);
-  mine.append(ph, tiles, mt, cust);
+
+  // The profile card is permanent (so editing is never interrupted); only the board below is rebuilt.
+  if (!S.pc) S.pc = buildProfileCard();
+  S.pc.update({ ex, level, into, streak: m ? m.streak : 0, best: m ? m.bestStreak : 0, rank: myRank, count: list.length });
+
   let lbNote = ''; const lb = o('section', 'card leaderboard'), head = o('div', 'section-heading'), hd = o('div');
   hd.append(o('p', 'eyebrow', 'The friends board'), o('h2', '', 'Who\u2019s putting in the work?')); head.append(hd);
   const tg = o('div', 'button-row');
@@ -6731,11 +7248,12 @@ function renderFriends() {
   if (S.board === 'week') lbNote = 'Weekly board resets every Monday. EXP counts from this update onward.';
   const ol = o('ol', 'board-list');
   list.forEach((p, i) => {
-    const li = o('li', p.id === S.uid ? 'is-me' : ''), w = o('div', 'board-who'), n = o('strong', '', (p.avatar ? p.avatar + ' ' : '') + nameOf(p.id));
+    const li = o('li', p.id === S.uid ? 'is-me' : ''), w = o('div', 'board-who'), n = o('strong', '', nameOf(p.id));
     if (p.id === S.uid) n.append(o('span', 'you-tag', 'you'));
     const live = p.lastDay === today() || p.lastDay === yesterday();
-    li.append(o('span', 'board-rank', i < 3 ? ['\u{1F947}', '\u{1F948}', '\u{1F949}'][i] : String(i + 1)));
+    li.append(o('span', 'board-rank', i < 3 ? ['\u{1F947}', '\u{1F948}', '\u{1F949}'][i] : String(i + 1)), bubble(p, 36));
     w.append(n, o('span', '', `Level ${lv(p.totalExp || 0).level}${live && p.streak ? ` \xB7 \u{1F525} ${p.streak}` : ''}${p.dailyDone && p.dailyDone.day === today() ? ' \xB7 daily \u2713' : ''}`));
+    if (p.bio) w.append(o('span', 'board-bio', p.bio));
     li.append(w, o('span', 'board-exp', `${val(p)} EXP`));
     li.tabIndex = 0; li.setAttribute('role', 'button'); li.setAttribute('aria-label', `See ${nameOf(p.id)}\u2019s stats`);
     li.onclick = () => showFriend(p); li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showFriend(p); } };
@@ -6754,7 +7272,10 @@ function renderFriends() {
     li.append(p, o('span', 'activity-exp', `+${r.exp}`), o('span', 'activity-time', ago(r.at))); ul.append(li);
   });
   act.append(ul);
-  const g = o('div', 'friends-grid'); g.append(lb, act); body.replaceChildren(mine, g);
+  const g = o('div', 'friends-grid'); g.append(lb, act);
+  if (!S.frWrap) { S.frWrap = o('div'); S.boardHost = o('div'); S.frWrap.append(S.pc.el, S.boardHost); }
+  S.boardHost.replaceChildren(g);
+  if (body.firstChild !== S.frWrap || body.childNodes.length !== 1) body.replaceChildren(S.frWrap);
 }
 
 // ===== FIREBASE SETUP: paste your own values from the Firebase console here =====
@@ -6788,7 +7309,7 @@ async function init() {
     S.db = fb.db; S.uid = fb.uid;
     S.db.collection('players').onSnapshot(async snap => {
       S.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      const mine = S.players.find(p => p.id === S.uid); S.doc = mine ? { ...mine } : S.doc || {}; delete S.doc.id;
+      const mine = S.players.find(p => p.id === S.uid); S.doc = mine ? { ...mine } : S.doc || {}; delete S.doc.id; if (S.pend) S.doc = { ...S.doc, ...S.pend };
       S.ready = true; renderAccount(); renderDaily(); renderFriends();
       if (!S.asked && !(S.doc && S.doc.displayName)) {
         S.asked = true;
@@ -6802,19 +7323,6 @@ async function init() {
   } catch { S.db = null; renderAccount(); renderFriends(); }
 }
 init();
-</script>
-<script>
-window.BeceProfile = {
-  AVATARS: ['🦁','🐯','🦊','🐼','🐸','🦉','🐙','🦄','🚀','⚡','🎯','🌟','🎮','📚','🧠','🔥'],
-  COLORS: { green: null, blue: '#2b5fa8', purple: '#7a4bb5', orange: '#c2410c', pink: '#b4235a', teal: '#0f766e' },
-  applyAccent(k) {
-    const c = this.COLORS[k], r = document.documentElement.style;
-    ['--primary', '--accent', '--primary-hover'].forEach(v => r.removeProperty(v));
-    if (c) { r.setProperty('--primary', c); r.setProperty('--accent', c); r.setProperty('--primary-hover', 'color-mix(in srgb, ' + c + ' 85%, black)'); }
-    try { localStorage.setItem('bece.accent', k); } catch (e) {}
-  }
-};
-try { const k = localStorage.getItem('bece.accent'); if (k) BeceProfile.applyAccent(k); } catch (e) {}
 </script>
 </body>
 </html>
