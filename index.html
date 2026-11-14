@@ -1034,6 +1034,8 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
 .board-list li[role=button]:hover { filter: brightness(1.08); }
 .board-list li[role=button]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .duel-box { width: min(520px, 100%); padding: 24px; display: grid; gap: 14px; max-height: calc(100dvh - 32px); overflow-y: auto; }
+.duel-box { position: relative; }
+.duel-x { position: absolute; top: 10px; right: 10px; min-width: 40px; height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); font-weight: 700; }
 .duel-card { display: grid; gap: 12px; margin-bottom: 20px; }
 .duel-card .button-row, .duel-box .button-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .duel-sel, .duel-in { flex: 1 1 160px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface); }
@@ -7370,10 +7372,12 @@ const Duel = (() => {
   function put(...n) {
     if (!box || !box.isConnected) {
       const m = o('div', 'friend-modal duel-modal'); m.id = 'duel-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
-      m.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+      m.addEventListener('keydown', e => { if (e.key === 'Escape') leave(); });
+      m.addEventListener('click', e => { if (e.target === m) leave(); });
       box = o('div', 'duel-box card'); m.append(box); document.body.append(m);
     }
-    box.replaceChildren(...n);
+    const x = o('button', 'duel-x', '\u2715'); x.type = 'button'; x.id = 'duel-x'; x.setAttribute('aria-label', 'Leave duel'); x.onclick = leave;
+    box.replaceChildren(...n, x);
   }
   // Saves one win/loss/draw to the player's profile, once per duel (guarded locally and in the duel doc).
   function record(out) {
@@ -7386,8 +7390,12 @@ const Duel = (() => {
     b.commit().catch(() => { D.recd = null; });
   }
   function push() { if (D.code && D.me) col().doc(D.code).update({ ['res.' + S.uid]: { ...D.me } }).catch(() => {}); }
+  function leave() {
+    const playing = D.doc && D.started && D.me && !D.me.done, x = $('duel-x');
+    if (playing && !D.armed) { D.armed = true; if (x) x.textContent = 'Forfeit?'; setTimeout(() => { D.armed = false; const y = $('duel-x'); if (y) y.textContent = '\u2715'; }, 3000); return; }
+    D.armed = false; close(true);
+  }
   function close(force) {
-    if (!force && D.doc && D.started && D.me && !D.me.done && !confirm('Leave the duel? You will forfeit.')) return;
     if (D.me && !D.me.done && D.started) { D.me.done = true; D.me.ms += (total() - D.me.n) * SECS * 1000; D.me.n = total(); push(); record('l'); }
     clearInterval(D.timer); clearInterval(D.cdT); clearTimeout(D.wait);
     if (D.unsub) { D.unsub(); D.unsub = null; }
@@ -7401,9 +7409,10 @@ const Duel = (() => {
     D.unsub = col().doc(code).onSnapshot(s => {
       if (!s.exists) { if (D.doc && D.doc.state === 'waiting') { App.toast('Duel cancelled.'); close(true); } return; }
       D.doc = s.data(); step();
-    }, () => { warn('Lost connection to the duel.'); close(true); });
+    }, e => { warn(`Lost connection to the duel (${(e && e.code) || 'error'}).`); close(true); });
   }
-  function step() {
+  function step() { try { step2(); } catch (e) { console.error(e); close(true); } }
+  function step2() {
     const d = D.doc; if (!d) return;
     if (d.state === 'waiting') return lobby();
     if (!D.started) { if (!D.cd) countdown(); return; }
@@ -7421,9 +7430,9 @@ const Duel = (() => {
       row(btn('Share invite', 'btn-primary btn-sm', share), btn('Cancel', 'btn-ghost btn-sm', () => close(true))));
   }
   function countdown() {
-    D.cd = true;
+    D.cd = true; D.cd0 = 0;
     const n = o('div', 'duel-count');
-    const tick = () => { const s = Math.min(5, Math.ceil((D.doc.startAt - Date.now()) / 1000)); if (s <= 0) { clearInterval(D.cdT); D.cd = false; begin(); } else n.textContent = s; };
+    const tick = () => { const at = Number(D.doc.startAt) || (D.cd0 = D.cd0 || Date.now() + 3000), s = Math.min(5, Math.ceil((at - Date.now()) / 1000)); if (s <= 0) { clearInterval(D.cdT); D.cd = false; begin(); } else n.textContent = s; };
     put(o('p', 'eyebrow', 'Duel found'), o('h2', '', `You vs ${oppName()}`), o('p', 'muted', `${SUBS[D.doc.subject] || 'Mixed'} \u00B7 ${total()} questions \u00B7 ${SECS}s each`), n);
     tick(); D.cdT = setInterval(tick, 200);
   }
@@ -7494,7 +7503,7 @@ const Duel = (() => {
     if (pool.length < LEN) return warn('Not enough questions for that subject.');
     const code = Array.from({ length: 5 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join('');
     const doc = { host: S.uid, hostName: myName(), guest: null, guestName: '', subject: D.subject, qids: mix(pool).slice(0, LEN).map(q => q.id), state: 'waiting', created: Date.now(), res: {} };
-    try { await col().doc(code).set(doc); } catch { return warn('Couldn\u2019t create the duel. The Firestore rules may need a "duels" rule.'); }
+    try { await col().doc(code).set(doc); } catch (e) { return warn(`Couldn\u2019t create the duel (${(e && (e.code || e.message)) || 'unknown error'}).`); }
     D.doc = doc; watch(code); lobby();
   }
   async function join(code) {
@@ -7509,13 +7518,14 @@ const Duel = (() => {
         const d = s.data(); if (d.host === S.uid) throw 'own'; if (d.state !== 'waiting') throw 'taken';
         tx.update(ref, { guest: S.uid, guestName: myName(), state: 'playing', startAt: Date.now() + 4000 });
       });
-    } catch (e) { return warn(e === 'nf' ? 'No duel with that code.' : e === 'own' ? 'That\u2019s your own duel.' : e === 'taken' ? 'That duel already started.' : 'Couldn\u2019t join the duel.'); }
+    } catch (e) { return warn(e === 'nf' ? 'No duel with that code.' : e === 'own' ? 'That\u2019s your own duel.' : e === 'taken' ? 'That duel already started.' : `Couldn\u2019t join the duel (${(e && (e.code || e.message)) || 'unknown error'}).`); }
     watch(code);
   }
   function paint() {
     if (!D.list) return;
     const d = S.doc || {}; D.rec.textContent = `Your record: ${d.duelW || 0} W \u00B7 ${d.duelL || 0} L \u00B7 ${d.duelD || 0} D`;
-    D.list.replaceChildren(); if (!D.open.length) return;
+    D.list.replaceChildren();
+    if (D.err) { D.list.append(o('li', 'muted', `Open challenges unavailable (${D.err}). You can still use a code.`)); return; } if (!D.open.length) return;
     D.list.append(o('li', 'eyebrow', 'Open challenges'));
     D.open.forEach(d => { const li = o('li'); li.append(o('span', '', `${d.hostName || 'Player'} \u00B7 ${SUBS[d.subject] || 'Mixed'}`), btn('Accept', 'btn-primary btn-sm', () => join(d.code))); D.list.append(li); });
   }
@@ -7531,11 +7541,12 @@ const Duel = (() => {
       row(sel, btn('Create duel', 'btn-primary btn-sm', create)), row(inp, btn('Join with code', 'btn-ghost btn-sm', () => join(inp.value))), D.list);
     D.card = c; paint(); return c;
   }
+  window.addEventListener('hashchange', () => { if (D.code) close(true); });
   function start() {
     if (D.os || !S.db) return;
     D.os = col().where('state', '==', 'waiting').onSnapshot(s => {
       D.open = s.docs.map(d => ({ code: d.id, ...d.data() })).filter(d => d.host !== S.uid && Date.now() - d.created < 9e5).sort((a, b) => b.created - a.created); paint();
-    }, () => {});
+    }, e => { D.err = (e && e.code) || 'error'; paint(); });
   }
   return { card, start, paint };
 })();
