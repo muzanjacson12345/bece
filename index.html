@@ -7286,7 +7286,7 @@ function renderFriends() {
   const body = $('friends-body'); if (!body || App.screen !== 'friends') return;
   if (!S.db) { const c = o('div', 'card friends-gate'); c.append(o('h2', '', 'Friends board unavailable'), o('p', 'muted', 'Check your internet connection and reload the page to join the board. Quizzes and notes still work.')); body.replaceChildren(c); return; }
   if (!S.ready) { const w = o('div', 'skeleton-wrap'); for (let i = 0; i < 3; i++) w.append(o('div', 'skeleton')); body.replaceChildren(w); return; }
-  const m = view(), base = S.players.some(p => p.id === S.uid) ? S.players : [...S.players, { id: S.uid, ...(S.doc || {}) }], wk = weekStart(), val = p => S.board === 'week' ? (p.weekKey === wk ? p.weekExp || 0 : 0) : (p.totalExp || 0), list = base.filter(p => val(p) > 0 || p.id === S.uid).sort((a, b) => val(b) - val(a));
+  const m = view(), base = S.players.some(p => p.id === S.uid) ? S.players : [...S.players, { id: S.uid, ...(S.doc || {}) }], wk = weekStart(), val = p => S.board === 'week' ? (p.weekKey === wk ? p.weekExp || 0 : 0) : (p.totalExp || 0), list = base.filter(p => val(p) > 0 || p.id === S.uid || p.displayName).sort((a, b) => val(b) - val(a));
   const myRank = list.findIndex(p => p.id === S.uid) + 1, ex = m ? m.totalExp : 0, { level, into } = lv(ex);
 
   // The profile card is permanent (so editing is never interrupted); only the board below is rebuilt.
