@@ -1551,6 +1551,46 @@ html[data-theme='dark'] .adm-prev[data-kind='warn'] { background: #4a3710; color
 
 .tool-main { grid-column: 1 / -1; }
 .tool-main .tool-icon { background: var(--surface); }
+/* ---------- Announcements: big and clear on phones ---------- */
+.ann-bar { top: calc(var(--nav-h, 58px) + env(safe-area-inset-top, 0px)); align-items: flex-start; gap: 12px; padding: 14px clamp(14px, 4vw, 32px); border-left: 6px solid var(--ann-c, var(--accent)); box-shadow: 0 8px 20px -14px rgb(0 0 0 / 50%); }
+.ann-bar[data-kind='warn'], .ann-pop-card[data-kind='warn'] { --ann-c: #e0a100; }
+.ann-bar[data-kind='event'], .ann-pop-card[data-kind='event'] { --ann-c: #2e9b57; }
+.ann-bar[data-kind='critical'], .ann-pop-card[data-kind='critical'] { --ann-c: #d9534f; }
+.ann-bar[data-kind='critical'] { background: #fde2e1; color: #5c0f0c; }
+html[data-theme='dark'] .ann-bar[data-kind='critical'] { background: #4a1715; color: #ffd6d3; }
+.ann-ic { font-size: 24px; line-height: 1.2; }
+.ann-body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.ann-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .72; }
+.ann-bar .ann-txt { font-size: 16px; line-height: 1.45; }
+.ann-bar .ann-x { width: 44px; height: 44px; margin: -8px -10px -8px 0; font-size: 16px; display: grid; place-items: center; }
+@media (max-width: 720px) {
+  .ann-bar { position: static; margin: 10px 12px 0; border-radius: 14px; border: 1px solid var(--line-strong); border-left: 6px solid var(--ann-c, var(--accent)); }
+}
+.ann-pop { padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); }
+.ann-pop-card { width: min(100%, 380px); text-align: center; justify-items: center; border-top: 6px solid var(--ann-c, var(--accent)); max-height: 86vh; overflow-y: auto; }
+.ann-pop-ic { font-size: 46px; line-height: 1; }
+.ann-pop-label { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ann-pop-text { font-size: 18px; line-height: 1.5; font-weight: 600; overflow-wrap: anywhere; }
+.ann-pop-card .btn { width: 100%; min-height: 48px; justify-self: stretch; }
+
+/* ---------- Bug reports ---------- */
+.foot-bug { font: inherit; font-weight: 700; color: var(--accent); text-decoration: underline; padding: 8px 6px; min-height: 40px; }
+.pc-bug { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line-strong); font-size: 14px; }
+.bug-ov { padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+.bug-card { width: min(100%, 440px); max-height: 92vh; overflow-y: auto; }
+.bug-mine { display: grid; gap: 8px; }
+.bug-item { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); display: grid; gap: 4px; font-size: 13px; overflow-wrap: anywhere; }
+.bug-chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink); justify-self: start; }
+.bug-chip[data-s='fixing'] { background: #fff1d6; color: #5a3b00; }
+.bug-chip[data-s='done'] { background: #d8f0df; color: #12301c; }
+.bug-chip[data-s='wontfix'] { color: var(--muted); }
+html[data-theme='dark'] .bug-chip[data-s='fixing'] { background: #4a3710; color: #ffe2a6; }
+html[data-theme='dark'] .bug-chip[data-s='done'] { background: #1d3a27; color: #d9f3e1; }
+.bug-reply { padding: 6px 10px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 6px; }
+.adm-bug { padding: 12px; display: grid; gap: 8px; }
+.bug-card .adm-info, .adm-bug .adm-info { word-break: normal; overflow-wrap: anywhere; }
+.adm-bug-text { margin: 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
 </style>
 </head>
 <body>
@@ -1724,7 +1764,7 @@ html[data-theme='dark'] .adm-prev[data-kind='warn'] { background: #4a3710; color
       <details><summary>How do EXP and streaks work?</summary><p>Log in and every correct answer earns 10 EXP (each question counts once per day). The daily quiz adds bonus EXP, and finishing any quiz each day keeps your streak alive. Your recent scores, bookmarks and essay drafts stay in this browser.</p></details>
     </section>
 
-    <footer class="site-footer"><span>Learn at your pace. You’ve got this.</span><span class="serif-note">Made for your next chapter ↗</span></footer>
+    <footer class="site-footer"><span>Learn at your pace. You’ve got this.</span><button type="button" class="foot-bug" id="bug-open">🐞 Report a bug</button><span class="serif-note">Made for your next chapter ↗</span></footer>
   </div>
 </section>
 
@@ -7512,7 +7552,9 @@ function buildProfileCard() {
   const toggle = o('button', 'btn btn-sm'); toggle.type = 'button'; toggle.setAttribute('aria-controls', 'cz-panel');
   act.append(toggle); head.append(av, who, act);
   const tiles = o('div', 'stat-tiles'), meter = o('progress', 'meter');
-  main.append(head, tiles, meter); el.append(banner, main);
+  main.append(head, tiles, meter);
+  { const bugRow = o('div', 'pc-bug'), bb = o('button', 'btn btn-ghost btn-sm', '\u{1F41E} Report a bug'); bb.type = 'button'; bb.onclick = () => Bugs.open(); bugRow.append(o('span', 'muted', 'Something broken, or hard to read on your phone?'), bb); main.append(bugRow); }
+  el.append(banner, main);
 
   const paintDoodles = ch => doodles.replaceChildren(...DOODLES.map(([x, y, r]) => { const s = o('span', '', ch); s.style.cssText = `left:${x}%;top:${y}%;--r:${r}deg`; return s; }));
   function paint() {
@@ -8151,6 +8193,7 @@ const Duel = (() => {
   }
   async function create() {
     if (S.banned) return warn('You are banned from duels.');
+    if (S.settings && S.settings.duelsPaused && !S.isOwner) return warn('New duels are paused for now. Try again later.');
     if (!S.db) return warn('Duels need an internet connection.');
     if (D.code) close();
     const c = D.cfg, all = c.subject === 'mixed' ? Object.values(questionsDB).flat() : (questionsDB[c.subject] || []);
@@ -8248,14 +8291,15 @@ const Duel = (() => {
    OWNER = knows 2 separate passwords. Session lasts 30 minutes. Does everything an admin can,
            plus: kick admins, change the admin PIN, change the owner passwords, bulk tools, audit log.
    All of this is only the interface. The real protection is in firestore.rules. */
-Object.assign(S, { owners: new Set(), badgeRole: new Map(), ownerAt: 0, ownFails: 0, isOwner: false, bansAll: new Map(), notes: new Map(), audit: [] });
+Object.assign(S, { roster: new Map(), settings: {}, bugs: [], myBugs: [], owners: new Set(), badgeRole: new Map(), ownerAt: 0, ownFails: 0, isOwner: false, bansAll: new Map(), notes: new Map(), audit: [] });
 const ADMIN_MS = 2 * 3600 * 1000, OWNER_MS = 30 * 60 * 1000, OWNER_AWAY_MS = 5 * 60 * 1000;
 // o() only takes text, so the admin layer uses elx(), which also accepts child elements.
 const elx = (tag, cls, ...kids) => { const n = document.createElement(tag); if (cls) n.className = cls; kids.flat().forEach(k => { if (k === null || k === undefined || k === false) return; n.append(k && k.nodeType ? k : document.createTextNode(String(k))); }); return n; };
 const fsv = () => firebase.firestore;
 const fmtTime = t => { try { return new Date(t).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); } catch { return String(t); } };
 const banActive = b => !!b && (!b.until || b.until > Date.now());
-const roleOf = id => S.owners.has(id) ? 'owner' : S.admins.has(id) ? 'admin' : null;
+// roster = permanent staff record (never expires), so protection holds even when the owner is locked
+const roleOf = id => (S.owners.has(id) || S.roster.get(id) === 'owner') ? 'owner' : (S.admins.has(id) || S.roster.has(id)) ? 'admin' : null;
 const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
@@ -8301,7 +8345,7 @@ function applyBan() {
 }
 function refreshBans() {
   S.bans = new Map([...S.bansAll].filter(([, b]) => banActive(b)));
-  const was = S.banned; S.banned = S.bans.has(S.uid); if (was && !S.banned) S.banDismissed = false;
+  const was = S.banned; S.banned = S.bans.has(S.uid) && roleOf(S.uid) !== 'owner'; if (was && !S.banned) S.banDismissed = false;
   applyBan(); renderFriends(); Adm.paint();
 }
 
@@ -8316,15 +8360,31 @@ function showNotice(n) {
   c.append(elx('h3', '', '\u{1F4E9} Message from the admin team'), elx('p', '', n.text), go); ov.append(c); document.body.append(ov);
 }
 
-const ANN_ICON = { info: '\u{1F4E2}', event: '\u{1F389}', warn: '\u26A0\uFE0F' };
+const ANN_ICON = { info: '\u{1F4E2}', event: '\u{1F389}', warn: '\u26A0\uFE0F', critical: '\u{1F6A8}' };
+const ANN_NAME = { info: 'Announcement', event: 'Event', warn: 'Important notice', critical: 'Urgent from the owner' };
 const annSeen = id => { try { return localStorage.getItem('ann-seen') === id; } catch { return false; } };
+const annPopped = id => { try { return localStorage.getItem('ann-popped') === id; } catch { return false; } };
+// A centred card the first time a new announcement arrives, so phones can't miss it.
+function annPopup(a) {
+  if ($('ann-pop')) return;
+  const ov = elx('div', 'pin-ov ann-pop'); ov.id = 'ann-pop'; ov.setAttribute('role', 'alertdialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', ANN_NAME[a.kind] || ANN_NAME.info);
+  const c = elx('div', 'card pin-card ann-pop-card'), go = elx('button', 'btn btn-primary', 'Got it'); c.dataset.kind = a.kind || 'info'; go.type = 'button';
+  const close = () => { try { localStorage.setItem('ann-popped', a.id); } catch {} ov.remove(); };
+  go.onclick = close; ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  c.append(elx('div', 'ann-pop-ic', ANN_ICON[a.kind] || ANN_ICON.info), elx('p', 'ann-pop-label', ANN_NAME[a.kind] || ANN_NAME.info), elx('p', 'ann-pop-text', a.text), a.by ? elx('small', 'muted', '\u2014 ' + a.by) : null, go);
+  ov.append(c); document.body.append(ov); setTimeout(() => go.focus(), 60);
+}
 function showAnn() {
-  let bar = $('ann-bar'); const a = S.ann, live = a && a.text && (!a.expires || a.expires > Date.now()) && !annSeen(a.id);
+  let bar = $('ann-bar'); const a = S.ann, critical = !!a && a.kind === 'critical';
+  const live = a && a.text && (!a.expires || a.expires > Date.now()) && (critical || !annSeen(a.id));
   if (!live) { if (bar) bar.remove(); return; }
   if (!bar) { bar = o('div', 'ann-bar'); bar.id = 'ann-bar'; bar.setAttribute('role', 'status'); const m = $('main'); m.parentNode.insertBefore(bar, m); }
-  const x = o('button', 'ann-x', '\u2715'); x.type = 'button'; x.setAttribute('aria-label', 'Dismiss announcement'); x.onclick = () => { try { localStorage.setItem('ann-seen', a.id); } catch {} showAnn(); };
   bar.dataset.kind = a.kind || 'info';
-  bar.replaceChildren(o('span', 'ann-ic', ANN_ICON[a.kind] || ANN_ICON.info), o('div', 'ann-txt', a.text), x);
+  const kids = [o('span', 'ann-ic', ANN_ICON[a.kind] || ANN_ICON.info), elx('div', 'ann-body', elx('span', 'ann-label', ANN_NAME[a.kind] || ANN_NAME.info), elx('div', 'ann-txt', a.text))];
+  if (!critical) { const x = o('button', 'ann-x', '\u2715'); x.type = 'button'; x.setAttribute('aria-label', 'Dismiss announcement'); x.onclick = () => { try { localStorage.setItem('ann-seen', a.id); } catch {} showAnn(); }; kids.push(x); }
+  bar.replaceChildren(...kids);
+  const small = window.matchMedia && matchMedia('(max-width: 720px)').matches;
+  if (!annPopped(a.id) && !S.isAdmin && !$('ban-ov') && (small || a.kind === 'warn' || critical)) annPopup(a);
 }
 setInterval(() => showAnn(), 60000);
 
@@ -8339,7 +8399,7 @@ function refreshAdmin(force) {
   if (wasOwner && !S.isOwner) { App.toast('Owner session ended. Enter both passwords again to renew.', 'warn'); if (S.db) S.db.doc('ownerSessions/' + S.uid).delete().catch(() => {}); }
   if (wasStaff && !S.isAdmin) App.toast('Admin session ended. Enter the PIN again to renew.', 'warn');
   syncSubs();
-  if (wasStaff !== S.isAdmin || wasOwner !== S.isOwner || force || oldKey !== [...S.admins].sort().join() + '|' + [...S.owners].sort().join()) { renderAccount(); renderFriends(); showFtab(); }
+  if (wasStaff !== S.isAdmin || wasOwner !== S.isOwner || force || oldKey !== [...S.admins].sort().join() + '|' + [...S.owners].sort().join()) { refreshBans(); renderAccount(); renderFriends(); showFtab(); }
   if (S.isAdmin) Adm.tick();
 }
 
@@ -8356,7 +8416,8 @@ function syncSubs() {
   if (!S.db) return;
   liveSub('notes', S.isAdmin, fail => S.db.collection('adminNotes').onSnapshot(sn => { S.notes = new Map(sn.docs.map(d => [d.id, d.data()])); Adm.paint(); }, fail));
   liveSub('audit', S.isOwner, fail => S.db.collection('auditLogs').orderBy('at', 'desc').limit(300).onSnapshot(sn => { S.audit = sn.docs.map(d => { const x = d.data({ serverTimestamps: 'estimate' }); return { id: d.id, ...x, at: x.at && x.at.toMillis ? x.at.toMillis() : Date.now() }; }); Adm.paint(); }, fail));
-  if (!S.isAdmin) { S.notes = new Map(); }
+  liveSub('bugs', S.isAdmin, fail => S.db.collection('bugReports').orderBy('at', 'desc').limit(200).onSnapshot(sn => { S.bugs = sn.docs.map(d => { const x = d.data({ serverTimestamps: 'estimate' }); return { id: d.id, ...x, at: x.at && x.at.toMillis ? x.at.toMillis() : Date.now() }; }); Adm.paint(); }, fail));
+  if (!S.isAdmin) { S.notes = new Map(); S.bugs = []; }
   if (!S.isOwner) { S.audit = []; }
 }
 async function logAct(action, target, detail) {
@@ -8364,6 +8425,16 @@ async function logAct(action, target, detail) {
     await S.db.collection('auditLogs').add({ at: fsv().FieldValue.serverTimestamp(), by: S.uid, byName: String(nameOf(S.uid)).slice(0, 40), role: S.isOwner ? 'owner' : 'admin', action, target: target || '', targetName: target ? String(nameOf(target)).slice(0, 40) : '', detail: String(detail || '').slice(0, 200) });
   } catch {}
 }
+
+// Permanent staff record. Written once per role; this is what keeps the owner safe from admins while locked.
+async function setRoster(role) {
+  const cur = S.roster.get(S.uid);
+  if (!S.db || cur === 'owner' || cur === role) return;
+  try { await S.db.doc('staffRoster/' + S.uid).set({ role, at: fsv().FieldValue.serverTimestamp() }); }
+  catch (e) { if (role === 'owner') App.toast('Couldn\u2019t save your permanent owner protection. Publish the newest firestore.rules, then unlock again.', 'warn'); }
+}
+// If an admin banned the owner before the rules were fixed, unlocking as owner lifts it.
+async function liftOwnBan() { if (S.bansAll.has(S.uid)) { try { await S.db.doc('bans/' + S.uid).delete(); App.toast('Your old ban was lifted.', 'good'); } catch {} } }
 
 async function setBadge() {
   // one badge doc per person; the owner badge wins while the owner session is live
@@ -8428,13 +8499,13 @@ function openPin(mode, renew) {
         const ref = S.db.doc('ownerSessions/' + S.uid);
         await ref.set({ pw1: secret[0], pw2: secret[1], at: F.FieldValue.serverTimestamp() });   // the server rules compare both passwords; they are never stored in this page
         const snap = await ref.get({ source: 'server' }); S.ownerAt = snap.data().at.toMillis(); S.ownFails = 0; lsSet('own-lock', '0');
-        refreshAdmin(true); await setBadge().catch(() => {}); logAct('unlock', '', 'Owner session started');
+        refreshAdmin(true); await setBadge().catch(() => {}); logAct('unlock', '', 'Owner session started'); await setRoster('owner'); liftOwnBan();
         close(); S.ftab = 'admin'; Adm.go('owner'); App.navigate('friends'); showFtab(); App.toast('Owner unlocked for 30 minutes.', 'good');
       } else {
         const ref = S.db.doc('adminSessions/' + S.uid);
         await ref.set({ pin: secret[0], at: F.FieldValue.serverTimestamp() });
         const snap = await ref.get({ source: 'server' }); S.adminAt = snap.data().at.toMillis(); S.pinFails = 0;
-        refreshAdmin(true); await setBadge().catch(() => {}); logAct('unlock', '', 'Admin session started');
+        refreshAdmin(true); await setBadge().catch(() => {}); logAct('unlock', '', 'Admin session started'); setRoster('admin');
         close(); S.ftab = 'admin'; App.navigate('friends'); showFtab(); App.toast('Admin unlocked for 2 hours.', 'good');
       }
     } catch (er) {
@@ -8461,8 +8532,76 @@ function openPin(mode, renew) {
   });
 })();
 
+/* ===== Bug reports: players send them, staff triage them ===== */
+const BUG_CATS = [['bug', '\u{1F41E} Something is broken'], ['display', '\u{1F4F1} Looks wrong on my phone'], ['content', '\u{1F4DA} Wrong answer or note'], ['idea', '\u{1F4A1} Idea or suggestion'], ['other', 'Something else']];
+const BUG_STATUS = { open: ['Received', '\u{1F4EC}'], fixing: ['Being fixed', '\u{1F6E0}\uFE0F'], done: ['Fixed', '\u2705'], wontfix: ['Closed', '\u{1F4D5}'] };
+const Bugs = (() => {
+  const deviceInfo = () => {
+    const ua = navigator.userAgent || '', os = /iPhone|iPad|iPod/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : 'Other';
+    const br = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Browser';
+    const app = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone ? 'app' : 'web';
+    return `${os} ${br} ${app} ${innerWidth}x${innerHeight} @${Math.round((devicePixelRatio || 1) * 10) / 10}x v21`.slice(0, 150);
+  };
+  // Watch this player's own reports so they hear back (toast when staff reply or change the status).
+  function start() {
+    if (!S.db || !S.uid) return;
+    S.db.collection('bugReports').where('uid', '==', S.uid).onSnapshot(sn => {
+      S.myBugs = sn.docs.map(d => { const x = d.data({ serverTimestamps: 'estimate' }); return { id: d.id, ...x, at: x.at && x.at.toMillis ? x.at.toMillis() : Date.now() }; }).sort((a, b) => b.at - a.at);
+      let seen = {}; try { seen = JSON.parse(lsGet('bug-seen') || '{}'); } catch {}
+      let changed = false;
+      S.myBugs.forEach(b => {
+        const sig = (b.status || 'open') + '|' + (b.reply || '');
+        if (seen[b.id] !== undefined && seen[b.id] !== sig && ((b.status || 'open') !== 'open' || b.reply)) App.toast(`Update on your report: ${BUG_STATUS[b.status || 'open'][0]}${b.reply ? ' \u2013 ' + String(b.reply).slice(0, 80) : ''}`, 'good');
+        if (seen[b.id] !== sig) { seen[b.id] = sig; changed = true; }
+      });
+      if (changed) lsSet('bug-seen', JSON.stringify(seen));
+    }, () => {});
+  }
+  function open() {
+    if ($('bug-ov')) return;
+    if (!S.db) return App.toast('Reporting needs an internet connection. Reload and try again.', 'warn');
+    const ov = elx('div', 'pin-ov bug-ov'); ov.id = 'bug-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Report a bug');
+    const f = elx('form', 'card pin-card bug-card'), cat = document.createElement('select'), ta = document.createElement('textarea');
+    cat.className = 'adm-sel'; cat.setAttribute('aria-label', 'What kind of problem'); BUG_CATS.forEach(([v, t]) => cat.append(new Option(t, v)));
+    ta.className = 'adm-ta'; ta.rows = 5; ta.maxLength = 600; ta.placeholder = 'What happened? What were you doing when it went wrong?'; ta.setAttribute('aria-label', 'Describe the problem');
+    const cnt = elx('span', 'adm-info', '0 / 600'); ta.oninput = () => { cnt.textContent = `${ta.value.length} / 600`; };
+    const msg = elx('p', 'pin-msg'); msg.setAttribute('role', 'alert');
+    const no = elx('button', 'btn btn-ghost', 'Close'), go = elx('button', 'btn btn-primary', 'Send report'); no.type = 'button'; go.type = 'submit';
+    const close = () => { document.removeEventListener('keydown', esc); ov.remove(); }, esc = e => { if (e.key === 'Escape') close(); };
+    no.onclick = close; ov.addEventListener('click', e => { if (e.target === ov) close(); }); document.addEventListener('keydown', esc);
+    f.append(elx('h3', '', '\u{1F41E} Report a bug'), elx('p', 'muted', 'Tell us what went wrong. A real person reads every report.'), elx('label', 'adm-lbl', 'What kind of problem?'), cat, elx('label', 'adm-lbl', 'What happened?'), ta, cnt,
+      elx('p', 'adm-info', `We also send your name, the page you are on and your device (${deviceInfo()}). No passwords or private data.`), msg, elx('div', 'cz-row pin-row', no, go));
+    const mine = S.myBugs.slice(0, 5);
+    if (mine.length) {
+      const box = elx('div', 'bug-mine'); box.append(elx('label', 'adm-lbl', 'Your recent reports'));
+      mine.forEach(b => { const s0 = b.status || 'open', chip = elx('span', 'bug-chip', `${BUG_STATUS[s0][1]} ${BUG_STATUS[s0][0]}`); chip.dataset.s = s0;
+        box.append(elx('div', 'bug-item', chip, elx('span', '', String(b.text || '').slice(0, 140) + (String(b.text || '').length > 140 ? '\u2026' : '')), b.reply ? elx('div', 'bug-reply', `${b.replyBy || 'Staff'}: ${b.reply}`) : null)); });
+      f.append(box);
+    }
+    f.onsubmit = async e => {
+      e.preventDefault(); const text = ta.value.trim();
+      if (text.length < 10) { msg.textContent = 'Please write at least 10 characters so we can understand the problem.'; return; }
+      const wait = 45000 - (Date.now() - (+lsGet('bug-last') || 0)); if (wait > 0) { msg.textContent = `Please wait ${Math.ceil(wait / 1000)}s before sending another report.`; return; }
+      let day = {}; try { day = JSON.parse(lsGet('bug-day') || '{}'); } catch {} if (day.d !== today()) day = { d: today(), n: 0 };
+      if (day.n >= 5) { msg.textContent = 'You\u2019ve sent 5 reports today. Thank you! Try again tomorrow.'; return; }
+      go.disabled = true; go.textContent = 'Sending\u2026'; msg.textContent = '';
+      try {
+        await S.db.collection('bugReports').add({ uid: S.uid, name: String(nameOf(S.uid) || 'Player').slice(0, 40), cat: cat.value, text, screen: String(App.screen || '').slice(0, 30), device: deviceInfo(), at: fsv().FieldValue.serverTimestamp(), status: 'open' });
+        lsSet('bug-last', String(Date.now())); day.n++; lsSet('bug-day', JSON.stringify(day));
+        App.toast('Thanks! Your report was sent.', 'good'); close();
+      } catch (er) {
+        msg.textContent = er && er.code === 'permission-denied' ? 'Couldn\u2019t send. Banned accounts can\u2019t send reports, and the newest firestore.rules must be published.' : 'Couldn\u2019t send: ' + ((er && er.message) || 'network problem');
+        go.disabled = false; go.textContent = 'Send report';
+      }
+    };
+    ov.append(f); document.body.append(ov); setTimeout(() => ta.focus(), 60);
+  }
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#bug-open')) open(); });
+  return { open, start };
+})();
+
 const Adm = (() => {
-  const st = { sub: 'players', q: '', f: 'all', sort: 'exp', open: null, amt: 10, kind: 'info', ttl: 86400000, limit: 40, alq: '', alr: 'all' };
+  const st = { sub: 'players', q: '', f: 'all', sort: 'exp', open: null, amt: 10, kind: 'info', ttl: 86400000, limit: 40, alq: '', alr: 'all', bf: 'open', bq: '' };
   let root = null, body = null, tabs = null, timer = null, eyebrow = null, title = null, tabsKey = '';
   const btn = (t, c, f, dis) => { const b = elx('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; if (dis) b.disabled = true; return b; };
   const ok = m => App.toast(m, 'good');
@@ -8472,11 +8611,11 @@ const Adm = (() => {
   const del = () => fsv().FieldValue.delete();
   const daysSince = d => d ? Math.max(0, Math.floor((Date.parse(today()) - Date.parse(d)) / 864e5)) : 9999;
   // who may be touched: admins can't touch other admins or the owner; the owner can touch admins but not another owner. Nobody can ban or delete themselves.
-  const canAct = p => p.id === S.uid || (S.isOwner ? !S.owners.has(p.id) : !S.admins.has(p.id));
+  const canAct = p => p.id === S.uid || (S.isOwner ? roleOf(p.id) !== 'owner' : !roleOf(p.id));
   const canKill = p => p.id !== S.uid && canAct(p);
   const chunked = async fns => { for (let i = 0; i < fns.length; i += 200) { const b = S.db.batch(); fns.slice(i, i + 200).forEach(f => f(b)); await b.commit(); } };
   const tile = (a, b) => elx('div', 'stat-tile', elx('strong', '', String(a)), elx('span', '', b));
-  const roleTag = id => { const r = roleOf(id); return r ? adminBadge(id) : null; };
+  const roleTag = id => { const r = roleOf(id); if (!r) return null; if (S.admins.has(id) || S.owners.has(id)) return adminBadge(id); return elx('span', 'board-title ' + (r === 'owner' ? 'board-owner' : 'board-admin'), r === 'owner' ? '\u{1F451} Owner' : '\u{1F6E1}\uFE0F Admin'); };
 
   /* ---------- player actions ---------- */
   async function adjust(p, field, delta, label) {
@@ -8489,6 +8628,7 @@ const Adm = (() => {
     if (await run(() => pdoc(p.id).set({ [v.what]: n }, { merge: true }), `${nameOf(p.id)}: ${v.what} ${cur} \u2192 ${n}`)) logAct('set', p.id, `${v.what} ${cur} \u2192 ${n}`);
   }
   async function message(p) {
+    if (roleOf(p.id) === 'owner' && !S.isOwner) return App.toast('Admins can\u2019t message the owner.', 'warn');
     const v = await ask({ title: `Message ${nameOf(p.id)}`, intro: 'They will see this the next time the app is open, with a Got it button.', fields: [{ key: 't', label: 'Message (max 200 characters)', multiline: true, max: 200 }], ok: 'Send', validate: x => x.t.trim().length < 3 ? 'Write a message first.' : '' });
     if (!v) return;
     if (await run(() => S.db.doc('notices/' + p.id).set({ text: v.t.trim(), at: fsv().FieldValue.serverTimestamp(), by: S.uid, byName: String(nameOf(S.uid)).slice(0, 40) }), 'Message sent.')) logAct('message', p.id, v.t.trim());
@@ -8512,6 +8652,7 @@ const Adm = (() => {
     if (await run(() => pdoc(p.id).delete(), 'Player deleted.')) { st.open = null; logAct('delete', p.id, 'removed from board'); }
   }
   async function ban(p) {
+    if (roleOf(p.id) === 'owner') return App.toast('The owner can\u2019t be banned.', 'warn');
     const v = await ask({ title: `Ban ${nameOf(p.id)}`, intro: 'They lose the board, duels and coins. Quizzes and notes keep working.', fields: [{ key: 'd', label: 'How long', options: [['3600000', '1 hour'], ['21600000', '6 hours'], ['86400000', '1 day'], ['259200000', '3 days'], ['604800000', '7 days'], ['2592000000', '30 days'], ['0', 'Permanent']], }, { key: 'r', label: 'Reason they will see (optional)', max: 120 }], ok: 'Ban', danger: true });
     if (!v) return; const ms = +v.d, until = ms ? Date.now() + ms : 0;
     if (await run(() => S.db.doc('bans/' + p.id).set({ at: Date.now(), by: S.uid, name: String(nameOf(p.id)).slice(0, 40), reason: v.r.trim().slice(0, 120), until }), `${nameOf(p.id)} is banned.`)) logAct('ban', p.id, `${until ? 'until ' + fmtTime(until) : 'permanent'}${v.r.trim() ? ' \u00B7 ' + v.r.trim() : ''}`);
@@ -8555,7 +8696,7 @@ const Adm = (() => {
     q.oninput = () => { st.q = q.value.trim().toLowerCase(); st.limit = 40; fill(); };
     FILTERS.forEach(([k, t]) => { const c = elx('button', 'adm-chip', t); c.type = 'button'; c.dataset.k = k; c.onclick = () => { st.f = k; st.limit = 40; fill(); }; chips.append(c); });
     const key = { exp: p => p.totalExp || 0, coins: p => p.coins || 0, streak: p => p.bestStreak || 0, recent: p => p.lastDay ? Date.parse(p.lastDay) : 0 };
-    const pass = p => st.f === 'all' ? true : st.f === 'today' ? p.lastDay === today() : st.f === 'inactive' ? daysSince(p.lastDay) >= 7 : st.f === 'banned' ? S.bans.has(p.id) : S.admins.has(p.id);
+    const pass = p => st.f === 'all' ? true : st.f === 'today' ? p.lastDay === today() : st.f === 'inactive' ? daysSince(p.lastDay) >= 7 : st.f === 'banned' ? S.bans.has(p.id) : !!roleOf(p.id);
     function fill() {
       chips.querySelectorAll('button').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.k === st.f)));
       let ps = S.players.filter(p => pass(p) && (!st.q || `${nameOf(p.id)} ${p.id}`.toLowerCase().includes(st.q)));
@@ -8580,7 +8721,7 @@ const Adm = (() => {
     const tiles = elx('div', 'stat-tiles',
       tile(ps.length, 'Players'), tile(ps.filter(p => p.lastDay === td).length, 'Active today'), tile(ps.filter(p => p.weekKey === wk && (p.weekExp || 0) > 0).length, 'Active this week'), tile(ps.filter(p => daysSince(p.lastDay) >= 7).length, 'Inactive 7d+'),
       tile(sum(p => p.totalExp), 'Total EXP'), tile(sum(p => p.coins), 'Coins in circulation'), tile(duels, 'Duels played'), tile(sum(p => p.dayKey === td ? p.dayExp : 0), 'EXP earned today'),
-      tile(avgLv, 'Average level'), tile(S.bans.size, 'Banned now'), tile(S.admins.size, 'Staff online'), tile(ps.filter(p => !p.lastDay).length, 'Never studied'));
+      tile(avgLv, 'Average level'), tile(S.bans.size, 'Banned now'), tile(S.admins.size, 'Staff online'), tile(ps.filter(p => !p.lastDay).length, 'Never studied'), tile(S.bugs.filter(b => (b.status || 'open') === 'open').length, 'Open bug reports'));
     const bar = (title, rows) => { const mx = Math.max(1, ...rows.map(r => r[1])), c = elx('div', 'adm-top'); c.append(elx('h4', '', title)); rows.forEach(([l, v]) => { const r = elx('div', 'adm-bar'), f = elx('i'); f.style.width = Math.max(v ? 4 : 0, Math.round(v / mx * 100)) + '%'; r.append(elx('span', '', l), elx('div', 'adm-bar-track', f), elx('strong', '', String(v))); c.append(r); }); return c; };
     const buckets = [['Today', p => daysSince(p.lastDay) === 0], ['Yesterday', p => daysSince(p.lastDay) === 1], ['2\u20137 days', p => { const d = daysSince(p.lastDay); return d >= 2 && d <= 7; }], ['8\u201330 days', p => { const d = daysSince(p.lastDay); return d >= 8 && d <= 30; }], ['Over 30 days / never', p => daysSince(p.lastDay) > 30]].map(([l, f]) => [l, ps.filter(f).length]);
     const lvls = [['Level 1\u20132', 1, 2], ['Level 3\u20135', 3, 5], ['Level 6\u201310', 6, 10], ['Level 11+', 11, 999]].map(([l, a, b]) => [l, ps.filter(p => { const x = lv(p.totalExp || 0).level; return x >= a && x <= b; }).length]);
@@ -8596,7 +8737,7 @@ const Adm = (() => {
     all.forEach(([id, b]) => {
       const act = banActive(b), row = elx('div', 'adm-row adm-ban' + (act ? '' : ' is-expired')), nm = elx('strong', '', b.name || nameOf(id));
       row.append(elx('div', 'adm-who adm-pad', nm, elx('span', 'adm-sub', `${act ? 'Active' : 'Expired'} \u00B7 ${b.until ? (act ? 'ends ' : 'ended ') + fmtTime(b.until) : 'permanent'}${b.reason ? ' \u00B7 \u201C' + b.reason + '\u201D' : ''}`), elx('span', 'adm-sub', `Banned ${b.at ? fmtTime(b.at) : ''}${b.by ? ' by ' + nameOf(b.by) : ''}`)),
-        elx('div', 'adm-pad', btn(act ? 'Unban' : 'Remove record', 'btn-ghost btn-sm', () => unban(id), !act ? false : S.admins.has(id) && !S.isOwner)));
+        elx('div', 'adm-pad', btn(act ? 'Unban' : 'Remove record', 'btn-ghost btn-sm', () => unban(id), !act ? false : !!roleOf(id) && !S.isOwner)));
       list.append(row);
     });
     w.append(list); return w;
@@ -8607,17 +8748,79 @@ const Adm = (() => {
     const w = elx('div'), cur = S.ann, ta = document.createElement('textarea'); ta.maxLength = 280; ta.rows = 3; ta.placeholder = 'Write a message for everyone (max 280 characters)\u2026'; ta.className = 'adm-ta'; ta.setAttribute('aria-label', 'Announcement text');
     const cnt = elx('span', 'adm-info', '0 / 280'), prev = elx('div', 'adm-prev'); prev.dataset.kind = st.kind;
     const kind = document.createElement('select'), ttl = document.createElement('select'); kind.className = ttl.className = 'adm-sel';
-    [['info', '\u{1F4E2} Info'], ['event', '\u{1F389} Event'], ['warn', '\u26A0\uFE0F Warning']].forEach(([v, t]) => kind.append(new Option(t, v))); kind.value = st.kind;
+    [['info', '\u{1F4E2} Info'], ['event', '\u{1F389} Event'], ['warn', '\u26A0\uFE0F Warning'], ...(S.isOwner ? [['critical', '\u{1F6A8} Urgent (owner only)']] : [])].forEach(([v, t]) => kind.append(new Option(t, v))); kind.value = st.kind; if (!kind.value) { kind.value = 'info'; st.kind = 'info'; }
     [[3600000, 'Disappears in 1 hour'], [86400000, 'Disappears in 24 hours'], [604800000, 'Disappears in 7 days'], [0, 'Stays until I clear it']].forEach(([v, t]) => ttl.append(new Option(t, v))); ttl.value = String(st.ttl); ttl.onchange = () => { st.ttl = +ttl.value; };
     const upd = () => { cnt.textContent = `${ta.value.length} / 280`; prev.dataset.kind = kind.value; prev.replaceChildren(elx('span', 'ann-ic', ANN_ICON[kind.value]), elx('div', 'ann-txt', ta.value.trim() || 'Preview of your announcement')); };
     kind.onchange = () => { st.kind = kind.value; upd(); }; ta.oninput = upd; upd();
     const tpl = elx('div', 'adm-chips'); TEMPLATES.forEach(([l, t]) => { const c = elx('button', 'adm-chip', l); c.type = 'button'; c.onclick = () => { ta.value = t; upd(); ta.focus(); }; tpl.append(c); });
+    const pinWrap = elx('div'), pinBox = document.createElement('input'); pinBox.type = 'checkbox'; pinBox.id = 'ann-pin';
+    if (S.isOwner) pinWrap.append(elx('label', 'adm-info', pinBox, ' \u{1F4CC} Pin it: admins can\u2019t edit or clear it'));
     const row = elx('div', 'adm-btns');
     row.append(btn('\u{1F4E3} Post to everyone', 'btn-primary btn-sm', async () => {
       const text = ta.value.trim(); if (text.length < 3) return App.toast('Write a message first.', 'warn');
-      if (await run(() => S.db.doc('announcements/current').set({ id: Date.now().toString(36), text, kind: kind.value, at: Date.now(), expires: st.ttl ? Date.now() + st.ttl : 0, by: nameOf(S.uid) }), 'Announcement posted.')) { ta.value = ''; upd(); logAct('announce', '', text); }
-    }), btn('Clear current', 'btn-ghost btn-sm', async () => { if (await run(() => S.db.doc('announcements/current').delete(), 'Announcement cleared.')) logAct('announce-clear', '', ''); }));
-    w.append(elx('label', 'adm-lbl', 'Quick templates'), tpl, ta, cnt, elx('div', 'adm-two', kind, ttl), prev, row, elx('p', 'adm-info', cur && cur.text && (!cur.expires || cur.expires > Date.now()) ? `Live now (by ${cur.by || 'staff'}): \u201C${cur.text}\u201D` : 'Nothing is live right now. Players can dismiss an announcement; a new one shows again.'));
+      if (S.ann && S.ann.pinned && !S.isOwner && (!S.ann.expires || S.ann.expires > Date.now())) return App.toast('The owner pinned an announcement. Only the owner can replace it.', 'warn');
+      if (await run(() => S.db.doc('announcements/current').set({ id: Date.now().toString(36), text, kind: kind.value, at: Date.now(), expires: st.ttl ? Date.now() + st.ttl : 0, by: nameOf(S.uid), pinned: !!(S.isOwner && pinBox.checked) }), 'Announcement posted.')) { ta.value = ''; upd(); logAct('announce', '', text); }
+    }), btn('Clear current', 'btn-ghost btn-sm', async () => { if (S.ann && S.ann.pinned && !S.isOwner) return App.toast('The owner pinned this announcement. Only the owner can clear it.', 'warn'); if (await run(() => S.db.doc('announcements/current').delete(), 'Announcement cleared.')) logAct('announce-clear', '', ''); }));
+    w.append(elx('label', 'adm-lbl', 'Quick templates'), tpl, ta, cnt, elx('div', 'adm-two', kind, ttl), prev, pinWrap, row, elx('p', 'adm-info', cur && cur.text && (!cur.expires || cur.expires > Date.now()) ? `Live now${cur.pinned ? ' (pinned by the owner)' : ''} (by ${cur.by || 'staff'}): \u201C${cur.text}\u201D` : 'Nothing is live right now. Players can dismiss an announcement; a new one shows again.'));
+    return w;
+  }
+
+  /* ---------- bug reports (staff) ---------- */
+  const BUG_FILTERS = [['open', 'Open'], ['fixing', 'Being fixed'], ['done', 'Fixed'], ['all', 'All']];
+  const bugCat = c => (BUG_CATS.find(x => x[0] === c) || BUG_CATS[4])[1];
+  const bugStatus = b => b.status || 'open';
+  async function bugSet(b, status) {
+    if (await run(() => S.db.doc('bugReports/' + b.id).update({ status, replyBy: String(nameOf(S.uid)).slice(0, 40), doneAt: status === 'open' ? 0 : Date.now() }), `Marked: ${BUG_STATUS[status][0]}.`)) logAct('bug-' + status, b.uid, String(b.text || '').slice(0, 80));
+  }
+  async function bugReply(b) {
+    const v = await ask({ title: `Reply to ${b.name || 'player'}`, intro: 'They see this under their report. Max 300 characters.', fields: [{ key: 't', label: 'Reply', multiline: true, max: 300, value: b.reply || '' }], ok: 'Send reply', validate: x => x.t.trim().length < 2 ? 'Write a reply first.' : '' });
+    if (!v) return;
+    if (await run(() => S.db.doc('bugReports/' + b.id).update({ reply: v.t.trim(), replyBy: String(nameOf(S.uid)).slice(0, 40), doneAt: Date.now(), status: bugStatus(b) }), 'Reply sent.')) logAct('bug-reply', b.uid, v.t.trim());
+  }
+  async function bugDelete(b) {
+    if (!await ask({ title: 'Delete this report?', intro: 'It disappears for you and for the player. This can\u2019t be undone.', ok: 'Delete', danger: true })) return;
+    if (await run(() => S.db.doc('bugReports/' + b.id).delete(), 'Report deleted.')) logAct('bug-delete', b.uid, String(b.text || '').slice(0, 80));
+  }
+  async function bugClearDone() {
+    const ids = S.bugs.filter(b => ['done', 'wontfix'].includes(bugStatus(b))).map(b => b.id);
+    if (!ids.length) return App.toast('No fixed or closed reports to clear.', 'warn');
+    if (!await ask({ title: `Delete ${ids.length} fixed/closed reports?`, ok: 'Delete them', danger: true })) return;
+    if (await run(() => chunked(ids.map(id => b => b.delete(S.db.doc('bugReports/' + id)))), `Deleted ${ids.length} reports.`)) logAct('bug-delete', '', `${ids.length} fixed/closed reports cleared`);
+  }
+  function bugCsv() {
+    const head = ['when', 'player', 'playerId', 'type', 'status', 'screen', 'device', 'report', 'reply'];
+    const rows = S.bugs.map(b => [new Date(b.at).toISOString(), b.name || '', b.uid || '', b.cat || '', bugStatus(b), b.screen || '', b.device || '', b.text || '', b.reply || '']);
+    const blob = new Blob(['\uFEFF' + [head, ...rows].map(r => r.map(csvCell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `bece-bug-reports-${today()}.csv`; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    ok('Bug reports exported.'); logAct('export', '', `${rows.length} bug reports to CSV`);
+  }
+  function bugsTab() {
+    const w = elx('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search reports\u2026'; q.value = st.bq; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search bug reports');
+    const chips = elx('div', 'adm-chips'), info = elx('p', 'adm-info'), list = elx('div', 'adm-list');
+    const n = k => S.bugs.filter(b => k === 'all' || bugStatus(b) === k).length;
+    BUG_FILTERS.forEach(([k, t]) => { const c = elx('button', 'adm-chip', `${t} ${n(k)}`); c.type = 'button'; c.dataset.k = k; c.onclick = () => { st.bf = k; fill(); }; chips.append(c); });
+    q.oninput = () => { st.bq = q.value.trim().toLowerCase(); fill(); };
+    function fill() {
+      chips.querySelectorAll('button').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.k === st.bf)));
+      const rs = S.bugs.filter(b => (st.bf === 'all' || bugStatus(b) === st.bf) && (!st.bq || `${b.name} ${b.text} ${b.screen} ${b.device} ${b.reply || ''}`.toLowerCase().includes(st.bq)));
+      info.textContent = `${rs.length} shown \u00B7 latest 200 reports are kept in view`;
+      list.replaceChildren(...(rs.length ? rs.slice(0, 80).map(b => {
+        const s0 = bugStatus(b), card = elx('div', 'adm-row adm-bug');
+        const top = elx('div', 'adm-who', elx('strong', '', b.name || 'Player'), elx('span', 'adm-sub', `${bugCat(b.cat)} \u00B7 ${fmtTime(b.at)} \u00B7 screen: ${b.screen || '?'}`));
+        const chip = elx('span', 'bug-chip', `${BUG_STATUS[s0][1]} ${BUG_STATUS[s0][0]}`); chip.dataset.s = s0;
+        const acts = [];
+        if (s0 === 'open') acts.push(btn('Being fixed', 'btn-ghost btn-sm', () => bugSet(b, 'fixing')));
+        if (s0 !== 'done') acts.push(btn('Mark fixed', 'btn-primary btn-sm', () => bugSet(b, 'done')));
+        if (s0 !== 'wontfix' && s0 !== 'done') acts.push(btn('Won\u2019t fix', 'btn-ghost btn-sm', () => bugSet(b, 'wontfix')));
+        if (s0 !== 'open') acts.push(btn('Reopen', 'btn-ghost btn-sm', () => bugSet(b, 'open')));
+        acts.push(btn('\u{1F4AC} Reply\u2026', 'btn-ghost btn-sm', () => bugReply(b)));
+        if (S.isOwner) acts.push(btn('\u{1F5D1}\uFE0F Delete', 'btn-ghost btn-sm adm-danger', () => bugDelete(b)));
+        card.append(top, chip, elx('p', 'adm-bug-text', b.text), elx('p', 'adm-info', b.device || ''), b.reply ? elx('p', 'adm-info', `Reply by ${b.replyBy || 'staff'}: ${b.reply}`) : null, elx('div', 'adm-btns', ...acts));
+        return card;
+      }) : [elx('p', 'muted', S.bugs.length ? 'No reports match.' : 'No bug reports yet. When players send one it shows up here.')]));
+    }
+    fill(); w.append(q, chips, info, list);
+    if (S.isOwner && S.bugs.length) w.append(elx('div', 'adm-card', elx('h4', '', '\u{1F451} Owner tools'), elx('div', 'adm-btns', btn('Export CSV', 'btn-ghost btn-sm', bugCsv), btn('Clear fixed/closed\u2026', 'btn-ghost btn-sm adm-danger', bugClearDone))));
     return w;
   }
 
@@ -8685,6 +8888,25 @@ const Adm = (() => {
     if (!v) return; const ids = S.audit.map(e => e.id);
     if (await run(() => chunked(ids.map(id => b => b.delete(S.db.doc('auditLogs/' + id)))), 'Audit log wiped.')) logAct('audit-wipe', '', `${ids.length} entries removed`);
   }
+  async function removeStaff(id, role) {
+    if (!await ask({ title: `Remove ${nameOf(id)} from the staff roster?`, intro: role === 'owner' ? 'Use this to clean up an old owner device. It loses its protection.' : 'They lose admin protection and are signed out. They can come back with the PIN unless you change it.', ok: 'Remove', danger: true })) return;
+    if (await run(async () => { await S.db.doc('adminSessions/' + id).delete().catch(() => {}); await S.db.doc('adminBadges/' + id).delete().catch(() => {}); await S.db.doc('staffRoster/' + id).delete(); }, `${nameOf(id)} was removed.`)) logAct('roster-remove', id, role);
+  }
+  async function toggleDuels() {
+    const paused = !!S.settings.duelsPaused;
+    if (await run(() => S.db.doc('settings/app').set({ duelsPaused: !paused, at: Date.now(), by: String(nameOf(S.uid)).slice(0, 40) }), paused ? 'Duels are open again.' : 'New duels are paused.')) logAct(paused ? 'duels-on' : 'duels-off', '', paused ? 'duels resumed' : 'new duels paused');
+  }
+  function protectCard() {
+    const safe = S.roster.get(S.uid) === 'owner';
+    return elx('div', 'adm-card', elx('h4', '', safe ? '\u{1F6E1}\uFE0F You are protected' : '\u26A0\uFE0F Protection not saved yet'),
+      elx('p', 'adm-info', safe ? 'Your device is on the permanent owner roster. Admins can never ban, reset, delete, rename or message you, even when you are locked out.' : 'Publish the newest firestore.rules, then lock and unlock as owner once. That saves a permanent record so admins can never touch you.'));
+  }
+  function rosterCard() {
+    const list = elx('div', 'adm-list'), rows = [...S.roster].sort((a, b) => (a[1] === 'owner' ? 0 : 1) - (b[1] === 'owner' ? 0 : 1));
+    rows.forEach(([id, role]) => list.append(elx('div', 'adm-row adm-ban', elx('div', 'adm-who adm-pad', elx('strong', '', nameOf(id), id === S.uid ? ' (you)' : ''), elx('span', 'adm-sub', role === 'owner' ? '\u{1F451} Owner device \u00B7 permanent' : '\u{1F6E1}\uFE0F Admin \u00B7 permanent')), elx('div', 'adm-pad', id === S.uid ? null : btn(role === 'owner' ? 'Remove device' : 'Remove admin', 'btn-ghost btn-sm adm-danger', () => removeStaff(id, role))))));
+    if (!rows.length) list.append(elx('p', 'muted', 'Nobody is on the roster yet.'));
+    return elx('div', 'adm-card', elx('h4', '', '\u{1F4CB} Permanent staff roster'), elx('p', 'adm-info', 'Everyone who has ever unlocked as staff. Roster members are shielded from admins even when signed out. Only you can remove them.'), list);
+  }
   function ownerTab() {
     const now = Date.now(), staff = [...S.badgeMap].filter(([, u]) => u > now).map(([id, u]) => ({ id, left: u - now, role: S.badgeRole.get(id) === 'owner' ? 'owner' : 'admin' }));
     if (S.isOwner && !staff.some(s => s.id === S.uid)) staff.push({ id: S.uid, left: S.ownerAt + OWNER_MS - now, role: 'owner' });
@@ -8693,11 +8915,14 @@ const Adm = (() => {
     if (!staff.length) list.append(elx('p', 'muted', 'Nobody is signed in as staff.'));
     const card = (h, p, ...b) => elx('div', 'adm-card', elx('h4', '', h), elx('p', 'adm-info', p), elx('div', 'adm-btns', ...b));
     return elx('div', '',
+      protectCard(),
       elx('div', 'adm-card', elx('h4', '', '\u{1F465} Staff signed in now'), list),
+      rosterCard(),
+      card('\u23F8\uFE0F Duels switch', S.settings.duelsPaused ? 'New duels are paused for everyone. Duels already running can finish.' : 'Duels are open. Pause new duels if something is broken or being abused.', btn(S.settings.duelsPaused ? 'Resume duels' : 'Pause new duels', S.settings.duelsPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleDuels)),
       card('\u{1F510} Security', 'The admin PIN opens admin sessions. The 2 owner passwords open this console. Changing either one signs people out.', btn('Change admin PIN', 'btn-ghost btn-sm', changeAdminPin), btn('Change owner passwords', 'btn-ghost btn-sm', changeOwnerPw)),
       card('\u{1F381} Bulk tools', 'Act on many players at once. Each one is written to the audit log.', btn('Gift coins\u2026', 'btn-primary btn-sm', giftAll), btn('Reset weekly board\u2026', 'btn-ghost btn-sm adm-danger', weeklyReset), btn('Clear expired bans', 'btn-ghost btn-sm', clearExpired), btn('\u{1F512} Lock everything', 'btn-ghost btn-sm', lockAll)));
   }
-  const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F' };
+  const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F', 'bug-open': '\u{1F41E}', 'bug-fixing': '\u{1F6E0}\uFE0F', 'bug-done': '\u2705', 'bug-wontfix': '\u{1F4D5}', 'bug-reply': '\u{1F4AC}', 'bug-delete': '\u{1F5D1}\uFE0F', 'roster-remove': '\u{1F6AA}', 'duels-on': '\u25B6\uFE0F', 'duels-off': '\u23F8\uFE0F' };
   function auditTab() {
     const w = elx('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search the log\u2026'; q.value = st.alq; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search audit log');
     const rs = document.createElement('select'); rs.className = 'adm-sel'; [['all', 'Everyone'], ['owner', 'Owner only'], ['admin', 'Admins only']].forEach(([v, t]) => rs.append(new Option(t, v))); rs.value = st.alr; rs.setAttribute('aria-label', 'Filter by role');
@@ -8712,8 +8937,8 @@ const Adm = (() => {
   }
 
   /* ---------- shell ---------- */
-  const tabList = () => [['players', '\u{1F465} Players'], ['stats', '\u{1F4CA} Stats'], ['bans', `\u{1F6AB} Bans${S.bans.size ? ' ' + S.bans.size : ''}`], ['announce', '\u{1F4E3} Announce'], ['tools', '\u{1F9F0} Tools'], ...(S.isOwner ? [['owner', '\u{1F451} Owner'], ['audit', '\u{1F4DC} Audit']] : [])];
-  const view = () => st.sub === 'players' ? players() : st.sub === 'stats' ? stats() : st.sub === 'bans' ? bansTab() : st.sub === 'announce' ? announce() : st.sub === 'tools' ? tools() : st.sub === 'owner' ? ownerTab() : auditTab();
+  const tabList = () => [['players', '\u{1F465} Players'], ['stats', '\u{1F4CA} Stats'], ['bans', `\u{1F6AB} Bans${S.bans.size ? ' ' + S.bans.size : ''}`], ['announce', '\u{1F4E3} Announce'], ['bugs', `\u{1F41E} Bugs${S.bugs.filter(b => (b.status || 'open') === 'open').length ? ' ' + S.bugs.filter(b => (b.status || 'open') === 'open').length : ''}`], ['tools', '\u{1F9F0} Tools'], ...(S.isOwner ? [['owner', '\u{1F451} Owner'], ['audit', '\u{1F4DC} Audit']] : [])];
+  const view = () => st.sub === 'players' ? players() : st.sub === 'stats' ? stats() : st.sub === 'bans' ? bansTab() : st.sub === 'announce' ? announce() : st.sub === 'tools' ? tools() : st.sub === 'bugs' ? bugsTab() : st.sub === 'owner' ? ownerTab() : auditTab();
   function paint(force) {
     if (!root || root.hidden && !force) return;
     if (!force && body && body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;   // don't wipe what you're typing
@@ -8771,6 +8996,9 @@ async function init() {
     setInterval(() => refreshAdmin(), 5000); setInterval(() => refreshBans(), 20000);
     S.db.collection('bans').onSnapshot(sn => { S.bansAll = new Map(sn.docs.map(d => [d.id, d.data()])); refreshBans(); }, () => {});
     S.db.doc('announcements/current').onSnapshot(sn => { S.ann = sn.exists ? sn.data() : null; showAnn(); }, () => {});
+    S.db.collection('staffRoster').onSnapshot(sn => { S.roster = new Map(sn.docs.map(d => [d.id, d.data().role === 'owner' ? 'owner' : 'admin'])); refreshBans(); Adm.paint(); }, () => {});
+    S.db.doc('settings/app').onSnapshot(sn => { S.settings = sn.exists ? sn.data() : {}; Adm.paint(); }, () => {});
+    Bugs.start();
     S.db.collection('players').onSnapshot(async snap => {
       S.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const mine = S.players.find(p => p.id === S.uid); S.doc = mine ? { ...mine } : S.doc || {}; delete S.doc.id; if (S.pend) S.doc = { ...S.doc, ...S.pend };
