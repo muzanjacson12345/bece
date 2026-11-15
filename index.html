@@ -1238,6 +1238,9 @@ button, .btn, .subject-card, .topic-item, .chip { transition: transform .15s var
 html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(--av-ds, var(--accent-soft)); }
 .board-list li.is-me .av { box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 4px var(--av); }
 .account-avatar { font-size: 1.1rem; line-height: 1; }
+.av-photo { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.board-title { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 20px; background: var(--accent-soft); color: var(--accent); margin-left: 5px; vertical-align: middle; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 
 /* ---------- Profile card ---------- */
 .profile-card { padding: 0; margin-bottom: 24px; overflow: hidden; }
@@ -7092,8 +7095,12 @@ App.on('quiz:finished', async ev => {
     const counted = d.counted && d.counted.day === day ? d.counted.ids.slice() : [];
     let fresh = 0, already = 0;
     for (const id of ev.questionIds) { const q = App.questionById(id); if (q && ev.answers[id] === q.correct) { if (counted.includes(id)) already++; else { counted.push(id); fresh++; } } }
-    let streak = d.streak || 0, extended = false;
-    if (d.lastDay !== day) { streak = d.lastDay === yesterday() ? streak + 1 : 1; extended = true; }
+    let streak = d.streak || 0, extended = false, usedFreeze = false;
+    if (d.lastDay !== day) {
+      if (d.lastDay === yesterday()) { streak = streak + 1; extended = true; }
+      else if ((d.sfreezes || 0) > 0 && streak > 0) { usedFreeze = true; extended = true; }
+      else { streak = 1; extended = true; }
+    }
     const parts = [];
     let dailyDone = d.dailyDone;
     if (ev.kind === 'daily' && !(dailyDone && dailyDone.day === day)) {
@@ -7102,14 +7109,19 @@ App.on('quiz:finished', async ev => {
       parts.push({ label: `${plural(streak, 'day')} streak`, exp: Math.min(streak * BONUS.perStreakDay, BONUS.streakCap) });
       dailyDone = { day, correct: ev.correct, total: ev.total, exp: fresh * 10 + parts.reduce((a, p) => a + p.exp, 0) };
     }
-    const bonusExp = parts.reduce((a, p) => a + p.exp, 0), earned = fresh * 10, coinsEarned = fresh + Math.floor(bonusExp / 4);
+    const bonusExp = parts.reduce((a, p) => a + p.exp, 0);
+    const xpMult = (d.xpBoost || 0) > 0 ? 2 : 1;
+    if (xpMult > 1) parts.push({ label: '\u26A1 XP Boost active', exp: fresh * 10 });
+    const earned = fresh * 10 * xpMult, coinsEarned = fresh + Math.floor(bonusExp / 4);
     const subs = [...new Set(ev.questionIds.map(i => i.slice(0, 3)))];
     const subject = subs.length === 1 ? SUBJ[subs[0]] || 'mixed subjects' : 'mixed subjects';
     const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: earned + bonusExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
-    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
+    const sfreezes = usedFreeze ? Math.max(0, (d.sfreezes || 0) - 1) : (d.sfreezes || 0);
+    const xpBoost = xpMult > 1 ? Math.max(0, (d.xpBoost || 0) - 1) : (d.xpBoost || 0);
+    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
     await S.db.doc('players/' + S.uid).set(next); S.doc = next;
     renderAccount(); renderDaily();
-    showResult({ coins: coinsEarned, earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended });
+    showResult({ coins: coinsEarned, earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended, usedFreeze, xpMult });
   } catch (err) { box.replaceChildren(o('p', 'exp-status', 'Couldn\u2019t save your EXP. ' + (err && err.message || ''))); }
 });
 function showResult(e) {
@@ -7120,6 +7132,8 @@ function showResult(e) {
   if (e.already) t.append(o('p', 'exp-status', `${plural(e.already, 'answer')} already earned EXP earlier today, so ${e.already === 1 ? 'it isn\u2019t' : 'they aren\u2019t'} counted twice.`));
   const { level, into } = lv(e.total), m = o('progress', 'meter'); m.max = LVL; m.value = into;
   t.append(o('p', 'exp-status', `Level ${level} \xB7 ${e.total} EXP total \xB7 ${LVL - into} EXP to level ${level + 1}`), m);
+  if (e.usedFreeze) t.append(o('p', 'exp-status', '\u{1F6E1}\uFE0F Streak Freeze used! Your streak is safe.'));
+  if (e.xpMult > 1) t.append(o('p', 'exp-status', '\u26A1 XP Boost active \u2014 EXP doubled this quiz!'));
   t.append(o('p', 'exp-streak', e.extended ? (e.streak > 1 ? `\u{1F525} Streak extended to ${e.streak} days!` : '\u{1F525} Streak started. Come back tomorrow to grow it.') : `\u{1F525} ${plural(e.streak, 'day')} streak \u2014 already counted today.`));
   const b = o('button', 'link-button', 'See how your friends are doing \u2192'); b.type = 'button'; b.onclick = () => App.navigate('friends'); t.append(b);
 }
@@ -7173,7 +7187,15 @@ const me = () => ({ id: S.uid, ...(S.doc || {}) });
 function paintBubble(b, p) {
   const pal = PF.palette(p.color);
   b.dataset.frame = (p.eq && p.eq.frame) || '';
-  b.textContent = p.avatar || (nameOf(p.id) || '?').slice(0, 1).toUpperCase();
+  if (p.photo) {
+    b.textContent = '';
+    let img = b.querySelector('img.av-photo');
+    if (!img) { img = document.createElement('img'); img.className = 'av-photo'; img.alt = ''; b.appendChild(img); }
+    img.src = p.photo;
+  } else {
+    const imgEl = b.querySelector('img.av-photo'); if (imgEl) imgEl.remove();
+    b.textContent = p.avatar || (nameOf(p.id) || '?').slice(0, 1).toUpperCase();
+  }
   b.style.setProperty('--av-l', pal.light.accent); b.style.setProperty('--av-ls', pal.light.accentSoft);
   b.style.setProperty('--av-d', pal.dark.accent); b.style.setProperty('--av-ds', pal.dark.accentSoft);
 }
@@ -7261,7 +7283,38 @@ function buildProfileCard() {
     inp.type = 'text'; inp.placeholder = 'Paste or type an emoji'; inp.maxLength = 16; inp.setAttribute('aria-label', 'Type any emoji'); go.type = 'submit';
     own.onsubmit = e => { e.preventDefault(); const em = firstEmoji(inp.value); if (!em) { App.toast('Type or paste a single emoji, like \u{1F432}', 'warn'); return; } pick(em); inp.value = ''; };
     own.append(inp, go);
-    w.append(o('p', 'cz-label', 'Pick your face'), chips, grid, o('p', 'cz-label', 'Quick picks'), row, o('p', 'cz-label', 'Or use any emoji'), own);
+    // Photo upload section
+    const photoLbl = o('p', 'cz-label', '\u{1F4F7} Profile photo');
+    const photoRow = o('div', 'cz-row');
+    const photoInp = document.createElement('input');
+    photoInp.type = 'file'; photoInp.accept = 'image/*'; photoInp.className = 'sr-only'; photoInp.id = 'photo-upload-inp';
+    const photoPickBtn = document.createElement('label');
+    photoPickBtn.htmlFor = 'photo-upload-inp'; photoPickBtn.className = 'btn btn-ghost btn-sm'; photoPickBtn.style.cursor = 'pointer';
+    photoPickBtn.textContent = '\u{1F4F7} Upload a photo';
+    const clearPhotoBtn = o('button', 'btn btn-ghost btn-sm', '\u2715 Remove photo');
+    clearPhotoBtn.type = 'button'; clearPhotoBtn.hidden = !me().photo;
+    clearPhotoBtn.onclick = () => { queueSave({ photo: '' }); paint(); renderAccount(); clearPhotoBtn.hidden = true; if (st.refresh) st.refresh(); };
+    photoInp.onchange = ev => {
+      const file = ev.target.files && ev.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = re => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas'); canvas.width = canvas.height = 96;
+          const ctx = canvas.getContext('2d');
+          const side = Math.min(img.width, img.height), sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, 96, 96);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+          queueSave({ photo: dataUrl }); paint(); renderAccount(); clearPhotoBtn.hidden = false;
+          App.toast('Photo saved!', 'good');
+        };
+        img.src = re.target.result;
+      };
+      reader.readAsDataURL(file); photoInp.value = '';
+    };
+    photoRow.append(photoPickBtn, photoInp, clearPhotoBtn);
+
+    w.append(photoLbl, photoRow, o('p', 'cz-note', 'Your photo shows as your avatar on the board.'), o('p', 'cz-label', 'Or pick an emoji'), chips, grid, o('p', 'cz-label', 'Quick picks'), row, o('p', 'cz-label', 'Or use any emoji'), own);
     st.refresh = mark; fill();
     return w;
   }
@@ -7426,6 +7479,7 @@ function renderFriends() {
     if (i < from) return;
     const li = o('li', p.id === S.uid ? 'is-me' : ''), w = o('div', 'board-who'), n = tint(o('strong', '', nameOf(p.id)), p);
     if (p.id === S.uid) n.append(o('span', 'you-tag', 'you'));
+    addTitleBadge(n, p);
     const live = p.lastDay === today() || p.lastDay === yesterday();
     li.append(o('span', 'board-rank', i < 3 && B !== 'everyone' ? medals[i] : String(i + 1)), bubble(p, 36));
     w.append(n, o('span', '', B === 'everyone' ? `${p.totalExp || 0} EXP \xB7 ${actv(p)}${p.duelW || p.duelL ? ` \xB7 \u2694\uFE0F ${p.duelW || 0}-${p.duelL || 0}` : ''}` : `Level ${lv(p.totalExp || 0).level}${live && p.streak ? ` \xB7 \u{1F525} ${p.streak}` : ''}${p.dailyDone && p.dailyDone.day === today() ? ' \xB7 daily \u2713' : ''}`));
@@ -7436,7 +7490,7 @@ function renderFriends() {
     ol.append(li);
   });
   const podEl = o('div', 'podium');
-  if (pod) [1, 0, 2].forEach(k => { const q = list[k], d = o('button', 'pod pod-' + (k + 1) + (q.id === S.uid ? ' is-me' : '')); d.type = 'button'; d.append(o('span', 'pod-medal', medals[k]), bubble(q, k === 0 ? 56 : 46), tint(o('strong', '', nameOf(q.id)), q), o('span', 'pod-exp', `${val(q)} EXP`)); d.onclick = () => showFriend(q); podEl.append(d); });
+  if (pod) [1, 0, 2].forEach(k => { const q = list[k], d = o('button', 'pod pod-' + (k + 1) + (q.id === S.uid ? ' is-me' : '')); d.type = 'button'; const podName = tint(o('strong', '', nameOf(q.id)), q); addTitleBadge(podName, q); d.append(o('span', 'pod-medal', medals[k]), bubble(q, k === 0 ? 56 : 46), podName, o('span', 'pod-exp', `${val(q)} EXP`)); d.onclick = () => showFriend(q); podEl.append(d); });
   lb.append(head, tg); if (pod) lb.append(podEl); lb.append(ol); lb.append(o('p', 'muted', 'Tap a player to see their stats.')); if (lbNote) lb.append(o('p', 'muted', lbNote));
   if (list.length < 2) {
     const h = o('div', 'board-hint'); h.append(o('p', '', 'It\u2019s just you so far. Share this page\u2019s link so friends can join.')); lb.append(h);
@@ -7485,18 +7539,19 @@ async function connectFirebase() {
 
 /* ===== Coin shop ===== */
 const SHOP = {
-  frames: [
-    { id: 'f_gold', name: 'Gold ring', price: 60 }, { id: 'f_emerald', name: 'Emerald glow', price: 80 },
-    { id: 'f_sunset', name: 'Sunset', price: 120 }, { id: 'f_rainbow', name: 'Rainbow', price: 200 }
+  titles: [
+    { id: 't_bookworm',  name: 'Bookworm',    icon: '📚', price: 80  },
+    { id: 't_scholar',   name: 'Scholar',      icon: '🧠', price: 120 },
+    { id: 't_champion',  name: 'Champion',     icon: '🏆', price: 160 },
+    { id: 't_legend',    name: 'Legend',       icon: '🌟', price: 300 },
   ],
-  colors: [
-    { id: 'c_ocean', name: 'Ocean', price: 40, hex: '#1d7fc4' }, { id: 'c_rose', name: 'Rose', price: 40, hex: '#d6336c' },
-    { id: 'c_gold', name: 'Gold', price: 80, hex: '#b8860b' }, { id: 'c_violet', name: 'Violet', price: 80, hex: '#7048e8' }
-  ],
-  p50: { id: 'p50', name: '50/50 lifeline', price: 15 }
+  sfreeze: { id: 'sfreeze', name: 'Streak Freeze', price: 30 },
+  xpboost: { id: 'xpboost', name: 'XP Boost',      price: 50 },
+  p50:     { id: 'p50',     name: 'Second Chance',  price: 15 },
 };
-const NAME_COLORS = Object.fromEntries(SHOP.colors.map(c => [c.id, c.hex]));
-function tint(el, p) { const c = p && p.eq && NAME_COLORS[p.eq.nameColor]; if (c) el.style.color = c; return el; }
+const SHOP_TITLES = Object.fromEntries((SHOP.titles || []).map(t => [t.id, t]));
+function tint(el, p) { /* name colours removed — kept for compat */ return el; }
+function addTitleBadge(container, p) { const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name; container.append(badge); } }
 const Shop = (() => {
   let el = null, bal = null, body = null;
   const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
@@ -7510,13 +7565,21 @@ const Shop = (() => {
     if ((d.coins || 0) < it.price) return warn('Not enough coins yet. Keep practising!');
     if (!S.db) return warn('You need to be online to buy.');
     const F = firebase.firestore.FieldValue;
-    const patch = slot === 'p50' ? { coins: F.increment(-it.price), p50: F.increment(1) } : { coins: F.increment(-it.price), owned: { [it.id]: true } };
+    let patch, docPatch;
+    if (slot === 'p50')     { patch = { coins: F.increment(-it.price), p50: F.increment(1) };       docPatch = { p50: (d.p50 || 0) + 1 }; }
+    else if (slot === 'sfreeze') { patch = { coins: F.increment(-it.price), sfreezes: F.increment(1) }; docPatch = { sfreezes: (d.sfreezes || 0) + 1 }; }
+    else if (slot === 'xpboost') { patch = { coins: F.increment(-it.price), xpBoost: F.increment(1) };  docPatch = { xpBoost: (d.xpBoost || 0) + 1 }; }
+    else { patch = { coins: F.increment(-it.price), owned: { [it.id]: true } }; docPatch = { owned: { ...(d.owned || {}), [it.id]: true } }; }
     try {
       await S.db.doc('players/' + S.uid).set(patch, { merge: true });
-      S.doc = { ...d, coins: (d.coins || 0) - it.price, ...(slot === 'p50' ? { p50: (d.p50 || 0) + 1 } : { owned: { ...(d.owned || {}), [it.id]: true } }) };
+      S.doc = { ...d, coins: (d.coins || 0) - it.price, ...docPatch };
       App.toast(`Bought ${it.name}!`);
-      if (slot === 'p50') render(); else equip(slot, it.id);
+      if (['p50', 'sfreeze', 'xpboost'].includes(slot)) render(); else equip(slot, it.id);
     } catch (e) { warn(`Couldn\u2019t buy that (${(e && e.code) || 'error'}).`); }
+  }
+  function wideItem(icon, title, desc, btnEl) {
+    const c = o('div', 'shop-item shop-wide');
+    c.append(o('strong', '', icon + ' ' + title), o('span', 'muted', desc), btnEl); return c;
   }
   function group(title, items, preview, slot) {
     const d = S.doc || {}, owned = d.owned || {}, eq = d.eq || {}, g = o('section', 'shop-group'), grid = o('div', 'shop-grid');
@@ -7535,14 +7598,27 @@ const Shop = (() => {
     if (!el) return;
     const d = S.doc || {}, eq = d.eq || {};
     bal.textContent = `\u{1FA99} ${d.coins || 0}`;
-    const life = o('section', 'shop-group'), c = o('div', 'shop-item shop-wide');
-    c.append(o('strong', '', '\u00BD 50/50 lifeline'), o('span', 'muted', `Removes two wrong answers in a duel (max 2 per duel). You have ${d.p50 || 0}.`),
-      btn(`Buy \u{1FA99} ${SHOP.p50.price}`, (d.coins || 0) >= SHOP.p50.price ? 'btn-primary btn-sm' : 'btn-ghost btn-sm', () => buy(SHOP.p50, 'p50')));
-    life.append(o('h3', '', 'Duel power-up'), c);
-    body.replaceChildren(
-      group('Avatar frames', SHOP.frames, it => bubble({ ...d, id: S.uid, eq: { ...eq, frame: it.id } }, 46), 'frame'),
-      group('Name colours', SHOP.colors, it => { const s = o('strong', 'shop-name', nameOf(S.uid)); s.style.color = it.hex; return s; }, 'nameColor'),
-      life);
+    const canAfford = price => (d.coins || 0) >= price ? 'btn-primary btn-sm' : 'btn-ghost btn-sm';
+
+    // Consumables section
+    const cons = o('section', 'shop-group');
+    cons.append(o('h3', '', 'Power-ups'));
+    cons.append(
+      wideItem('\u{1F6E1}\uFE0F', 'Streak Freeze', `Protects your streak for one missed day. You have ${d.sfreezes || 0}.`,
+        btn(`Buy \u{1FA99} ${SHOP.sfreeze.price}`, canAfford(SHOP.sfreeze.price), () => buy(SHOP.sfreeze, 'sfreeze'))),
+      wideItem('\u26A1', 'XP Boost', `Doubles EXP on your next quiz. You have ${d.xpBoost || 0}.`,
+        btn(`Buy \u{1FA99} ${SHOP.xpboost.price}`, canAfford(SHOP.xpboost.price), () => buy(SHOP.xpboost, 'xpboost'))),
+      wideItem('\u{1F3AF}', 'Second Chance', `Use in a duel: if you answer wrong, pick again (without hints). You have ${d.p50 || 0}.`,
+        btn(`Buy \u{1FA99} ${SHOP.p50.price}`, canAfford(SHOP.p50.price), () => buy(SHOP.p50, 'p50'))),
+    );
+
+    // Titles section
+    const titlesGroup = group('Board titles', SHOP.titles, it => {
+      const s = o('div'); s.style.cssText = 'font-size:22px;padding:4px 0'; s.textContent = it.icon;
+      const badge = o('span', 'board-title', it.icon + ' ' + it.name); s.append(badge); return s;
+    }, 'title');
+
+    body.replaceChildren(cons, titlesGroup);
   }
   function build() {
     el = o('section', 'card shop'); bal = o('strong', 'shop-bal'); body = o('div', 'shop-body');
@@ -7671,27 +7747,41 @@ const Duel = (() => {
       const b = o('button', 'option'); b.type = 'button'; b.dataset.key = op.key;
       b.append(o('span', 'option-letter', 'ABCDEF'[i]), o('span', 'option-text', op.text)); b.onclick = () => answer(op.key); opts.append(b);
     });
-    const extra = [];
-    if (S.doc && S.doc.p50 > 0 && D.used < 2) {
-      const ff = btn(`\u00BD 50/50 (${S.doc.p50} left)`, 'btn-ghost btn-sm duel-ff', () => {
-        if (D.locked) return;
-        const wrong = [...opts.querySelectorAll('.option')].filter(x => x.dataset.key !== q.correct && !x.disabled);
-        mix(wrong).slice(0, 2).forEach(x => { x.disabled = true; x.classList.add('is-dim'); });
-        D.used++; S.doc = { ...S.doc, p50: S.doc.p50 - 1 }; ff.remove();
-        S.db.doc('players/' + S.uid).set({ p50: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(() => {});
-      });
-      extra.push(ff);
-    }
-    put(vs, dots, tr, o('span', 'duel-topic', q.topic || ''), o('h3', 'duel-q', q.question), opts, ...extra, D.fb); paintScore();
+    put(vs, dots, tr, o('span', 'duel-topic', q.topic || ''), o('h3', 'duel-q', q.question), opts, D.fb); paintScore();
     D.timer = setInterval(() => {
       const left = secs() - (Date.now() - D.qStart) / 1000;
       D.tm.textContent = Math.max(0, Math.ceil(left)); D.bar.style.width = Math.max(0, left / secs() * 100) + '%'; D.track.classList.toggle('is-low', left <= 5);
       if (left <= 0) answer(null);
     }, 200);
   }
-  function answer(key) {
+  function answer(key, secondAttempt) {
     if (D.locked || !D.doc) return; D.locked = true; clearInterval(D.timer);
     const tok = D.code, q = App.questionById(D.doc.qids[D.idx]), ok = key === q.correct;
+
+    // Second Chance: if wrong on first try and player has a token, offer a re-pick
+    if (!ok && key !== null && !secondAttempt && S.doc && (S.doc.p50 || 0) > 0 && D.used < 2) {
+      D.locked = false; // unlock so they can pick again
+      // Mark the wrong pick visually (but don't lock in the answer yet)
+      const wrongBtn = box.querySelector(`.option[data-key="${key}"]`);
+      if (wrongBtn) { wrongBtn.disabled = true; wrongBtn.classList.add('is-wrong'); }
+      D.fb.textContent = '\u2753 Wrong pick! Use your Second Chance to try again?';
+      const scBtn = document.createElement('button');
+      scBtn.className = 'btn btn-primary btn-sm duel-ff'; scBtn.type = 'button';
+      scBtn.textContent = `\u{1F3AF} Use Second Chance (${S.doc.p50} left)`;
+      scBtn.onclick = () => {
+        D.used++; S.doc = { ...S.doc, p50: S.doc.p50 - 1 };
+        S.db && S.db.doc('players/' + S.uid).set({ p50: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(() => {});
+        scBtn.remove();
+        D.fb.textContent = '\u{1F3AF} Pick again \u2014 no hints, choose wisely!';
+        // Re-enable remaining options for a second pick
+        box.querySelectorAll('.option:not([disabled])').forEach(b => {
+          b.onclick = () => { D.locked = false; answer(b.dataset.key, true); };
+        });
+      };
+      D.fb.after(scBtn);
+      return;
+    }
+
     D.me.n++; D.me.ms += ok ? Date.now() - D.qStart : secs() * 1000; if (ok) D.me.c++;
     D.log.push({ id: q.id, key, ok });
     box.querySelectorAll('.option').forEach(b => { b.disabled = true; b.classList.add(b.dataset.key === q.correct ? 'is-correct' : b.dataset.key === key ? 'is-wrong' : 'is-dim'); });
