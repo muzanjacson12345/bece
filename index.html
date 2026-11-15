@@ -195,14 +195,17 @@
   };
 
   /* ---------- public profile API (used by the Friends page) ---------- */
+  // Emoji newer than Windows 10 can draw (ninja, coin) are swapped for ones that work everywhere
+  const LEGACY_AV = { '🥷': '🕵️', '🪙': '💰' };
+  const safeAv = a => LEGACY_AV[a] || a;
   const AVATAR_GROUPS = [
     { id: 'animals', label: 'Animals', items: ['🦁', '🐯', '🦊', '🐼', '🐸', '🦉', '🐙', '🦄', '🐨', '🐧', '🦈', '🐺', '🦋', '🐢', '🦖', '🐬', '🐻', '🐰', '🦒', '🦅', '🐝', '🦜', '🐘', '🦓'] },
     { id: 'fun', label: 'Fun', items: ['🚀', '⚡', '🎯', '🌟', '🎮', '🔥', '👑', '💎', '🎧', '🎸', '⚽', '🏀', '🏆', '🎨', '🎭', '🧩', '🎲', '🛹', '🍉', '🍕', '🌈', '🌴', '🍦', '🎂'] },
     { id: 'study', label: 'Study', items: ['📚', '🧠', '✏️', '🔬', '🌍', '🧮', '💡', '🎓', '📝', '🔭', '⏳', '📐', '🧪', '🗺️', '🏛️', '🎻', '📖', '🖊️', '🔢', '🧬'] },
-    { id: 'people', label: 'Characters', items: ['😎', '🤓', '🥳', '🤩', '😄', '🤠', '🥷', '🧙', '🦸', '🤖', '👻', '👽', '🧛', '🧜', '🧑‍🚀', '🧑‍🎓', '🦹', '🧞', '🤴', '👸'] },
+    { id: 'people', label: 'Characters', items: ['😎', '🤓', '🥳', '🤩', '😄', '🤠', '🕵️', '🧙', '🦸', '🤖', '👻', '👽', '🧛', '🧜', '🧑‍🚀', '🧑‍🎓', '🦹', '🧞', '🤴', '👸'] },
   ];
   window.BeceProfile = {
-    AVATAR_GROUPS,
+    AVATAR_GROUPS, safeAv,
     AVATARS: AVATAR_GROUPS.flatMap(g => g.items),
     PRESETS,
     COLORS: Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.hex])),
@@ -1095,7 +1098,8 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
 .duel-empty { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px; border: 1px dashed var(--line-strong); border-radius: 12px; }
 @media (max-width: 760px) {
   .hero { padding: 12px 0 4px; }
-  .hero .lead, .hero .caption, .hero-art { display: none; }
+  .hero .lead, .hero .caption { display: none; }
+  .hero-art { width: 36%; max-width: 150px; top: 2px; opacity: .6; }
   .hero h1 { font-size: clamp(32px, 9vw, 40px); margin-bottom: 14px; }
   .hero-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .hero-actions .btn-primary { grid-column: 1 / -1; }
@@ -1238,9 +1242,20 @@ button, .btn, .subject-card, .topic-item, .chip { transition: transform .15s var
 html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(--av-ds, var(--accent-soft)); }
 .board-list li.is-me .av { box-shadow: 0 0 0 2px var(--accent-soft), 0 0 0 4px var(--av); }
 .account-avatar { font-size: 1.1rem; line-height: 1; }
+.account-photo { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex: none; display: block; }
 .av-photo { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
 .board-title { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 20px; background: var(--accent-soft); color: var(--accent); margin-left: 5px; vertical-align: middle; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+/* ---------- Photo cropper ---------- */
+.crop-ov { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.6); }
+.crop-card { width: min(100%, 372px); display: grid; gap: 12px; justify-items: center; padding: 20px; text-align: center; max-height: 100%; overflow: auto; }
+.crop-stage { position: relative; touch-action: none; cursor: grab; border-radius: 12px; overflow: hidden; background: #fff; user-select: none; }
+.crop-stage canvas { display: block; }
+.crop-ring { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 999px rgba(0,0,0,.5); border: 2px solid #fff; pointer-events: none; }
+.crop-zoom { width: 100%; accent-color: var(--accent); }
+.crop-actions { justify-content: center; }
+.duel-choice { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* ---------- Profile card ---------- */
 .profile-card { padding: 0; margin-bottom: 24px; overflow: hidden; }
@@ -7054,7 +7069,8 @@ function renderAccount() {
   const e = $('account-btn'); e.replaceChildren(); const m = view();
   if (!S.db) { e.append(o('span', 'account-name', 'Offline')); e.onclick = () => App.navigate('friends'); return; }
   if (!m) { e.append(o('span', 'account-name', 'Friends')); e.onclick = () => App.navigate('friends'); return; }
-  if (S.doc && S.doc.avatar) e.append(o('span', 'account-avatar', S.doc.avatar));
+  if (S.doc && S.doc.photo) { const im = document.createElement('img'); im.className = 'account-photo'; im.alt = ''; im.src = S.doc.photo; e.append(im); }
+  else if (S.doc && S.doc.avatar) e.append(o('span', 'account-avatar', BeceProfile.safeAv(S.doc.avatar)));
   e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), o('span', 'account-exp', `${m.totalExp} EXP`));
   if (m.streak) e.append(o('span', 'account-streak', `\u{1F525} ${m.streak}`));
   e.setAttribute('aria-label', `${m.displayName}, level ${lv(m.totalExp).level}, ${m.totalExp} EXP. Open the friends board`);
@@ -7128,7 +7144,7 @@ function showResult(e) {
   const t = $('exp-result'); t.hidden = false; t.replaceChildren(o('p', 'exp-headline', `+${e.earned + e.bonusExp} EXP`));
   const ul = o('ul', 'exp-breakdown'), add = (a, b) => { const li = o('li'); li.append(o('span', '', a), o('strong', '', `+${b}`)); ul.append(li); };
   add(`${plural(e.correct - e.already, 'new correct answer')} \xD7 10`, e.earned); e.parts.forEach(p => add(p.label, p.exp)); t.append(ul);
-  if (e.coins) t.append(o('p', 'exp-status', `\u{1FA99} +${e.coins} coins`));
+  if (e.coins) t.append(o('p', 'exp-status', `\u{1F4B0} +${e.coins} coins`));
   if (e.already) t.append(o('p', 'exp-status', `${plural(e.already, 'answer')} already earned EXP earlier today, so ${e.already === 1 ? 'it isn\u2019t' : 'they aren\u2019t'} counted twice.`));
   const { level, into } = lv(e.total), m = o('progress', 'meter'); m.max = LVL; m.value = into;
   t.append(o('p', 'exp-status', `Level ${level} \xB7 ${e.total} EXP total \xB7 ${LVL - into} EXP to level ${level + 1}`), m);
@@ -7194,7 +7210,7 @@ function paintBubble(b, p) {
     img.src = p.photo;
   } else {
     const imgEl = b.querySelector('img.av-photo'); if (imgEl) imgEl.remove();
-    b.textContent = p.avatar || (nameOf(p.id) || '?').slice(0, 1).toUpperCase();
+    b.textContent = (p.avatar && PF.safeAv(p.avatar)) || (nameOf(p.id) || '?').slice(0, 1).toUpperCase();
   }
   b.style.setProperty('--av-l', pal.light.accent); b.style.setProperty('--av-ls', pal.light.accentSoft);
   b.style.setProperty('--av-d', pal.dark.accent); b.style.setProperty('--av-ds', pal.dark.accentSoft);
@@ -7221,6 +7237,59 @@ async function flushSave() {
   }
 }
 
+/* ---------- Photo cropper: drag to move, slider / pinch / scroll to resize ---------- */
+function openCropper(file, onDone) {
+  const url = URL.createObjectURL(file), img = new Image();
+  img.onerror = () => { URL.revokeObjectURL(url); App.toast('That file could not be opened as a picture.', 'warn'); };
+  img.onload = () => {
+    const BOX = Math.min(300, window.innerWidth - 64), OUT = 192;
+    const ov = o('div', 'crop-ov'); ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Crop your photo');
+    const card = o('div', 'crop-card card');
+    const stage = o('div', 'crop-stage'); stage.style.width = stage.style.height = BOX + 'px';
+    const cv = document.createElement('canvas'); cv.width = cv.height = BOX; stage.append(cv, o('div', 'crop-ring'));
+    const zoom = document.createElement('input'); zoom.type = 'range'; zoom.className = 'crop-zoom'; zoom.setAttribute('aria-label', 'Zoom');
+    zoom.min = '0'; zoom.max = '100'; zoom.value = '0';
+    const mk = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
+    const base = BOX / Math.min(img.width, img.height);       // scale where the picture just fills the square
+    let k = 1, x = 0, y = 0;                                  // zoom multiplier and picture centre offset (px)
+    const scale = () => base * k;
+    const clamp = () => { const w = img.width * scale(), h = img.height * scale(); x = Math.min(Math.max(x, -(w - BOX) / 2), (w - BOX) / 2); y = Math.min(Math.max(y, -(h - BOX) / 2), (h - BOX) / 2); };
+    const draw = (c, size) => {
+      const ctx = c.getContext('2d'), f = size / BOX, w = img.width * scale() * f, h = img.height * scale() * f;
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, size, size); ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, size / 2 - w / 2 + x * f, size / 2 - h / 2 + y * f, w, h);
+    };
+    const paintC = () => { clamp(); draw(cv, BOX); };
+    const setZoom = nk => { k = Math.min(4, Math.max(1, nk)); zoom.value = String((k - 1) / 3 * 100); paintC(); };
+    zoom.oninput = () => { k = 1 + Number(zoom.value) / 100 * 3; paintC(); };
+    const pts = new Map(); let last = 0;
+    stage.onpointerdown = e => { stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); last = 0; };
+    stage.onpointermove = e => {
+      if (!pts.has(e.pointerId)) return;
+      const prev = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pts.size === 1) { x += e.clientX - prev[0]; y += e.clientY - prev[1]; paintC(); }
+      else if (pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (last) setZoom(k * d / last); last = d; }
+    };
+    const up = e => { pts.delete(e.pointerId); last = 0; };
+    stage.onpointerup = stage.onpointercancel = up;
+    stage.addEventListener('wheel', e => { e.preventDefault(); setZoom(k * (e.deltaY < 0 ? 1.08 : 0.92)); }, { passive: false });
+    const close = () => { URL.revokeObjectURL(url); document.removeEventListener('keydown', onKey); ov.remove(); };
+    const onKey = e => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    ov.addEventListener('click', e => { if (e.target === ov) close(); });
+    const save = mk('Use photo', 'btn-primary btn-sm', () => {
+      const out = document.createElement('canvas'); out.width = out.height = OUT; draw(out, OUT);
+      let q = .85, data = out.toDataURL('image/jpeg', q);
+      while (data.length > 60000 && q > .4) { q -= .1; data = out.toDataURL('image/jpeg', q); }
+      close(); onDone(data);
+    });
+    const row = o('div', 'cz-row crop-actions'); row.append(mk('Cancel', 'btn-ghost btn-sm', close), save);
+    card.append(o('h3', '', 'Adjust your photo'), o('p', 'muted', 'Drag to move it. Use the slider (or pinch) to make it bigger or smaller.'), stage, zoom, row);
+    ov.append(card); document.body.append(ov); paintC(); save.focus();
+  };
+  img.src = url;
+}
+
 function buildProfileCard() {
   const el = o('section', 'card profile-card'), st = { tab: 'avatar', group: 'animals', lastAv: null, refresh: null, onTheme: null };
   const tile = (a, b) => { const x = o('div', 'stat-tile'); x.append(o('strong', '', a), o('span', '', b)); return x; };
@@ -7239,9 +7308,9 @@ function buildProfileCard() {
   function paint() {
     const d = me();
     paintBubble(av, d);
-    const key = d.avatar || '';
+    const key = d.photo ? '#photo' : (d.avatar || '');
     if (st.lastAv !== key) {
-      paintDoodles(key || '\u2728');
+      paintDoodles(d.photo ? '\u2728' : (PF.safeAv(d.avatar || '') || '\u2728'));
       if (st.lastAv !== null) { av.classList.remove('pop'); void av.offsetWidth; av.classList.add('pop'); }
       st.lastAv = key;
     }
@@ -7259,7 +7328,7 @@ function buildProfileCard() {
   const STATUS = { saved: 'All changes saved', saving: 'Saving\u2026', error: 'Couldn\u2019t save \u00B7 will retry' };
   const setStatus = s => { status.dataset.state = s; status.textContent = STATUS[s]; };
 
-  const pick = a => { queueSave({ avatar: a }); paint(); renderAccount(); if (st.refresh) st.refresh(); };
+  const pick = a => { queueSave({ avatar: a, photo: '' }); if (st.photoBtn) st.photoBtn.hidden = true; paint(); renderAccount(); if (st.refresh) st.refresh(); };
 
   function avatarPanel() {
     const w = o('div'), grid = o('div', 'emoji-grid'), chips = o('div', 'cz-chips');
@@ -7292,25 +7361,14 @@ function buildProfileCard() {
     photoPickBtn.htmlFor = 'photo-upload-inp'; photoPickBtn.className = 'btn btn-ghost btn-sm'; photoPickBtn.style.cursor = 'pointer';
     photoPickBtn.textContent = '\u{1F4F7} Upload a photo';
     const clearPhotoBtn = o('button', 'btn btn-ghost btn-sm', '\u2715 Remove photo');
-    clearPhotoBtn.type = 'button'; clearPhotoBtn.hidden = !me().photo;
+    clearPhotoBtn.type = 'button'; clearPhotoBtn.hidden = !me().photo; st.photoBtn = clearPhotoBtn;
     clearPhotoBtn.onclick = () => { queueSave({ photo: '' }); paint(); renderAccount(); clearPhotoBtn.hidden = true; if (st.refresh) st.refresh(); };
     photoInp.onchange = ev => {
-      const file = ev.target.files && ev.target.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = re => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas'); canvas.width = canvas.height = 96;
-          const ctx = canvas.getContext('2d');
-          const side = Math.min(img.width, img.height), sx = (img.width - side) / 2, sy = (img.height - side) / 2;
-          ctx.drawImage(img, sx, sy, side, side, 0, 0, 96, 96);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
-          queueSave({ photo: dataUrl }); paint(); renderAccount(); clearPhotoBtn.hidden = false;
-          App.toast('Photo saved!', 'good');
-        };
-        img.src = re.target.result;
-      };
-      reader.readAsDataURL(file); photoInp.value = '';
+      const file = ev.target.files && ev.target.files[0]; photoInp.value = ''; if (!file) return;
+      openCropper(file, dataUrl => {
+        queueSave({ photo: dataUrl }); paint(); renderAccount(); clearPhotoBtn.hidden = false;
+        App.toast('Photo saved!', 'good');
+      });
     };
     photoRow.append(photoPickBtn, photoInp, clearPhotoBtn);
 
@@ -7589,7 +7647,7 @@ const Shop = (() => {
       pv.append(preview(it));
       let b;
       if (owned[it.id]) b = eq[slot] === it.id ? btn('Equipped \u2713', 'btn-ghost btn-sm', () => equip(slot, it.id)) : btn('Equip', 'btn-primary btn-sm', () => equip(slot, it.id));
-      else b = btn(`Buy \u{1FA99} ${it.price}`, (d.coins || 0) >= it.price ? 'btn-primary btn-sm' : 'btn-ghost btn-sm', () => buy(it, slot));
+      else b = btn(`Buy \u{1F4B0} ${it.price}`, (d.coins || 0) >= it.price ? 'btn-primary btn-sm' : 'btn-ghost btn-sm', () => buy(it, slot));
       c.append(pv, o('strong', '', it.name), b); grid.append(c);
     });
     return g;
@@ -7597,7 +7655,7 @@ const Shop = (() => {
   function render() {
     if (!el) return;
     const d = S.doc || {}, eq = d.eq || {};
-    bal.textContent = `\u{1FA99} ${d.coins || 0}`;
+    bal.textContent = `\u{1F4B0} ${d.coins || 0}`;
     const canAfford = price => (d.coins || 0) >= price ? 'btn-primary btn-sm' : 'btn-ghost btn-sm';
 
     // Consumables section
@@ -7605,11 +7663,11 @@ const Shop = (() => {
     cons.append(o('h3', '', 'Power-ups'));
     cons.append(
       wideItem('\u{1F6E1}\uFE0F', 'Streak Freeze', `Protects your streak for one missed day. You have ${d.sfreezes || 0}.`,
-        btn(`Buy \u{1FA99} ${SHOP.sfreeze.price}`, canAfford(SHOP.sfreeze.price), () => buy(SHOP.sfreeze, 'sfreeze'))),
+        btn(`Buy \u{1F4B0} ${SHOP.sfreeze.price}`, canAfford(SHOP.sfreeze.price), () => buy(SHOP.sfreeze, 'sfreeze'))),
       wideItem('\u26A1', 'XP Boost', `Doubles EXP on your next quiz. You have ${d.xpBoost || 0}.`,
-        btn(`Buy \u{1FA99} ${SHOP.xpboost.price}`, canAfford(SHOP.xpboost.price), () => buy(SHOP.xpboost, 'xpboost'))),
+        btn(`Buy \u{1F4B0} ${SHOP.xpboost.price}`, canAfford(SHOP.xpboost.price), () => buy(SHOP.xpboost, 'xpboost'))),
       wideItem('\u{1F3AF}', 'Second Chance', `Use in a duel: if you answer wrong, pick again (without hints). You have ${d.p50 || 0}.`,
-        btn(`Buy \u{1FA99} ${SHOP.p50.price}`, canAfford(SHOP.p50.price), () => buy(SHOP.p50, 'p50'))),
+        btn(`Buy \u{1F4B0} ${SHOP.p50.price}`, canAfford(SHOP.p50.price), () => buy(SHOP.p50, 'p50'))),
     );
 
     // Titles section
@@ -7758,27 +7816,32 @@ const Duel = (() => {
     if (D.locked || !D.doc) return; D.locked = true; clearInterval(D.timer);
     const tok = D.code, q = App.questionById(D.doc.qids[D.idx]), ok = key === q.correct;
 
-    // Second Chance: if wrong on first try and player has a token, offer a re-pick
+    // Second Chance: after a wrong first pick, freeze every option until the player decides
     if (!ok && key !== null && !secondAttempt && S.doc && (S.doc.p50 || 0) > 0 && D.used < 2) {
-      D.locked = false; // unlock so they can pick again
-      // Mark the wrong pick visually (but don't lock in the answer yet)
+      D.locked = true;                                   // stays locked: no other option can be picked yet
+      box.querySelectorAll('.option').forEach(b => { b.disabled = true; });
       const wrongBtn = box.querySelector(`.option[data-key="${key}"]`);
-      if (wrongBtn) { wrongBtn.disabled = true; wrongBtn.classList.add('is-wrong'); }
-      D.fb.textContent = '\u2753 Wrong pick! Use your Second Chance to try again?';
+      if (wrongBtn) wrongBtn.classList.add('is-wrong');
+      D.fb.textContent = '\u2753 Wrong pick! Use a Second Chance to try again, or move on.';
+      const choice = document.createElement('div'); choice.className = 'duel-choice';
       const scBtn = document.createElement('button');
-      scBtn.className = 'btn btn-primary btn-sm duel-ff'; scBtn.type = 'button';
+      scBtn.className = 'btn btn-primary btn-sm'; scBtn.type = 'button';
       scBtn.textContent = `\u{1F3AF} Use Second Chance (${S.doc.p50} left)`;
       scBtn.onclick = () => {
         D.used++; S.doc = { ...S.doc, p50: S.doc.p50 - 1 };
         S.db && S.db.doc('players/' + S.uid).set({ p50: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(() => {});
-        scBtn.remove();
+        choice.remove();
         D.fb.textContent = '\u{1F3AF} Pick again \u2014 no hints, choose wisely!';
-        // Re-enable remaining options for a second pick
-        box.querySelectorAll('.option:not([disabled])').forEach(b => {
-          b.onclick = () => { D.locked = false; answer(b.dataset.key, true); };
+        box.querySelectorAll('.option').forEach(b => {
+          if (b.dataset.key === key) return;             // the wrong one stays crossed out
+          b.disabled = false; b.onclick = () => answer(b.dataset.key, true);
         });
+        D.locked = false; D.qStart = Date.now(); D.timer = setInterval(() => { if (Date.now() - D.qStart > secs() * 1000) answer(null, true); }, 250);
       };
-      D.fb.after(scBtn);
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'btn btn-ghost btn-sm'; nextBtn.type = 'button'; nextBtn.textContent = 'Next \u2192';
+      nextBtn.onclick = () => { choice.remove(); D.locked = false; answer(key, true); };   // keep the wrong answer and move on
+      choice.append(scBtn, nextBtn); D.fb.after(choice);
       return;
     }
 
@@ -7815,7 +7878,7 @@ const Duel = (() => {
     });
     const d = D.doc, cfg = { subject: d.subject, len: n, secs: secs(), vis: d.vis || 'public' };
     put(o('p', 'eyebrow', 'Duel result'), o('h2', '', tie ? 'It\u2019s a draw!' : win ? 'You won! \u{1F3C6}' : `${oppName()} wins this one`), sc,
-      chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, cn ? `\u{1FA99} +${cn} coins` : ''),
+      chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, cn ? `\u{1F4B0} +${cn} coins` : ''),
       o('p', 'muted', opp.done ? 'Most correct answers wins; faster total time breaks ties.' : `${oppName()} didn\u2019t finish, so unanswered questions count as wrong.`),
       rev, row(btn('Rematch', 'btn-primary btn-sm', () => { close(); D.cfg = cfg; create(); }), btn('Close', 'btn-ghost btn-sm', () => close())));
   }
