@@ -1034,11 +1034,8 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
 .board-list li[role=button]:hover { filter: brightness(1.08); }
 .board-list li[role=button]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .duel-box { position: relative; width: min(540px, 100%); padding: 22px; display: grid; gap: 14px; max-height: calc(100dvh - 24px); overflow-y: auto; }
-.duel-box > :first-child { padding-right: 44px; }
-.duel-x { position: absolute; top: 10px; right: 10px; min-width: 40px; height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); font-weight: 700; z-index: 1; }
 .duel-card { display: grid; gap: 14px; margin-bottom: 20px; }
 .duel-card .button-row, .duel-box .button-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.duel-rec { font-weight: 600; color: var(--accent); }
 .duel-field, .duel-join { display: grid; gap: 6px; }
 .duel-lbl { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .duel-hint { font-size: 13px; color: var(--muted); }
@@ -1054,12 +1051,7 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
 .duel-chips span { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft); }
 .duel-code { font: 700 44px/1 var(--serif); letter-spacing: .2em; text-align: center; padding: 18px 0; border: 1px dashed var(--line-strong); border-radius: 12px; }
 .duel-count { font: 700 72px/1 var(--serif); text-align: center; color: var(--accent); }
-.duel-vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
 .duel-vs-big .duel-side { flex-direction: column; text-align: center; }
-.duel-x2 { font-size: 12px; color: var(--muted); letter-spacing: .1em; }
-.duel-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.duel-side.opp { flex-direction: row-reverse; text-align: right; }
-.duel-side strong { font: 700 26px/1 var(--serif); }
 .duel-nm { display: block; font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .duel-sub { display: block; font-size: 12px; color: var(--muted); }
 .duel-dots { display: flex; gap: 5px; }
@@ -1083,6 +1075,44 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
 .duel-review summary { cursor: pointer; font-weight: 600; }
 .duel-rv { display: grid; gap: 3px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
 .duel-rv.bad strong { color: #d9534f; }
+.duel-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.duel-x { min-width: 40px; height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); font-weight: 700; }
+.duel-vs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; position: relative; }
+.duel-x2 { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; padding: 3px 9px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line-strong); font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--muted); }
+.duel-side { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 12px 8px; text-align: center; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+.duel-side.me { border-color: var(--primary); }
+.duel-side strong { font: 700 38px/1 var(--serif); }
+.duel-side .duel-nm { max-width: 100%; }
+.duel-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.duel-tile { display: grid; justify-items: center; gap: 2px; padding: 12px 6px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+.duel-tile strong { font: 700 26px/1 var(--serif); }
+.duel-tile span { font-size: 12px; color: var(--muted); font-weight: 600; }
+.duel-modes, .f-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 5px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); }
+.duel-modes button, .f-tabs button { min-height: 44px; padding: 4px 8px; border-radius: 10px; font-weight: 700; font-size: 14px; color: var(--muted); text-align: center; }
+.duel-modes button[aria-pressed="true"], .f-tabs button[aria-selected="true"] { background: var(--surface); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.14); }
+.f-tabs { margin: 0 0 16px; position: sticky; top: calc(var(--nav-h, 58px) + 6px); z-index: 5; }
+.duel-pane { display: grid; gap: 14px; }
+.duel-empty { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px; border: 1px dashed var(--line-strong); border-radius: 12px; }
+@media (max-width: 760px) {
+  .hero { padding: 12px 0 4px; }
+  .hero .lead, .hero .caption, .hero-art { display: none; }
+  .hero h1 { font-size: clamp(32px, 9vw, 40px); margin-bottom: 14px; }
+  .hero-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .hero-actions .btn-primary { grid-column: 1 / -1; }
+  .hero-actions .btn-ghost { padding-left: 10px; padding-right: 10px; font-size: 15px; }
+  .daily-card { grid-template-columns: 1fr; gap: 14px; padding: 18px; margin-bottom: 28px; }
+  .subject-card { padding: 14px !important; min-height: 0; gap: 6px; }
+  .subject-card h3 { font-size: 18px !important; margin-bottom: 0; }
+  .subject-card p { display: none; }
+  .subject-grid { gap: 12px; }
+  .block { margin-bottom: 28px; }
+  .learning-path { display: none; }
+  #screen-friends .page-intro .muted, #screen-friends .page-intro .eyebrow { display: none; }
+  #screen-friends .page-intro h1 { font-size: 28px; margin-bottom: 8px; }
+  .duel-box { padding: 16px; gap: 12px; border-radius: 18px; }
+  .duel-side strong { font-size: 34px; }
+  .duel-q { font-size: 18px; }
+}
 .friend-modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 1000; padding: 16px; overflow-y: auto; }
 .friend-box { max-width: 440px; width: 100%; display: grid; gap: 14px; padding: 22px; max-height: 90vh; overflow-y: auto; }
 
@@ -1331,6 +1361,7 @@ html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(-
         <div class="hero-actions">
           <button class="btn btn-primary btn-lg" type="button" data-action="quick-practice">Start a quick practice <svg class="icon"><use href="#i-arrow"/></svg></button>
           <a class="btn btn-ghost btn-lg" href="#daily-card">Today’s daily quiz</a>
+          <a class="btn btn-ghost btn-lg" href="#/friends" data-open-duels>⚔️ Duel a friend</a>
         </div>
         <p class="caption">5 mixed questions · instant explanations</p>
       </div>
@@ -7309,6 +7340,12 @@ function buildProfileCard() {
   };
 }
 
+function showFtab() {
+  if (!S.frWrap) return;
+  S.boardHost.hidden = S.ftab !== 'board'; Duel.card().hidden = S.ftab !== 'duels'; S.pc.el.hidden = S.ftab !== 'me';
+  S.ftabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.k === S.ftab)));
+}
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-open-duels]')) { S.ftab = 'duels'; showFtab(); } });
 function renderFriends() {
   const body = $('friends-body'); if (!body || App.screen !== 'friends') return;
   if (!S.db) { const c = o('div', 'card friends-gate'); c.append(o('h2', '', 'Friends board unavailable'), o('p', 'muted', 'Check your internet connection and reload the page to join the board. Quizzes and notes still work.')); body.replaceChildren(c); return; }
@@ -7354,7 +7391,12 @@ function renderFriends() {
   });
   act.append(ul);
   const g = o('div', 'friends-grid'); g.append(lb, act);
-  if (!S.frWrap) { S.frWrap = o('div'); S.boardHost = o('div'); S.frWrap.append(S.pc.el, Duel.card(), S.boardHost); }
+  if (!S.frWrap) {
+    S.frWrap = o('div'); S.boardHost = o('div'); S.ftab = S.ftab || 'board'; S.ftabs = o('div', 'f-tabs'); S.ftabs.setAttribute('role', 'tablist');
+    [['board', '\u{1F3C6} Board'], ['duels', '\u2694\uFE0F Duels'], ['me', '\u{1F464} Profile']].forEach(([k, t]) => { const b = o('button', '', t); b.type = 'button'; b.dataset.k = k; b.setAttribute('role', 'tab'); b.onclick = () => { S.ftab = k; showFtab(); }; S.ftabs.append(b); });
+    S.frWrap.append(S.ftabs, S.boardHost, Duel.card(), S.pc.el);
+  }
+  showFtab();
   S.boardHost.replaceChildren(g);
   if (body.firstChild !== S.frWrap || body.childNodes.length !== 1) body.replaceChildren(S.frWrap);
 }
@@ -7410,7 +7452,8 @@ const Duel = (() => {
       box = o('div', 'duel-box card'); m.append(box); document.body.append(m);
     }
     const x = o('button', 'duel-x', '\u2715'); x.type = 'button'; x.id = 'duel-x'; x.setAttribute('aria-label', 'Leave duel'); x.onclick = leave;
-    box.replaceChildren(...n, x);
+    const top = o('div', 'duel-top'); top.append(o('span', 'eyebrow', '1v1 duel' + (D.doc ? ' \u00B7 ' + (SUBS[D.doc.subject] || 'Mixed') : '')), x);
+    box.replaceChildren(top, ...n);
   }
   function record(out) {
     if (!D.code || !D.doc || D.recd === D.code || (D.doc.rec && D.doc.rec[S.uid])) return;
@@ -7457,7 +7500,7 @@ const Duel = (() => {
       if (navigator.share) navigator.share({ text }).catch(() => {});
       else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => App.toast('Invite copied.')).catch(() => {});
     };
-    put(o('p', 'eyebrow', '1v1 duel'), o('h2', '', 'Waiting for an opponent\u2026'), cfgChips(D.doc),
+    put(o('h2', '', 'Waiting for an opponent\u2026'), cfgChips(D.doc),
       o('p', 'muted', D.doc.vis === 'private' ? 'Private: only people with this code can join.' : 'Public: it also shows under Open challenges for everyone on the Friends tab.'),
       o('div', 'duel-code', D.code), row(btn('Share invite', 'btn-primary btn-sm', share), btn('Cancel', 'btn-ghost btn-sm', () => close())));
   }
@@ -7483,7 +7526,7 @@ const Duel = (() => {
     const q = App.questionById(id);
     if (!q) { D.me.n++; D.me.ms += secs() * 1000; D.log.push({ id, key: null, ok: false }); D.idx++; return ask(); }
     D.locked = false; D.qStart = Date.now();
-    const side = (pid, nm, cls) => { const s = o('div', 'duel-side ' + cls), t = o('div'); D[cls + 'Sc'] = o('strong', '', '0'); D[cls + 'Sub'] = o('span', 'duel-sub'); t.append(o('span', 'duel-nm', nm), D[cls + 'Sub']); s.append(av(pid, 34), t, D[cls + 'Sc']); return s; };
+    const side = (pid, nm, cls) => { const s = o('div', 'duel-side ' + cls); D[cls + 'Sc'] = o('strong', '', '0'); D[cls + 'Sub'] = o('span', 'duel-sub'); s.append(av(pid, 40), o('span', 'duel-nm', nm), D[cls + 'Sc'], D[cls + 'Sub']); return s; };
     const vs = o('div', 'duel-vs'); vs.append(side(S.uid, 'You', 'me'), o('b', 'duel-x2', 'VS'), side(oppId(), oppName(), 'opp'));
     D.dots = Array.from({ length: total() }, (_, i) => o('span', 'duel-dot' + (i < D.idx ? (D.log[i] && D.log[i].ok ? ' ok' : ' bad') : i === D.idx ? ' cur' : '')));
     const dots = o('div', 'duel-dots'); dots.append(...D.dots);
@@ -7568,13 +7611,19 @@ const Duel = (() => {
     } catch (e) { return warn(e === 'nf' ? 'No duel with that code.' : e === 'own' ? 'That\u2019s your own duel.' : e === 'taken' ? 'That duel already started.' : `Couldn\u2019t join the duel (${(e && (e.code || e.message)) || 'unknown error'}).`); }
     watch(code);
   }
+  function mode() {
+    D.mode = D.mode || 'create';
+    const panes = { open: D.pOpen, create: D.pCreate, join: D.pJoin };
+    Object.keys(panes).forEach(k => { D.mb[k].setAttribute('aria-pressed', String(D.mode === k)); panes[k].hidden = D.mode !== k; });
+  }
   function paint() {
-    if (!D.list) return;
-    const d = S.doc || {}; D.rec.textContent = `Your record: ${d.duelW || 0} W \u00B7 ${d.duelL || 0} L \u00B7 ${d.duelD || 0} D`;
+    if (!D.list || !D.tiles) return;
+    const d = S.doc || {};
+    [d.duelW, d.duelL, d.duelD].forEach((v, i) => { D.tiles[i].n.textContent = v || 0; });
+    D.mb.open.textContent = D.open.length ? `Open (${D.open.length})` : 'Open';
     D.list.replaceChildren();
     if (D.err) { D.list.append(o('li', 'muted', `Open challenges unavailable (${D.err}). You can still use a code.`)); return; }
-    D.list.append(o('li', 'eyebrow', 'Open challenges'));
-    if (!D.open.length) { D.list.append(o('li', 'muted', 'No public duels right now. Create one and wait for a challenger.')); return; }
+    if (!D.open.length) { const li = o('li', 'duel-empty'); li.append(o('span', 'muted', 'No public duels right now.'), btn('Create one', 'btn-primary btn-sm', () => { D.mode = 'create'; mode(); })); D.list.append(li); return; }
     D.open.forEach(x => {
       const li = o('li', 'duel-item'), p = who(x.host), t = o('div');
       t.append(o('strong', '', x.hostName || 'Player'), o('span', 'duel-sub', `Level ${lv(p.totalExp || 0).level} \u00B7 ${p.duelW || 0}W-${p.duelL || 0}L \u00B7 ${ago(x.created)}`));
@@ -7593,16 +7642,21 @@ const Duel = (() => {
     const sel = document.createElement('select'); sel.className = 'duel-sel'; sel.setAttribute('aria-label', 'Duel subject');
     Object.entries(SUBS).forEach(([k, v]) => sel.append(new Option(v, k))); sel.onchange = () => { D.cfg.subject = sel.value; };
     const sw = o('div', 'duel-field'); sw.append(o('span', 'duel-lbl', 'Subject'), sel);
-    const hint = o('p', 'duel-hint'), sync = () => { hint.textContent = D.cfg.vis === 'public' ? 'Public: shows under Open challenges so anyone on the board can accept.' : 'Private: hidden from the list. Only people with your code can join.'; };
+    const hint = o('p', 'duel-hint'), sync = () => { hint.textContent = D.cfg.vis === 'public' ? 'Public: shows under Open so anyone on the board can accept.' : 'Private: hidden from the list. Only people with your code can join.'; };
     const vis = seg('Who can join', ['public', 'private'], 'vis', v => (v === 'public' ? '\u{1F310} Public' : '\u{1F512} Private'), sync); sync();
     const inp = document.createElement('input'); inp.className = 'duel-in'; inp.placeholder = 'CODE'; inp.maxLength = 5; inp.autocapitalize = 'characters'; inp.setAttribute('aria-label', 'Duel code');
     inp.onkeydown = e => { if (e.key === 'Enter') join(inp.value); };
-    D.list = o('ul', 'duel-open'); D.rec = o('p', 'duel-rec');
-    const c = o('section', 'card duel-card'), jr = o('div', 'duel-join'); jr.append(o('span', 'duel-lbl', 'Have a code?'), row(inp, btn('Join', 'btn-ghost btn-sm', () => join(inp.value))));
-    c.append(o('p', 'eyebrow', '1v1 duel'), o('h2', '', 'Challenge a friend'), D.rec, sw,
-      seg('Questions', LENS, 'len', v => String(v)), seg('Time per question', TIMES, 'secs', v => v + 's'), vis, hint,
-      btn('Create duel', 'btn-primary btn-block', create), jr, D.list);
-    D.card = c; paint(); return c;
+    D.list = o('ul', 'duel-open');
+    D.tiles = ['Wins', 'Losses', 'Draws'].map(l => { const t = o('div', 'duel-tile'), n = o('strong', '', '0'); t.append(n, o('span', '', l)); t.n = n; return t; });
+    const tiles = o('div', 'duel-tiles'); tiles.append(...D.tiles);
+    const mk = (k, t) => { const b = o('button', '', t); b.type = 'button'; b.onclick = () => { D.mode = k; mode(); }; return b; };
+    D.mb = { open: mk('open', 'Open'), create: mk('create', 'Create'), join: mk('join', 'Join code') };
+    const modes = o('div', 'duel-modes'); modes.append(D.mb.open, D.mb.create, D.mb.join);
+    D.pOpen = o('div', 'duel-pane'); D.pOpen.append(D.list);
+    D.pCreate = o('div', 'duel-pane'); D.pCreate.append(sw, seg('Questions', LENS, 'len', v => String(v)), seg('Time per question', TIMES, 'secs', v => v + 's'), vis, hint, btn('Create duel', 'btn-primary btn-block', create));
+    D.pJoin = o('div', 'duel-pane'); D.pJoin.append(o('p', 'muted', 'Got a code from a friend? Enter it to jump straight in.'), row(inp, btn('Join', 'btn-primary btn-sm', () => join(inp.value))));
+    const c = o('section', 'card duel-card'); c.append(tiles, modes, D.pOpen, D.pCreate, D.pJoin);
+    D.card = c; mode(); paint(); return c;
   }
   window.addEventListener('hashchange', () => { if (D.code) close(); });
   function start() {
