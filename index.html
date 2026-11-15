@@ -1324,6 +1324,37 @@ html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(-
 .duel-vs-big .duel-side { animation-duration: .7s; }
 .confetti-cv { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
 
+/* ---------- Coins panel, confetti (GPU), extra duel motion ---------- */
+@keyframes cSpin { 0% { transform: rotateY(0) scale(.6); } 60% { transform: rotateY(720deg) scale(1.25); } 100% { transform: rotateY(720deg) scale(1); } }
+@keyframes cLine { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+@keyframes cDrop { 0% { transform: translateY(-10px) scale(.6); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(120px) rotate(200deg); opacity: 0; } }
+@keyframes cDone { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes cGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(249, 199, 79, 0); } 50% { box-shadow: 0 0 22px 2px rgba(249, 199, 79, .55); } }
+@keyframes dPing { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); } 100% { box-shadow: 0 0 0 12px transparent; } }
+@keyframes dLowNum { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35); } }
+@keyframes dWiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-4deg) scale(1.06); } 40% { transform: rotate(4deg) scale(1.06); } 60% { transform: rotate(-2deg); } 80% { transform: rotate(2deg); } }
+@keyframes dDots { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@keyframes dCodeGlow { 0%, 100% { letter-spacing: .18em; } 50% { letter-spacing: .24em; } }
+.coin-panel { position: relative; overflow: hidden; display: grid; gap: 8px; padding: 14px; border-radius: 14px; border: 1px solid rgba(249, 199, 79, .6); background: linear-gradient(135deg, rgba(249, 199, 79, .22), rgba(249, 199, 79, .05)); animation: dRise .4s ease-out both, cGlow 2.4s ease-in-out 2; }
+.coin-top { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.coin-ic { font-size: 34px; line-height: 1; display: inline-block; animation: cSpin 1s ease-out both; }
+.coin-num { font: 800 34px/1 var(--serif); color: var(--ink); font-variant-numeric: tabular-nums; display: inline-block; }
+.coin-num.done { animation: cDone .35s ease-out; }
+.coin-lbl { font-weight: 600; color: var(--muted); font-size: 14px; }
+.coin-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.coin-list li { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 5px 10px; border-radius: 9px; background: color-mix(in srgb, var(--surface) 70%, transparent); animation: cLine .4s ease-out both; }
+.coin-list strong { color: var(--ink); }
+.coin-bal { margin: 0; text-align: center; font-size: 13px; color: var(--muted); }
+.coin-drop { position: absolute; top: 0; pointer-events: none; animation: cDrop 1.4s ease-in forwards; }
+.duel-plus.big { font-size: 22px; white-space: nowrap; color: #c98a00; }
+.duel-timer.is-low { display: inline-block; color: #d9534f; animation: dLowNum 1s ease-in-out infinite; }
+.duel-side.ping { animation: dPing .7s ease-out; }
+.duel-win { display: inline-block; animation: dWiggle .9s .5s ease-in-out 2; }
+.pulse-text { animation: dDots 1.4s ease-in-out infinite; }
+.duel-code { animation: dCodeGlow 2.4s ease-in-out infinite; }
+.cf-host { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9999; contain: strict; }
+.cf-host i { position: absolute; left: 0; top: 0; will-change: transform, opacity; opacity: 0; }
+
 /* ---------- Photo cropper ---------- */
 .crop-ov { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.6); }
 .crop-card { width: min(100%, 372px); display: grid; gap: 12px; justify-items: center; padding: 20px; text-align: center; max-height: 100%; overflow: auto; }
@@ -7208,7 +7239,14 @@ App.on('quiz:finished', async ev => {
     const bonusExp = parts.reduce((a, p) => a + p.exp, 0);
     const xpMult = (d.xpBoost || 0) > 0 ? 2 : 1;
     if (xpMult > 1) parts.push({ label: '\u26A1 XP Boost active', exp: fresh * 10 });
-    const earned = fresh * 10 * xpMult, coinsEarned = fresh + Math.floor(bonusExp / 4);
+    const earned = fresh * 10 * xpMult;
+    // coins: 1 per new correct answer, a quarter of the daily-quiz bonus, and a streak bonus (+1 for every 3 days in a row, up to +5)
+    const coinParts = [];
+    if (fresh) coinParts.push({ label: `${plural(fresh, 'new correct answer')}`, n: fresh });
+    if (Math.floor(bonusExp / 4)) coinParts.push({ label: 'Daily quiz bonus', n: Math.floor(bonusExp / 4) });
+    const streakCoins = fresh > 0 ? Math.min(5, Math.floor(streak / 3)) : 0;
+    if (streakCoins) coinParts.push({ label: `\u{1F525} ${streak}-day streak bonus`, n: streakCoins });
+    const coinsEarned = coinParts.reduce((a, c) => a + c.n, 0);
     const subs = [...new Set(ev.questionIds.map(i => i.slice(0, 3)))];
     const subject = subs.length === 1 ? SUBJ[subs[0]] || 'mixed subjects' : 'mixed subjects';
     const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: earned + bonusExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
@@ -7217,14 +7255,28 @@ App.on('quiz:finished', async ev => {
     const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
     await S.db.doc('players/' + S.uid).set(next); S.doc = next;
     renderAccount(); renderDaily();
-    showResult({ coins: coinsEarned, earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended, usedFreeze, xpMult });
+    showResult({ coins: coinsEarned, coinParts, balance: (next.coins || 0), earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended, usedFreeze, xpMult });
   } catch (err) { box.replaceChildren(o('p', 'exp-status', 'Couldn\u2019t save your EXP. ' + (err && err.message || ''))); }
 });
+// A "coins earned" card: animated total, a line for every reason, and your new balance
+function coinPanel(total, parts, balance) {
+  const w = o('div', 'coin-panel'), top = o('div', 'coin-top'), ic = o('span', 'coin-ic', '\u{1F4B0}'), num = o('strong', 'coin-num', '+0');
+  top.append(ic, num, o('span', 'coin-lbl', total === 1 ? 'coin earned' : 'coins earned')); w.append(top);
+  if (parts && parts.length) { const ul = o('ul', 'coin-list'); parts.forEach((p, i) => { const li = o('li'); li.style.animationDelay = (0.25 + i * 0.12) + 's'; li.append(o('span', '', p.label), o('strong', '', '+' + p.n)); ul.append(li); }); w.append(ul); }
+  if (balance != null) w.append(o('p', 'coin-bal', `Your balance: \u{1F4B0} ${balance}`));
+  const t0 = performance.now(), step = t => { const k = Math.min(1, (t - t0) / 800); num.textContent = '+' + Math.round(total * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); else { num.classList.add('done'); coinShower(w); } };
+  requestAnimationFrame(step);
+  return w;
+}
+function coinShower(host) {
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for (let i = 0; i < 10; i++) { const c = document.createElement('span'); c.className = 'coin-drop'; c.textContent = '\u{1F4B0}'; c.style.cssText = `left:${8 + Math.random() * 84}%;animation-delay:${(Math.random() * .5).toFixed(2)}s;font-size:${14 + Math.round(Math.random() * 10)}px`; host.append(c); setTimeout(() => c.remove(), 1800); }
+}
 function showResult(e) {
   const t = $('exp-result'); t.hidden = false; t.replaceChildren(o('p', 'exp-headline', `+${e.earned + e.bonusExp} EXP`));
   const ul = o('ul', 'exp-breakdown'), add = (a, b) => { const li = o('li'); li.append(o('span', '', a), o('strong', '', `+${b}`)); ul.append(li); };
   add(`${plural(e.correct - e.already, 'new correct answer')} \xD7 10`, e.earned); e.parts.forEach(p => add(p.label, p.exp)); t.append(ul);
-  if (e.coins) t.append(o('p', 'exp-status', `\u{1F4B0} +${e.coins} coins`));
+  if (e.coins) { const cp = coinPanel(e.coins, e.coinParts, e.balance); t.append(cp); }
   if (e.already) t.append(o('p', 'exp-status', `${plural(e.already, 'answer')} already earned EXP earlier today, so ${e.already === 1 ? 'it isn\u2019t' : 'they aren\u2019t'} counted twice.`));
   const { level, into } = lv(e.total), m = o('progress', 'meter'); m.max = LVL; m.value = into;
   t.append(o('p', 'exp-status', `Level ${level} \xB7 ${e.total} EXP total \xB7 ${LVL - into} EXP to level ${level + 1}`), m);
@@ -7806,7 +7858,20 @@ const Duel = (() => {
     D.recd = D.code;
     const F = firebase.firestore.FieldValue, k = out === 'w' ? 'duelW' : out === 'l' ? 'duelL' : 'duelD';
     const d = S.doc || {}, td = today(), n = d.dcDay === td ? d.dcN || 0 : 0;
-    let c = out === 'w' ? 5 : out === 'd' ? 2 : 1; if (forceCoins === 0 || n >= 10) c = 0;
+    const base = out === 'w' ? 5 : out === 'd' ? 2 : 1, parts = [];
+    let c = 0; D.limit = false;
+    if (forceCoins !== 0 && n >= 10) D.limit = true;
+    else if (forceCoins !== 0) {
+      parts.push({ label: out === 'w' ? '\u{1F3C6} Duel won' : out === 'd' ? '\u{1F91D} Draw' : '\u2694\uFE0F Duel played', n: base });
+      const inRow = Math.min(3, Math.floor((D.best || 0) / 3));                  // +1 for every 3 right answers in a row (best run), up to +3
+      if (inRow) parts.push({ label: `\u{1F525} Best run: ${D.best} in a row`, n: inRow });
+      if (D.me && D.me.c === total() && total() >= 3) parts.push({ label: '\u{1F31F} Perfect score', n: 2 });
+      const ds = d.lastDay === td || d.lastDay === (typeof yesterday === 'function' ? yesterday() : '') ? d.streak || 0 : 0;
+      const dayCoins = Math.min(3, Math.floor(ds / 3));                           // daily streak: +1 per 3 days, up to +3
+      if (dayCoins) parts.push({ label: `\u{1F4C5} ${ds}-day streak bonus`, n: dayCoins });
+      c = parts.reduce((a, p) => a + p.n, 0);
+    }
+    D.coinParts = parts; D.bal = (d.coins || 0) + c;
     const b = S.db.batch();
     b.set(S.db.doc('players/' + S.uid), { [k]: F.increment(1), ...(c ? { coins: F.increment(c), dcDay: td, dcN: n + 1 } : {}) }, { merge: true });
     b.update(col().doc(D.code), { ['rec.' + S.uid]: true });
@@ -7849,7 +7914,7 @@ const Duel = (() => {
       if (navigator.share) navigator.share({ text }).catch(() => {});
       else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => App.toast('Invite copied.')).catch(() => {});
     };
-    put(o('h2', '', 'Waiting for an opponent\u2026'), cfgChips(D.doc),
+    put(o('h2', 'pulse-text', 'Waiting for an opponent\u2026'), cfgChips(D.doc),
       o('p', 'muted', D.doc.vis === 'private' ? 'Private: only people with this code can join.' : 'Public: it also shows under Open challenges for everyone on the Friends tab.'),
       o('div', 'duel-code', D.code), row(btn('Share invite', 'btn-primary btn-sm', share), btn('Cancel', 'btn-ghost btn-sm', () => close())));
   }
@@ -7863,13 +7928,14 @@ const Duel = (() => {
     put(o('p', 'eyebrow', 'Duel found'), vs, cfgChips(D.doc), n, o('p', 'muted', 'Get ready\u2026'));
     tick(); D.cdT = setInterval(tick, 200);
   }
-  function begin() { D.started = true; D.used = 0; D.idx = 0; D.log = []; D.me = { c: 0, n: 0, ms: 0, done: false }; ask(); }
+  function begin() { D.started = true; D.used = 0; D.idx = 0; D.log = []; D.streak = 0; D.best = 0; D.oppN = 0; D.me = { c: 0, n: 0, ms: 0, done: false }; ask(); }
   function paintScore() {
     if (!D.meSc || !D.doc || !D.me) return;
     const r = (D.doc.res || {})[oppId()] || { c: 0, n: 0 };
     const bump = (el, v) => { if (el.textContent !== String(v)) { el.textContent = v; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
     bump(D.meSc, D.me.c); D.meSub.textContent = `${D.me.n}/${total()} done`;
     bump(D.oppSc, r.c); D.oppSub.textContent = `${r.n}/${total()} done`;
+    if (r.n !== D.oppN) { D.oppN = r.n; const sd = D.oppSc.parentNode; if (sd) { sd.classList.remove('ping'); void sd.offsetWidth; sd.classList.add('ping'); } }
   }
   function ask() {
     clearInterval(D.timer); clearInterval(D.scT); box && box.classList.remove('d-out', 'flash-ok', 'flash-bad');
@@ -7892,7 +7958,7 @@ const Duel = (() => {
     put(vs, dots, tr, o('span', 'duel-topic', q.topic || ''), o('h3', 'duel-q', q.question), opts, D.fb); paintScore();
     D.timer = setInterval(() => {
       const left = secs() - (Date.now() - D.qStart) / 1000;
-      D.tm.textContent = Math.max(0, Math.ceil(left)); D.bar.style.width = Math.max(0, left / secs() * 100) + '%'; D.track.classList.toggle('is-low', left <= 5);
+      D.tm.textContent = Math.max(0, Math.ceil(left)); D.bar.style.width = Math.max(0, left / secs() * 100) + '%'; D.track.classList.toggle('is-low', left <= 5); D.tm.classList.toggle('is-low', left <= 5);
       if (left <= 0) answer(null);
     }, 200);
   }
@@ -7940,9 +8006,10 @@ const Duel = (() => {
     box.querySelectorAll('.option').forEach(b => { b.disabled = true; b.classList.add(b.dataset.key === q.correct ? 'is-correct' : b.dataset.key === key ? 'is-wrong' : 'is-dim'); });
     const right = (q.options.find(x => x.key === q.correct) || {}).text;
     D.dots[D.idx].className = 'duel-dot ' + (ok ? 'ok' : 'bad');
-    D.streak = ok ? (D.streak || 0) + 1 : 0;
+    D.streak = ok ? (D.streak || 0) + 1 : 0; if (D.streak > (D.best || 0)) D.best = D.streak;
+    const bonusHit = ok && D.streak % 3 === 0 && D.streak <= 9;
     box.classList.remove('flash-ok', 'flash-bad'); void box.offsetWidth; box.classList.add(ok ? 'flash-ok' : 'flash-bad');
-    if (ok) { const pt = o('span', 'duel-plus', D.streak > 1 ? `+1  \u{1F525}\u00D7${D.streak}` : '+1'); box.append(pt); setTimeout(() => pt.remove(), 1000); }
+    if (ok) { const pt = o('span', 'duel-plus' + (bonusHit ? ' big' : ''), bonusHit ? `\u{1F525} ${D.streak} in a row! +1 \u{1F4B0}` : D.streak > 1 ? `+1  \u{1F525}\u00D7${D.streak}` : '+1'); box.append(pt); setTimeout(() => pt.remove(), bonusHit ? 1500 : 1000); }
     D.fb.className = 'duel-fb ' + (ok ? 'good' : 'bad');
     D.fb.textContent = ok ? '\u2713 Correct!' : key === null ? `\u23F1 Time\u2019s up. Answer: ${right}` : `\u2717 Not quite. Answer: ${right}`;
     buzz(ok ? 25 : [60, 40, 60]); paintScore(); push();
@@ -7958,19 +8025,21 @@ const Duel = (() => {
       o('p', 'muted', `Waiting for ${oppName()} to finish${r ? ` (${r.n}/${total()} answered)` : ''}\u2026`), row(btn('Leave', 'btn-ghost btn-sm', () => close())));
   }
   function confetti() {
-    const cv = document.createElement('canvas'); cv.className = 'confetti-cv'; cv.width = innerWidth; cv.height = innerHeight; document.body.append(cv);
-    const ctx = cv.getContext('2d'), cols = ['#f94144', '#f3722c', '#f9c74f', '#90be6d', '#43aa8b', '#4d96ff', '#b565e6', '#ff6bd6'], ps = [];
-    const burst = (x, ang, n) => { for (let i = 0; i < n; i++) { const a = ang + (Math.random() - .5) * .9, v = 9 + Math.random() * 11; ps.push({ x, y: innerHeight * .75, vx: Math.cos(a) * v, vy: Math.sin(a) * v, w: 6 + Math.random() * 7, h: 4 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[i % cols.length], life: 0 }); } };
-    burst(0, -Math.PI / 3, 90); burst(innerWidth, -Math.PI * 2 / 3, 90);
-    setTimeout(() => { burst(innerWidth * .25, -Math.PI / 2, 50); burst(innerWidth * .75, -Math.PI / 2, 50); }, 450);
-    for (let i = 0; i < 70; i++) ps.push({ x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * .6, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, w: 6 + Math.random() * 6, h: 4 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .3, c: cols[i % cols.length], life: 0 });
-    let t0 = performance.now(), raf;
-    const frame = t => {
-      const dt = Math.min(2, (t - t0) / 16.7); t0 = t; ctx.clearRect(0, 0, cv.width, cv.height);
-      ps.forEach(p => { p.vy += .32 * dt; p.vx *= .995; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; p.life += dt; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = Math.max(0, Math.min(1, 1 - (p.life - 150) / 70)); ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore(); });
-      if (ps.some(p => p.life < 220 && p.y < cv.height + 40)) raf = requestAnimationFrame(frame); else cv.remove();
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const host = o('div', 'cf-host'), cols = ['#f94144', '#f3722c', '#f9c74f', '#90be6d', '#43aa8b', '#4d96ff', '#b565e6', '#ff6bd6'];
+    const W = innerWidth, H = innerHeight, rnd = (a, b) => a + Math.random() * (b - a), frag = document.createDocumentFragment(), anims = [];
+    const piece = (x0, y0, x1, y1, x2, y2, dur, delay) => {
+      const e = document.createElement('i'); e.style.background = cols[(Math.random() * cols.length) | 0]; e.style.width = rnd(6, 10) + 'px'; e.style.height = rnd(8, 14) + 'px'; if (Math.random() < .3) e.style.borderRadius = '50%';
+      frag.append(e); const r = rnd(360, 900) * (Math.random() < .5 ? -1 : 1);
+      anims.push([e, [{ transform: `translate3d(${x0}px,${y0}px,0) rotate(0)`, opacity: 1 }, { transform: `translate3d(${x1}px,${y1}px,0) rotate(${r * .4}deg)`, opacity: 1, offset: .35 }, { transform: `translate3d(${x2}px,${y2}px,0) rotate(${r}deg)`, opacity: 0 }], { duration: dur, delay, easing: 'cubic-bezier(.25,.6,.4,1)', fill: 'forwards' }]);
     };
-    raf = requestAnimationFrame(frame); setTimeout(() => { cancelAnimationFrame(raf); cv.remove(); }, 6000);
+    for (let i = 0; i < 26; i++) {                                        // two cannons from the bottom corners
+      [[0, 1], [W, -1]].forEach(([x, dir]) => piece(x, H, x + dir * rnd(W * .15, W * .55), H - rnd(H * .35, H * .8), x + dir * rnd(W * .3, W * .8), H + 40, rnd(1900, 2700), rnd(0, 250)));
+    }
+    for (let i = 0; i < 22; i++) { const x = rnd(0, W); piece(x, -30, x + rnd(-60, 60), H * .4, x + rnd(-120, 120), H + 40, rnd(2200, 3200), rnd(150, 900)); }   // gentle rain
+    host.append(frag); document.body.append(host);
+    anims.forEach(([e, k, o2]) => e.animate(k, o2));
+    setTimeout(() => host.remove(), 4400);
   }
   function countUp() {
     box && box.querySelectorAll('.duel-score strong').forEach(el => {
@@ -7993,8 +8062,9 @@ const Duel = (() => {
       it.append(o('span', '', `Correct: ${txt(q.correct)}`)); if (q.explanation) it.append(o('span', 'muted', q.explanation)); rev.append(it);
     });
     const d = D.doc, cfg = { subject: d.subject, len: n, secs: secs(), vis: d.vis || 'public' };
-    put(o('p', 'eyebrow', 'Duel result'), o('h2', '', tie ? 'It\u2019s a draw!' : win ? 'You won! \u{1F3C6}' : `${oppName()} wins this one`), sc,
-      chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, cn ? `\u{1F4B0} +${cn} coins` : ''),
+    put(o('p', 'eyebrow', 'Duel result'), o('h2', tie ? '' : win ? 'duel-win' : '', tie ? 'It\u2019s a draw!' : win ? 'You won! \u{1F3C6}' : `${oppName()} wins this one`), sc,
+      chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, D.best > 1 ? `\u{1F525} best run ${D.best}` : ''),
+      cn ? coinPanel(cn, D.coinParts, D.bal) : o('p', 'muted', D.limit ? '\u{1F4B0} Daily duel coin limit reached (10 duels). Come back tomorrow!' : 'No coins this time.'),
       o('p', 'muted', opp.done ? 'Most correct answers wins; faster total time breaks ties.' : `${oppName()} didn\u2019t finish, so unanswered questions count as wrong.`),
       rev, row(btn('Rematch', 'btn-primary btn-sm', () => { close(); D.cfg = cfg; create(); }), btn('Close', 'btn-ghost btn-sm', () => close())));
     countUp(); if (!tie && win) { buzz([40, 30, 40, 30, 90]); setTimeout(confetti, 300); }
