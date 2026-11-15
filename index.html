@@ -1307,6 +1307,23 @@ html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(-
 .emoji-pick:active { transform: scale(.9); }
 .crop-card { animation: dBoxIn .3s cubic-bezier(.2, .8, .2, 1) both; }
 
+/* ---------- Duel animations, round 2 ---------- */
+@keyframes dOut { to { opacity: 0; transform: translateX(26px); } }
+@keyframes dFlashOk { 0% { opacity: .55; } 100% { opacity: 0; } }
+@keyframes dPlus { 0% { opacity: 0; transform: translate(-50%, 10px) scale(.6); } 25% { opacity: 1; transform: translate(-50%, -6px) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -64px) scale(1); } }
+@keyframes dShrink { from { width: 100%; } to { width: 0; } }
+.d-out .duel-q, .d-out .duel-opts, .d-out .duel-fb, .d-out .duel-choice { animation: dOut .25s ease-in forwards !important; }
+.duel-box::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; }
+.duel-box.flash-ok::after { background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--primary) 45%, transparent), transparent 70%); animation: dFlashOk .7s ease-out; }
+.duel-box.flash-bad::after { background: radial-gradient(circle at 50% 60%, rgba(217, 83, 79, .4), transparent 70%); animation: dFlashOk .7s ease-out; }
+.duel-plus { position: absolute; left: 50%; top: 42%; font: 800 30px/1 var(--serif); color: var(--primary); pointer-events: none; z-index: 5; animation: dPlus 1s ease-out forwards; text-shadow: 0 2px 8px rgba(0,0,0,.2); }
+.duel-fb.good { color: var(--primary); } .duel-fb.bad { color: #d9534f; }
+.sc-bar { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.sc-bar span { display: block; height: 100%; background: var(--accent); animation: dShrink 20s linear forwards; }
+.duel-count { animation: none; min-height: 1.1em; }
+.duel-vs-big .duel-side { animation-duration: .7s; }
+.confetti-cv { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+
 /* ---------- Photo cropper ---------- */
 .crop-ov { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.6); }
 .crop-card { width: min(100%, 372px); display: grid; gap: 12px; justify-items: center; padding: 20px; text-align: center; max-height: 100%; overflow: auto; }
@@ -7804,7 +7821,7 @@ const Duel = (() => {
   }
   function close() {
     if (D.me && !D.me.done && D.started) { D.me.done = true; D.me.ms += (total() - D.me.n) * secs() * 1000; D.me.n = total(); push(); record('l', 0); }
-    clearInterval(D.timer); clearInterval(D.cdT); clearInterval(D.hbT); clearTimeout(D.wait);
+    clearInterval(D.timer); clearInterval(D.scT); clearInterval(D.cdT); clearInterval(D.hbT); clearTimeout(D.wait);
     if (D.unsub) { D.unsub(); D.unsub = null; }
     if (D.doc && D.doc.state === 'waiting' && D.doc.host === S.uid) col().doc(D.code).delete().catch(() => {});
     D.code = D.doc = D.me = null; D.started = D.cd = false; box = null;
@@ -7837,9 +7854,10 @@ const Duel = (() => {
       o('div', 'duel-code', D.code), row(btn('Share invite', 'btn-primary btn-sm', share), btn('Cancel', 'btn-ghost btn-sm', () => close())));
   }
   function countdown() {
-    D.cd = true; D.cd0 = 0;
+    D.cd = true; clearInterval(D.cdT);
     const n = o('div', 'duel-count');
-    const tick = () => { const at = Number(D.doc.startAt) || (D.cd0 = D.cd0 || Date.now() + 3000), s = Math.min(5, Math.ceil((at - Date.now()) / 1000)); if (s <= 0) { clearInterval(D.cdT); D.cd = false; begin(); } else if (n.textContent !== String(s)) { n.textContent = s; n.classList.remove('tick'); void n.offsetWidth; n.classList.add('tick'); } };
+    const at = Date.now() + 3600;   // each device counts from the moment it sees the duel start, so clock differences between PC and phone no longer matter
+    const tick = () => { const left = at - Date.now(), sec = Math.ceil(left / 1000); if (left <= 0) { clearInterval(D.cdT); D.cd = false; n.textContent = ''; begin(); } else { const t = sec > 3 ? 'Ready?' : String(sec); if (n.textContent !== t) { n.textContent = t; n.classList.remove('tick'); void n.offsetWidth; n.classList.add('tick'); } } };
     const vs = o('div', 'duel-vs duel-vs-big'); const a = o('div', 'duel-side'), b = o('div', 'duel-side opp');
     a.append(av(S.uid, 44), o('span', 'duel-nm', 'You')); b.append(av(oppId(), 44), o('span', 'duel-nm', oppName())); vs.append(a, o('b', 'duel-x2', 'VS'), b);
     put(o('p', 'eyebrow', 'Duel found'), vs, cfgChips(D.doc), n, o('p', 'muted', 'Get ready\u2026'));
@@ -7854,7 +7872,7 @@ const Duel = (() => {
     bump(D.oppSc, r.c); D.oppSub.textContent = `${r.n}/${total()} done`;
   }
   function ask() {
-    clearInterval(D.timer);
+    clearInterval(D.timer); clearInterval(D.scT); box && box.classList.remove('d-out', 'flash-ok', 'flash-bad');
     const id = D.doc.qids[D.idx]; if (!id) return finish();
     const q = App.questionById(id);
     if (!q) { D.me.n++; D.me.ms += secs() * 1000; D.log.push({ id, key: null, ok: false }); D.idx++; return ask(); }
@@ -7888,16 +7906,20 @@ const Duel = (() => {
       box.querySelectorAll('.option').forEach(b => { b.disabled = true; });
       const wrongBtn = box.querySelector(`.option[data-key="${key}"]`);
       if (wrongBtn) wrongBtn.classList.add('is-wrong');
-      D.fb.textContent = '\u2753 Wrong pick! Use a Second Chance to try again, or move on.';
+      const WAIT = 20; let left = WAIT;
+      const msg = () => { D.fb.textContent = `\u2753 Wrong pick! Use a Second Chance or move on (${left}s)`; D.fb.className = 'duel-fb bad'; };
+      msg(); box.classList.remove('flash-ok', 'flash-bad'); void box.offsetWidth; box.classList.add('flash-bad'); D.streak = 0;
       const choice = document.createElement('div'); choice.className = 'duel-choice';
+      const bar = document.createElement('div'); bar.className = 'sc-bar'; const barIn = document.createElement('span'); barIn.style.animationDuration = WAIT + 's'; bar.append(barIn);
       const scBtn = document.createElement('button');
       scBtn.className = 'btn btn-primary btn-sm'; scBtn.type = 'button';
       scBtn.textContent = `\u{1F3AF} Use Second Chance (${S.doc.p50} left)`;
       scBtn.onclick = () => {
+        clearInterval(D.scT);
         D.used++; S.doc = { ...S.doc, p50: S.doc.p50 - 1 };
         S.db && S.db.doc('players/' + S.uid).set({ p50: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(() => {});
-        choice.remove();
-        D.fb.textContent = '\u{1F3AF} Pick again \u2014 no hints, choose wisely!';
+        choice.remove(); bar.remove();
+        D.fb.textContent = '\u{1F3AF} Pick again \u2014 no hints, choose wisely!'; D.fb.className = 'duel-fb';
         box.querySelectorAll('.option').forEach(b => {
           if (b.dataset.key === key) return;             // the wrong one stays crossed out
           b.disabled = false; b.onclick = () => answer(b.dataset.key, true);
@@ -7906,8 +7928,10 @@ const Duel = (() => {
       };
       const nextBtn = document.createElement('button');
       nextBtn.className = 'btn btn-ghost btn-sm'; nextBtn.type = 'button'; nextBtn.textContent = 'Next \u2192';
-      nextBtn.onclick = () => { choice.remove(); D.locked = false; answer(key, true); };   // keep the wrong answer and move on
-      choice.append(scBtn, nextBtn); D.fb.after(choice);
+      nextBtn.onclick = () => { clearInterval(D.scT); choice.remove(); bar.remove(); D.locked = false; answer(key, true); };   // keep the wrong answer and move on
+      clearInterval(D.scT);
+      D.scT = setInterval(() => { left--; if (left <= 0) nextBtn.onclick(); else msg(); }, 1000);   // nobody chose: go to the next question
+      choice.append(scBtn, nextBtn); D.fb.after(choice); choice.after(bar);
       return;
     }
 
@@ -7916,8 +7940,13 @@ const Duel = (() => {
     box.querySelectorAll('.option').forEach(b => { b.disabled = true; b.classList.add(b.dataset.key === q.correct ? 'is-correct' : b.dataset.key === key ? 'is-wrong' : 'is-dim'); });
     const right = (q.options.find(x => x.key === q.correct) || {}).text;
     D.dots[D.idx].className = 'duel-dot ' + (ok ? 'ok' : 'bad');
+    D.streak = ok ? (D.streak || 0) + 1 : 0;
+    box.classList.remove('flash-ok', 'flash-bad'); void box.offsetWidth; box.classList.add(ok ? 'flash-ok' : 'flash-bad');
+    if (ok) { const pt = o('span', 'duel-plus', D.streak > 1 ? `+1  \u{1F525}\u00D7${D.streak}` : '+1'); box.append(pt); setTimeout(() => pt.remove(), 1000); }
+    D.fb.className = 'duel-fb ' + (ok ? 'good' : 'bad');
     D.fb.textContent = ok ? '\u2713 Correct!' : key === null ? `\u23F1 Time\u2019s up. Answer: ${right}` : `\u2717 Not quite. Answer: ${right}`;
     buzz(ok ? 25 : [60, 40, 60]); paintScore(); push();
+    setTimeout(() => { if (D.code === tok && box) box.classList.add('d-out'); }, 850);
     setTimeout(() => { if (D.code !== tok || !D.doc) return; D.idx++; ask(); }, 1100);
   }
   function finish() { D.me.done = true; D.finAt = Date.now(); push(); step(); }
@@ -7929,10 +7958,25 @@ const Duel = (() => {
       o('p', 'muted', `Waiting for ${oppName()} to finish${r ? ` (${r.n}/${total()} answered)` : ''}\u2026`), row(btn('Leave', 'btn-ghost btn-sm', () => close())));
   }
   function confetti() {
-    const host = document.getElementById('duel-modal'); if (!host) return;
-    const wrap = o('div', 'confetti'); const bits = ['\u{1F389}', '\u2728', '\u{1F38A}', '\u2B50', '\u{1F31F}'];
-    for (let i = 0; i < 26; i++) { const c = o('span', '', bits[i % bits.length]); c.style.cssText = `left:${Math.random() * 100}%;--dx:${Math.round(Math.random() * 120 - 60)}px;--d:${(1.6 + Math.random() * 1.6).toFixed(2)}s;--dl:${(Math.random() * .6).toFixed(2)}s;font-size:${16 + Math.round(Math.random() * 14)}px`; wrap.append(c); }
-    host.append(wrap); setTimeout(() => wrap.remove(), 3800);
+    const cv = document.createElement('canvas'); cv.className = 'confetti-cv'; cv.width = innerWidth; cv.height = innerHeight; document.body.append(cv);
+    const ctx = cv.getContext('2d'), cols = ['#f94144', '#f3722c', '#f9c74f', '#90be6d', '#43aa8b', '#4d96ff', '#b565e6', '#ff6bd6'], ps = [];
+    const burst = (x, ang, n) => { for (let i = 0; i < n; i++) { const a = ang + (Math.random() - .5) * .9, v = 9 + Math.random() * 11; ps.push({ x, y: innerHeight * .75, vx: Math.cos(a) * v, vy: Math.sin(a) * v, w: 6 + Math.random() * 7, h: 4 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[i % cols.length], life: 0 }); } };
+    burst(0, -Math.PI / 3, 90); burst(innerWidth, -Math.PI * 2 / 3, 90);
+    setTimeout(() => { burst(innerWidth * .25, -Math.PI / 2, 50); burst(innerWidth * .75, -Math.PI / 2, 50); }, 450);
+    for (let i = 0; i < 70; i++) ps.push({ x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * .6, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, w: 6 + Math.random() * 6, h: 4 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .3, c: cols[i % cols.length], life: 0 });
+    let t0 = performance.now(), raf;
+    const frame = t => {
+      const dt = Math.min(2, (t - t0) / 16.7); t0 = t; ctx.clearRect(0, 0, cv.width, cv.height);
+      ps.forEach(p => { p.vy += .32 * dt; p.vx *= .995; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; p.life += dt; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = Math.max(0, Math.min(1, 1 - (p.life - 150) / 70)); ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore(); });
+      if (ps.some(p => p.life < 220 && p.y < cv.height + 40)) raf = requestAnimationFrame(frame); else cv.remove();
+    };
+    raf = requestAnimationFrame(frame); setTimeout(() => { cancelAnimationFrame(raf); cv.remove(); }, 6000);
+  }
+  function countUp() {
+    box && box.querySelectorAll('.duel-score strong').forEach(el => {
+      const m = /^(\d+)\/(\d+)$/.exec(el.textContent); if (!m) return; const to = +m[1], n = m[2], t0 = performance.now();
+      const f = t => { const k = Math.min(1, (t - t0) / 900); el.textContent = `${Math.round(to * k)}/${n}`; if (k < 1) requestAnimationFrame(f); }; el.textContent = `0/${n}`; requestAnimationFrame(f);
+    });
   }
   function result(r) {
     const me = D.me, opp = r || { c: 0, n: 0, ms: 0, done: false }, n = total();
@@ -7949,11 +7993,11 @@ const Duel = (() => {
       it.append(o('span', '', `Correct: ${txt(q.correct)}`)); if (q.explanation) it.append(o('span', 'muted', q.explanation)); rev.append(it);
     });
     const d = D.doc, cfg = { subject: d.subject, len: n, secs: secs(), vis: d.vis || 'public' };
-    if (!tie && win) setTimeout(confetti, 250);
     put(o('p', 'eyebrow', 'Duel result'), o('h2', '', tie ? 'It\u2019s a draw!' : win ? 'You won! \u{1F3C6}' : `${oppName()} wins this one`), sc,
       chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, cn ? `\u{1F4B0} +${cn} coins` : ''),
       o('p', 'muted', opp.done ? 'Most correct answers wins; faster total time breaks ties.' : `${oppName()} didn\u2019t finish, so unanswered questions count as wrong.`),
       rev, row(btn('Rematch', 'btn-primary btn-sm', () => { close(); D.cfg = cfg; create(); }), btn('Close', 'btn-ghost btn-sm', () => close())));
+    countUp(); if (!tie && win) { buzz([40, 30, 40, 30, 90]); setTimeout(confetti, 300); }
   }
   async function create() {
     if (!S.db) return warn('Duels need an internet connection.');
