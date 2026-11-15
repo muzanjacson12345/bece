@@ -1355,6 +1355,50 @@ html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(-
 .cf-host { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9999; contain: strict; }
 .cf-host i { position: absolute; left: 0; top: 0; will-change: transform, opacity; opacity: 0; }
 
+/* ---------- Admin layer ---------- */
+.board-admin { background: #1f3a5f; color: #fff; }
+.adm-bantag { background: #d9534f; color: #fff; }
+.pc-id { margin: 0; padding: 10px 18px 16px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pc-id code { font-size: 11px; padding: 2px 6px; border-radius: 6px; background: var(--surface-2); word-break: break-all; user-select: all; }
+.adm { padding: 18px; display: grid; gap: 14px; }
+.adm-subs { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); }
+.adm-subs button { padding-left: 4px; padding-right: 4px; font-size: 13px; }
+.adm-search, .adm-amt, .adm-ta, .adm-sel { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: inherit; }
+.adm-ta { resize: vertical; }
+.adm-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.adm-list { display: grid; gap: 8px; margin-top: 10px; }
+.adm-row { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.adm-row.is-open { border-color: var(--accent); }
+.adm-head { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; text-align: left; }
+.adm-who { display: grid; min-width: 0; flex: 1; }
+.adm-who strong { overflow: hidden; text-overflow: ellipsis; }
+.adm-sub { font-size: 12px; color: var(--muted); }
+.adm-chev { color: var(--muted); font-size: 11px; }
+.adm-ctl { display: grid; gap: 8px; padding: 4px 12px 14px; animation: dRise .25s ease-out both; }
+.adm-lbl { font-size: 12px; font-weight: 700; color: var(--muted); }
+.adm-btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.adm-danger { color: #d9534f; border-color: #d9534f; }
+.adm-info { margin: 0; font-size: 12px; color: var(--muted); word-break: break-all; }
+.adm-top { margin-top: 14px; } .adm-top h4 { margin: 0 0 6px; font-size: 14px; }
+.adm-top ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; counter-reset: r; }
+.adm-top li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 8px; background: var(--surface-2); font-size: 14px; }
+.ann-bar { position: sticky; top: var(--nav-h, 58px); z-index: 30; display: flex; align-items: center; gap: 10px; padding: 10px clamp(14px, 4vw, 32px); background: var(--accent-soft); color: var(--ink); border-bottom: 1px solid var(--line-strong); animation: dRise .35s ease-out both; }
+.ann-bar[data-kind="warn"] { background: #fff1d6; color: #5a3b00; } .ann-bar[data-kind="event"] { background: #e6f4ea; }
+html[data-theme='dark'] .ann-bar[data-kind="warn"] { background: #4a3710; color: #ffe2a6; } html[data-theme='dark'] .ann-bar[data-kind="event"] { background: #1d3a27; }
+.ann-ic { font-size: 20px; flex: none; } .ann-txt { flex: 1; font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+.ann-x { flex: none; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; }
+.ban-ov { position: fixed; inset: 0; z-index: 800; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, .7); }
+.ban-card { display: grid; gap: 12px; text-align: center; max-width: 380px; }
+
+.adm .cz-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.adm-hact { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.adm-timer { font-size: 12px; font-weight: 700; color: var(--muted); } .adm-timer.is-low { color: #d9534f; }
+.pin-ov { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, .65); animation: dRise .2s ease-out both; }
+.pin-card { width: min(100%, 340px); display: grid; gap: 12px; padding: 22px; animation: dBoxIn .3s cubic-bezier(.2, .8, .2, 1) both; }
+.pin-card h3 { margin: 0; } .pin-card p { margin: 0; }
+.pin-msg { min-height: 18px; font-size: 13px; color: #d9534f; font-weight: 600; }
+.pin-row { justify-content: flex-end; }
+
 /* ---------- Photo cropper ---------- */
 .crop-ov { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.6); }
 .crop-card { width: min(100%, 372px); display: grid; gap: 12px; justify-items: center; padding: 20px; text-align: center; max-height: 100%; overflow: auto; }
@@ -7153,7 +7197,7 @@ const yesterday = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
 const lv = e => ({ level: Math.floor(e / LVL) + 1, into: e % LVL });
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const ago = t => { const s = Math.max(0, (Date.now() - t) / 1e3); return s < 60 ? 'just now' : s < 3600 ? `${Math.floor(s / 60)}m ago` : s < 86400 ? `${Math.floor(s / 3600)}h ago` : `${Math.floor(s / 86400)}d ago`; };
-const S = { board: 'day', db: null, user: null, uid: null, doc: null, players: [], names: {}, daily: null, ready: false };
+const S = { board: 'day', db: null, user: null, uid: null, doc: null, players: [], names: {}, daily: null, ready: false, admins: new Set(), badgeMap: new Map(), adminAt: 0, pinFails: 0, pinLock: 0, bans: new Map(), isAdmin: false, banned: false, ann: null };
 
 function makeDaily() {
   const d = today(); let h = 0; for (const c of d) h = (h * 31 + c.charCodeAt(0)) >>> 0;
@@ -7304,6 +7348,7 @@ function showFriend(p) {
   const m = o('div', 'friend-modal'); m.id = 'friend-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
   const box = o('div', 'card friend-box'), title = o('h2', '', nameOf(p.id));
   if (p.id === S.uid) title.append(o('span', 'you-tag', 'you'));
+  if (S.admins.has(p.id)) title.append(' ', adminBadge());
   const tiles = o('div', 'stat-tiles');
   tiles.append(tile(`Lv ${level}`, `${LVL - into} EXP to next`), tile(String(tExp), 'Total EXP'), tile(String(wExp), 'EXP this week'), tile(`\u{1F525} ${live ? p.streak || 0 : 0}`, `Day streak \u00B7 best ${p.bestStreak || 0}`), tile(allRank, 'All-time rank'), tile(weekRank, 'Weekly rank'), tile(`${p.duelW || 0}-${p.duelL || 0}-${p.duelD || 0}`, 'Duels W-L-D'));
   const mt = o('progress', 'meter'); mt.max = LVL; mt.value = into;
@@ -7448,7 +7493,7 @@ function buildProfileCard() {
       if (st.lastAv !== null) { av.classList.remove('pop'); void av.offsetWidth; av.classList.add('pop'); }
       st.lastAv = key;
     }
-    nameEl.textContent = nameOf(S.uid); bioEl.textContent = d.bio || '';
+    nameEl.textContent = nameOf(S.uid); if (S.isAdmin) nameEl.append(' ', adminBadge()); bioEl.textContent = d.bio || '';
   }
 
   /* --- customiser --- */
@@ -7459,6 +7504,7 @@ function buildProfileCard() {
   const tabs = o('div', 'segmented cz-tabs'), panel = o('div', 'cz-panel');
   tabs.setAttribute('role', 'tablist'); panel.setAttribute('role', 'tabpanel');
   cz.append(hd, tabs, panel); el.append(cz);
+
   const STATUS = { saved: 'All changes saved', saving: 'Saving\u2026', error: 'Couldn\u2019t save \u00B7 will retry' };
   const setStatus = s => { status.dataset.state = s; status.textContent = STATUS[s]; };
 
@@ -7638,12 +7684,14 @@ function buildProfileCard() {
 function showFtab() {
   if (!S.frWrap) return;
   S.boardHost.hidden = S.ftab !== 'board'; Duel.card().hidden = S.ftab !== 'duels'; Shop.el().hidden = S.ftab !== 'shop'; S.pc.el.hidden = S.ftab !== 'me';
+  Adm.sync();
   S.ftabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.k === S.ftab)));
 }
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-open-duels]')) { S.ftab = 'duels'; showFtab(); } });
 function renderFriends() {
   const body = $('friends-body'); if (!body || App.screen !== 'friends') return;
   if (!S.db) { const c = o('div', 'card friends-gate'); c.append(o('h2', '', 'Friends board unavailable'), o('p', 'muted', 'Check your internet connection and reload the page to join the board. Quizzes and notes still work.')); body.replaceChildren(c); return; }
+  if (S.banned) { body.replaceChildren(banCard()); return; }
   if (!S.ready) { const w = o('div', 'skeleton-wrap'); for (let i = 0; i < 3; i++) w.append(o('div', 'skeleton')); body.replaceChildren(w); return; }
   const m = view(), base = S.players.some(p => p.id === S.uid) ? S.players : [...S.players, { id: S.uid, ...(S.doc || {}) }], wk = weekStart(), td = today(), B = S.board;
   const val = p => B === 'day' ? (p.dayKey === td ? p.dayExp || 0 : 0) : B === 'week' ? (p.weekKey === wk ? p.weekExp || 0 : 0) : (p.totalExp || 0);
@@ -7743,7 +7791,8 @@ const SHOP = {
 };
 const SHOP_TITLES = Object.fromEntries((SHOP.titles || []).map(t => [t.id, t]));
 function tint(el, p) { /* name colours removed — kept for compat */ return el; }
-function addTitleBadge(container, p) { const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name; container.append(badge); } }
+function adminBadge() { const b = document.createElement('span'); b.className = 'board-title board-admin'; b.textContent = '\u{1F6E1}\uFE0F Admin'; return b; }
+function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge()); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name; container.append(badge); } }
 const Shop = (() => {
   let el = null, bal = null, body = null;
   const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
@@ -8070,6 +8119,7 @@ const Duel = (() => {
     countUp(); if (!tie && win) { buzz([40, 30, 40, 30, 90]); setTimeout(confetti, 300); }
   }
   async function create() {
+    if (S.banned) return warn('You are banned from duels.');
     if (!S.db) return warn('Duels need an internet connection.');
     if (D.code) close();
     const c = D.cfg, all = c.subject === 'mixed' ? Object.values(questionsDB).flat() : (questionsDB[c.subject] || []);
@@ -8084,6 +8134,7 @@ const Duel = (() => {
   }
   async function join(code) {
     code = (code || '').trim().toUpperCase();
+    if (S.banned) return warn('You are banned from duels.');
     if (code.length < 4) return App.toast('Enter the duel code first.');
     if (!S.db) return warn('Duels need an internet connection.');
     if (D.code) close();
@@ -8161,6 +8212,207 @@ const Duel = (() => {
   return { card, start, paint };
 })();
 
+/* ===== Overseer / admin layer ===== */
+// Who is an admin, who is banned and the current announcement all live in Firestore (admins/, bans/, announcements/current).
+// The buttons below are only the interface: the real protection is the Firestore rules (see firestore.rules).
+function banCard() {
+  const c = o('div', 'card friends-gate'), b = S.bans.get(S.uid) || {};
+  c.append(o('h2', '', '\u{1F6AB} You\u2019re banned from the friends board'), o('p', 'muted', b.reason ? `Reason: ${b.reason}` : 'An admin has turned off the board, duels and coins for this account.'), o('p', 'muted', 'Quizzes and notes still work on your device.'));
+  return c;
+}
+function applyBan() {
+  let ov = $('ban-ov');
+  if (!S.banned) { if (ov) ov.remove(); return; }
+  if (ov || S.banDismissed) return;
+  ov = o('div', 'ban-ov'); ov.id = 'ban-ov'; ov.setAttribute('role', 'alertdialog');
+  const c = banCard(); c.classList.add('ban-card'); const go = o('button', 'btn btn-primary', 'Keep studying'); go.type = 'button'; go.onclick = () => { S.banDismissed = true; ov.remove(); };
+  c.append(go); ov.append(c); document.body.append(ov);
+  renderFriends();
+}
+const ANN_ICON = { info: '\u{1F4E2}', event: '\u{1F389}', warn: '\u26A0\uFE0F' };
+const annSeen = id => { try { return localStorage.getItem('ann-seen') === id; } catch { return false; } };
+function showAnn() {
+  let bar = $('ann-bar'); const a = S.ann, live = a && a.text && (!a.expires || a.expires > Date.now()) && !annSeen(a.id);
+  if (!live) { if (bar) bar.remove(); return; }
+  if (!bar) { bar = o('div', 'ann-bar'); bar.id = 'ann-bar'; bar.setAttribute('role', 'status'); const m = $('main'); m.parentNode.insertBefore(bar, m); }
+  const x = o('button', 'ann-x', '\u2715'); x.type = 'button'; x.setAttribute('aria-label', 'Dismiss announcement'); x.onclick = () => { try { localStorage.setItem('ann-seen', a.id); } catch {} showAnn(); };
+  bar.dataset.kind = a.kind || 'info';
+  bar.replaceChildren(o('span', 'ann-ic', ANN_ICON[a.kind] || ANN_ICON.info), o('div', 'ann-txt', a.text), x);
+}
+setInterval(() => showAnn(), 60000);
+
+/* ===== Secret admin unlock: PIN -> 2-hour session ===== */
+const ADMIN_MS = 2 * 3600 * 1000;
+function refreshAdmin(force) {
+  const now = Date.now(), was = S.isAdmin, oldKey = [...S.admins].sort().join();
+  S.isAdmin = !!S.adminAt && now < S.adminAt + ADMIN_MS;
+  S.admins = new Set([...S.badgeMap].filter(([, u]) => u > now).map(([id]) => id)); if (S.isAdmin && S.badgeMap.has(S.uid)) S.admins.add(S.uid);
+  if (was && !S.isAdmin) App.toast('Admin session ended. Enter the PIN again to renew.', 'warn');
+  if (was !== S.isAdmin || force || oldKey !== [...S.admins].sort().join()) { renderAccount(); renderFriends(); showFtab(); }
+  if (S.isAdmin) Adm.tick();
+}
+async function adminLock() {
+  try { await S.db.doc('adminBadges/' + S.uid).delete(); } catch {}
+  try { await S.db.doc('adminSessions/' + S.uid).delete(); } catch {}
+  S.adminAt = 0; if (S.ftab === 'admin') S.ftab = 'board'; refreshAdmin(true); App.toast('Admin locked.', 'good');
+}
+function openPin(renew) {
+  if (!S.db || !S.uid) return App.toast('You need to be online to unlock admin.', 'warn');
+  if (S.isAdmin && !renew) { S.ftab = 'admin'; App.navigate('friends'); showFtab(); return; }
+  if ($('pin-ov')) return;
+  const ov = o('div', 'pin-ov'); ov.id = 'pin-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Admin access');
+  const c = o('form', 'card pin-card'), inp = document.createElement('input'), msg = o('p', 'pin-msg'), go = o('button', 'btn btn-primary', 'Unlock'), no = o('button', 'btn btn-ghost', 'Cancel');
+  inp.type = 'password'; inp.className = 'adm-search pin-in'; inp.placeholder = 'Admin PIN'; inp.autocomplete = 'off'; inp.setAttribute('autocapitalize', 'off'); inp.setAttribute('aria-label', 'Admin PIN');
+  go.type = 'submit'; no.type = 'button'; msg.setAttribute('role', 'alert');
+  const close = () => { document.removeEventListener('keydown', esc); ov.remove(); }, esc = e => { if (e.key === 'Escape') close(); };
+  no.onclick = close; document.addEventListener('keydown', esc); ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  c.onsubmit = async e => {
+    e.preventDefault(); const pin = inp.value.trim(); if (!pin) return;
+    if (Date.now() < S.pinLock) { msg.textContent = `Too many tries. Wait ${Math.ceil((S.pinLock - Date.now()) / 60000)} min.`; return; }
+    go.disabled = true; go.textContent = 'Checking\u2026'; msg.textContent = '';
+    try {
+      const ref = S.db.doc('adminSessions/' + S.uid), F = firebase.firestore;
+      await ref.set({ pin, at: F.FieldValue.serverTimestamp() });             // the server rules compare the PIN; it is never stored in this page
+      const snap = await ref.get({ source: 'server' }), at = snap.data().at.toMillis();
+      await S.db.doc('adminBadges/' + S.uid).set({ until: F.Timestamp.fromMillis(at + ADMIN_MS) }).catch(() => {});
+      S.pinFails = 0; S.adminAt = at; close(); refreshAdmin(true); S.ftab = 'admin'; App.navigate('friends'); showFtab(); App.toast('Admin unlocked for 2 hours.', 'good');
+    } catch (er) {
+      go.disabled = false; go.textContent = 'Unlock'; inp.value = ''; inp.focus();
+      if (er && er.code === 'permission-denied') { S.pinFails++; if (S.pinFails >= 5) { S.pinLock = Date.now() + 5 * 60000; S.pinFails = 0; msg.textContent = 'Too many wrong tries. Locked for 5 minutes.'; } else msg.textContent = `Wrong PIN (${5 - S.pinFails} tries left). If it is right, the admin rules may not be set up yet.`; }
+      else msg.textContent = 'Couldn\u2019t check the PIN: ' + ((er && er.message) || 'network problem');
+    }
+  };
+  c.append(o('h3', '', '\u{1F6E1}\uFE0F Admin access'), o('p', 'muted', 'Enter the admin PIN. Access lasts 2 hours, then locks itself.'), inp, msg, o('div', 'cz-row pin-row', ...[no, go]));
+  ov.append(c); document.body.append(ov); setTimeout(() => inp.focus(), 50);
+}
+(() => {
+  let taps = [];
+  const brand = document.querySelector('.brand');
+  if (brand) brand.addEventListener('click', e => { const t = Date.now(); taps = taps.filter(x => t - x < 2500); taps.push(t); if (taps.length >= 5) { taps = []; e.preventDefault(); openPin(); } });   // tap the logo 5 times
+  document.addEventListener('keydown', e => { if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) { e.preventDefault(); openPin(); } });                                   // or Ctrl+Shift+A on a computer
+})();
+
+const Adm = (() => {
+  const st = { sub: 'players', q: '', open: null, amt: 10, kind: 'info', ttl: 86400000 };
+  let root = null, body = null, subs = null, timer = null;
+  const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
+  const ok = m => App.toast(m, 'good');
+  const fail = e => App.toast(e && e.code === 'permission-denied' ? 'Blocked by the Firestore rules. Add the admin rules first (see firestore.rules).' : 'Failed: ' + ((e && e.message) || 'unknown error'), 'warn');
+  const pdoc = id => S.db.doc('players/' + id);
+  const protectedP = p => S.admins.has(p.id);
+
+  async function adjust(p, field, delta, label) {
+    const cur = Number(p[field]) || 0, next = Math.max(0, cur + delta);
+    try { await pdoc(p.id).set({ [field]: next }, { merge: true }); ok(`${nameOf(p.id)}: ${label} ${cur} \u2192 ${next}`); } catch (e) { fail(e); }
+  }
+  async function reset(p) {
+    if (!confirm(`Reset ${nameOf(p.id)}? EXP, coins, streak, items and duel record go back to zero. Name and look stay.`)) return;
+    const keep = {}; ['displayName', 'avatar', 'photo', 'color', 'bio'].forEach(k => { if (p[k]) keep[k] = p[k]; });
+    try { await pdoc(p.id).set(keep); ok(`${nameOf(p.id)} was reset.`); } catch (e) { fail(e); }
+  }
+  async function remove(p) {
+    if (!confirm(`Delete ${nameOf(p.id)} from the board? If they open the app again they come back with a blank profile. Ban them too to stop that.`)) return;
+    try { await pdoc(p.id).delete(); st.open = null; ok('Player deleted.'); } catch (e) { fail(e); }
+  }
+  async function ban(p) {
+    const reason = prompt(`Ban ${nameOf(p.id)}? Add a reason they will see (optional):`, ''); if (reason === null) return;
+    try { await S.db.doc('bans/' + p.id).set({ at: Date.now(), by: S.uid, name: nameOf(p.id), reason: reason.trim().slice(0, 120) }); ok(`${nameOf(p.id)} is banned.`); } catch (e) { fail(e); }
+  }
+  async function unban(p) { try { await S.db.doc('bans/' + p.id).delete(); ok(`${nameOf(p.id)} is unbanned.`); } catch (e) { fail(e); } }
+
+  function controls(p) {
+    const w = o('div', 'adm-ctl'), inp = document.createElement('input'); inp.type = 'number'; inp.min = '1'; inp.value = st.amt; inp.inputMode = 'numeric'; inp.className = 'adm-amt'; inp.setAttribute('aria-label', 'Amount');
+    inp.oninput = () => { st.amt = Math.max(1, Math.floor(+inp.value) || 1); };
+    const n = () => Math.max(1, Math.floor(+inp.value) || 1);
+    const g1 = o('div', 'adm-btns'); g1.append(
+      btn('+ \u{1F4B0} coins', 'btn-primary btn-sm', () => adjust(p, 'coins', n(), 'coins')), btn('\u2212 \u{1F4B0} coins', 'btn-ghost btn-sm', () => adjust(p, 'coins', -n(), 'coins')),
+      btn('+ EXP', 'btn-primary btn-sm', () => adjust(p, 'totalExp', n(), 'EXP')), btn('\u2212 EXP', 'btn-ghost btn-sm', () => adjust(p, 'totalExp', -n(), 'EXP')));
+    const banned = S.bans.has(p.id), g2 = o('div', 'adm-btns');
+    const rb = btn('Reset progress', 'btn-ghost btn-sm', () => reset(p)), bb = banned ? btn('Unban', 'btn-primary btn-sm', () => unban(p)) : btn('\u{1F6AB} Ban', 'btn-ghost btn-sm adm-danger', () => ban(p)), db = btn('\u{1F5D1}\uFE0F Delete', 'btn-ghost btn-sm adm-danger', () => remove(p));
+    if (protectedP(p)) [rb, db].forEach(b => { b.disabled = true; }), banned || (bb.disabled = true);
+    g2.append(rb, bb, db);
+    const live = p.lastDay === today() || p.lastDay === yesterday();
+    const info = o('p', 'adm-info', `ID ${p.id} \u00B7 last active ${p.lastDay || 'never'} \u00B7 \u{1F525} ${live ? p.streak || 0 : 0} \u00B7 duels ${p.duelW || 0}W-${p.duelL || 0}L-${p.duelD || 0}D \u00B7 Second Chances ${p.p50 || 0}`);
+    w.append(o('label', 'adm-lbl', 'Amount'), inp, g1, g2, info);
+    if (protectedP(p)) w.append(o('p', 'adm-info', '\u{1F6E1}\uFE0F Admins are protected from reset, ban and delete.'));
+    return w;
+  }
+
+  function players() {
+    const w = o('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search a name or ID\u2026'; q.value = st.q; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search players');
+    q.oninput = () => { st.q = q.value.trim().toLowerCase(); fill(); };
+    const list = o('div', 'adm-list');
+    function fill() {
+      const ps = S.players.filter(p => !st.q || `${nameOf(p.id)} ${p.id}`.toLowerCase().includes(st.q)).sort((a, b) => (b.totalExp || 0) - (a.totalExp || 0));
+      list.replaceChildren(...(ps.length ? ps.map(p => {
+        const open = st.open === p.id, row = o('div', 'adm-row' + (open ? ' is-open' : '')), h = o('button', 'adm-head'); h.type = 'button';
+        const t = o('div', 'adm-who'), nm = o('strong', '', nameOf(p.id)); if (p.id === S.uid) nm.append(' ', o('span', 'you-tag', 'you')); if (S.admins.has(p.id)) nm.append(' ', adminBadge()); if (S.bans.has(p.id)) nm.append(' ', o('span', 'board-title adm-bantag', 'Banned'));
+        t.append(nm, o('span', 'adm-sub', `Lv ${lv(p.totalExp || 0).level} \u00B7 ${p.totalExp || 0} EXP \u00B7 \u{1F4B0} ${p.coins || 0}`));
+        h.append(bubble(p, 36), t, o('span', 'adm-chev', open ? '\u25B2' : '\u25BC')); h.onclick = () => { st.open = open ? null : p.id; fill(); };
+        row.append(h); if (open) row.append(controls(p)); return row;
+      }) : [o('p', 'muted', 'No players match.')]));
+    }
+    fill(); w.append(q, list); return w;
+  }
+
+  function stats() {
+    const ps = S.players, td = today(), wk = weekStart(), sum = f => ps.reduce((a, p) => a + (Number(f(p)) || 0), 0);
+    const tile = (a, b) => { const x = o('div', 'stat-tile'); x.append(o('strong', '', String(a)), o('span', '', b)); return x; };
+    const duels = Math.round(sum(p => (p.duelW || 0) + (p.duelL || 0) + (p.duelD || 0)) / 2);
+    const tiles = o('div', 'stat-tiles');
+    tiles.append(tile(ps.length, 'Players'), tile(ps.filter(p => p.lastDay === td).length, 'Active today'), tile(ps.filter(p => p.weekKey === wk && (p.weekExp || 0) > 0).length, 'Active this week'),
+      tile(sum(p => p.totalExp), 'Total EXP'), tile(sum(p => p.coins), 'Coins in circulation'), tile(duels, 'Duels played'), tile(sum(p => p.dayKey === td ? p.dayExp : 0), 'EXP earned today'), tile(S.bans.size, 'Banned'), tile(S.admins.size, 'Admins'));
+    const top = (title, key, fmt) => { const c = o('div', 'adm-top'); c.append(o('h4', '', title)); const ol = o('ol'); [...ps].sort((a, b) => key(b) - key(a)).filter(p => key(p) > 0).slice(0, 5).forEach(p => { const li = o('li'); li.append(o('span', '', nameOf(p.id)), o('strong', '', fmt(key(p)))); ol.append(li); }); if (!ol.children.length) ol.append(o('li', 'muted', 'Nobody yet')); c.append(ol); return c; };
+    const w = o('div'); w.append(tiles, top('\u{1F3C6} Top EXP', p => p.totalExp || 0, v => v + ' EXP'), top('\u{1F4B0} Richest', p => p.coins || 0, v => '\u{1F4B0} ' + v), top('\u{1F525} Best streaks', p => p.bestStreak || 0, v => v + ' days'), top('\u2694\uFE0F Most duel wins', p => p.duelW || 0, v => v + ' wins'));
+    return w;
+  }
+
+  function announce() {
+    const w = o('div'), cur = S.ann, ta = document.createElement('textarea'); ta.maxLength = 280; ta.rows = 3; ta.placeholder = 'Write a message for everyone (max 280 characters)\u2026'; ta.className = 'adm-ta'; ta.setAttribute('aria-label', 'Announcement text');
+    const kind = document.createElement('select'), ttl = document.createElement('select'); kind.className = ttl.className = 'adm-sel';
+    [['info', '\u{1F4E2} Info'], ['event', '\u{1F389} Event'], ['warn', '\u26A0\uFE0F Warning']].forEach(([v, t]) => { const op = new Option(t, v); kind.append(op); }); kind.value = st.kind; kind.onchange = () => { st.kind = kind.value; };
+    [[3600000, 'Disappears in 1 hour'], [86400000, 'Disappears in 24 hours'], [604800000, 'Disappears in 7 days'], [0, 'Stays until I clear it']].forEach(([v, t]) => ttl.append(new Option(t, v))); ttl.value = String(st.ttl); ttl.onchange = () => { st.ttl = +ttl.value; };
+    const row = o('div', 'adm-btns');
+    row.append(btn('\u{1F4E3} Post to everyone', 'btn-primary btn-sm', async () => {
+      const text = ta.value.trim(); if (text.length < 3) return App.toast('Write a message first.', 'warn');
+      try { await S.db.doc('announcements/current').set({ id: Date.now().toString(36), text, kind: kind.value, at: Date.now(), expires: st.ttl ? Date.now() + st.ttl : 0, by: nameOf(S.uid) }); ta.value = ''; ok('Announcement posted.'); } catch (e) { fail(e); }
+    }), btn('Clear current', 'btn-ghost btn-sm', async () => { try { await S.db.doc('announcements/current').delete(); ok('Announcement cleared.'); } catch (e) { fail(e); } }));
+    w.append(ta, o('div', 'adm-two', ...[kind, ttl]), row, o('p', 'adm-info', cur && cur.text && (!cur.expires || cur.expires > Date.now()) ? `Live now: \u201C${cur.text}\u201D` : 'Nothing is live right now. Players can dismiss an announcement; a new one shows again.'));
+    return w;
+  }
+
+  function paint(force) {
+    if (!root) return;
+    if (!force && body && body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;   // don't wipe what you're typing
+    subs.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === st.sub)));
+    body.replaceChildren(st.sub === 'players' ? players() : st.sub === 'stats' ? stats() : announce());
+  }
+  function el() {
+    if (root) return root;
+    root = o('section', 'card adm'); root.hidden = true;
+    const hd = o('div', 'cz-head'), ht = o('div'); ht.append(o('p', 'eyebrow', 'Overseer'), o('h2', '', 'Admin panel')); hd.append(ht);
+    timer = o('span', 'adm-timer'); const act = o('div', 'adm-hact'); act.append(timer, btn('Renew', 'btn-ghost btn-sm', () => openPin(true)), btn('\u{1F512} Lock', 'btn-ghost btn-sm', () => adminLock())); hd.append(act);
+    subs = o('div', 'segmented segmented-full adm-subs'); subs.setAttribute('role', 'group');
+    [['players', '\u{1F465} Players'], ['stats', '\u{1F4CA} Stats'], ['announce', '\u{1F4E3} Announce']].forEach(([k, t]) => { const b = o('button', '', t); b.type = 'button'; b.dataset.k = k; b.onclick = () => { st.sub = k; paint(true); }; subs.append(b); });
+    body = o('div', 'adm-body'); root.append(hd, subs, body); return root;
+  }
+  function sync() {
+    if (!S.frWrap || !S.ftabs) return;
+    let b = S.ftabs.querySelector('[data-k="admin"]');
+    if (S.isAdmin && !b) { b = o('button', '', '\u{1F6E1}\uFE0F Admin'); b.type = 'button'; b.dataset.k = 'admin'; b.setAttribute('role', 'tab'); b.onclick = () => { S.ftab = 'admin'; showFtab(); }; S.ftabs.append(b); }
+    if (!S.isAdmin && b) { b.remove(); if (S.ftab === 'admin') S.ftab = 'board'; if (root) root.hidden = true; }
+    if (!S.isAdmin) return;
+    if (!el().parentNode) S.frWrap.append(root);
+    root.hidden = S.ftab !== 'admin'; if (!root.hidden) { paint(); tick(); }
+  }
+  function tick() {
+    if (!timer || !S.adminAt) return;
+    const left = Math.max(0, S.adminAt + ADMIN_MS - Date.now()), h = Math.floor(left / 3600000), m = Math.floor(left % 3600000 / 60000);
+    timer.textContent = `\u23F3 ${h ? h + 'h ' : ''}${m}m left`; timer.classList.toggle('is-low', left < 10 * 60000);
+  }
+  return { sync, paint, tick };
+})();
+
 async function init() {
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
@@ -8169,10 +8421,17 @@ async function init() {
   try {
     const fb = await connectFirebase();
     S.db = fb.db; S.uid = fb.uid; Duel.start();
+    // overseer layer: all optional; if the Firestore rules aren't set up yet these just stay empty
+    // admin = a PIN-unlocked session that lasts 2 hours (adminSessions/<uid>); adminBadges/<uid> shows the tag to everyone else
+    S.db.collection('adminBadges').onSnapshot(sn => { S.badgeMap = new Map(sn.docs.map(d => { const u = d.data().until; return [d.id, u && u.toMillis ? u.toMillis() : 0]; })); refreshAdmin(true); }, () => {});
+    S.db.doc('adminSessions/' + S.uid).onSnapshot(sn => { const d = sn.exists ? sn.data() : null; S.adminAt = d && d.at && d.at.toMillis ? d.at.toMillis() : 0; refreshAdmin(); }, () => {});
+    setInterval(() => refreshAdmin(), 15000);
+    S.db.collection('bans').onSnapshot(sn => { S.bans = new Map(sn.docs.map(d => [d.id, d.data()])); S.banned = S.bans.has(S.uid); applyBan(); renderFriends(); Adm.paint(); }, () => {});
+    S.db.doc('announcements/current').onSnapshot(sn => { S.ann = sn.exists ? sn.data() : null; showAnn(); }, () => {});
     S.db.collection('players').onSnapshot(async snap => {
       S.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const mine = S.players.find(p => p.id === S.uid); S.doc = mine ? { ...mine } : S.doc || {}; delete S.doc.id; if (S.pend) S.doc = { ...S.doc, ...S.pend };
-      S.ready = true; renderAccount(); renderDaily(); renderFriends();
+      S.ready = true; renderAccount(); renderDaily(); renderFriends(); Adm.paint();
       if (!S.asked && !(S.doc && S.doc.displayName)) {
         S.asked = true;
         setTimeout(() => {
