@@ -1247,6 +1247,66 @@ html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(-
 .board-title { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 20px; background: var(--accent-soft); color: var(--accent); margin-left: 5px; vertical-align: middle; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 
+.av { position: relative; }
+.av-badge { position: absolute; top: -4px; right: -6px; width: 1.5em; height: 1.5em; display: grid; place-items: center; font-size: max(13px, calc(var(--s) * .3)); line-height: 1; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 1.5px var(--av), 0 1px 3px rgba(0,0,0,.25); }
+.account-ph { position: relative; display: inline-flex; flex: none; }
+.account-badge { position: absolute; top: -6px; right: -7px; width: 15px; height: 15px; display: grid; place-items: center; font-size: 10px; line-height: 1; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 1px var(--line-strong); }
+/* keep the top-right account button inside the screen on phones */
+@media (max-width: 760px) {
+  .nav-inner { min-width: 0; }
+  .nav-tools { min-width: 0; flex: 1 1 auto; justify-content: flex-end; gap: 6px; }
+  .account-btn { min-width: 0; flex: 0 1 auto; gap: 6px; padding: 6px 10px; overflow: hidden; }
+  .account-name { min-width: 0; flex: 0 1 auto; max-width: min(110px, 26vw); }
+  .account-level, .account-streak, .account-avatar { flex: none; }
+}
+@media (max-width: 520px) { .brand-text { display: none; } .account-streak { display: none; } .account-name { max-width: min(120px, 34vw); } }
+
+/* ---------- Duel animations ---------- */
+@keyframes dBoxIn { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes dSlideIn { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: none; } }
+@keyframes dRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes dVsL { from { opacity: 0; transform: translateX(-40px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes dVsR { from { opacity: 0; transform: translateX(40px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes dVsX { 0% { opacity: 0; transform: translate(-50%, -50%) scale(2.4) rotate(-12deg); } 70% { transform: translate(-50%, -50%) scale(.9); } 100% { opacity: 1; transform: translate(-50%, -50%); } }
+@keyframes dTick { 0% { transform: scale(1.7); opacity: .2; } 60% { transform: scale(.94); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes dShake { 0%, 100% { transform: none; } 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+@keyframes dGlow { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 55%, transparent); transform: scale(1); } 40% { transform: scale(1.025); } 100% { box-shadow: 0 0 0 14px transparent; transform: scale(1); } }
+@keyframes dBump { 0% { transform: scale(1); } 40% { transform: scale(1.5); color: var(--primary); } 100% { transform: scale(1); } }
+@keyframes dDot { 0% { transform: scale(.4); } 60% { transform: scale(1.5); } 100% { transform: scale(1); } }
+@keyframes dLow { 50% { opacity: .55; } }
+@keyframes dTrophy { 0% { opacity: 0; transform: scale(.5) rotate(-8deg); } 60% { transform: scale(1.08) rotate(2deg); } 100% { opacity: 1; transform: none; } }
+@keyframes dFall { 0% { transform: translate(0, -30px) rotate(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(var(--dx), 105vh) rotate(540deg); opacity: .9; } }
+.duel-modal { animation: dRise .25s ease-out both; }
+.duel-box { animation: dBoxIn .35s cubic-bezier(.2, .8, .2, 1) both; }
+.duel-box .duel-q { animation: dRise .35s ease-out both; }
+.duel-opts .option { animation: dSlideIn .35s ease-out both; }
+.duel-opts .option:nth-child(2) { animation-delay: .06s; } .duel-opts .option:nth-child(3) { animation-delay: .12s; } .duel-opts .option:nth-child(4) { animation-delay: .18s; } .duel-opts .option:nth-child(5) { animation-delay: .24s; }
+.duel-opts .option:not(:disabled):active { transform: scale(.98); }
+.duel-opts .option.is-correct { animation: dGlow .6s ease-out; }
+.duel-opts .option.is-wrong { animation: dShake .45s ease-out; }
+.duel-fb:not(:empty) { animation: dRise .25s ease-out both; }
+.duel-choice { animation: dRise .3s ease-out both; }
+.duel-dot.ok, .duel-dot.bad { animation: dDot .4s ease-out; }
+.duel-dot.cur { animation: dLow 1.2s ease-in-out infinite; }
+.duel-track.is-low span { animation: dLow .6s ease-in-out infinite; }
+.duel-timer.is-low, .duel-track.is-low + .duel-timer { color: #d9534f; }
+.duel-vs .duel-side:first-child, .duel-vs-big .duel-side:first-child { animation: dVsL .5s cubic-bezier(.2, .8, .2, 1) both; }
+.duel-vs .duel-side.opp { animation: dVsR .5s cubic-bezier(.2, .8, .2, 1) both; }
+.duel-vs .duel-x2 { animation: dVsX .6s .25s cubic-bezier(.2, .8, .2, 1) both; }
+.duel-count.tick { animation: dTick .55s ease-out; }
+.duel-side strong.bump { display: inline-block; animation: dBump .45s ease-out; }
+.duel-score > div { animation: dRise .45s ease-out both; } .duel-score > div:nth-child(2) { animation-delay: .15s; }
+.duel-score .is-win { animation: dTrophy .7s .2s cubic-bezier(.2, .8, .2, 1) both; }
+.duel-review { animation: dRise .4s .3s ease-out both; }
+.confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 500; }
+.confetti span { position: absolute; top: 0; animation: dFall var(--d, 2.4s) var(--dl, 0s) ease-in forwards; opacity: 0; }
+/* general polish: buttons, cards and the profile avatar */
+.btn { transition: transform .12s, box-shadow .18s, background-color .18s, border-color .18s; }
+.btn:not(:disabled):active { transform: scale(.96); }
+.emoji-pick { transition: transform .15s, box-shadow .15s; }
+.emoji-pick:active { transform: scale(.9); }
+.crop-card { animation: dBoxIn .3s cubic-bezier(.2, .8, .2, 1) both; }
+
 /* ---------- Photo cropper ---------- */
 .crop-ov { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.6); }
 .crop-card { width: min(100%, 372px); display: grid; gap: 12px; justify-items: center; padding: 20px; text-align: center; max-height: 100%; overflow: auto; }
@@ -7069,8 +7129,11 @@ function renderAccount() {
   const e = $('account-btn'); e.replaceChildren(); const m = view();
   if (!S.db) { e.append(o('span', 'account-name', 'Offline')); e.onclick = () => App.navigate('friends'); return; }
   if (!m) { e.append(o('span', 'account-name', 'Friends')); e.onclick = () => App.navigate('friends'); return; }
-  if (S.doc && S.doc.photo) { const im = document.createElement('img'); im.className = 'account-photo'; im.alt = ''; im.src = S.doc.photo; e.append(im); }
-  else if (S.doc && S.doc.avatar) e.append(o('span', 'account-avatar', BeceProfile.safeAv(S.doc.avatar)));
+  if (S.doc && S.doc.photo) {
+    const w = o('span', 'account-ph'), im = document.createElement('img'); im.className = 'account-photo'; im.alt = ''; im.src = S.doc.photo; w.append(im);
+    if (S.doc.avatar) w.append(o('span', 'account-badge', BeceProfile.safeAv(S.doc.avatar)));
+    e.append(w);
+  } else if (S.doc && S.doc.avatar) e.append(o('span', 'account-avatar', BeceProfile.safeAv(S.doc.avatar)));
   e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), o('span', 'account-exp', `${m.totalExp} EXP`));
   if (m.streak) e.append(o('span', 'account-streak', `\u{1F525} ${m.streak}`));
   e.setAttribute('aria-label', `${m.displayName}, level ${lv(m.totalExp).level}, ${m.totalExp} EXP. Open the friends board`);
@@ -7203,11 +7266,13 @@ const me = () => ({ id: S.uid, ...(S.doc || {}) });
 function paintBubble(b, p) {
   const pal = PF.palette(p.color);
   b.dataset.frame = (p.eq && p.eq.frame) || '';
+  const oldBadge = b.querySelector('.av-badge'); if (oldBadge) oldBadge.remove();
   if (p.photo) {
-    b.textContent = '';
+    if (!b.querySelector('img.av-photo')) b.textContent = '';
     let img = b.querySelector('img.av-photo');
     if (!img) { img = document.createElement('img'); img.className = 'av-photo'; img.alt = ''; b.appendChild(img); }
     img.src = p.photo;
+    if (p.avatar) { const bd = document.createElement('span'); bd.className = 'av-badge'; bd.textContent = PF.safeAv(p.avatar); b.appendChild(bd); }
   } else {
     const imgEl = b.querySelector('img.av-photo'); if (imgEl) imgEl.remove();
     b.textContent = (p.avatar && PF.safeAv(p.avatar)) || (nameOf(p.id) || '?').slice(0, 1).toUpperCase();
@@ -7308,9 +7373,9 @@ function buildProfileCard() {
   function paint() {
     const d = me();
     paintBubble(av, d);
-    const key = d.photo ? '#photo' : (d.avatar || '');
+    const key = d.avatar || '';
     if (st.lastAv !== key) {
-      paintDoodles(d.photo ? '\u2728' : (PF.safeAv(d.avatar || '') || '\u2728'));
+      paintDoodles(PF.safeAv(key) || '\u2728');
       if (st.lastAv !== null) { av.classList.remove('pop'); void av.offsetWidth; av.classList.add('pop'); }
       st.lastAv = key;
     }
@@ -7328,7 +7393,7 @@ function buildProfileCard() {
   const STATUS = { saved: 'All changes saved', saving: 'Saving\u2026', error: 'Couldn\u2019t save \u00B7 will retry' };
   const setStatus = s => { status.dataset.state = s; status.textContent = STATUS[s]; };
 
-  const pick = a => { queueSave({ avatar: a, photo: '' }); if (st.photoBtn) st.photoBtn.hidden = true; paint(); renderAccount(); if (st.refresh) st.refresh(); };
+  const pick = a => { queueSave({ avatar: a }); paint(); renderAccount(); if (st.refresh) st.refresh(); };
 
   function avatarPanel() {
     const w = o('div'), grid = o('div', 'emoji-grid'), chips = o('div', 'cz-chips');
@@ -7343,7 +7408,7 @@ function buildProfileCard() {
       c.onclick = () => { st.group = g.id; chips.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === c))); fill(); };
       chips.append(c);
     });
-    const row = o('div', 'cz-row'), rnd = o('button', 'btn btn-ghost btn-sm', '\u{1F3B2} Surprise me'), ini = o('button', 'btn btn-ghost btn-sm', 'Use my initial');
+    const row = o('div', 'cz-row'), rnd = o('button', 'btn btn-ghost btn-sm', '\u{1F3B2} Surprise me'), ini = o('button', 'btn btn-ghost btn-sm', 'Remove emoji');
     rnd.type = ini.type = 'button';
     rnd.onclick = () => { const all = PF.AVATARS, cur = me().avatar; let a; do { a = all[Math.floor(Math.random() * all.length)]; } while (a === cur); pick(a); const g = PF.AVATAR_GROUPS.find(x => x.items.includes(a)); if (g && g.id !== st.group) { st.group = g.id; chips.querySelectorAll('.chip').forEach((x, i) => x.setAttribute('aria-pressed', String(PF.AVATAR_GROUPS[i].id === g.id))); fill(); } };
     ini.onclick = () => pick('');
@@ -7372,7 +7437,7 @@ function buildProfileCard() {
     };
     photoRow.append(photoPickBtn, photoInp, clearPhotoBtn);
 
-    w.append(photoLbl, photoRow, o('p', 'cz-note', 'Your photo shows as your avatar on the board.'), o('p', 'cz-label', 'Or pick an emoji'), chips, grid, o('p', 'cz-label', 'Quick picks'), row, o('p', 'cz-label', 'Or use any emoji'), own);
+    w.append(photoLbl, photoRow, o('p', 'cz-note', 'Your photo shows as your avatar on the board. If you also pick an emoji, it sits in the top-right corner of your photo until you remove the photo.'), o('p', 'cz-label', 'Or pick an emoji'), chips, grid, o('p', 'cz-label', 'Quick picks'), row, o('p', 'cz-label', 'Or use any emoji'), own);
     st.refresh = mark; fill();
     return w;
   }
@@ -7774,7 +7839,7 @@ const Duel = (() => {
   function countdown() {
     D.cd = true; D.cd0 = 0;
     const n = o('div', 'duel-count');
-    const tick = () => { const at = Number(D.doc.startAt) || (D.cd0 = D.cd0 || Date.now() + 3000), s = Math.min(5, Math.ceil((at - Date.now()) / 1000)); if (s <= 0) { clearInterval(D.cdT); D.cd = false; begin(); } else n.textContent = s; };
+    const tick = () => { const at = Number(D.doc.startAt) || (D.cd0 = D.cd0 || Date.now() + 3000), s = Math.min(5, Math.ceil((at - Date.now()) / 1000)); if (s <= 0) { clearInterval(D.cdT); D.cd = false; begin(); } else if (n.textContent !== String(s)) { n.textContent = s; n.classList.remove('tick'); void n.offsetWidth; n.classList.add('tick'); } };
     const vs = o('div', 'duel-vs duel-vs-big'); const a = o('div', 'duel-side'), b = o('div', 'duel-side opp');
     a.append(av(S.uid, 44), o('span', 'duel-nm', 'You')); b.append(av(oppId(), 44), o('span', 'duel-nm', oppName())); vs.append(a, o('b', 'duel-x2', 'VS'), b);
     put(o('p', 'eyebrow', 'Duel found'), vs, cfgChips(D.doc), n, o('p', 'muted', 'Get ready\u2026'));
@@ -7784,8 +7849,9 @@ const Duel = (() => {
   function paintScore() {
     if (!D.meSc || !D.doc || !D.me) return;
     const r = (D.doc.res || {})[oppId()] || { c: 0, n: 0 };
-    D.meSc.textContent = D.me.c; D.meSub.textContent = `${D.me.n}/${total()} done`;
-    D.oppSc.textContent = r.c; D.oppSub.textContent = `${r.n}/${total()} done`;
+    const bump = (el, v) => { if (el.textContent !== String(v)) { el.textContent = v; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } };
+    bump(D.meSc, D.me.c); D.meSub.textContent = `${D.me.n}/${total()} done`;
+    bump(D.oppSc, r.c); D.oppSub.textContent = `${r.n}/${total()} done`;
   }
   function ask() {
     clearInterval(D.timer);
@@ -7862,6 +7928,12 @@ const Duel = (() => {
     put(o('p', 'eyebrow', 'Finished'), o('h2', '', `You got ${D.me.c}/${total()}`),
       o('p', 'muted', `Waiting for ${oppName()} to finish${r ? ` (${r.n}/${total()} answered)` : ''}\u2026`), row(btn('Leave', 'btn-ghost btn-sm', () => close())));
   }
+  function confetti() {
+    const host = document.getElementById('duel-modal'); if (!host) return;
+    const wrap = o('div', 'confetti'); const bits = ['\u{1F389}', '\u2728', '\u{1F38A}', '\u2B50', '\u{1F31F}'];
+    for (let i = 0; i < 26; i++) { const c = o('span', '', bits[i % bits.length]); c.style.cssText = `left:${Math.random() * 100}%;--dx:${Math.round(Math.random() * 120 - 60)}px;--d:${(1.6 + Math.random() * 1.6).toFixed(2)}s;--dl:${(Math.random() * .6).toFixed(2)}s;font-size:${16 + Math.round(Math.random() * 14)}px`; wrap.append(c); }
+    host.append(wrap); setTimeout(() => wrap.remove(), 3800);
+  }
   function result(r) {
     const me = D.me, opp = r || { c: 0, n: 0, ms: 0, done: false }, n = total();
     const tie = me.c === opp.c && me.ms === opp.ms, win = me.c !== opp.c ? me.c > opp.c : me.ms < opp.ms;
@@ -7877,6 +7949,7 @@ const Duel = (() => {
       it.append(o('span', '', `Correct: ${txt(q.correct)}`)); if (q.explanation) it.append(o('span', 'muted', q.explanation)); rev.append(it);
     });
     const d = D.doc, cfg = { subject: d.subject, len: n, secs: secs(), vis: d.vis || 'public' };
+    if (!tie && win) setTimeout(confetti, 250);
     put(o('p', 'eyebrow', 'Duel result'), o('h2', '', tie ? 'It\u2019s a draw!' : win ? 'You won! \u{1F3C6}' : `${oppName()} wins this one`), sc,
       chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, cn ? `\u{1F4B0} +${cn} coins` : ''),
       o('p', 'muted', opp.done ? 'Most correct answers wins; faster total time breaks ties.' : `${oppName()} didn\u2019t finish, so unanswered questions count as wrong.`),
