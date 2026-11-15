@@ -1142,6 +1142,25 @@ html { -webkit-tap-highlight-color: transparent; }
   .chip-row::-webkit-scrollbar { display: none; }
   .chip-row .chip { flex: 0 0 auto; }
 }
+.av[data-frame="f_gold"] { box-shadow: 0 0 0 3px #e0b040; }
+.av[data-frame="f_emerald"] { box-shadow: 0 0 0 2px #2e8b57, 0 0 14px 2px rgba(46,139,87,.6); }
+.av[data-frame="f_sunset"] { box-shadow: 0 0 0 2px #ff8a3d, 0 0 0 4px #ff4f81; }
+.av[data-frame="f_rainbow"] { box-shadow: 0 0 0 2px #ff5f6d, 0 0 0 4px #ffc371, 0 0 0 6px #47c9a2; }
+.shop { display: grid; gap: 18px; padding: 20px 16px; }
+.shop-head { display: grid; gap: 6px; }
+.shop-bal { font: 700 40px/1 var(--serif); }
+.shop-body { display: grid; gap: 18px; }
+.shop-group { display: grid; gap: 10px; }
+.shop-group h3 { font-size: 16px; }
+.shop-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.shop-item { display: grid; justify-items: center; gap: 8px; padding: 14px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); text-align: center; }
+.shop-item .btn { width: 100%; }
+.shop-wide { grid-template-columns: 1fr; text-align: left; justify-items: stretch; }
+.shop-prev { min-height: 62px; display: grid; place-items: center; }
+.shop-name { font-size: 18px; }
+.duel-ff { justify-self: start; }
+.f-tabs { grid-template-columns: repeat(4, 1fr); }
+.f-tabs button { font-size: 12.5px; padding: 4px 2px; }
 .friend-modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 1000; padding: 16px; overflow-y: auto; }
 .friend-box { max-width: 440px; width: 100%; display: grid; gap: 14px; padding: 22px; max-height: 90vh; overflow-y: auto; }
 
@@ -7083,20 +7102,21 @@ App.on('quiz:finished', async ev => {
       parts.push({ label: `${plural(streak, 'day')} streak`, exp: Math.min(streak * BONUS.perStreakDay, BONUS.streakCap) });
       dailyDone = { day, correct: ev.correct, total: ev.total, exp: fresh * 10 + parts.reduce((a, p) => a + p.exp, 0) };
     }
-    const bonusExp = parts.reduce((a, p) => a + p.exp, 0), earned = fresh * 10;
+    const bonusExp = parts.reduce((a, p) => a + p.exp, 0), earned = fresh * 10, coinsEarned = fresh + Math.floor(bonusExp / 4);
     const subs = [...new Set(ev.questionIds.map(i => i.slice(0, 3)))];
     const subject = subs.length === 1 ? SUBJ[subs[0]] || 'mixed subjects' : 'mixed subjects';
     const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: earned + bonusExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
-    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
+    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
     await S.db.doc('players/' + S.uid).set(next); S.doc = next;
     renderAccount(); renderDaily();
-    showResult({ earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended });
+    showResult({ coins: coinsEarned, earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended });
   } catch (err) { box.replaceChildren(o('p', 'exp-status', 'Couldn\u2019t save your EXP. ' + (err && err.message || ''))); }
 });
 function showResult(e) {
   const t = $('exp-result'); t.hidden = false; t.replaceChildren(o('p', 'exp-headline', `+${e.earned + e.bonusExp} EXP`));
   const ul = o('ul', 'exp-breakdown'), add = (a, b) => { const li = o('li'); li.append(o('span', '', a), o('strong', '', `+${b}`)); ul.append(li); };
   add(`${plural(e.correct - e.already, 'new correct answer')} \xD7 10`, e.earned); e.parts.forEach(p => add(p.label, p.exp)); t.append(ul);
+  if (e.coins) t.append(o('p', 'exp-status', `\u{1FA99} +${e.coins} coins`));
   if (e.already) t.append(o('p', 'exp-status', `${plural(e.already, 'answer')} already earned EXP earlier today, so ${e.already === 1 ? 'it isn\u2019t' : 'they aren\u2019t'} counted twice.`));
   const { level, into } = lv(e.total), m = o('progress', 'meter'); m.max = LVL; m.value = into;
   t.append(o('p', 'exp-status', `Level ${level} \xB7 ${e.total} EXP total \xB7 ${LVL - into} EXP to level ${level + 1}`), m);
@@ -7152,6 +7172,7 @@ const me = () => ({ id: S.uid, ...(S.doc || {}) });
 // An avatar bubble in the player's own colour. Both the light and dark shades are set, so it stays right when the mode changes.
 function paintBubble(b, p) {
   const pal = PF.palette(p.color);
+  b.dataset.frame = (p.eq && p.eq.frame) || '';
   b.textContent = p.avatar || (nameOf(p.id) || '?').slice(0, 1).toUpperCase();
   b.style.setProperty('--av-l', pal.light.accent); b.style.setProperty('--av-ls', pal.light.accentSoft);
   b.style.setProperty('--av-d', pal.dark.accent); b.style.setProperty('--av-ds', pal.dark.accentSoft);
@@ -7371,7 +7392,7 @@ function buildProfileCard() {
 
 function showFtab() {
   if (!S.frWrap) return;
-  S.boardHost.hidden = S.ftab !== 'board'; Duel.card().hidden = S.ftab !== 'duels'; S.pc.el.hidden = S.ftab !== 'me';
+  S.boardHost.hidden = S.ftab !== 'board'; Duel.card().hidden = S.ftab !== 'duels'; Shop.el().hidden = S.ftab !== 'shop'; S.pc.el.hidden = S.ftab !== 'me';
   S.ftabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.k === S.ftab)));
 }
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-open-duels]')) { S.ftab = 'duels'; showFtab(); } });
@@ -7389,7 +7410,7 @@ function renderFriends() {
 
   // The profile card is permanent (so editing is never interrupted); only the board below is rebuilt.
   if (!S.pc) S.pc = buildProfileCard();
-  Duel.paint();
+  Duel.paint(); Shop.render();
   S.pc.update({ ex, level, into, streak: m ? m.streak : 0, best: m ? m.bestStreak : 0, rank: myRank, count: allList.length });
 
   let lbNote = ''; const lb = o('section', 'card leaderboard'), head = o('div', 'section-heading'), hd = o('div');
@@ -7403,7 +7424,7 @@ function renderFriends() {
   const ol = o('ol', 'board-list');
   list.forEach((p, i) => {
     if (i < from) return;
-    const li = o('li', p.id === S.uid ? 'is-me' : ''), w = o('div', 'board-who'), n = o('strong', '', nameOf(p.id));
+    const li = o('li', p.id === S.uid ? 'is-me' : ''), w = o('div', 'board-who'), n = tint(o('strong', '', nameOf(p.id)), p);
     if (p.id === S.uid) n.append(o('span', 'you-tag', 'you'));
     const live = p.lastDay === today() || p.lastDay === yesterday();
     li.append(o('span', 'board-rank', i < 3 && B !== 'everyone' ? medals[i] : String(i + 1)), bubble(p, 36));
@@ -7415,7 +7436,7 @@ function renderFriends() {
     ol.append(li);
   });
   const podEl = o('div', 'podium');
-  if (pod) [1, 0, 2].forEach(k => { const q = list[k], d = o('button', 'pod pod-' + (k + 1) + (q.id === S.uid ? ' is-me' : '')); d.type = 'button'; d.append(o('span', 'pod-medal', medals[k]), bubble(q, k === 0 ? 56 : 46), o('strong', '', nameOf(q.id)), o('span', 'pod-exp', `${val(q)} EXP`)); d.onclick = () => showFriend(q); podEl.append(d); });
+  if (pod) [1, 0, 2].forEach(k => { const q = list[k], d = o('button', 'pod pod-' + (k + 1) + (q.id === S.uid ? ' is-me' : '')); d.type = 'button'; d.append(o('span', 'pod-medal', medals[k]), bubble(q, k === 0 ? 56 : 46), tint(o('strong', '', nameOf(q.id)), q), o('span', 'pod-exp', `${val(q)} EXP`)); d.onclick = () => showFriend(q); podEl.append(d); });
   lb.append(head, tg); if (pod) lb.append(podEl); lb.append(ol); lb.append(o('p', 'muted', 'Tap a player to see their stats.')); if (lbNote) lb.append(o('p', 'muted', lbNote));
   if (list.length < 2) {
     const h = o('div', 'board-hint'); h.append(o('p', '', 'It\u2019s just you so far. Share this page\u2019s link so friends can join.')); lb.append(h);
@@ -7432,8 +7453,8 @@ function renderFriends() {
   const g = o('div', 'friends-grid'); g.append(lb, act);
   if (!S.frWrap) {
     S.frWrap = o('div'); S.boardHost = o('div'); S.ftab = S.ftab || 'board'; S.ftabs = o('div', 'f-tabs'); S.ftabs.setAttribute('role', 'tablist');
-    [['board', '\u{1F3C6} Board'], ['duels', '\u2694\uFE0F Duels'], ['me', '\u{1F464} Profile']].forEach(([k, t]) => { const b = o('button', '', t); b.type = 'button'; b.dataset.k = k; b.setAttribute('role', 'tab'); b.onclick = () => { S.ftab = k; showFtab(); }; S.ftabs.append(b); });
-    S.frWrap.append(S.ftabs, S.boardHost, Duel.card(), S.pc.el);
+    [['board', '\u{1F3C6} Board'], ['duels', '\u2694\uFE0F Duels'], ['shop', '\u{1F6CD}\uFE0F Shop'], ['me', '\u{1F464} Me']].forEach(([k, t]) => { const b = o('button', '', t); b.type = 'button'; b.dataset.k = k; b.setAttribute('role', 'tab'); b.onclick = () => { S.ftab = k; showFtab(); }; S.ftabs.append(b); });
+    S.frWrap.append(S.ftabs, S.boardHost, Duel.card(), Shop.el(), S.pc.el);
   }
   showFtab();
   S.boardHost.replaceChildren(g);
@@ -7461,6 +7482,76 @@ async function connectFirebase() {
   return { db: firebase.firestore(), uid: cred.user.uid };
 }
 
+
+/* ===== Coin shop ===== */
+const SHOP = {
+  frames: [
+    { id: 'f_gold', name: 'Gold ring', price: 60 }, { id: 'f_emerald', name: 'Emerald glow', price: 80 },
+    { id: 'f_sunset', name: 'Sunset', price: 120 }, { id: 'f_rainbow', name: 'Rainbow', price: 200 }
+  ],
+  colors: [
+    { id: 'c_ocean', name: 'Ocean', price: 40, hex: '#1d7fc4' }, { id: 'c_rose', name: 'Rose', price: 40, hex: '#d6336c' },
+    { id: 'c_gold', name: 'Gold', price: 80, hex: '#b8860b' }, { id: 'c_violet', name: 'Violet', price: 80, hex: '#7048e8' }
+  ],
+  p50: { id: 'p50', name: '50/50 lifeline', price: 15 }
+};
+const NAME_COLORS = Object.fromEntries(SHOP.colors.map(c => [c.id, c.hex]));
+function tint(el, p) { const c = p && p.eq && NAME_COLORS[p.eq.nameColor]; if (c) el.style.color = c; return el; }
+const Shop = (() => {
+  let el = null, bal = null, body = null;
+  const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
+  const warn = m => App.toast(m, 'warn');
+  function equip(slot, id) {
+    const eq = (S.doc && S.doc.eq) || {};
+    queueSave({ eq: { ...eq, [slot]: eq[slot] === id ? '' : id } }); render(); renderFriends();
+  }
+  async function buy(it, slot) {
+    const d = S.doc || {};
+    if ((d.coins || 0) < it.price) return warn('Not enough coins yet. Keep practising!');
+    if (!S.db) return warn('You need to be online to buy.');
+    const F = firebase.firestore.FieldValue;
+    const patch = slot === 'p50' ? { coins: F.increment(-it.price), p50: F.increment(1) } : { coins: F.increment(-it.price), owned: { [it.id]: true } };
+    try {
+      await S.db.doc('players/' + S.uid).set(patch, { merge: true });
+      S.doc = { ...d, coins: (d.coins || 0) - it.price, ...(slot === 'p50' ? { p50: (d.p50 || 0) + 1 } : { owned: { ...(d.owned || {}), [it.id]: true } }) };
+      App.toast(`Bought ${it.name}!`);
+      if (slot === 'p50') render(); else equip(slot, it.id);
+    } catch (e) { warn(`Couldn\u2019t buy that (${(e && e.code) || 'error'}).`); }
+  }
+  function group(title, items, preview, slot) {
+    const d = S.doc || {}, owned = d.owned || {}, eq = d.eq || {}, g = o('section', 'shop-group'), grid = o('div', 'shop-grid');
+    g.append(o('h3', '', title), grid);
+    items.forEach(it => {
+      const c = o('div', 'shop-item'), pv = o('div', 'shop-prev');
+      pv.append(preview(it));
+      let b;
+      if (owned[it.id]) b = eq[slot] === it.id ? btn('Equipped \u2713', 'btn-ghost btn-sm', () => equip(slot, it.id)) : btn('Equip', 'btn-primary btn-sm', () => equip(slot, it.id));
+      else b = btn(`Buy \u{1FA99} ${it.price}`, (d.coins || 0) >= it.price ? 'btn-primary btn-sm' : 'btn-ghost btn-sm', () => buy(it, slot));
+      c.append(pv, o('strong', '', it.name), b); grid.append(c);
+    });
+    return g;
+  }
+  function render() {
+    if (!el) return;
+    const d = S.doc || {}, eq = d.eq || {};
+    bal.textContent = `\u{1FA99} ${d.coins || 0}`;
+    const life = o('section', 'shop-group'), c = o('div', 'shop-item shop-wide');
+    c.append(o('strong', '', '\u00BD 50/50 lifeline'), o('span', 'muted', `Removes two wrong answers in a duel (max 2 per duel). You have ${d.p50 || 0}.`),
+      btn(`Buy \u{1FA99} ${SHOP.p50.price}`, (d.coins || 0) >= SHOP.p50.price ? 'btn-primary btn-sm' : 'btn-ghost btn-sm', () => buy(SHOP.p50, 'p50')));
+    life.append(o('h3', '', 'Duel power-up'), c);
+    body.replaceChildren(
+      group('Avatar frames', SHOP.frames, it => bubble({ ...d, id: S.uid, eq: { ...eq, frame: it.id } }, 46), 'frame'),
+      group('Name colours', SHOP.colors, it => { const s = o('strong', 'shop-name', nameOf(S.uid)); s.style.color = it.hex; return s; }, 'nameColor'),
+      life);
+  }
+  function build() {
+    el = o('section', 'card shop'); bal = o('strong', 'shop-bal'); body = o('div', 'shop-body');
+    const head = o('div', 'shop-head'); head.append(o('span', 'duel-lbl', 'Your coins'), bal,
+      o('p', 'muted', 'Earn coins: 1 per new correct answer, bonus coins from the daily quiz and streaks, and from duels (win 5, draw 2, played 1; up to 10 duels a day).'));
+    el.append(head, body); render(); return el;
+  }
+  return { el: () => el || build(), render };
+})();
 
 /* ===== 1v1 Duel (Firestore collection "duels") ===== */
 const Duel = (() => {
@@ -7494,14 +7585,17 @@ const Duel = (() => {
     const top = o('div', 'duel-top'); top.append(o('span', 'eyebrow', '1v1 duel' + (D.doc ? ' \u00B7 ' + (SUBS[D.doc.subject] || 'Mixed') : '')), x);
     box.replaceChildren(top, ...n);
   }
-  function record(out) {
-    if (!D.code || !D.doc || D.recd === D.code || (D.doc.rec && D.doc.rec[S.uid])) return;
+  function record(out, forceCoins) {
+    if (!D.code || !D.doc || D.recd === D.code || (D.doc.rec && D.doc.rec[S.uid])) return 0;
     D.recd = D.code;
     const F = firebase.firestore.FieldValue, k = out === 'w' ? 'duelW' : out === 'l' ? 'duelL' : 'duelD';
+    const d = S.doc || {}, td = today(), n = d.dcDay === td ? d.dcN || 0 : 0;
+    let c = out === 'w' ? 5 : out === 'd' ? 2 : 1; if (forceCoins === 0 || n >= 10) c = 0;
     const b = S.db.batch();
-    b.set(S.db.doc('players/' + S.uid), { [k]: F.increment(1) }, { merge: true });
+    b.set(S.db.doc('players/' + S.uid), { [k]: F.increment(1), ...(c ? { coins: F.increment(c), dcDay: td, dcN: n + 1 } : {}) }, { merge: true });
     b.update(col().doc(D.code), { ['rec.' + S.uid]: true });
     b.commit().catch(() => { D.recd = null; });
+    return c;
   }
   function push() { if (D.code && D.me) col().doc(D.code).update({ ['res.' + S.uid]: { ...D.me } }).catch(() => {}); }
   function leave() {
@@ -7510,7 +7604,7 @@ const Duel = (() => {
     D.armed = false; close(true);
   }
   function close() {
-    if (D.me && !D.me.done && D.started) { D.me.done = true; D.me.ms += (total() - D.me.n) * secs() * 1000; D.me.n = total(); push(); record('l'); }
+    if (D.me && !D.me.done && D.started) { D.me.done = true; D.me.ms += (total() - D.me.n) * secs() * 1000; D.me.n = total(); push(); record('l', 0); }
     clearInterval(D.timer); clearInterval(D.cdT); clearInterval(D.hbT); clearTimeout(D.wait);
     if (D.unsub) { D.unsub(); D.unsub = null; }
     if (D.doc && D.doc.state === 'waiting' && D.doc.host === S.uid) col().doc(D.code).delete().catch(() => {});
@@ -7552,7 +7646,7 @@ const Duel = (() => {
     put(o('p', 'eyebrow', 'Duel found'), vs, cfgChips(D.doc), n, o('p', 'muted', 'Get ready\u2026'));
     tick(); D.cdT = setInterval(tick, 200);
   }
-  function begin() { D.started = true; D.idx = 0; D.log = []; D.me = { c: 0, n: 0, ms: 0, done: false }; ask(); }
+  function begin() { D.started = true; D.used = 0; D.idx = 0; D.log = []; D.me = { c: 0, n: 0, ms: 0, done: false }; ask(); }
   function paintScore() {
     if (!D.meSc || !D.doc || !D.me) return;
     const r = (D.doc.res || {})[oppId()] || { c: 0, n: 0 };
@@ -7565,7 +7659,7 @@ const Duel = (() => {
     const q = App.questionById(id);
     if (!q) { D.me.n++; D.me.ms += secs() * 1000; D.log.push({ id, key: null, ok: false }); D.idx++; return ask(); }
     D.locked = false; D.qStart = Date.now();
-    const side = (pid, nm, cls) => { const s = o('div', 'duel-side ' + cls); D[cls + 'Sc'] = o('strong', '', '0'); D[cls + 'Sub'] = o('span', 'duel-sub'); s.append(av(pid, 40), o('span', 'duel-nm', nm), D[cls + 'Sc'], D[cls + 'Sub']); return s; };
+    const side = (pid, nm, cls) => { const s = o('div', 'duel-side ' + cls); D[cls + 'Sc'] = o('strong', '', '0'); D[cls + 'Sub'] = o('span', 'duel-sub'); s.append(av(pid, 40), tint(o('span', 'duel-nm', nm), who(pid)), D[cls + 'Sc'], D[cls + 'Sub']); return s; };
     const vs = o('div', 'duel-vs'); vs.append(side(S.uid, 'You', 'me'), o('b', 'duel-x2', 'VS'), side(oppId(), oppName(), 'opp'));
     D.dots = Array.from({ length: total() }, (_, i) => o('span', 'duel-dot' + (i < D.idx ? (D.log[i] && D.log[i].ok ? ' ok' : ' bad') : i === D.idx ? ' cur' : '')));
     const dots = o('div', 'duel-dots'); dots.append(...D.dots);
@@ -7577,7 +7671,18 @@ const Duel = (() => {
       const b = o('button', 'option'); b.type = 'button'; b.dataset.key = op.key;
       b.append(o('span', 'option-letter', 'ABCDEF'[i]), o('span', 'option-text', op.text)); b.onclick = () => answer(op.key); opts.append(b);
     });
-    put(vs, dots, tr, o('span', 'duel-topic', q.topic || ''), o('h3', 'duel-q', q.question), opts, D.fb); paintScore();
+    const extra = [];
+    if (S.doc && S.doc.p50 > 0 && D.used < 2) {
+      const ff = btn(`\u00BD 50/50 (${S.doc.p50} left)`, 'btn-ghost btn-sm duel-ff', () => {
+        if (D.locked) return;
+        const wrong = [...opts.querySelectorAll('.option')].filter(x => x.dataset.key !== q.correct && !x.disabled);
+        mix(wrong).slice(0, 2).forEach(x => { x.disabled = true; x.classList.add('is-dim'); });
+        D.used++; S.doc = { ...S.doc, p50: S.doc.p50 - 1 }; ff.remove();
+        S.db.doc('players/' + S.uid).set({ p50: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(() => {});
+      });
+      extra.push(ff);
+    }
+    put(vs, dots, tr, o('span', 'duel-topic', q.topic || ''), o('h3', 'duel-q', q.question), opts, ...extra, D.fb); paintScore();
     D.timer = setInterval(() => {
       const left = secs() - (Date.now() - D.qStart) / 1000;
       D.tm.textContent = Math.max(0, Math.ceil(left)); D.bar.style.width = Math.max(0, left / secs() * 100) + '%'; D.track.classList.toggle('is-low', left <= 5);
@@ -7607,7 +7712,7 @@ const Duel = (() => {
   function result(r) {
     const me = D.me, opp = r || { c: 0, n: 0, ms: 0, done: false }, n = total();
     const tie = me.c === opp.c && me.ms === opp.ms, win = me.c !== opp.c ? me.c > opp.c : me.ms < opp.ms;
-    record(tie ? 'd' : win ? 'w' : 'l');
+    const cn = record(tie ? 'd' : win ? 'w' : 'l');
     const side = (pid, name, x, w) => { const d = o('div', w ? 'is-win' : ''); d.append(av(pid, 40), o('span', 'duel-nm', name), o('strong', '', `${x.c}/${n}`), o('span', 'duel-sub', `${(x.ms / 1000).toFixed(1)}s total`)); return d; };
     const sc = o('div', 'duel-score'); sc.append(side(S.uid, 'You', me, win && !tie), side(oppId(), oppName(), opp, !win && !tie));
     const rev = o('details', 'duel-review'); rev.append(o('summary', '', `Review your answers (${me.c} right, ${D.log.length - me.c} missed)`));
@@ -7620,7 +7725,7 @@ const Duel = (() => {
     });
     const d = D.doc, cfg = { subject: d.subject, len: n, secs: secs(), vis: d.vis || 'public' };
     put(o('p', 'eyebrow', 'Duel result'), o('h2', '', tie ? 'It\u2019s a draw!' : win ? 'You won! \u{1F3C6}' : `${oppName()} wins this one`), sc,
-      chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`),
+      chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, cn ? `\u{1FA99} +${cn} coins` : ''),
       o('p', 'muted', opp.done ? 'Most correct answers wins; faster total time breaks ties.' : `${oppName()} didn\u2019t finish, so unanswered questions count as wrong.`),
       rev, row(btn('Rematch', 'btn-primary btn-sm', () => { close(); D.cfg = cfg; create(); }), btn('Close', 'btn-ghost btn-sm', () => close())));
   }
