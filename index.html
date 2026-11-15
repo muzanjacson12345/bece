@@ -1127,6 +1127,21 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
 .pod-exp { font-size: 12px; font-weight: 700; color: var(--accent); }
 .btn:active, .subject-card:active, .board-list li:active, .pod:active { transform: scale(.98); }
 .board-list li { border-radius: 14px; }
+html { -webkit-tap-highlight-color: transparent; }
+@keyframes screenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.screen:not([hidden]) { animation: screenIn .28s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .screen:not([hidden]) { animation: none; } }
+@media (max-width: 760px) {
+  .segmented[aria-label="Subject"] { display: flex !important; grid-template-columns: none !important; flex-wrap: nowrap !important; overflow-x: auto; max-width: 100%; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .segmented[aria-label="Subject"]::-webkit-scrollbar { display: none; }
+  .segmented[aria-label="Subject"] button { flex: 0 0 auto !important; width: auto !important; grid-column: auto !important; scroll-snap-align: center; padding-left: 16px; padding-right: 16px; }
+  #screen-notes .page-intro .muted, #screen-essays .page-intro .muted { display: none; }
+  #screen-notes .page-intro, #screen-essays .page-intro { padding: 16px 0 10px; }
+  .page-intro h1 { font-size: 28px; }
+  .chip-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip-row .chip { flex: 0 0 auto; }
+}
 .friend-modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 1000; padding: 16px; overflow-y: auto; }
 .friend-box { max-width: 440px; width: 100%; display: grid; gap: 14px; padding: 22px; max-height: 90vh; overflow-y: auto; }
 
