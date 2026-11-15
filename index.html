@@ -1361,8 +1361,6 @@ html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(-
 .pc-id { margin: 0; padding: 10px 18px 16px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .pc-id code { font-size: 11px; padding: 2px 6px; border-radius: 6px; background: var(--surface-2); word-break: break-all; user-select: all; }
 .adm { padding: 18px; display: grid; gap: 14px; }
-.adm-subs { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); }
-.adm-subs button { padding-left: 4px; padding-right: 4px; font-size: 13px; }
 .adm-search, .adm-amt, .adm-ta, .adm-sel { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: inherit; }
 .adm-ta { resize: vertical; }
 .adm-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
@@ -1393,6 +1391,39 @@ html[data-theme='dark'] .ann-bar[data-kind="warn"] { background: #4a3710; color:
 .adm .cz-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .adm-hact { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .adm-timer { font-size: 12px; font-weight: 700; color: var(--muted); } .adm-timer.is-low { color: #d9534f; }
+.adm-subs { width: 100%; display: flex; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.adm-subs::-webkit-scrollbar { display: none; }
+.adm-subs button { flex: 1 0 auto; padding-left: 12px; padding-right: 12px; font-size: 13px; }
+.board-owner { background: linear-gradient(135deg, #b8860b, #e7b923); color: #1d1500; }
+.adm.is-owner { border: 1px solid #d4a017; box-shadow: 0 0 0 3px rgba(212, 160, 23, .14); }
+.pin-owner { border: 1px solid #d4a017; }
+.adm-link { justify-self: center; font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: underline; padding: 4px 8px; }
+.adm-modal { max-height: 90vh; overflow-y: auto; }
+.adm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.adm-chip { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; }
+.adm-chip[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.adm-btns3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.adm-btns3 .btn { padding-left: 6px; padding-right: 6px; }
+.adm-btns .btn:disabled, .adm-btns3 .btn:disabled { opacity: .45; }
+.adm-prot { padding: 8px 10px; border-radius: 8px; background: var(--surface-2); word-break: normal; }
+.adm-pad { padding: 10px 12px; }
+.adm-ban { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.adm-ban.is-expired { opacity: .65; }
+.adm-card { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); display: grid; gap: 8px; margin-top: 12px; }
+.adm-card h4 { margin: 0; font-size: 15px; }
+.adm-prev { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--ink); margin: 8px 0; }
+.adm-prev[data-kind='warn'] { background: #fff1d6; color: #5a3b00; } .adm-prev[data-kind='event'] { background: #e6f4ea; color: #12301c; }
+html[data-theme='dark'] .adm-prev[data-kind='warn'] { background: #4a3710; color: #ffe2a6; } html[data-theme='dark'] .adm-prev[data-kind='event'] { background: #1d3a27; color: #d9f3e1; }
+.adm-bar { display: grid; grid-template-columns: 112px 1fr 34px; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 4px; }
+.adm-bar-track { height: 10px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.adm-bar-track i { display: block; height: 100%; border-radius: 6px; background: var(--accent); }
+.adm-bar strong { text-align: right; }
+.adm-log { display: flex; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.adm-log-ic { font-size: 18px; flex: none; }
+.adm-log-t { display: grid; gap: 2px; min-width: 0; font-size: 13px; overflow-wrap: anywhere; }
+.adm-log-t small { color: var(--muted); }
+.adm-log-t em { font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; }
+.adm-role-o { background: #e7b923; color: #1d1500; } .adm-role-a { background: #1f3a5f; color: #fff; }
 .pin-ov { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, .65); animation: dRise .2s ease-out both; }
 .pin-card { width: min(100%, 340px); display: grid; gap: 12px; padding: 22px; animation: dBoxIn .3s cubic-bezier(.2, .8, .2, 1) both; }
 .pin-card h3 { margin: 0; } .pin-card p { margin: 0; }
@@ -7348,7 +7379,7 @@ function showFriend(p) {
   const m = o('div', 'friend-modal'); m.id = 'friend-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
   const box = o('div', 'card friend-box'), title = o('h2', '', nameOf(p.id));
   if (p.id === S.uid) title.append(o('span', 'you-tag', 'you'));
-  if (S.admins.has(p.id)) title.append(' ', adminBadge());
+  if (S.admins.has(p.id)) title.append(' ', adminBadge(p.id));
   const tiles = o('div', 'stat-tiles');
   tiles.append(tile(`Lv ${level}`, `${LVL - into} EXP to next`), tile(String(tExp), 'Total EXP'), tile(String(wExp), 'EXP this week'), tile(`\u{1F525} ${live ? p.streak || 0 : 0}`, `Day streak \u00B7 best ${p.bestStreak || 0}`), tile(allRank, 'All-time rank'), tile(weekRank, 'Weekly rank'), tile(`${p.duelW || 0}-${p.duelL || 0}-${p.duelD || 0}`, 'Duels W-L-D'));
   const mt = o('progress', 'meter'); mt.max = LVL; mt.value = into;
@@ -7493,7 +7524,7 @@ function buildProfileCard() {
       if (st.lastAv !== null) { av.classList.remove('pop'); void av.offsetWidth; av.classList.add('pop'); }
       st.lastAv = key;
     }
-    nameEl.textContent = nameOf(S.uid); if (S.isAdmin) nameEl.append(' ', adminBadge()); bioEl.textContent = d.bio || '';
+    nameEl.textContent = nameOf(S.uid); if (S.isAdmin) nameEl.append(' ', adminBadge(S.uid)); bioEl.textContent = d.bio || '';
   }
 
   /* --- customiser --- */
@@ -7791,8 +7822,8 @@ const SHOP = {
 };
 const SHOP_TITLES = Object.fromEntries((SHOP.titles || []).map(t => [t.id, t]));
 function tint(el, p) { /* name colours removed — kept for compat */ return el; }
-function adminBadge() { const b = document.createElement('span'); b.className = 'board-title board-admin'; b.textContent = '\u{1F6E1}\uFE0F Admin'; return b; }
-function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge()); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name; container.append(badge); } }
+function adminBadge(id) { const owner = id ? !!(S.owners && S.owners.has(id)) : !!S.isOwner, b = document.createElement('span'); b.className = 'board-title ' + (owner ? 'board-owner' : 'board-admin'); b.textContent = owner ? '\u{1F451} Owner' : '\u{1F6E1}\uFE0F Admin'; return b; }
+function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge(p.id)); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name; container.append(badge); } }
 const Shop = (() => {
   let el = null, bal = null, body = null;
   const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
@@ -8212,12 +8243,51 @@ const Duel = (() => {
   return { card, start, paint };
 })();
 
-/* ===== Overseer / admin layer ===== */
-// Who is an admin, who is banned and the current announcement all live in Firestore (admins/, bans/, announcements/current).
-// The buttons below are only the interface: the real protection is the Firestore rules (see firestore.rules).
+/* ===== Overseer layer: two roles =====
+   ADMIN = knows the 1 admin PIN. Session lasts 2 hours. Moderates players.
+   OWNER = knows 2 separate passwords. Session lasts 30 minutes. Does everything an admin can,
+           plus: kick admins, change the admin PIN, change the owner passwords, bulk tools, audit log.
+   All of this is only the interface. The real protection is in firestore.rules. */
+Object.assign(S, { owners: new Set(), badgeRole: new Map(), ownerAt: 0, ownFails: 0, isOwner: false, bansAll: new Map(), notes: new Map(), audit: [] });
+const ADMIN_MS = 2 * 3600 * 1000, OWNER_MS = 30 * 60 * 1000, OWNER_AWAY_MS = 5 * 60 * 1000;
+// o() only takes text, so the admin layer uses elx(), which also accepts child elements.
+const elx = (tag, cls, ...kids) => { const n = document.createElement(tag); if (cls) n.className = cls; kids.flat().forEach(k => { if (k === null || k === undefined || k === false) return; n.append(k && k.nodeType ? k : document.createTextNode(String(k))); }); return n; };
+const fsv = () => firebase.firestore;
+const fmtTime = t => { try { return new Date(t).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); } catch { return String(t); } };
+const banActive = b => !!b && (!b.until || b.until > Date.now());
+const roleOf = id => S.owners.has(id) ? 'owner' : S.admins.has(id) ? 'admin' : null;
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+
+/* ---- Small dialog helper (replaces prompt/confirm) ---- */
+function ask(cfg) {
+  return new Promise(res => {
+    const ov = elx('div', 'pin-ov'); ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', cfg.title);
+    const f = elx('form', 'card pin-card adm-modal'), inputs = {};
+    f.append(elx('h3', '', cfg.title)); if (cfg.intro) f.append(elx('p', 'muted', cfg.intro));
+    (cfg.fields || []).forEach(fd => {
+      let inp;
+      if (fd.options) { inp = document.createElement('select'); fd.options.forEach(([v, t]) => inp.append(new Option(t, v))); }
+      else if (fd.multiline) { inp = document.createElement('textarea'); inp.rows = 3; }
+      else { inp = document.createElement('input'); inp.type = fd.type || 'text'; if (fd.type === 'number') inp.inputMode = 'numeric'; }
+      inp.className = 'adm-search'; if (fd.placeholder) inp.placeholder = fd.placeholder; if (fd.max) inp.maxLength = fd.max;
+      if (fd.value !== undefined) inp.value = fd.value; inp.autocomplete = fd.type === 'password' ? 'new-password' : 'off'; inp.setAttribute('aria-label', fd.label);
+      inputs[fd.key] = inp; f.append(elx('label', 'adm-lbl', fd.label), inp);
+    });
+    const msg = elx('p', 'pin-msg'); msg.setAttribute('role', 'alert');
+    const no = elx('button', 'btn btn-ghost', 'Cancel'), go = elx('button', 'btn ' + (cfg.danger ? 'btn-ghost adm-danger' : 'btn-primary'), cfg.ok || 'OK'); no.type = 'button'; go.type = 'submit';
+    const esc = e => { if (e.key === 'Escape') done(null); }, done = v => { document.removeEventListener('keydown', esc); ov.remove(); res(v); };
+    no.onclick = () => done(null); ov.addEventListener('click', e => { if (e.target === ov) done(null); }); document.addEventListener('keydown', esc);
+    f.onsubmit = e => { e.preventDefault(); const v = {}; for (const k in inputs) v[k] = inputs[k].value; const er = cfg.validate && cfg.validate(v); if (er) { msg.textContent = er; return; } done(v); };
+    f.append(msg, elx('div', 'cz-row pin-row', no, go)); ov.append(f); document.body.append(ov);
+    const first = Object.values(inputs)[0]; setTimeout(() => (first || go).focus(), 50);
+  });
+}
+
+/* ---- Bans (permanent or timed) ---- */
 function banCard() {
-  const c = o('div', 'card friends-gate'), b = S.bans.get(S.uid) || {};
-  c.append(o('h2', '', '\u{1F6AB} You\u2019re banned from the friends board'), o('p', 'muted', b.reason ? `Reason: ${b.reason}` : 'An admin has turned off the board, duels and coins for this account.'), o('p', 'muted', 'Quizzes and notes still work on your device.'));
+  const c = o('div', 'card friends-gate'), b = S.bans.get(S.uid) || {}, when = b.until ? ` It ends ${fmtTime(b.until)}.` : '';
+  c.append(o('h2', '', '\u{1F6AB} You\u2019re banned from the friends board'), o('p', 'muted', (b.reason ? `Reason: ${b.reason}.` : 'An admin has turned off the board, duels and coins for this account.') + when), o('p', 'muted', 'Quizzes and notes still work on your device.'));
   return c;
 }
 function applyBan() {
@@ -8229,6 +8299,23 @@ function applyBan() {
   c.append(go); ov.append(c); document.body.append(ov);
   renderFriends();
 }
+function refreshBans() {
+  S.bans = new Map([...S.bansAll].filter(([, b]) => banActive(b)));
+  const was = S.banned; S.banned = S.bans.has(S.uid); if (was && !S.banned) S.banDismissed = false;
+  applyBan(); renderFriends(); Adm.paint();
+}
+
+/* ---- Private message from the admin team ("notices/<uid>") ---- */
+function showNotice(n) {
+  let ov = $('notice-ov');
+  if (!n || !n.text) { if (ov) ov.remove(); return; }
+  if (ov) ov.remove();
+  ov = elx('div', 'pin-ov'); ov.id = 'notice-ov'; ov.setAttribute('role', 'alertdialog');
+  const c = elx('div', 'card pin-card'), go = elx('button', 'btn btn-primary', 'Got it'); go.type = 'button';
+  go.onclick = () => { ov.remove(); S.db.doc('notices/' + S.uid).delete().catch(() => {}); };
+  c.append(elx('h3', '', '\u{1F4E9} Message from the admin team'), elx('p', '', n.text), go); ov.append(c); document.body.append(ov);
+}
+
 const ANN_ICON = { info: '\u{1F4E2}', event: '\u{1F389}', warn: '\u26A0\uFE0F' };
 const annSeen = id => { try { return localStorage.getItem('ann-seen') === id; } catch { return false; } };
 function showAnn() {
@@ -8241,177 +8328,431 @@ function showAnn() {
 }
 setInterval(() => showAnn(), 60000);
 
-/* ===== Secret admin unlock: PIN -> 2-hour session ===== */
-const ADMIN_MS = 2 * 3600 * 1000;
+/* ---- Role state ---- */
 function refreshAdmin(force) {
-  const now = Date.now(), was = S.isAdmin, oldKey = [...S.admins].sort().join();
-  S.isAdmin = !!S.adminAt && now < S.adminAt + ADMIN_MS;
-  S.admins = new Set([...S.badgeMap].filter(([, u]) => u > now).map(([id]) => id)); if (S.isAdmin && S.badgeMap.has(S.uid)) S.admins.add(S.uid);
-  if (was && !S.isAdmin) App.toast('Admin session ended. Enter the PIN again to renew.', 'warn');
-  if (was !== S.isAdmin || force || oldKey !== [...S.admins].sort().join()) { renderAccount(); renderFriends(); showFtab(); }
+  const now = Date.now(), wasStaff = S.isAdmin, wasOwner = S.isOwner, oldKey = [...S.admins].sort().join() + '|' + [...S.owners].sort().join();
+  const adminLive = !!S.adminAt && now < S.adminAt + ADMIN_MS, ownerLive = !!S.ownerAt && now < S.ownerAt + OWNER_MS;
+  S.isOwner = ownerLive; S.isAdmin = adminLive || ownerLive;
+  S.admins = new Set(); S.owners = new Set();
+  S.badgeMap.forEach((until, id) => { if (until > now) { S.admins.add(id); if (S.badgeRole.get(id) === 'owner') S.owners.add(id); } });
+  if (S.isAdmin) S.admins.add(S.uid); if (S.isOwner) S.owners.add(S.uid);
+  if (wasOwner && !S.isOwner) { App.toast('Owner session ended. Enter both passwords again to renew.', 'warn'); if (S.db) S.db.doc('ownerSessions/' + S.uid).delete().catch(() => {}); }
+  if (wasStaff && !S.isAdmin) App.toast('Admin session ended. Enter the PIN again to renew.', 'warn');
+  syncSubs();
+  if (wasStaff !== S.isAdmin || wasOwner !== S.isOwner || force || oldKey !== [...S.admins].sort().join() + '|' + [...S.owners].sort().join()) { renderAccount(); renderFriends(); showFtab(); }
   if (S.isAdmin) Adm.tick();
 }
-async function adminLock() {
-  try { await S.db.doc('adminBadges/' + S.uid).delete(); } catch {}
-  try { await S.db.doc('adminSessions/' + S.uid).delete(); } catch {}
-  S.adminAt = 0; if (S.ftab === 'admin') S.ftab = 'board'; refreshAdmin(true); App.toast('Admin locked.', 'good');
+
+/* Live data only staff may read (private notes) and only the owner may read (audit log) */
+const subs = {};
+function liveSub(key, want, make) {
+  const s = subs[key] || (subs[key] = { off: null, retry: 0 });
+  if (want && !s.off && Date.now() > s.retry) {
+    try { s.off = make(() => { if (s.off) { try { s.off(); } catch {} } s.off = null; s.retry = Date.now() + 30000; }); } catch { s.off = null; }
+  }
+  if (!want && s.off) { try { s.off(); } catch {} s.off = null; }
 }
-function openPin(renew) {
-  if (!S.db || !S.uid) return App.toast('You need to be online to unlock admin.', 'warn');
-  if (S.isAdmin && !renew) { S.ftab = 'admin'; App.navigate('friends'); showFtab(); return; }
-  if ($('pin-ov')) return;
-  const ov = o('div', 'pin-ov'); ov.id = 'pin-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Admin access');
-  const c = o('form', 'card pin-card'), inp = document.createElement('input'), msg = o('p', 'pin-msg'), go = o('button', 'btn btn-primary', 'Unlock'), no = o('button', 'btn btn-ghost', 'Cancel');
-  inp.type = 'password'; inp.className = 'adm-search pin-in'; inp.placeholder = 'Admin PIN'; inp.autocomplete = 'off'; inp.setAttribute('autocapitalize', 'off'); inp.setAttribute('aria-label', 'Admin PIN');
+function syncSubs() {
+  if (!S.db) return;
+  liveSub('notes', S.isAdmin, fail => S.db.collection('adminNotes').onSnapshot(sn => { S.notes = new Map(sn.docs.map(d => [d.id, d.data()])); Adm.paint(); }, fail));
+  liveSub('audit', S.isOwner, fail => S.db.collection('auditLogs').orderBy('at', 'desc').limit(300).onSnapshot(sn => { S.audit = sn.docs.map(d => { const x = d.data({ serverTimestamps: 'estimate' }); return { id: d.id, ...x, at: x.at && x.at.toMillis ? x.at.toMillis() : Date.now() }; }); Adm.paint(); }, fail));
+  if (!S.isAdmin) { S.notes = new Map(); }
+  if (!S.isOwner) { S.audit = []; }
+}
+async function logAct(action, target, detail) {
+  try {
+    await S.db.collection('auditLogs').add({ at: fsv().FieldValue.serverTimestamp(), by: S.uid, byName: String(nameOf(S.uid)).slice(0, 40), role: S.isOwner ? 'owner' : 'admin', action, target: target || '', targetName: target ? String(nameOf(target)).slice(0, 40) : '', detail: String(detail || '').slice(0, 200) });
+  } catch {}
+}
+
+async function setBadge() {
+  // one badge doc per person; the owner badge wins while the owner session is live
+  const F = fsv();
+  if (S.isOwner) return S.db.doc('adminBadges/' + S.uid).set({ until: F.Timestamp.fromMillis(S.ownerAt + OWNER_MS), role: 'owner' });
+  if (S.adminAt && Date.now() < S.adminAt + ADMIN_MS) return S.db.doc('adminBadges/' + S.uid).set({ until: F.Timestamp.fromMillis(S.adminAt + ADMIN_MS), role: 'admin' });
+  return S.db.doc('adminBadges/' + S.uid).delete();
+}
+async function adminLock() {
+  try { await S.db.doc('adminSessions/' + S.uid).delete(); } catch {}
+  S.adminAt = 0; refreshAdmin(true); try { await setBadge(); } catch {}
+  if (!S.isAdmin) { if (S.ftab === 'admin') S.ftab = 'board'; App.toast('Admin locked.', 'good'); } else App.toast('Admin PIN session closed. Owner session is still open.', 'good');
+  showFtab();
+}
+async function ownerLock(silent) {
+  try { await S.db.doc('ownerSessions/' + S.uid).delete(); } catch {}
+  S.ownerAt = 0; refreshAdmin(true); try { await setBadge(); } catch {}
+  if (!S.isAdmin && S.ftab === 'admin') S.ftab = 'board';
+  showFtab(); if (!silent) App.toast('Owner locked.', 'good');
+}
+async function lockAll() {
+  try { await S.db.doc('ownerSessions/' + S.uid).delete(); } catch {}
+  try { await S.db.doc('adminSessions/' + S.uid).delete(); } catch {}
+  try { await S.db.doc('adminBadges/' + S.uid).delete(); } catch {}
+  S.ownerAt = 0; S.adminAt = 0; if (S.ftab === 'admin') S.ftab = 'board'; refreshAdmin(true); showFtab(); App.toast('Everything locked.', 'good');
+}
+// the owner session locks itself if the app was hidden for more than 5 minutes
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenAt = Date.now(); return; }
+  if (S.isOwner && hiddenAt && Date.now() - hiddenAt > OWNER_AWAY_MS) { ownerLock(true); App.toast('Owner locked because you were away. Unlock again to continue.', 'warn'); }
+  hiddenAt = 0;
+});
+
+/* ---- Unlock dialog: admin = 1 PIN, owner = 2 passwords ---- */
+function openPin(mode, renew) {
+  if (!S.db || !S.uid) return App.toast('You need to be online to unlock.', 'warn');
+  mode = mode === 'owner' ? 'owner' : 'admin';
+  if (!renew && ((mode === 'owner' && S.isOwner) || (mode === 'admin' && S.isAdmin))) { S.ftab = 'admin'; App.navigate('friends'); showFtab(); return; }
+  const old = $('pin-ov'); if (old) old.remove();
+  const owner = mode === 'owner';
+  const ov = elx('div', 'pin-ov'); ov.id = 'pin-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', owner ? 'Owner access' : 'Admin access');
+  const c = elx('form', 'card pin-card' + (owner ? ' pin-owner' : '')), msg = elx('p', 'pin-msg'), go = elx('button', 'btn btn-primary', owner ? 'Continue' : 'Unlock'), no = elx('button', 'btn btn-ghost', 'Cancel');
+  const pw = (ph) => { const i = document.createElement('input'); i.type = 'password'; i.className = 'adm-search pin-in'; i.placeholder = ph; i.autocomplete = 'off'; i.setAttribute('autocapitalize', 'off'); i.setAttribute('aria-label', ph); return i; };
+  const i1 = pw(owner ? 'Owner password 1 of 2' : 'Admin PIN'), i2 = owner ? pw('Owner password 2 of 2') : null;
+  if (i2) i2.hidden = true;
   go.type = 'submit'; no.type = 'button'; msg.setAttribute('role', 'alert');
   const close = () => { document.removeEventListener('keydown', esc); ov.remove(); }, esc = e => { if (e.key === 'Escape') close(); };
   no.onclick = close; document.addEventListener('keydown', esc); ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  const sw = elx('button', 'adm-link', owner ? '\u2190 Admin PIN instead' : 'I\u2019m the owner \u2192'); sw.type = 'button'; sw.onclick = () => { close(); openPin(owner ? 'admin' : 'owner', renew); };
+  let step = 1;
+  const reset1 = () => { step = 1; i1.value = ''; if (i2) { i2.value = ''; i2.hidden = true; } i1.hidden = false; go.textContent = owner ? 'Continue' : 'Unlock'; i1.focus(); };
   c.onsubmit = async e => {
-    e.preventDefault(); const pin = inp.value.trim(); if (!pin) return;
-    if (Date.now() < S.pinLock) { msg.textContent = `Too many tries. Wait ${Math.ceil((S.pinLock - Date.now()) / 60000)} min.`; return; }
+    e.preventDefault();
+    if (owner && step === 1) { if (!i1.value) return; if (Date.now() < +lsGet('own-lock')) { msg.textContent = `Too many wrong tries. Locked for ${Math.ceil((+lsGet('own-lock') - Date.now()) / 60000)} more min.`; return; } step = 2; i1.hidden = true; i2.hidden = false; go.textContent = 'Unlock'; msg.textContent = ''; i2.focus(); return; }
+    const secret = owner ? [i1.value, i2.value] : [i1.value.trim()]; if (secret.some(x => !x)) return;
+    if (!owner && Date.now() < S.pinLock) { msg.textContent = `Too many tries. Wait ${Math.ceil((S.pinLock - Date.now()) / 60000)} min.`; return; }
     go.disabled = true; go.textContent = 'Checking\u2026'; msg.textContent = '';
     try {
-      const ref = S.db.doc('adminSessions/' + S.uid), F = firebase.firestore;
-      await ref.set({ pin, at: F.FieldValue.serverTimestamp() });             // the server rules compare the PIN; it is never stored in this page
-      const snap = await ref.get({ source: 'server' }), at = snap.data().at.toMillis();
-      await S.db.doc('adminBadges/' + S.uid).set({ until: F.Timestamp.fromMillis(at + ADMIN_MS) }).catch(() => {});
-      S.pinFails = 0; S.adminAt = at; close(); refreshAdmin(true); S.ftab = 'admin'; App.navigate('friends'); showFtab(); App.toast('Admin unlocked for 2 hours.', 'good');
+      const F = fsv();
+      if (owner) {
+        const ref = S.db.doc('ownerSessions/' + S.uid);
+        await ref.set({ pw1: secret[0], pw2: secret[1], at: F.FieldValue.serverTimestamp() });   // the server rules compare both passwords; they are never stored in this page
+        const snap = await ref.get({ source: 'server' }); S.ownerAt = snap.data().at.toMillis(); S.ownFails = 0; lsSet('own-lock', '0');
+        refreshAdmin(true); await setBadge().catch(() => {}); logAct('unlock', '', 'Owner session started');
+        close(); S.ftab = 'admin'; Adm.go('owner'); App.navigate('friends'); showFtab(); App.toast('Owner unlocked for 30 minutes.', 'good');
+      } else {
+        const ref = S.db.doc('adminSessions/' + S.uid);
+        await ref.set({ pin: secret[0], at: F.FieldValue.serverTimestamp() });
+        const snap = await ref.get({ source: 'server' }); S.adminAt = snap.data().at.toMillis(); S.pinFails = 0;
+        refreshAdmin(true); await setBadge().catch(() => {}); logAct('unlock', '', 'Admin session started');
+        close(); S.ftab = 'admin'; App.navigate('friends'); showFtab(); App.toast('Admin unlocked for 2 hours.', 'good');
+      }
     } catch (er) {
-      go.disabled = false; go.textContent = 'Unlock'; inp.value = ''; inp.focus();
-      if (er && er.code === 'permission-denied') { S.pinFails++; if (S.pinFails >= 5) { S.pinLock = Date.now() + 5 * 60000; S.pinFails = 0; msg.textContent = 'Too many wrong tries. Locked for 5 minutes.'; } else msg.textContent = `Wrong PIN (${5 - S.pinFails} tries left). If it is right, the admin rules may not be set up yet.`; }
-      else msg.textContent = 'Couldn\u2019t check the PIN: ' + ((er && er.message) || 'network problem');
+      go.disabled = false;
+      if (er && er.code === 'permission-denied') {
+        if (owner) { S.ownFails++; if (S.ownFails >= 3) { lsSet('own-lock', String(Date.now() + 15 * 60000)); S.ownFails = 0; msg.textContent = 'Too many wrong tries. Owner access is locked for 15 minutes.'; } else msg.textContent = `Those passwords don\u2019t match (${3 - S.ownFails} tries left). If they are right, the owner rules may not be published yet.`; reset1(); }
+        else { S.pinFails++; if (S.pinFails >= 5) { S.pinLock = Date.now() + 5 * 60000; S.pinFails = 0; msg.textContent = 'Too many wrong tries. Locked for 5 minutes.'; } else msg.textContent = `Wrong PIN (${5 - S.pinFails} tries left). If it is right, the admin rules may not be set up yet.`; go.textContent = 'Unlock'; i1.value = ''; i1.focus(); }
+      } else { msg.textContent = 'Couldn\u2019t check: ' + ((er && er.message) || 'network problem'); if (owner) reset1(); else { go.textContent = 'Unlock'; i1.value = ''; } }
     }
   };
-  c.append(o('h3', '', '\u{1F6E1}\uFE0F Admin access'), o('p', 'muted', 'Enter the admin PIN. Access lasts 2 hours, then locks itself.'), inp, msg, o('div', 'cz-row pin-row', ...[no, go]));
-  ov.append(c); document.body.append(ov); setTimeout(() => inp.focus(), 50);
+  c.append(elx('h3', '', owner ? '\u{1F451} Owner access' : '\u{1F6E1}\uFE0F Admin access'),
+    elx('p', 'muted', owner ? 'Enter both owner passwords, one after the other. Owner access lasts 30 minutes.' : 'Enter the admin PIN. Access lasts 2 hours, then locks itself.'),
+    i1, i2, msg, elx('div', 'cz-row pin-row', no, go), sw);
+  ov.append(c); document.body.append(ov); setTimeout(() => i1.focus(), 50);
 }
 (() => {
   let taps = [];
   const brand = document.querySelector('.brand');
-  if (brand) brand.addEventListener('click', e => { const t = Date.now(); taps = taps.filter(x => t - x < 2500); taps.push(t); if (taps.length >= 5) { taps = []; e.preventDefault(); openPin(); } });   // tap the logo 5 times
-  document.addEventListener('keydown', e => { if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) { e.preventDefault(); openPin(); } });                                   // or Ctrl+Shift+A on a computer
+  if (brand) brand.addEventListener('click', e => { const t = Date.now(); taps = taps.filter(x => t - x < 2500); taps.push(t); if (taps.length >= 5) { taps = []; e.preventDefault(); openPin('admin'); } });   // tap the logo 5 times
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey && e.shiftKey)) return;
+    if (e.key === 'A' || e.key === 'a') { e.preventDefault(); openPin('admin'); }       // Ctrl+Shift+A = admin
+    if (e.key === 'O' || e.key === 'o') { e.preventDefault(); openPin('owner'); }       // Ctrl+Shift+O = owner
+  });
 })();
 
 const Adm = (() => {
-  const st = { sub: 'players', q: '', open: null, amt: 10, kind: 'info', ttl: 86400000 };
-  let root = null, body = null, subs = null, timer = null;
-  const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
+  const st = { sub: 'players', q: '', f: 'all', sort: 'exp', open: null, amt: 10, kind: 'info', ttl: 86400000, limit: 40, alq: '', alr: 'all' };
+  let root = null, body = null, tabs = null, timer = null, eyebrow = null, title = null, tabsKey = '';
+  const btn = (t, c, f, dis) => { const b = elx('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; if (dis) b.disabled = true; return b; };
   const ok = m => App.toast(m, 'good');
-  const fail = e => App.toast(e && e.code === 'permission-denied' ? 'Blocked by the Firestore rules. Add the admin rules first (see firestore.rules).' : 'Failed: ' + ((e && e.message) || 'unknown error'), 'warn');
+  const fail = e => App.toast(e && e.code === 'permission-denied' ? 'Blocked by the Firestore rules. Publish the new firestore.rules and check that your role is allowed to do this.' : 'Failed: ' + ((e && e.message) || 'unknown error'), 'warn');
+  const run = async (fn, msg) => { try { await fn(); if (msg) ok(msg); return true; } catch (e) { fail(e); return false; } };
   const pdoc = id => S.db.doc('players/' + id);
-  const protectedP = p => S.admins.has(p.id);
+  const del = () => fsv().FieldValue.delete();
+  const daysSince = d => d ? Math.max(0, Math.floor((Date.parse(today()) - Date.parse(d)) / 864e5)) : 9999;
+  // who may be touched: admins can't touch other admins or the owner; the owner can touch admins but not another owner. Nobody can ban or delete themselves.
+  const canAct = p => p.id === S.uid || (S.isOwner ? !S.owners.has(p.id) : !S.admins.has(p.id));
+  const canKill = p => p.id !== S.uid && canAct(p);
+  const chunked = async fns => { for (let i = 0; i < fns.length; i += 200) { const b = S.db.batch(); fns.slice(i, i + 200).forEach(f => f(b)); await b.commit(); } };
+  const tile = (a, b) => elx('div', 'stat-tile', elx('strong', '', String(a)), elx('span', '', b));
+  const roleTag = id => { const r = roleOf(id); return r ? adminBadge(id) : null; };
 
+  /* ---------- player actions ---------- */
   async function adjust(p, field, delta, label) {
     const cur = Number(p[field]) || 0, next = Math.max(0, cur + delta);
-    try { await pdoc(p.id).set({ [field]: next }, { merge: true }); ok(`${nameOf(p.id)}: ${label} ${cur} \u2192 ${next}`); } catch (e) { fail(e); }
+    if (await run(() => pdoc(p.id).set({ [field]: next }, { merge: true }), `${nameOf(p.id)}: ${label} ${cur} \u2192 ${next}`)) logAct(delta > 0 ? 'give' : 'take', p.id, `${label} ${cur} \u2192 ${next}`);
+  }
+  async function setExact(p) {
+    const v = await ask({ title: `Set a value for ${nameOf(p.id)}`, intro: 'This replaces the number. Use it to fix mistakes.', fields: [{ key: 'what', label: 'What to set', options: [['coins', '\u{1F4B0} Coins'], ['totalExp', 'Total EXP'], ['bestStreak', 'Best streak'], ['p50', 'Second Chances']] }, { key: 'n', label: 'New value', type: 'number', value: '0' }], ok: 'Set value', validate: x => (x.n === '' || +x.n < 0 || +x.n > 9999999) ? 'Enter a number from 0 to 9,999,999.' : '' });
+    if (!v) return; const n = Math.floor(+v.n), cur = Number(p[v.what]) || 0;
+    if (await run(() => pdoc(p.id).set({ [v.what]: n }, { merge: true }), `${nameOf(p.id)}: ${v.what} ${cur} \u2192 ${n}`)) logAct('set', p.id, `${v.what} ${cur} \u2192 ${n}`);
+  }
+  async function message(p) {
+    const v = await ask({ title: `Message ${nameOf(p.id)}`, intro: 'They will see this the next time the app is open, with a Got it button.', fields: [{ key: 't', label: 'Message (max 200 characters)', multiline: true, max: 200 }], ok: 'Send', validate: x => x.t.trim().length < 3 ? 'Write a message first.' : '' });
+    if (!v) return;
+    if (await run(() => S.db.doc('notices/' + p.id).set({ text: v.t.trim(), at: fsv().FieldValue.serverTimestamp(), by: S.uid, byName: String(nameOf(S.uid)).slice(0, 40) }), 'Message sent.')) logAct('message', p.id, v.t.trim());
+  }
+  async function rename(p) {
+    const v = await ask({ title: `Rename ${nameOf(p.id)}`, intro: 'Use this for names that break the rules. The player can change it again later.', fields: [{ key: 'n', label: 'New name', value: nameOf(p.id), max: 30 }], ok: 'Rename', validate: x => x.n.trim().length < 2 ? 'At least 2 characters.' : '' });
+    if (!v) return; const old = nameOf(p.id);
+    if (await run(() => pdoc(p.id).set({ displayName: v.n.trim() }, { merge: true }), 'Renamed.')) logAct('rename', p.id, `${old} \u2192 ${v.n.trim()}`);
+  }
+  async function clearField(p, f, label) {
+    if (!await ask({ title: `Remove ${nameOf(p.id)}\u2019s ${label}?`, ok: 'Remove', danger: true })) return;
+    if (await run(() => pdoc(p.id).update({ [f]: del() }), `${label} removed.`)) logAct('clear-' + f, p.id, label);
   }
   async function reset(p) {
-    if (!confirm(`Reset ${nameOf(p.id)}? EXP, coins, streak, items and duel record go back to zero. Name and look stay.`)) return;
+    if (!await ask({ title: `Reset ${nameOf(p.id)}?`, intro: 'EXP, coins, streak, items and duel record go back to zero. Name and look stay.', ok: 'Reset progress', danger: true })) return;
     const keep = {}; ['displayName', 'avatar', 'photo', 'color', 'bio'].forEach(k => { if (p[k]) keep[k] = p[k]; });
-    try { await pdoc(p.id).set(keep); ok(`${nameOf(p.id)} was reset.`); } catch (e) { fail(e); }
+    if (await run(() => pdoc(p.id).set(keep), `${nameOf(p.id)} was reset.`)) logAct('reset', p.id, 'progress wiped');
   }
   async function remove(p) {
-    if (!confirm(`Delete ${nameOf(p.id)} from the board? If they open the app again they come back with a blank profile. Ban them too to stop that.`)) return;
-    try { await pdoc(p.id).delete(); st.open = null; ok('Player deleted.'); } catch (e) { fail(e); }
+    if (!await ask({ title: `Delete ${nameOf(p.id)}?`, intro: 'They leave the board. If they open the app again they come back with a blank profile. Ban them too to stop that.', ok: 'Delete player', danger: true })) return;
+    if (await run(() => pdoc(p.id).delete(), 'Player deleted.')) { st.open = null; logAct('delete', p.id, 'removed from board'); }
   }
   async function ban(p) {
-    const reason = prompt(`Ban ${nameOf(p.id)}? Add a reason they will see (optional):`, ''); if (reason === null) return;
-    try { await S.db.doc('bans/' + p.id).set({ at: Date.now(), by: S.uid, name: nameOf(p.id), reason: reason.trim().slice(0, 120) }); ok(`${nameOf(p.id)} is banned.`); } catch (e) { fail(e); }
+    const v = await ask({ title: `Ban ${nameOf(p.id)}`, intro: 'They lose the board, duels and coins. Quizzes and notes keep working.', fields: [{ key: 'd', label: 'How long', options: [['3600000', '1 hour'], ['21600000', '6 hours'], ['86400000', '1 day'], ['259200000', '3 days'], ['604800000', '7 days'], ['2592000000', '30 days'], ['0', 'Permanent']], }, { key: 'r', label: 'Reason they will see (optional)', max: 120 }], ok: 'Ban', danger: true });
+    if (!v) return; const ms = +v.d, until = ms ? Date.now() + ms : 0;
+    if (await run(() => S.db.doc('bans/' + p.id).set({ at: Date.now(), by: S.uid, name: String(nameOf(p.id)).slice(0, 40), reason: v.r.trim().slice(0, 120), until }), `${nameOf(p.id)} is banned.`)) logAct('ban', p.id, `${until ? 'until ' + fmtTime(until) : 'permanent'}${v.r.trim() ? ' \u00B7 ' + v.r.trim() : ''}`);
   }
-  async function unban(p) { try { await S.db.doc('bans/' + p.id).delete(); ok(`${nameOf(p.id)} is unbanned.`); } catch (e) { fail(e); } }
+  async function unban(id) { if (await run(() => S.db.doc('bans/' + id).delete(), `${nameOf(id)} is unbanned.`)) logAct('unban', id, ''); }
+  async function saveNote(p, text) {
+    const t = text.trim().slice(0, 500);
+    if (await run(() => t ? S.db.doc('adminNotes/' + p.id).set({ text: t, by: String(nameOf(S.uid)).slice(0, 40), at: Date.now() }) : S.db.doc('adminNotes/' + p.id).delete(), t ? 'Note saved.' : 'Note removed.')) logAct('note', p.id, t ? 'private note updated' : 'private note removed');
+  }
 
   function controls(p) {
-    const w = o('div', 'adm-ctl'), inp = document.createElement('input'); inp.type = 'number'; inp.min = '1'; inp.value = st.amt; inp.inputMode = 'numeric'; inp.className = 'adm-amt'; inp.setAttribute('aria-label', 'Amount');
+    const w = elx('div', 'adm-ctl'), can = canAct(p), kill = canKill(p), banned = S.bans.has(p.id), rt = roleOf(p.id);
+    const inp = document.createElement('input'); inp.type = 'number'; inp.min = '1'; inp.value = st.amt; inp.inputMode = 'numeric'; inp.className = 'adm-amt'; inp.setAttribute('aria-label', 'Amount');
     inp.oninput = () => { st.amt = Math.max(1, Math.floor(+inp.value) || 1); };
     const n = () => Math.max(1, Math.floor(+inp.value) || 1);
-    const g1 = o('div', 'adm-btns'); g1.append(
-      btn('+ \u{1F4B0} coins', 'btn-primary btn-sm', () => adjust(p, 'coins', n(), 'coins')), btn('\u2212 \u{1F4B0} coins', 'btn-ghost btn-sm', () => adjust(p, 'coins', -n(), 'coins')),
-      btn('+ EXP', 'btn-primary btn-sm', () => adjust(p, 'totalExp', n(), 'EXP')), btn('\u2212 EXP', 'btn-ghost btn-sm', () => adjust(p, 'totalExp', -n(), 'EXP')));
-    const banned = S.bans.has(p.id), g2 = o('div', 'adm-btns');
-    const rb = btn('Reset progress', 'btn-ghost btn-sm', () => reset(p)), bb = banned ? btn('Unban', 'btn-primary btn-sm', () => unban(p)) : btn('\u{1F6AB} Ban', 'btn-ghost btn-sm adm-danger', () => ban(p)), db = btn('\u{1F5D1}\uFE0F Delete', 'btn-ghost btn-sm adm-danger', () => remove(p));
-    if (protectedP(p)) [rb, db].forEach(b => { b.disabled = true; }), banned || (bb.disabled = true);
-    g2.append(rb, bb, db);
-    const live = p.lastDay === today() || p.lastDay === yesterday();
-    const info = o('p', 'adm-info', `ID ${p.id} \u00B7 last active ${p.lastDay || 'never'} \u00B7 \u{1F525} ${live ? p.streak || 0 : 0} \u00B7 duels ${p.duelW || 0}W-${p.duelL || 0}L-${p.duelD || 0}D \u00B7 Second Chances ${p.p50 || 0}`);
-    w.append(o('label', 'adm-lbl', 'Amount'), inp, g1, g2, info);
-    if (protectedP(p)) w.append(o('p', 'adm-info', '\u{1F6E1}\uFE0F Admins are protected from reset, ban and delete.'));
+    const chips = elx('div', 'adm-chips'); [10, 50, 100, 500, 1000].forEach(v => { const c = elx('button', 'adm-chip', '+' + v); c.type = 'button'; c.onclick = () => { inp.value = v; st.amt = v; }; chips.append(c); });
+    const g1 = elx('div', 'adm-btns',
+      btn('+ \u{1F4B0} coins', 'btn-primary btn-sm', () => adjust(p, 'coins', n(), 'coins'), !can), btn('\u2212 \u{1F4B0} coins', 'btn-ghost btn-sm', () => adjust(p, 'coins', -n(), 'coins'), !can),
+      btn('+ EXP', 'btn-primary btn-sm', () => adjust(p, 'totalExp', n(), 'EXP'), !can), btn('\u2212 EXP', 'btn-ghost btn-sm', () => adjust(p, 'totalExp', -n(), 'EXP'), !can));
+    const g2 = elx('div', 'adm-btns', btn('\u{1F4DD} Set exact value\u2026', 'btn-ghost btn-sm', () => setExact(p), !can), btn('\u{1F4E9} Send message\u2026', 'btn-ghost btn-sm', () => message(p)));
+    const g3 = elx('div', 'adm-btns3', btn('\u270F\uFE0F Rename', 'btn-ghost btn-sm', () => rename(p), !can), btn('Remove photo', 'btn-ghost btn-sm', () => clearField(p, 'photo', 'photo'), !can || !p.photo), btn('Remove bio', 'btn-ghost btn-sm', () => clearField(p, 'bio', 'bio'), !can || !p.bio));
+    const g4 = elx('div', 'adm-btns3', btn('Reset progress', 'btn-ghost btn-sm adm-danger', () => reset(p), !kill), banned ? btn('Unban', 'btn-primary btn-sm', () => unban(p.id), !can) : btn('\u{1F6AB} Ban', 'btn-ghost btn-sm adm-danger', () => ban(p), !kill), btn('\u{1F5D1}\uFE0F Delete', 'btn-ghost btn-sm adm-danger', () => remove(p), !kill));
+    const note = document.createElement('textarea'); note.className = 'adm-ta'; note.rows = 2; note.maxLength = 500; note.placeholder = 'Private note about this player (only admins and the owner can see it)'; note.value = (S.notes.get(p.id) || {}).text || ''; note.setAttribute('aria-label', 'Private note');
+    const nb = btn('Save note', 'btn-ghost btn-sm', () => saveNote(p, note.value));
+    const nmeta = S.notes.get(p.id); const nm = nmeta ? elx('p', 'adm-info', `Last edited by ${nmeta.by || 'staff'} \u00B7 ${fmtTime(nmeta.at)}`) : null;
+    const live = p.lastDay === today() || p.lastDay === yesterday(), b = S.bans.get(p.id);
+    const info = elx('p', 'adm-info', `ID ${p.id} \u00B7 last active ${p.lastDay || 'never'} \u00B7 \u{1F525} ${live ? p.streak || 0 : 0} (best ${p.bestStreak || 0}) \u00B7 duels ${p.duelW || 0}W-${p.duelL || 0}L-${p.duelD || 0}D \u00B7 Second Chances ${p.p50 || 0}${b ? ` \u00B7 ${banActive(b) ? 'BANNED' : 'ban expired'}${b.reason ? ' (' + b.reason + ')' : ''}` : ''}`);
+    w.append(elx('label', 'adm-lbl', 'Amount'), inp, chips, g1, g2, elx('label', 'adm-lbl', 'Moderation'), g3, g4, elx('label', 'adm-lbl', 'Private note'), note, nb, nm, info);
+    if (!can) w.append(elx('p', 'adm-info adm-prot', rt === 'owner' ? '\u{1F451} The owner is protected from every action here.' : '\u{1F6E1}\uFE0F Admins are protected from other admins. Only the owner can act on them.'));
+    else if (p.id === S.uid) w.append(elx('p', 'adm-info adm-prot', 'This is you. You can\u2019t ban, reset or delete yourself.'));
     return w;
   }
 
+  /* ---------- tabs ---------- */
+  const FILTERS = [['all', 'All'], ['today', 'Active today'], ['inactive', 'Inactive 7d+'], ['banned', 'Banned'], ['staff', 'Staff']];
+  const SORTS = [['exp', 'Most EXP'], ['coins', 'Most coins'], ['streak', 'Best streak'], ['recent', 'Recently active'], ['name', 'Name A\u2013Z']];
   function players() {
-    const w = o('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search a name or ID\u2026'; q.value = st.q; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search players');
-    q.oninput = () => { st.q = q.value.trim().toLowerCase(); fill(); };
-    const list = o('div', 'adm-list');
+    const w = elx('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search a name or ID\u2026'; q.value = st.q; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search players');
+    const sort = document.createElement('select'); sort.className = 'adm-sel'; SORTS.forEach(([v, t]) => sort.append(new Option(t, v))); sort.value = st.sort; sort.setAttribute('aria-label', 'Sort players'); sort.onchange = () => { st.sort = sort.value; fill(); };
+    const chips = elx('div', 'adm-chips'), count = elx('p', 'adm-info'), list = elx('div', 'adm-list');
+    q.oninput = () => { st.q = q.value.trim().toLowerCase(); st.limit = 40; fill(); };
+    FILTERS.forEach(([k, t]) => { const c = elx('button', 'adm-chip', t); c.type = 'button'; c.dataset.k = k; c.onclick = () => { st.f = k; st.limit = 40; fill(); }; chips.append(c); });
+    const key = { exp: p => p.totalExp || 0, coins: p => p.coins || 0, streak: p => p.bestStreak || 0, recent: p => p.lastDay ? Date.parse(p.lastDay) : 0 };
+    const pass = p => st.f === 'all' ? true : st.f === 'today' ? p.lastDay === today() : st.f === 'inactive' ? daysSince(p.lastDay) >= 7 : st.f === 'banned' ? S.bans.has(p.id) : S.admins.has(p.id);
     function fill() {
-      const ps = S.players.filter(p => !st.q || `${nameOf(p.id)} ${p.id}`.toLowerCase().includes(st.q)).sort((a, b) => (b.totalExp || 0) - (a.totalExp || 0));
-      list.replaceChildren(...(ps.length ? ps.map(p => {
-        const open = st.open === p.id, row = o('div', 'adm-row' + (open ? ' is-open' : '')), h = o('button', 'adm-head'); h.type = 'button';
-        const t = o('div', 'adm-who'), nm = o('strong', '', nameOf(p.id)); if (p.id === S.uid) nm.append(' ', o('span', 'you-tag', 'you')); if (S.admins.has(p.id)) nm.append(' ', adminBadge()); if (S.bans.has(p.id)) nm.append(' ', o('span', 'board-title adm-bantag', 'Banned'));
-        t.append(nm, o('span', 'adm-sub', `Lv ${lv(p.totalExp || 0).level} \u00B7 ${p.totalExp || 0} EXP \u00B7 \u{1F4B0} ${p.coins || 0}`));
-        h.append(bubble(p, 36), t, o('span', 'adm-chev', open ? '\u25B2' : '\u25BC')); h.onclick = () => { st.open = open ? null : p.id; fill(); };
-        row.append(h); if (open) row.append(controls(p)); return row;
-      }) : [o('p', 'muted', 'No players match.')]));
+      chips.querySelectorAll('button').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.k === st.f)));
+      let ps = S.players.filter(p => pass(p) && (!st.q || `${nameOf(p.id)} ${p.id}`.toLowerCase().includes(st.q)));
+      ps = st.sort === 'name' ? ps.sort((a, b) => String(nameOf(a.id)).localeCompare(String(nameOf(b.id)))) : ps.sort((a, b) => key[st.sort](b) - key[st.sort](a));
+      count.textContent = `${ps.length} of ${S.players.length} players`;
+      const shown = ps.slice(0, st.limit);
+      list.replaceChildren(...(shown.length ? shown.map(p => {
+        const open = st.open === p.id, row = elx('div', 'adm-row' + (open ? ' is-open' : '')), hd = elx('button', 'adm-head'); hd.type = 'button';
+        const nm = elx('strong', '', nameOf(p.id)); if (p.id === S.uid) nm.append(' ', elx('span', 'you-tag', 'you')); const rt = roleTag(p.id); if (rt) nm.append(' ', rt); if (S.bans.has(p.id)) nm.append(' ', elx('span', 'board-title adm-bantag', 'Banned'));
+        const t = elx('div', 'adm-who', nm, elx('span', 'adm-sub', `Lv ${lv(p.totalExp || 0).level} \u00B7 ${p.totalExp || 0} EXP \u00B7 \u{1F4B0} ${p.coins || 0} \u00B7 ${p.lastDay === today() ? 'active today' : p.lastDay ? daysSince(p.lastDay) + 'd ago' : 'never active'}${S.notes.has(p.id) ? ' \u00B7 \u{1F4DD}' : ''}`));
+        hd.append(bubble(p, 36), t, elx('span', 'adm-chev', open ? '\u25B2' : '\u25BC')); hd.onclick = () => { st.open = open ? null : p.id; fill(); };
+        row.append(hd); if (open) row.append(controls(p)); return row;
+      }) : [elx('p', 'muted', 'No players match.')]));
+      if (ps.length > shown.length) list.append(btn(`Show ${Math.min(40, ps.length - shown.length)} more`, 'btn-ghost btn-sm', () => { st.limit += 40; fill(); }));
     }
-    fill(); w.append(q, list); return w;
+    fill(); w.append(q, elx('div', 'adm-two', sort, count), chips, list); return w;
   }
 
   function stats() {
     const ps = S.players, td = today(), wk = weekStart(), sum = f => ps.reduce((a, p) => a + (Number(f(p)) || 0), 0);
-    const tile = (a, b) => { const x = o('div', 'stat-tile'); x.append(o('strong', '', String(a)), o('span', '', b)); return x; };
-    const duels = Math.round(sum(p => (p.duelW || 0) + (p.duelL || 0) + (p.duelD || 0)) / 2);
-    const tiles = o('div', 'stat-tiles');
-    tiles.append(tile(ps.length, 'Players'), tile(ps.filter(p => p.lastDay === td).length, 'Active today'), tile(ps.filter(p => p.weekKey === wk && (p.weekExp || 0) > 0).length, 'Active this week'),
-      tile(sum(p => p.totalExp), 'Total EXP'), tile(sum(p => p.coins), 'Coins in circulation'), tile(duels, 'Duels played'), tile(sum(p => p.dayKey === td ? p.dayExp : 0), 'EXP earned today'), tile(S.bans.size, 'Banned'), tile(S.admins.size, 'Admins'));
-    const top = (title, key, fmt) => { const c = o('div', 'adm-top'); c.append(o('h4', '', title)); const ol = o('ol'); [...ps].sort((a, b) => key(b) - key(a)).filter(p => key(p) > 0).slice(0, 5).forEach(p => { const li = o('li'); li.append(o('span', '', nameOf(p.id)), o('strong', '', fmt(key(p)))); ol.append(li); }); if (!ol.children.length) ol.append(o('li', 'muted', 'Nobody yet')); c.append(ol); return c; };
-    const w = o('div'); w.append(tiles, top('\u{1F3C6} Top EXP', p => p.totalExp || 0, v => v + ' EXP'), top('\u{1F4B0} Richest', p => p.coins || 0, v => '\u{1F4B0} ' + v), top('\u{1F525} Best streaks', p => p.bestStreak || 0, v => v + ' days'), top('\u2694\uFE0F Most duel wins', p => p.duelW || 0, v => v + ' wins'));
-    return w;
+    const duels = Math.round(sum(p => (p.duelW || 0) + (p.duelL || 0) + (p.duelD || 0)) / 2), avgLv = ps.length ? (sum(p => lv(p.totalExp || 0).level) / ps.length).toFixed(1) : '0';
+    const tiles = elx('div', 'stat-tiles',
+      tile(ps.length, 'Players'), tile(ps.filter(p => p.lastDay === td).length, 'Active today'), tile(ps.filter(p => p.weekKey === wk && (p.weekExp || 0) > 0).length, 'Active this week'), tile(ps.filter(p => daysSince(p.lastDay) >= 7).length, 'Inactive 7d+'),
+      tile(sum(p => p.totalExp), 'Total EXP'), tile(sum(p => p.coins), 'Coins in circulation'), tile(duels, 'Duels played'), tile(sum(p => p.dayKey === td ? p.dayExp : 0), 'EXP earned today'),
+      tile(avgLv, 'Average level'), tile(S.bans.size, 'Banned now'), tile(S.admins.size, 'Staff online'), tile(ps.filter(p => !p.lastDay).length, 'Never studied'));
+    const bar = (title, rows) => { const mx = Math.max(1, ...rows.map(r => r[1])), c = elx('div', 'adm-top'); c.append(elx('h4', '', title)); rows.forEach(([l, v]) => { const r = elx('div', 'adm-bar'), f = elx('i'); f.style.width = Math.max(v ? 4 : 0, Math.round(v / mx * 100)) + '%'; r.append(elx('span', '', l), elx('div', 'adm-bar-track', f), elx('strong', '', String(v))); c.append(r); }); return c; };
+    const buckets = [['Today', p => daysSince(p.lastDay) === 0], ['Yesterday', p => daysSince(p.lastDay) === 1], ['2\u20137 days', p => { const d = daysSince(p.lastDay); return d >= 2 && d <= 7; }], ['8\u201330 days', p => { const d = daysSince(p.lastDay); return d >= 8 && d <= 30; }], ['Over 30 days / never', p => daysSince(p.lastDay) > 30]].map(([l, f]) => [l, ps.filter(f).length]);
+    const lvls = [['Level 1\u20132', 1, 2], ['Level 3\u20135', 3, 5], ['Level 6\u201310', 6, 10], ['Level 11+', 11, 999]].map(([l, a, b]) => [l, ps.filter(p => { const x = lv(p.totalExp || 0).level; return x >= a && x <= b; }).length]);
+    const top = (title, k, fmt) => { const c = elx('div', 'adm-top'); c.append(elx('h4', '', title)); const ol = elx('ol'); [...ps].sort((a, b) => k(b) - k(a)).filter(p => k(p) > 0).slice(0, 5).forEach(p => ol.append(elx('li', '', elx('span', '', nameOf(p.id)), elx('strong', '', fmt(k(p)))))); if (!ol.children.length) ol.append(elx('li', 'muted', 'Nobody yet')); c.append(ol); return c; };
+    return elx('div', '', tiles, bar('\u{1F4C5} When players were last active', buckets), bar('\u{1F4C8} Players by level', lvls), top('\u{1F3C6} Top EXP', p => p.totalExp || 0, v => v + ' EXP'), top('\u{1F4B0} Richest', p => p.coins || 0, v => '\u{1F4B0} ' + v), top('\u{1F525} Best streaks', p => p.bestStreak || 0, v => v + ' days'), top('\u2694\uFE0F Most duel wins', p => p.duelW || 0, v => v + ' wins'));
   }
 
+  function bansTab() {
+    const all = [...S.bansAll].sort((a, b) => (b[1].at || 0) - (a[1].at || 0)), w = elx('div');
+    w.append(elx('p', 'adm-info', `${S.bans.size} active \u00B7 ${all.length - S.bans.size} expired`));
+    if (!all.length) { w.append(elx('p', 'muted', 'Nobody has been banned. Good.')); return w; }
+    const list = elx('div', 'adm-list');
+    all.forEach(([id, b]) => {
+      const act = banActive(b), row = elx('div', 'adm-row adm-ban' + (act ? '' : ' is-expired')), nm = elx('strong', '', b.name || nameOf(id));
+      row.append(elx('div', 'adm-who adm-pad', nm, elx('span', 'adm-sub', `${act ? 'Active' : 'Expired'} \u00B7 ${b.until ? (act ? 'ends ' : 'ended ') + fmtTime(b.until) : 'permanent'}${b.reason ? ' \u00B7 \u201C' + b.reason + '\u201D' : ''}`), elx('span', 'adm-sub', `Banned ${b.at ? fmtTime(b.at) : ''}${b.by ? ' by ' + nameOf(b.by) : ''}`)),
+        elx('div', 'adm-pad', btn(act ? 'Unban' : 'Remove record', 'btn-ghost btn-sm', () => unban(id), !act ? false : S.admins.has(id) && !S.isOwner)));
+      list.append(row);
+    });
+    w.append(list); return w;
+  }
+
+  const TEMPLATES = [['\u{1F4DA} Revise tonight', 'Mock exam week is close. Do at least one quiz tonight and keep your streak alive!'], ['\u{1F389} Double effort day', 'Weekend challenge: beat your own EXP record today. Good luck, everyone!'], ['\u26A0\uFE0F Be respectful', 'Reminder: keep names and bios clean and kind. Rule breakers will be banned from the board.'], ['\u{1F6E0}\uFE0F Update', 'The app was just updated. Close it fully and open it again to get the latest version.']];
   function announce() {
-    const w = o('div'), cur = S.ann, ta = document.createElement('textarea'); ta.maxLength = 280; ta.rows = 3; ta.placeholder = 'Write a message for everyone (max 280 characters)\u2026'; ta.className = 'adm-ta'; ta.setAttribute('aria-label', 'Announcement text');
+    const w = elx('div'), cur = S.ann, ta = document.createElement('textarea'); ta.maxLength = 280; ta.rows = 3; ta.placeholder = 'Write a message for everyone (max 280 characters)\u2026'; ta.className = 'adm-ta'; ta.setAttribute('aria-label', 'Announcement text');
+    const cnt = elx('span', 'adm-info', '0 / 280'), prev = elx('div', 'adm-prev'); prev.dataset.kind = st.kind;
     const kind = document.createElement('select'), ttl = document.createElement('select'); kind.className = ttl.className = 'adm-sel';
-    [['info', '\u{1F4E2} Info'], ['event', '\u{1F389} Event'], ['warn', '\u26A0\uFE0F Warning']].forEach(([v, t]) => { const op = new Option(t, v); kind.append(op); }); kind.value = st.kind; kind.onchange = () => { st.kind = kind.value; };
+    [['info', '\u{1F4E2} Info'], ['event', '\u{1F389} Event'], ['warn', '\u26A0\uFE0F Warning']].forEach(([v, t]) => kind.append(new Option(t, v))); kind.value = st.kind;
     [[3600000, 'Disappears in 1 hour'], [86400000, 'Disappears in 24 hours'], [604800000, 'Disappears in 7 days'], [0, 'Stays until I clear it']].forEach(([v, t]) => ttl.append(new Option(t, v))); ttl.value = String(st.ttl); ttl.onchange = () => { st.ttl = +ttl.value; };
-    const row = o('div', 'adm-btns');
+    const upd = () => { cnt.textContent = `${ta.value.length} / 280`; prev.dataset.kind = kind.value; prev.replaceChildren(elx('span', 'ann-ic', ANN_ICON[kind.value]), elx('div', 'ann-txt', ta.value.trim() || 'Preview of your announcement')); };
+    kind.onchange = () => { st.kind = kind.value; upd(); }; ta.oninput = upd; upd();
+    const tpl = elx('div', 'adm-chips'); TEMPLATES.forEach(([l, t]) => { const c = elx('button', 'adm-chip', l); c.type = 'button'; c.onclick = () => { ta.value = t; upd(); ta.focus(); }; tpl.append(c); });
+    const row = elx('div', 'adm-btns');
     row.append(btn('\u{1F4E3} Post to everyone', 'btn-primary btn-sm', async () => {
       const text = ta.value.trim(); if (text.length < 3) return App.toast('Write a message first.', 'warn');
-      try { await S.db.doc('announcements/current').set({ id: Date.now().toString(36), text, kind: kind.value, at: Date.now(), expires: st.ttl ? Date.now() + st.ttl : 0, by: nameOf(S.uid) }); ta.value = ''; ok('Announcement posted.'); } catch (e) { fail(e); }
-    }), btn('Clear current', 'btn-ghost btn-sm', async () => { try { await S.db.doc('announcements/current').delete(); ok('Announcement cleared.'); } catch (e) { fail(e); } }));
-    w.append(ta, o('div', 'adm-two', ...[kind, ttl]), row, o('p', 'adm-info', cur && cur.text && (!cur.expires || cur.expires > Date.now()) ? `Live now: \u201C${cur.text}\u201D` : 'Nothing is live right now. Players can dismiss an announcement; a new one shows again.'));
+      if (await run(() => S.db.doc('announcements/current').set({ id: Date.now().toString(36), text, kind: kind.value, at: Date.now(), expires: st.ttl ? Date.now() + st.ttl : 0, by: nameOf(S.uid) }), 'Announcement posted.')) { ta.value = ''; upd(); logAct('announce', '', text); }
+    }), btn('Clear current', 'btn-ghost btn-sm', async () => { if (await run(() => S.db.doc('announcements/current').delete(), 'Announcement cleared.')) logAct('announce-clear', '', ''); }));
+    w.append(elx('label', 'adm-lbl', 'Quick templates'), tpl, ta, cnt, elx('div', 'adm-two', kind, ttl), prev, row, elx('p', 'adm-info', cur && cur.text && (!cur.expires || cur.expires > Date.now()) ? `Live now (by ${cur.by || 'staff'}): \u201C${cur.text}\u201D` : 'Nothing is live right now. Players can dismiss an announcement; a new one shows again.'));
     return w;
   }
 
+  const csvCell = v => { const s = String(v === undefined || v === null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  function exportCsv() {
+    const head = ['id', 'name', 'level', 'totalExp', 'coins', 'streak', 'bestStreak', 'lastDay', 'duelWins', 'duelLosses', 'duelDraws', 'banned'];
+    const rows = [...S.players].sort((a, b) => (b.totalExp || 0) - (a.totalExp || 0)).map(p => [p.id, nameOf(p.id), lv(p.totalExp || 0).level, p.totalExp || 0, p.coins || 0, p.streak || 0, p.bestStreak || 0, p.lastDay || '', p.duelW || 0, p.duelL || 0, p.duelD || 0, S.bans.has(p.id) ? 'yes' : '']);
+    const blob = new Blob(['\uFEFF' + [head, ...rows].map(r => r.map(csvCell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `bece-players-${today()}.csv`; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    ok('Players exported.'); logAct('export', '', `${rows.length} players to CSV`);
+  }
+  async function copyBoard() {
+    const wk = weekStart(), top = S.players.filter(p => p.weekKey === wk && (p.weekExp || 0) > 0).sort((a, b) => b.weekExp - a.weekExp).slice(0, 10);
+    const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'], text = `\u{1F3C6} BECE Hub weekly top ${top.length || 10} (week of ${wk})\n` + (top.length ? top.map((p, i) => `${medals[i] || i + 1 + '.'} ${nameOf(p.id)} \u2013 ${p.weekExp} EXP`).join('\n') : 'Nobody has earned EXP this week yet.') + '\nKeep revising!';
+    try { await navigator.clipboard.writeText(text); ok('Copied. Paste it into your class group.'); } catch { await ask({ title: 'Copy this text', fields: [{ key: 't', label: 'Weekly top 10', multiline: true, value: text }], ok: 'Done' }); }
+  }
+  function tools() {
+    const card = (h, p, ...b) => elx('div', 'adm-card', elx('h4', '', h), elx('p', 'adm-info', p), elx('div', 'adm-btns', ...b));
+    return elx('div', '',
+      card('\u{1F4E4} Export players', 'Download every player\u2019s level, EXP, coins, streak and last active day as a spreadsheet file (CSV).', btn('Download CSV', 'btn-primary btn-sm', exportCsv)),
+      card('\u{1F4CB} Share the weekly top 10', 'Copies a ready-made message with this week\u2019s leaders. Paste it into WhatsApp.', btn('Copy text', 'btn-primary btn-sm', copyBoard)),
+      card('\u{1F4A1} Good to know', `Admin sessions last 2 hours. ${S.isOwner ? 'Your owner session lasts 30 minutes and locks if you leave the app for 5 minutes.' : 'Only the owner can kick admins, change passwords, run bulk tools and read the audit log.'} Everything you do is written to the audit log.`));
+  }
+
+  /* ---------- owner-only ---------- */
+  async function changeAdminPin() {
+    const v = await ask({ title: 'Change the admin PIN', intro: 'Every admin is signed out right now and needs the new PIN to come back. Pick something others can\u2019t guess.', fields: [{ key: 'a', label: 'New admin PIN (4 or more characters)', type: 'password', max: 64 }, { key: 'b', label: 'Type it again', type: 'password', max: 64 }], ok: 'Change PIN & sign out admins', danger: true, validate: x => x.a.length < 4 ? 'Use at least 4 characters.' : x.a !== x.b ? 'The two entries don\u2019t match.' : '' });
+    if (!v) return;
+    if (!await run(() => S.db.doc('config/admin').set({ pin: v.a }), 'Admin PIN changed.')) return;
+    const others = [...S.badgeMap.keys()].filter(id => id !== S.uid);
+    await chunked(others.flatMap(id => [b => b.delete(S.db.doc('adminSessions/' + id)), b => b.delete(S.db.doc('adminBadges/' + id))])).catch(() => {});
+    logAct('pin-change', '', `signed out ${others.length} other staff`);
+  }
+  async function changeOwnerPw() {
+    const v = await ask({ title: 'Change the 2 owner passwords', intro: 'Choose two different passwords, 8+ characters each. Your owner session ends and you unlock again with the new ones. If you forget them you must reset them in the Firebase console.', fields: [{ key: 'p1', label: 'New owner password 1', type: 'password', max: 128 }, { key: 'p2', label: 'New owner password 2', type: 'password', max: 128 }, { key: 'c1', label: 'Repeat password 1', type: 'password', max: 128 }, { key: 'c2', label: 'Repeat password 2', type: 'password', max: 128 }], ok: 'Change passwords', danger: true, validate: x => (x.p1.length < 8 || x.p2.length < 8) ? 'Each password needs at least 8 characters.' : x.p1 === x.p2 ? 'The two passwords must be different.' : (x.p1 !== x.c1 || x.p2 !== x.c2) ? 'The repeated passwords don\u2019t match.' : '' });
+    if (!v) return;
+    await logAct('owner-pw-change', '', 'owner passwords changed');
+    if (!await run(() => S.db.doc('config/owner').set({ pw1: v.p1, pw2: v.p2 }), 'Owner passwords changed. Unlock again with the new ones.')) return;
+    await ownerLock(true);
+  }
+  async function kick(id) {
+    if (!await ask({ title: `Sign ${nameOf(id)} out of admin?`, intro: 'Their admin session ends now. They can get back in with the PIN unless you also change the PIN.', ok: 'Sign out', danger: true })) return;
+    if (await run(async () => { await S.db.doc('adminSessions/' + id).delete(); await S.db.doc('adminBadges/' + id).delete(); }, `${nameOf(id)} was signed out.`)) logAct('kick', id, 'admin session ended');
+  }
+  async function giftAll() {
+    const v = await ask({ title: 'Gift coins to many players', fields: [{ key: 'who', label: 'Who gets them', options: [['today', 'Players active today'], ['week', 'Players active this week'], ['all', 'Everyone']] }, { key: 'n', label: 'Coins each', type: 'number', value: '50' }], ok: 'Send gift', validate: x => (!(+x.n >= 1) || +x.n > 10000) ? 'Enter 1 to 10,000 coins.' : '' });
+    if (!v) return; const n = Math.floor(+v.n), wk = weekStart(), td = today();
+    const ps = S.players.filter(p => v.who === 'all' || (v.who === 'today' ? p.lastDay === td : (p.weekKey === wk && (p.weekExp || 0) > 0)) && !S.bans.has(p.id));
+    if (!ps.length) return App.toast('Nobody matches that group.', 'warn');
+    if (await run(() => chunked(ps.map(p => b => b.update(pdoc(p.id), { coins: fsv().FieldValue.increment(n) }))), `Gave ${n} coins to ${ps.length} players.`)) logAct('gift-all', '', `${n} coins each to ${ps.length} players (${v.who})`);
+  }
+  async function weeklyReset() {
+    const v = await ask({ title: 'Reset the weekly board', intro: 'Sets everyone\u2019s EXP for this week to 0. Total EXP, coins and streaks are not touched. Type RESET to confirm.', fields: [{ key: 'w', label: 'Type RESET' }], ok: 'Reset weekly board', danger: true, validate: x => x.w.trim() !== 'RESET' ? 'Type RESET exactly.' : '' });
+    if (!v) return; const ps = S.players.filter(p => (p.weekExp || 0) > 0);
+    if (!ps.length) return App.toast('The weekly board is already empty.', 'warn');
+    if (await run(() => chunked(ps.map(p => b => b.update(pdoc(p.id), { weekExp: 0 }))), `Weekly board reset for ${ps.length} players.`)) logAct('weekly-reset', '', `${ps.length} players`);
+  }
+  async function clearExpired() {
+    const ex = [...S.bansAll].filter(([, b]) => !banActive(b)).map(([id]) => id);
+    if (!ex.length) return App.toast('No expired bans to clear.', 'warn');
+    if (await run(() => chunked(ex.map(id => b => b.delete(S.db.doc('bans/' + id)))), `Cleared ${ex.length} expired bans.`)) logAct('clear-expired-bans', '', `${ex.length} records`);
+  }
+  async function wipeAudit() {
+    const v = await ask({ title: 'Wipe the audit log', intro: 'Deletes the log entries shown in the Audit tab. This can\u2019t be undone. Type WIPE to confirm.', fields: [{ key: 'w', label: 'Type WIPE' }], ok: 'Wipe log', danger: true, validate: x => x.w.trim() !== 'WIPE' ? 'Type WIPE exactly.' : '' });
+    if (!v) return; const ids = S.audit.map(e => e.id);
+    if (await run(() => chunked(ids.map(id => b => b.delete(S.db.doc('auditLogs/' + id)))), 'Audit log wiped.')) logAct('audit-wipe', '', `${ids.length} entries removed`);
+  }
+  function ownerTab() {
+    const now = Date.now(), staff = [...S.badgeMap].filter(([, u]) => u > now).map(([id, u]) => ({ id, left: u - now, role: S.badgeRole.get(id) === 'owner' ? 'owner' : 'admin' }));
+    if (S.isOwner && !staff.some(s => s.id === S.uid)) staff.push({ id: S.uid, left: S.ownerAt + OWNER_MS - now, role: 'owner' });
+    const list = elx('div', 'adm-list');
+    staff.sort((a, b) => (a.role === 'owner' ? 0 : 1) - (b.role === 'owner' ? 0 : 1)).forEach(s => list.append(elx('div', 'adm-row adm-ban', elx('div', 'adm-who adm-pad', elx('strong', '', nameOf(s.id), s.id === S.uid ? ' (you)' : '', ' ', adminBadge(s.id)), elx('span', 'adm-sub', `${fmtLeft(s.left)} left on this session`)), elx('div', 'adm-pad', s.role === 'owner' ? null : btn('Sign out', 'btn-ghost btn-sm adm-danger', () => kick(s.id))))));
+    if (!staff.length) list.append(elx('p', 'muted', 'Nobody is signed in as staff.'));
+    const card = (h, p, ...b) => elx('div', 'adm-card', elx('h4', '', h), elx('p', 'adm-info', p), elx('div', 'adm-btns', ...b));
+    return elx('div', '',
+      elx('div', 'adm-card', elx('h4', '', '\u{1F465} Staff signed in now'), list),
+      card('\u{1F510} Security', 'The admin PIN opens admin sessions. The 2 owner passwords open this console. Changing either one signs people out.', btn('Change admin PIN', 'btn-ghost btn-sm', changeAdminPin), btn('Change owner passwords', 'btn-ghost btn-sm', changeOwnerPw)),
+      card('\u{1F381} Bulk tools', 'Act on many players at once. Each one is written to the audit log.', btn('Gift coins\u2026', 'btn-primary btn-sm', giftAll), btn('Reset weekly board\u2026', 'btn-ghost btn-sm adm-danger', weeklyReset), btn('Clear expired bans', 'btn-ghost btn-sm', clearExpired), btn('\u{1F512} Lock everything', 'btn-ghost btn-sm', lockAll)));
+  }
+  const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F' };
+  function auditTab() {
+    const w = elx('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search the log\u2026'; q.value = st.alq; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search audit log');
+    const rs = document.createElement('select'); rs.className = 'adm-sel'; [['all', 'Everyone'], ['owner', 'Owner only'], ['admin', 'Admins only']].forEach(([v, t]) => rs.append(new Option(t, v))); rs.value = st.alr; rs.setAttribute('aria-label', 'Filter by role');
+    const list = elx('div', 'adm-list'), info = elx('p', 'adm-info');
+    function fill() {
+      const es = S.audit.filter(e => (st.alr === 'all' || e.role === st.alr) && (!st.alq || `${e.byName} ${e.action} ${e.targetName} ${e.detail}`.toLowerCase().includes(st.alq)));
+      info.textContent = `${es.length} of ${S.audit.length} entries (latest 300 are kept in view)`;
+      list.replaceChildren(...(es.length ? es.slice(0, 120).map(e => elx('div', 'adm-log', elx('span', 'adm-log-ic', ACT_ICON[e.action] || '\u2022'), elx('div', 'adm-log-t', elx('strong', '', e.byName || 'Someone', ' ', elx('em', e.role === 'owner' ? 'adm-role-o' : 'adm-role-a', e.role === 'owner' ? 'owner' : 'admin')), elx('span', '', `${e.action}${e.targetName ? ' \u2192 ' + e.targetName : ''}${e.detail ? ' \u00B7 ' + e.detail : ''}`), elx('small', '', fmtTime(e.at))))) : [elx('p', 'muted', 'Nothing logged yet.')]));
+    }
+    q.oninput = () => { st.alq = q.value.trim().toLowerCase(); fill(); }; rs.onchange = () => { st.alr = rs.value; fill(); };
+    fill(); w.append(q, elx('div', 'adm-two', rs, info), list, S.audit.length ? btn('Wipe audit log\u2026', 'btn-ghost btn-sm adm-danger', wipeAudit) : null); return w;
+  }
+
+  /* ---------- shell ---------- */
+  const tabList = () => [['players', '\u{1F465} Players'], ['stats', '\u{1F4CA} Stats'], ['bans', `\u{1F6AB} Bans${S.bans.size ? ' ' + S.bans.size : ''}`], ['announce', '\u{1F4E3} Announce'], ['tools', '\u{1F9F0} Tools'], ...(S.isOwner ? [['owner', '\u{1F451} Owner'], ['audit', '\u{1F4DC} Audit']] : [])];
+  const view = () => st.sub === 'players' ? players() : st.sub === 'stats' ? stats() : st.sub === 'bans' ? bansTab() : st.sub === 'announce' ? announce() : st.sub === 'tools' ? tools() : st.sub === 'owner' ? ownerTab() : auditTab();
   function paint(force) {
-    if (!root) return;
+    if (!root || root.hidden && !force) return;
     if (!force && body && body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;   // don't wipe what you're typing
-    subs.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === st.sub)));
-    body.replaceChildren(st.sub === 'players' ? players() : st.sub === 'stats' ? stats() : announce());
+    if (!S.isOwner && (st.sub === 'owner' || st.sub === 'audit')) st.sub = 'players';
+    const t = tabList(), key = t.map(x => x[1]).join('|');
+    if (key !== tabsKey) { tabsKey = key; tabs.replaceChildren(...t.map(([k, l]) => { const b = elx('button', '', l); b.type = 'button'; b.dataset.k = k; b.onclick = () => { st.sub = k; paint(true); }; return b; })); }
+    tabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === st.sub)));
+    root.classList.toggle('is-owner', S.isOwner); eyebrow.textContent = S.isOwner ? 'Owner console' : 'Overseer'; title.textContent = S.isOwner ? '\u{1F451} Owner panel' : 'Admin panel';
+    body.replaceChildren(view());
   }
   function el() {
     if (root) return root;
-    root = o('section', 'card adm'); root.hidden = true;
-    const hd = o('div', 'cz-head'), ht = o('div'); ht.append(o('p', 'eyebrow', 'Overseer'), o('h2', '', 'Admin panel')); hd.append(ht);
-    timer = o('span', 'adm-timer'); const act = o('div', 'adm-hact'); act.append(timer, btn('Renew', 'btn-ghost btn-sm', () => openPin(true)), btn('\u{1F512} Lock', 'btn-ghost btn-sm', () => adminLock())); hd.append(act);
-    subs = o('div', 'segmented segmented-full adm-subs'); subs.setAttribute('role', 'group');
-    [['players', '\u{1F465} Players'], ['stats', '\u{1F4CA} Stats'], ['announce', '\u{1F4E3} Announce']].forEach(([k, t]) => { const b = o('button', '', t); b.type = 'button'; b.dataset.k = k; b.onclick = () => { st.sub = k; paint(true); }; subs.append(b); });
-    body = o('div', 'adm-body'); root.append(hd, subs, body); return root;
+    root = elx('section', 'card adm'); root.hidden = true;
+    timer = elx('span', 'adm-timer'); eyebrow = elx('p', 'eyebrow', 'Overseer'); title = elx('h2', '', 'Admin panel');
+    const hd = elx('div', 'cz-head', elx('div', '', eyebrow, title), elx('div', 'adm-hact', timer, btn('Renew', 'btn-ghost btn-sm', () => openPin(S.isOwner ? 'owner' : 'admin', true)), btn('\u{1F512} Lock', 'btn-ghost btn-sm', () => lockAll())));
+    tabs = elx('div', 'segmented adm-subs'); tabs.setAttribute('role', 'group');
+    body = elx('div', 'adm-body'); root.append(hd, tabs, body); return root;
   }
   function sync() {
     if (!S.frWrap || !S.ftabs) return;
     let b = S.ftabs.querySelector('[data-k="admin"]');
-    if (S.isAdmin && !b) { b = o('button', '', '\u{1F6E1}\uFE0F Admin'); b.type = 'button'; b.dataset.k = 'admin'; b.setAttribute('role', 'tab'); b.onclick = () => { S.ftab = 'admin'; showFtab(); }; S.ftabs.append(b); }
+    if (S.isAdmin && !b) { b = elx('button'); b.type = 'button'; b.dataset.k = 'admin'; b.setAttribute('role', 'tab'); b.onclick = () => { S.ftab = 'admin'; showFtab(); }; S.ftabs.append(b); }
     if (!S.isAdmin && b) { b.remove(); if (S.ftab === 'admin') S.ftab = 'board'; if (root) root.hidden = true; }
     if (!S.isAdmin) return;
+    b.textContent = S.isOwner ? '\u{1F451} Owner' : '\u{1F6E1}\uFE0F Admin';
     if (!el().parentNode) S.frWrap.append(root);
-    root.hidden = S.ftab !== 'admin'; if (!root.hidden) { paint(); tick(); }
+    root.hidden = S.ftab !== 'admin'; if (!root.hidden) { paint(true); tick(); }
   }
   function tick() {
-    if (!timer || !S.adminAt) return;
-    const left = Math.max(0, S.adminAt + ADMIN_MS - Date.now()), h = Math.floor(left / 3600000), m = Math.floor(left % 3600000 / 60000);
-    timer.textContent = `\u23F3 ${h ? h + 'h ' : ''}${m}m left`; timer.classList.toggle('is-low', left < 10 * 60000);
+    if (!timer) return;
+    const now = Date.now(), left = S.isOwner ? S.ownerAt + OWNER_MS - now : S.adminAt + ADMIN_MS - now;
+    if (!(left > 0)) return;
+    const m = Math.floor(left / 60000), s = Math.floor(left % 60000 / 1000);
+    timer.textContent = `${S.isOwner ? '\u{1F451}' : '\u23F3'} ${m >= 60 ? Math.floor(m / 60) + 'h ' + m % 60 + 'm' : m + 'm ' + String(s).padStart(2, '0') + 's'} left`;
+    timer.classList.toggle('is-low', left < (S.isOwner ? 5 : 10) * 60000);
   }
-  return { sync, paint, tick };
+  return { sync, paint, tick, go: k => { st.sub = k; } };
 })();
+const fmtLeft = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
 
 async function init() {
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
@@ -8423,10 +8764,12 @@ async function init() {
     S.db = fb.db; S.uid = fb.uid; Duel.start();
     // overseer layer: all optional; if the Firestore rules aren't set up yet these just stay empty
     // admin = a PIN-unlocked session that lasts 2 hours (adminSessions/<uid>); adminBadges/<uid> shows the tag to everyone else
-    S.db.collection('adminBadges').onSnapshot(sn => { S.badgeMap = new Map(sn.docs.map(d => { const u = d.data().until; return [d.id, u && u.toMillis ? u.toMillis() : 0]; })); refreshAdmin(true); }, () => {});
+    S.db.collection('adminBadges').onSnapshot(sn => { S.badgeMap = new Map(); S.badgeRole = new Map(); sn.docs.forEach(d => { const x = d.data(), u = x.until; S.badgeMap.set(d.id, u && u.toMillis ? u.toMillis() : 0); S.badgeRole.set(d.id, x.role === 'owner' ? 'owner' : 'admin'); }); refreshAdmin(true); }, () => {});
     S.db.doc('adminSessions/' + S.uid).onSnapshot(sn => { const d = sn.exists ? sn.data() : null; S.adminAt = d && d.at && d.at.toMillis ? d.at.toMillis() : 0; refreshAdmin(); }, () => {});
-    setInterval(() => refreshAdmin(), 15000);
-    S.db.collection('bans').onSnapshot(sn => { S.bans = new Map(sn.docs.map(d => [d.id, d.data()])); S.banned = S.bans.has(S.uid); applyBan(); renderFriends(); Adm.paint(); }, () => {});
+    S.db.doc('ownerSessions/' + S.uid).onSnapshot(sn => { const d = sn.exists ? sn.data() : null; S.ownerAt = d && d.at && d.at.toMillis ? d.at.toMillis() : 0; refreshAdmin(); }, () => {});
+    S.db.doc('notices/' + S.uid).onSnapshot(sn => showNotice(sn.exists ? sn.data() : null), () => {});
+    setInterval(() => refreshAdmin(), 5000); setInterval(() => refreshBans(), 20000);
+    S.db.collection('bans').onSnapshot(sn => { S.bansAll = new Map(sn.docs.map(d => [d.id, d.data()])); refreshBans(); }, () => {});
     S.db.doc('announcements/current').onSnapshot(sn => { S.ann = sn.exists ? sn.data() : null; showAnn(); }, () => {});
     S.db.collection('players').onSnapshot(async snap => {
       S.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
