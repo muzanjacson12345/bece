@@ -1112,7 +1112,21 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
   .duel-box { padding: 16px; gap: 12px; border-radius: 18px; }
   .duel-side strong { font-size: 34px; }
   .duel-q { font-size: 18px; }
+  .leaderboard .section-heading .eyebrow { display: none; }
+  .leaderboard h2 { font-size: 22px; }
 }
+.board-seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; margin: 4px 0 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); }
+.board-seg button { min-height: 40px; padding: 4px 2px; border-radius: 10px; font-weight: 700; font-size: 13px; color: var(--muted); text-align: center; }
+.board-seg button[aria-pressed="true"] { background: var(--surface); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.14); }
+.podium { display: grid; grid-template-columns: 1fr 1.1fr 1fr; gap: 8px; align-items: end; margin: 4px 0 14px; }
+.pod { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-2); text-align: center; min-width: 0; }
+.pod strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.pod-1 { padding-bottom: 22px; background: var(--accent-soft); border-color: var(--primary); }
+.pod.is-me { box-shadow: 0 0 0 2px var(--primary); }
+.pod-medal { font-size: 22px; }
+.pod-exp { font-size: 12px; font-weight: 700; color: var(--accent); }
+.btn:active, .subject-card:active, .board-list li:active, .pod:active { transform: scale(.98); }
+.board-list li { border-radius: 14px; }
 .friend-modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 1000; padding: 16px; overflow-y: auto; }
 .friend-box { max-width: 440px; width: 100%; display: grid; gap: 14px; padding: 22px; max-height: 90vh; overflow-y: auto; }
 
@@ -6979,7 +6993,7 @@ const yesterday = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
 const lv = e => ({ level: Math.floor(e / LVL) + 1, into: e % LVL });
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const ago = t => { const s = Math.max(0, (Date.now() - t) / 1e3); return s < 60 ? 'just now' : s < 3600 ? `${Math.floor(s / 60)}m ago` : s < 86400 ? `${Math.floor(s / 3600)}h ago` : `${Math.floor(s / 86400)}d ago`; };
-const S = { board: 'week', db: null, user: null, uid: null, doc: null, players: [], names: {}, daily: null, ready: false };
+const S = { board: 'day', db: null, user: null, uid: null, doc: null, players: [], names: {}, daily: null, ready: false };
 
 function makeDaily() {
   const d = today(); let h = 0; for (const c of d) h = (h * 31 + c.charCodeAt(0)) >>> 0;
@@ -7058,7 +7072,7 @@ App.on('quiz:finished', async ev => {
     const subs = [...new Set(ev.questionIds.map(i => i.slice(0, 3)))];
     const subject = subs.length === 1 ? SUBJ[subs[0]] || 'mixed subjects' : 'mixed subjects';
     const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: earned + bonusExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
-    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
+    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
     await S.db.doc('players/' + S.uid).set(next); S.doc = next;
     renderAccount(); renderDaily();
     showResult({ earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended });
@@ -7350,34 +7364,44 @@ function renderFriends() {
   const body = $('friends-body'); if (!body || App.screen !== 'friends') return;
   if (!S.db) { const c = o('div', 'card friends-gate'); c.append(o('h2', '', 'Friends board unavailable'), o('p', 'muted', 'Check your internet connection and reload the page to join the board. Quizzes and notes still work.')); body.replaceChildren(c); return; }
   if (!S.ready) { const w = o('div', 'skeleton-wrap'); for (let i = 0; i < 3; i++) w.append(o('div', 'skeleton')); body.replaceChildren(w); return; }
-  const m = view(), base = S.players.some(p => p.id === S.uid) ? S.players : [...S.players, { id: S.uid, ...(S.doc || {}) }], wk = weekStart(), val = p => S.board === 'week' ? (p.weekKey === wk ? p.weekExp || 0 : 0) : (p.totalExp || 0), list = base.filter(p => val(p) > 0 || p.id === S.uid || p.displayName).sort((a, b) => val(b) - val(a));
-  const myRank = list.findIndex(p => p.id === S.uid) + 1, ex = m ? m.totalExp : 0, { level, into } = lv(ex);
+  const m = view(), base = S.players.some(p => p.id === S.uid) ? S.players : [...S.players, { id: S.uid, ...(S.doc || {}) }], wk = weekStart(), td = today(), B = S.board;
+  const val = p => B === 'day' ? (p.dayKey === td ? p.dayExp || 0 : 0) : B === 'week' ? (p.weekKey === wk ? p.weekExp || 0 : 0) : (p.totalExp || 0);
+  const tot = (a, b) => (b.totalExp || 0) - (a.totalExp || 0);
+  const list = base.filter(p => (B === 'everyone' ? (p.displayName || p.totalExp) : val(p) > 0) || p.id === S.uid).sort((a, b) => val(b) - val(a) || tot(a, b));
+  const allList = base.filter(p => (p.totalExp || 0) > 0 || p.id === S.uid).sort(tot);
+  const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'], actv = p => (p.lastDay === td ? 'active today' : p.lastDay === yesterday() ? 'active yesterday' : p.lastDay ? 'last seen ' + p.lastDay : 'new here');
+  const myRank = allList.findIndex(p => p.id === S.uid) + 1, ex = m ? m.totalExp : 0, { level, into } = lv(ex);
 
   // The profile card is permanent (so editing is never interrupted); only the board below is rebuilt.
   if (!S.pc) S.pc = buildProfileCard();
   Duel.paint();
-  S.pc.update({ ex, level, into, streak: m ? m.streak : 0, best: m ? m.bestStreak : 0, rank: myRank, count: list.length });
+  S.pc.update({ ex, level, into, streak: m ? m.streak : 0, best: m ? m.bestStreak : 0, rank: myRank, count: allList.length });
 
   let lbNote = ''; const lb = o('section', 'card leaderboard'), head = o('div', 'section-heading'), hd = o('div');
   hd.append(o('p', 'eyebrow', 'The friends board'), o('h2', '', 'Who\u2019s putting in the work?')); head.append(hd);
-  const tg = o('div', 'button-row');
-  [['week', 'This week'], ['all', 'All time']].forEach(([k, t]) => { const b = o('button', 'btn btn-sm ' + (S.board === k ? 'btn-primary' : 'btn-ghost'), t); b.type = 'button'; b.setAttribute('aria-pressed', String(S.board === k)); b.onclick = () => { S.board = k; renderFriends(); }; tg.append(b); });
-  head.append(tg);
-  if (S.board === 'week') lbNote = 'Weekly board resets every Monday. EXP counts from this update onward.';
+  const tg = o('div', 'board-seg'); head.append(o('span', 'section-meta', plural(list.length, 'player')));
+  [['day', 'Today'], ['week', 'Week'], ['all', 'All time'], ['everyone', 'Everyone']].forEach(([k, t]) => { const b = o('button', '', t); b.type = 'button'; b.setAttribute('aria-pressed', String(B === k)); b.onclick = () => { S.board = k; renderFriends(); }; tg.append(b); });
+  if (B === 'day') lbNote = 'Today\u2019s board resets at midnight. EXP counts from this update onward.';
+  else if (B === 'week') lbNote = 'Weekly board resets every Monday. EXP counts from this update onward.';
+  else if (B === 'everyone') lbNote = 'Everyone who has used the app, even with no EXP yet.';
+  const pod = B !== 'everyone' && list.length >= 3 && list.slice(0, 3).every(p => val(p) > 0), from = pod ? 3 : 0;
   const ol = o('ol', 'board-list');
   list.forEach((p, i) => {
+    if (i < from) return;
     const li = o('li', p.id === S.uid ? 'is-me' : ''), w = o('div', 'board-who'), n = o('strong', '', nameOf(p.id));
     if (p.id === S.uid) n.append(o('span', 'you-tag', 'you'));
     const live = p.lastDay === today() || p.lastDay === yesterday();
-    li.append(o('span', 'board-rank', i < 3 ? ['\u{1F947}', '\u{1F948}', '\u{1F949}'][i] : String(i + 1)), bubble(p, 36));
-    w.append(n, o('span', '', `Level ${lv(p.totalExp || 0).level}${live && p.streak ? ` \xB7 \u{1F525} ${p.streak}` : ''}${p.dailyDone && p.dailyDone.day === today() ? ' \xB7 daily \u2713' : ''}`));
+    li.append(o('span', 'board-rank', i < 3 && B !== 'everyone' ? medals[i] : String(i + 1)), bubble(p, 36));
+    w.append(n, o('span', '', B === 'everyone' ? `${p.totalExp || 0} EXP \xB7 ${actv(p)}${p.duelW || p.duelL ? ` \xB7 \u2694\uFE0F ${p.duelW || 0}-${p.duelL || 0}` : ''}` : `Level ${lv(p.totalExp || 0).level}${live && p.streak ? ` \xB7 \u{1F525} ${p.streak}` : ''}${p.dailyDone && p.dailyDone.day === today() ? ' \xB7 daily \u2713' : ''}`));
     if (p.bio) w.append(o('span', 'board-bio', p.bio));
-    li.append(w, o('span', 'board-exp', `${val(p)} EXP`));
+    li.append(w, o('span', 'board-exp', B === 'everyone' ? `Lv ${lv(p.totalExp || 0).level}` : `${val(p)} EXP`));
     li.tabIndex = 0; li.setAttribute('role', 'button'); li.setAttribute('aria-label', `See ${nameOf(p.id)}\u2019s stats`);
     li.onclick = () => showFriend(p); li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showFriend(p); } };
     ol.append(li);
   });
-  lb.append(head, ol); lb.append(o('p', 'muted', 'Tap a friend to see their stats.')); if (lbNote) lb.append(o('p', 'muted', lbNote));
+  const podEl = o('div', 'podium');
+  if (pod) [1, 0, 2].forEach(k => { const q = list[k], d = o('button', 'pod pod-' + (k + 1) + (q.id === S.uid ? ' is-me' : '')); d.type = 'button'; d.append(o('span', 'pod-medal', medals[k]), bubble(q, k === 0 ? 56 : 46), o('strong', '', nameOf(q.id)), o('span', 'pod-exp', `${val(q)} EXP`)); d.onclick = () => showFriend(q); podEl.append(d); });
+  lb.append(head, tg); if (pod) lb.append(podEl); lb.append(ol); lb.append(o('p', 'muted', 'Tap a player to see their stats.')); if (lbNote) lb.append(o('p', 'muted', lbNote));
   if (list.length < 2) {
     const h = o('div', 'board-hint'); h.append(o('p', '', 'It\u2019s just you so far. Share this page\u2019s link so friends can join.')); lb.append(h);
   }
@@ -7472,7 +7496,7 @@ const Duel = (() => {
   }
   function close() {
     if (D.me && !D.me.done && D.started) { D.me.done = true; D.me.ms += (total() - D.me.n) * secs() * 1000; D.me.n = total(); push(); record('l'); }
-    clearInterval(D.timer); clearInterval(D.cdT); clearTimeout(D.wait);
+    clearInterval(D.timer); clearInterval(D.cdT); clearInterval(D.hbT); clearTimeout(D.wait);
     if (D.unsub) { D.unsub(); D.unsub = null; }
     if (D.doc && D.doc.state === 'waiting' && D.doc.host === S.uid) col().doc(D.code).delete().catch(() => {});
     D.code = D.doc = D.me = null; D.started = D.cd = false; box = null;
@@ -7592,9 +7616,11 @@ const Duel = (() => {
     const pool = all.filter(q => !q.diagram && q.options && q.options.length && q.correct);
     if (pool.length < c.len) return warn(`Only ${pool.length} questions available for that subject. Pick fewer.`);
     const code = Array.from({ length: 5 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join('');
-    const doc = { host: S.uid, hostName: myName(), guest: null, guestName: '', subject: c.subject, secs: c.secs, vis: c.vis, qids: mix(pool).slice(0, c.len).map(q => q.id), state: 'waiting', created: Date.now(), res: {} };
+    const doc = { host: S.uid, hostName: myName(), guest: null, guestName: '', subject: c.subject, secs: c.secs, vis: c.vis, qids: mix(pool).slice(0, c.len).map(q => q.id), state: 'waiting', created: Date.now(), hb: Date.now(), res: {} };
     try { await col().doc(code).set(doc); } catch (e) { return warn(`Couldn\u2019t create the duel (${(e && (e.code || e.message)) || 'unknown error'}).`); }
     D.doc = doc; watch(code); lobby();
+    clearInterval(D.hbT);
+    D.hbT = setInterval(() => { if (!D.doc || D.doc.state !== 'waiting') return clearInterval(D.hbT); col().doc(D.code).update({ hb: Date.now() }).catch(() => {}); }, 20000);
   }
   async function join(code) {
     code = (code || '').trim().toUpperCase();
@@ -7621,9 +7647,11 @@ const Duel = (() => {
     const d = S.doc || {};
     [d.duelW, d.duelL, d.duelD].forEach((v, i) => { D.tiles[i].n.textContent = v || 0; });
     D.mb.open.textContent = D.open.length ? `Open (${D.open.length})` : 'Open';
+    const ft = document.querySelector('.f-tabs [data-k="duels"]'); if (ft) ft.textContent = '\u2694\uFE0F Duels' + (D.open.length ? ` (${D.open.length})` : '');
+    if (!D.picked && D.open.length && D.mode !== 'open') { D.mode = 'open'; mode(); }
     D.list.replaceChildren();
     if (D.err) { D.list.append(o('li', 'muted', `Open challenges unavailable (${D.err}). You can still use a code.`)); return; }
-    if (!D.open.length) { const li = o('li', 'duel-empty'); li.append(o('span', 'muted', 'No public duels right now.'), btn('Create one', 'btn-primary btn-sm', () => { D.mode = 'create'; mode(); })); D.list.append(li); return; }
+    if (!D.open.length) { const li = o('li', 'duel-empty'); li.append(o('span', 'muted', 'No public duels right now.'), btn('Create one', 'btn-primary btn-sm', () => { D.picked = true; D.mode = 'create'; mode(); })); D.list.append(li); return; }
     D.open.forEach(x => {
       const li = o('li', 'duel-item'), p = who(x.host), t = o('div');
       t.append(o('strong', '', x.hostName || 'Player'), o('span', 'duel-sub', `Level ${lv(p.totalExp || 0).level} \u00B7 ${p.duelW || 0}W-${p.duelL || 0}L \u00B7 ${ago(x.created)}`));
@@ -7649,7 +7677,7 @@ const Duel = (() => {
     D.list = o('ul', 'duel-open');
     D.tiles = ['Wins', 'Losses', 'Draws'].map(l => { const t = o('div', 'duel-tile'), n = o('strong', '', '0'); t.append(n, o('span', '', l)); t.n = n; return t; });
     const tiles = o('div', 'duel-tiles'); tiles.append(...D.tiles);
-    const mk = (k, t) => { const b = o('button', '', t); b.type = 'button'; b.onclick = () => { D.mode = k; mode(); }; return b; };
+    const mk = (k, t) => { const b = o('button', '', t); b.type = 'button'; b.onclick = () => { D.picked = true; D.mode = k; mode(); }; return b; };
     D.mb = { open: mk('open', 'Open'), create: mk('create', 'Create'), join: mk('join', 'Join code') };
     const modes = o('div', 'duel-modes'); modes.append(D.mb.open, D.mb.create, D.mb.join);
     D.pOpen = o('div', 'duel-pane'); D.pOpen.append(D.list);
@@ -7661,9 +7689,14 @@ const Duel = (() => {
   window.addEventListener('hashchange', () => { if (D.code) close(); });
   function start() {
     if (D.os || !S.db) return;
+    D.seen = {};
+    const calc = () => { D.open = (D.raw || []).filter(d => d.host !== S.uid && Date.now() - ((D.seen[d.code] || {}).at || 0) < 70000).sort((a, b) => (b.created || 0) - (a.created || 0)); paint(); };
     D.os = col().where('state', '==', 'waiting').where('vis', '==', 'public').onSnapshot(s => {
-      D.err = null; D.open = s.docs.map(d => ({ code: d.id, ...d.data() })).filter(d => d.host !== S.uid && Date.now() - d.created < 9e5).sort((a, b) => b.created - a.created); paint();
+      D.err = null; D.raw = s.docs.map(d => ({ code: d.id, ...d.data() }));
+      D.raw.forEach(d => { const k = D.seen[d.code]; if (!k || k.hb !== d.hb) D.seen[d.code] = { hb: d.hb, at: Date.now() }; });
+      calc();
     }, e => { D.err = (e && e.code) || 'error'; paint(); });
+    setInterval(calc, 15000);
   }
   return { card, start, paint };
 })();
