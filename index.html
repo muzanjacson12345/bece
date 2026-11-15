@@ -8291,7 +8291,7 @@ const Duel = (() => {
    OWNER = knows 2 separate passwords. Session lasts 30 minutes. Does everything an admin can,
            plus: kick admins, change the admin PIN, change the owner passwords, bulk tools, audit log.
    All of this is only the interface. The real protection is in firestore.rules. */
-Object.assign(S, { roster: new Map(), settings: {}, bugs: [], myBugs: [], owners: new Set(), badgeRole: new Map(), ownerAt: 0, ownFails: 0, isOwner: false, bansAll: new Map(), notes: new Map(), audit: [] });
+Object.assign(S, { roster: new Map(), rosterData: new Map(), noAuto: false, autoTry: 0, settings: {}, bugs: [], myBugs: [], owners: new Set(), badgeRole: new Map(), ownerAt: 0, ownFails: 0, isOwner: false, bansAll: new Map(), notes: new Map(), audit: [] });
 const ADMIN_MS = 2 * 3600 * 1000, OWNER_MS = 30 * 60 * 1000, OWNER_AWAY_MS = 5 * 60 * 1000;
 // o() only takes text, so the admin layer uses elx(), which also accepts child elements.
 const elx = (tag, cls, ...kids) => { const n = document.createElement(tag); if (cls) n.className = cls; kids.flat().forEach(k => { if (k === null || k === undefined || k === false) return; n.append(k && k.nodeType ? k : document.createTextNode(String(k))); }); return n; };
@@ -8299,6 +8299,7 @@ const fsv = () => firebase.firestore;
 const fmtTime = t => { try { return new Date(t).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); } catch { return String(t); } };
 const banActive = b => !!b && (!b.until || b.until > Date.now());
 // roster = permanent staff record (never expires), so protection holds even when the owner is locked
+const isAppointed = id => !!(S.rosterData.get(id) || {}).appointed;
 const roleOf = id => (S.owners.has(id) || S.roster.get(id) === 'owner') ? 'owner' : (S.admins.has(id) || S.roster.has(id)) ? 'admin' : null;
 const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
@@ -8397,10 +8398,19 @@ function refreshAdmin(force) {
   S.badgeMap.forEach((until, id) => { if (until > now) { S.admins.add(id); if (S.badgeRole.get(id) === 'owner') S.owners.add(id); } });
   if (S.isAdmin) S.admins.add(S.uid); if (S.isOwner) S.owners.add(S.uid);
   if (wasOwner && !S.isOwner) { App.toast('Owner session ended. Enter both passwords again to renew.', 'warn'); if (S.db) S.db.doc('ownerSessions/' + S.uid).delete().catch(() => {}); }
-  if (wasStaff && !S.isAdmin) App.toast('Admin session ended. Enter the PIN again to renew.', 'warn');
+  if (wasStaff && !S.isAdmin && !isAppointed(S.uid)) App.toast('Admin session ended. Enter the PIN again to renew.', 'warn');
   syncSubs();
   if (wasStaff !== S.isAdmin || wasOwner !== S.isOwner || force || oldKey !== [...S.admins].sort().join() + '|' + [...S.owners].sort().join()) { refreshBans(); renderAccount(); renderFriends(); showFtab(); }
   if (S.isAdmin) Adm.tick();
+  if (S.db && !S.isAdmin && isAppointed(S.uid) && !S.noAuto && Date.now() > S.autoTry) { S.autoTry = Date.now() + 60000; autoAdmin(); }
+}
+// Admins the owner appointed get their 2-hour session started (and renewed) automatically: no PIN.
+async function autoAdmin() {
+  try {
+    await S.db.doc('adminSessions/' + S.uid).set({ at: fsv().FieldValue.serverTimestamp() });
+    const snap = await S.db.doc('adminSessions/' + S.uid).get({ source: 'server' }); S.adminAt = snap.data().at.toMillis();
+    refreshAdmin(true); await setBadge().catch(() => {});
+  } catch {}
 }
 
 /* Live data only staff may read (private notes) and only the owner may read (audit log) */
@@ -8444,6 +8454,7 @@ async function setBadge() {
   return S.db.doc('adminBadges/' + S.uid).delete();
 }
 async function adminLock() {
+  S.noAuto = true;
   try { await S.db.doc('adminSessions/' + S.uid).delete(); } catch {}
   S.adminAt = 0; refreshAdmin(true); try { await setBadge(); } catch {}
   if (!S.isAdmin) { if (S.ftab === 'admin') S.ftab = 'board'; App.toast('Admin locked.', 'good'); } else App.toast('Admin PIN session closed. Owner session is still open.', 'good');
@@ -8459,7 +8470,7 @@ async function lockAll() {
   try { await S.db.doc('ownerSessions/' + S.uid).delete(); } catch {}
   try { await S.db.doc('adminSessions/' + S.uid).delete(); } catch {}
   try { await S.db.doc('adminBadges/' + S.uid).delete(); } catch {}
-  S.ownerAt = 0; S.adminAt = 0; if (S.ftab === 'admin') S.ftab = 'board'; refreshAdmin(true); showFtab(); App.toast('Everything locked.', 'good');
+  S.noAuto = true; S.ownerAt = 0; S.adminAt = 0; if (S.ftab === 'admin') S.ftab = 'board'; refreshAdmin(true); showFtab(); App.toast('Everything locked.', 'good');
 }
 // the owner session locks itself if the app was hidden for more than 5 minutes
 let hiddenAt = 0;
@@ -8675,12 +8686,13 @@ const Adm = (() => {
     const g2 = elx('div', 'adm-btns', btn('\u{1F4DD} Set exact value\u2026', 'btn-ghost btn-sm', () => setExact(p), !can), btn('\u{1F4E9} Send message\u2026', 'btn-ghost btn-sm', () => message(p)));
     const g3 = elx('div', 'adm-btns3', btn('\u270F\uFE0F Rename', 'btn-ghost btn-sm', () => rename(p), !can), btn('Remove photo', 'btn-ghost btn-sm', () => clearField(p, 'photo', 'photo'), !can || !p.photo), btn('Remove bio', 'btn-ghost btn-sm', () => clearField(p, 'bio', 'bio'), !can || !p.bio));
     const g4 = elx('div', 'adm-btns3', btn('Reset progress', 'btn-ghost btn-sm adm-danger', () => reset(p), !kill), banned ? btn('Unban', 'btn-primary btn-sm', () => unban(p.id), !can) : btn('\u{1F6AB} Ban', 'btn-ghost btn-sm adm-danger', () => ban(p), !kill), btn('\u{1F5D1}\uFE0F Delete', 'btn-ghost btn-sm adm-danger', () => remove(p), !kill));
+    const g5 = S.isOwner && p.id !== S.uid && roleOf(p.id) !== 'owner' ? elx('div', 'adm-btns', isAppointed(p.id) ? btn('\u{1F6E1}\uFE0F Remove admin role', 'btn-ghost btn-sm adm-danger', () => removeStaff(p.id, 'admin')) : btn(roleOf(p.id) ? '\u{1F6E1}\uFE0F Make permanent admin' : '\u{1F6E1}\uFE0F Make admin', 'btn-primary btn-sm', () => appoint(p))) : elx('div');
     const note = document.createElement('textarea'); note.className = 'adm-ta'; note.rows = 2; note.maxLength = 500; note.placeholder = 'Private note about this player (only admins and the owner can see it)'; note.value = (S.notes.get(p.id) || {}).text || ''; note.setAttribute('aria-label', 'Private note');
     const nb = btn('Save note', 'btn-ghost btn-sm', () => saveNote(p, note.value));
     const nmeta = S.notes.get(p.id); const nm = nmeta ? elx('p', 'adm-info', `Last edited by ${nmeta.by || 'staff'} \u00B7 ${fmtTime(nmeta.at)}`) : null;
     const live = p.lastDay === today() || p.lastDay === yesterday(), b = S.bans.get(p.id);
     const info = elx('p', 'adm-info', `ID ${p.id} \u00B7 last active ${p.lastDay || 'never'} \u00B7 \u{1F525} ${live ? p.streak || 0 : 0} (best ${p.bestStreak || 0}) \u00B7 duels ${p.duelW || 0}W-${p.duelL || 0}L-${p.duelD || 0}D \u00B7 Second Chances ${p.p50 || 0}${b ? ` \u00B7 ${banActive(b) ? 'BANNED' : 'ban expired'}${b.reason ? ' (' + b.reason + ')' : ''}` : ''}`);
-    w.append(elx('label', 'adm-lbl', 'Amount'), inp, chips, g1, g2, elx('label', 'adm-lbl', 'Moderation'), g3, g4, elx('label', 'adm-lbl', 'Private note'), note, nb, nm, info);
+    w.append(elx('label', 'adm-lbl', 'Amount'), inp, chips, g1, g2, elx('label', 'adm-lbl', 'Moderation'), g3, g4, g5, elx('label', 'adm-lbl', 'Private note'), note, nb, nm, info);
     if (!can) w.append(elx('p', 'adm-info adm-prot', rt === 'owner' ? '\u{1F451} The owner is protected from every action here.' : '\u{1F6E1}\uFE0F Admins are protected from other admins. Only the owner can act on them.'));
     else if (p.id === S.uid) w.append(elx('p', 'adm-info adm-prot', 'This is you. You can\u2019t ban, reset or delete yourself.'));
     return w;
@@ -8888,6 +8900,11 @@ const Adm = (() => {
     if (!v) return; const ids = S.audit.map(e => e.id);
     if (await run(() => chunked(ids.map(id => b => b.delete(S.db.doc('auditLogs/' + id)))), 'Audit log wiped.')) logAct('audit-wipe', '', `${ids.length} entries removed`);
   }
+  async function appoint(p) {
+    if (S.bans.has(p.id)) return App.toast('Unban them first.', 'warn');
+    if (!await ask({ title: `Make ${nameOf(p.id)} an admin?`, intro: 'They become an admin on their own device with no PIN, and stay one until you remove them. Admins can moderate players but can never touch you or other admins.', ok: 'Make admin' })) return;
+    if (await run(() => S.db.doc('staffRoster/' + p.id).set({ role: 'admin', appointed: true, by: S.uid, at: fsv().FieldValue.serverTimestamp() }), `${nameOf(p.id)} is now an admin. They get the Admin tab next time they open the app.`)) logAct('appoint', p.id, 'made admin by the owner');
+  }
   async function removeStaff(id, role) {
     if (!await ask({ title: `Remove ${nameOf(id)} from the staff roster?`, intro: role === 'owner' ? 'Use this to clean up an old owner device. It loses its protection.' : 'They lose admin protection and are signed out. They can come back with the PIN unless you change it.', ok: 'Remove', danger: true })) return;
     if (await run(async () => { await S.db.doc('adminSessions/' + id).delete().catch(() => {}); await S.db.doc('adminBadges/' + id).delete().catch(() => {}); await S.db.doc('staffRoster/' + id).delete(); }, `${nameOf(id)} was removed.`)) logAct('roster-remove', id, role);
@@ -8903,7 +8920,7 @@ const Adm = (() => {
   }
   function rosterCard() {
     const list = elx('div', 'adm-list'), rows = [...S.roster].sort((a, b) => (a[1] === 'owner' ? 0 : 1) - (b[1] === 'owner' ? 0 : 1));
-    rows.forEach(([id, role]) => list.append(elx('div', 'adm-row adm-ban', elx('div', 'adm-who adm-pad', elx('strong', '', nameOf(id), id === S.uid ? ' (you)' : ''), elx('span', 'adm-sub', role === 'owner' ? '\u{1F451} Owner device \u00B7 permanent' : '\u{1F6E1}\uFE0F Admin \u00B7 permanent')), elx('div', 'adm-pad', id === S.uid ? null : btn(role === 'owner' ? 'Remove device' : 'Remove admin', 'btn-ghost btn-sm adm-danger', () => removeStaff(id, role))))));
+    rows.forEach(([id, role]) => list.append(elx('div', 'adm-row adm-ban', elx('div', 'adm-who adm-pad', elx('strong', '', nameOf(id), id === S.uid ? ' (you)' : ''), elx('span', 'adm-sub', role === 'owner' ? '\u{1F451} Owner device \u00B7 permanent' : '\u{1F6E1}\uFE0F Admin \u00B7 ' + (isAppointed(id) ? 'appointed by you' : 'permanent'))), elx('div', 'adm-pad', id === S.uid ? null : btn(role === 'owner' ? 'Remove device' : 'Remove admin', 'btn-ghost btn-sm adm-danger', () => removeStaff(id, role))))));
     if (!rows.length) list.append(elx('p', 'muted', 'Nobody is on the roster yet.'));
     return elx('div', 'adm-card', elx('h4', '', '\u{1F4CB} Permanent staff roster'), elx('p', 'adm-info', 'Everyone who has ever unlocked as staff. Roster members are shielded from admins even when signed out. Only you can remove them.'), list);
   }
@@ -8922,7 +8939,7 @@ const Adm = (() => {
       card('\u{1F510} Security', 'The admin PIN opens admin sessions. The 2 owner passwords open this console. Changing either one signs people out.', btn('Change admin PIN', 'btn-ghost btn-sm', changeAdminPin), btn('Change owner passwords', 'btn-ghost btn-sm', changeOwnerPw)),
       card('\u{1F381} Bulk tools', 'Act on many players at once. Each one is written to the audit log.', btn('Gift coins\u2026', 'btn-primary btn-sm', giftAll), btn('Reset weekly board\u2026', 'btn-ghost btn-sm adm-danger', weeklyReset), btn('Clear expired bans', 'btn-ghost btn-sm', clearExpired), btn('\u{1F512} Lock everything', 'btn-ghost btn-sm', lockAll)));
   }
-  const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F', 'bug-open': '\u{1F41E}', 'bug-fixing': '\u{1F6E0}\uFE0F', 'bug-done': '\u2705', 'bug-wontfix': '\u{1F4D5}', 'bug-reply': '\u{1F4AC}', 'bug-delete': '\u{1F5D1}\uFE0F', 'roster-remove': '\u{1F6AA}', 'duels-on': '\u25B6\uFE0F', 'duels-off': '\u23F8\uFE0F' };
+  const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F', 'bug-open': '\u{1F41E}', 'bug-fixing': '\u{1F6E0}\uFE0F', 'bug-done': '\u2705', 'bug-wontfix': '\u{1F4D5}', 'bug-reply': '\u{1F4AC}', 'bug-delete': '\u{1F5D1}\uFE0F', 'roster-remove': '\u{1F6AA}', 'duels-on': '\u25B6\uFE0F', 'duels-off': '\u23F8\uFE0F', appoint: '\u{1F6E1}\uFE0F' };
   function auditTab() {
     const w = elx('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search the log\u2026'; q.value = st.alq; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search audit log');
     const rs = document.createElement('select'); rs.className = 'adm-sel'; [['all', 'Everyone'], ['owner', 'Owner only'], ['admin', 'Admins only']].forEach(([v, t]) => rs.append(new Option(t, v))); rs.value = st.alr; rs.setAttribute('aria-label', 'Filter by role');
@@ -8996,7 +9013,7 @@ async function init() {
     setInterval(() => refreshAdmin(), 5000); setInterval(() => refreshBans(), 20000);
     S.db.collection('bans').onSnapshot(sn => { S.bansAll = new Map(sn.docs.map(d => [d.id, d.data()])); refreshBans(); }, () => {});
     S.db.doc('announcements/current').onSnapshot(sn => { S.ann = sn.exists ? sn.data() : null; showAnn(); }, () => {});
-    S.db.collection('staffRoster').onSnapshot(sn => { S.roster = new Map(sn.docs.map(d => [d.id, d.data().role === 'owner' ? 'owner' : 'admin'])); refreshBans(); Adm.paint(); }, () => {});
+    S.db.collection('staffRoster').onSnapshot(sn => { S.roster = new Map(sn.docs.map(d => [d.id, d.data().role === 'owner' ? 'owner' : 'admin'])); S.rosterData = new Map(sn.docs.map(d => [d.id, d.data()])); refreshBans(); refreshAdmin(true); Adm.paint(); }, () => {});
     S.db.doc('settings/app').onSnapshot(sn => { S.settings = sn.exists ? sn.data() : {}; Adm.paint(); }, () => {});
     Bugs.start();
     S.db.collection('players').onSnapshot(async snap => {
