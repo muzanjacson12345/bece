@@ -7058,6 +7058,42 @@ document.addEventListener('click', event => {
   state.pending = cleanup;
 });
 
+
+/* =================== Expanded question banks ===================
+   Additional questions are added before questionIndex is built, so
+   quiz review, explanations, bookmarks, history and mixed practice
+   all use the same shared question records as the original banks.
+*/
+const makeExtraMCQ = (id, topic, question, correctText, wrongTexts, explanation, hint) => {
+  const raw = [correctText, ...wrongTexts];
+  const shift = Number(id.split('-').pop()) % 4;
+  const options = raw.map((_, i) => raw[(i + shift) % 4]);
+  const correct = 'ABCD'[options.indexOf(correctText)];
+  return { id, topic, question, options: options.map((text, i) => ({ key: 'ABCD'[i], text: String(text) })), correct, explanation, hint: hint || 'Read the question carefully, work through the idea, and eliminate options that do not fit.' };
+};
+const addExtraBank = (subject, prefix, rows, start) => {
+  rows.forEach((r, i) => questionsDB[subject].push(makeExtraMCQ(prefix + '-' + (start + i), r[0], r[1], r[2], r[3], r[4], r[5])));
+};
+const mathExtras = [];
+const addMath = (topic, q, answer, wrong, why) => mathExtras.push([topic, q, String(answer), wrong.map(String), why, 'Write down the rule or formula first, then substitute the given values.']);
+for (let i=0;i<20;i++) {
+  const a=17+i*3, b=6+(i*7)%19, op=i%4;
+  if(op===0){const v=a+b;addMath('Number Operations',`Calculate ${a} + ${b}.`,v,[v+2,v-3,v+10],`Add the two numbers to obtain ${v}.`);}
+  if(op===1){const v=a-b;addMath('Number Operations',`Evaluate ${a} − ${b}.`,v,[v+2,v-2,v+5],`Subtract ${b} from ${a}; the difference is ${v}.`);}
+  if(op===2){const v=a*b;addMath('Number Operations',`Find the product of ${a} and ${b}.`,v,[v+a,v-b,v+12],`Multiplication gives ${a} × ${b} = ${v}.`);}
+  if(op===3){const n=(a%8)+2, v=n* b;addMath('Number Operations',`A number ${v} is shared equally among ${b} groups. How many are in each group?`,n,[n+1,n+2,n-1],`Division gives ${v} ÷ ${b} = ${n}.`);}
+}
+for(let i=0;i<10;i++){const n=20+i*5,p=10+(i*7)%81,v=n*p/100;addMath('Fractions, Decimals & Percentages',`Find ${p}% of ${n}.`,Number(v.toFixed(2)),[Number((v+2).toFixed(2)),Number((v-1).toFixed(2)),Number((n-v).toFixed(2))],`Percentage amount = ${p} ÷ 100 × ${n} = ${v}.`);}
+for(let i=0;i<10;i++){const a=2+i,b=3+(i%5),k=2+(i%4),v=a*k;addMath('Ratio and Proportion',`The ratio of red beads to blue beads is ${a}:${b}. If there are ${k} times as many beads, how many red beads are there?`,v,[v+1,v+b,v-k],`Multiply both parts of the ratio by ${k}; red beads = ${a} × ${k} = ${v}.`);}
+for(let i=0;i<10;i++){const x=2+i, a=2+(i%4), c=3+(i%7), v=a*x+c;addMath('Algebra',`If ${a}x + ${c} = ${v}, find x.`,x,[x+1,x-1,x+2],`Subtract ${c} from both sides, then divide by ${a}; x = ${x}.`);}
+for(let i=0;i<10;i++){const l=5+i,w=3+(i%6),v=l*w;addMath('Mensuration',`A rectangle is ${l} cm long and ${w} cm wide. Find its area.`,v,[2*(l+w),v+l,v-w],`Area of a rectangle = length × width = ${l} × ${w} = ${v} cm².`);}
+for(let i=0;i<10;i++){const a=35+i*4,b=65+i*3,v=180-a-b;addMath('Geometry',`Two angles in a triangle are ${a}° and ${b}°. Find the third angle.`,v,[180-a,180-b,a+b],`Angles in a triangle add up to 180°; the third angle is 180° − ${a}° − ${b}° = ${v}°.`);}
+for(let i=0;i<10;i++){const a=4+i*2,b=8+i*2,c=10+i*3,v=(a+b+c)/3;addMath('Statistics',`Find the mean of ${a}, ${b} and ${c}.`,Number(v.toFixed(2)),[Number((v+2).toFixed(2)),Number((v-1).toFixed(2)),a+b+c],`Mean = total ÷ number of values = ${a+b+c} ÷ 3 = ${v}.`);}
+for(let i=0;i<10;i++){const cm=125+i*25,m=cm/100;addMath('Measurement',`Convert ${cm} centimetres to metres.`,m,[cm*10,cm/10,m+1],`Divide centimetres by 100: ${cm} ÷ 100 = ${m} m.`);}
+for(let i=0;i<10;i++){const red=2+i,blue=3+i,tot=red+blue;addMath('Probability',`A bag has ${red} red and ${blue} blue counters. What is the probability of picking a red counter?`,`${red}/${tot}`,[`${blue}/${tot}`,`1/${tot}`,`${red}/${blue}`],`Probability = favourable outcomes ÷ total outcomes = ${red}/${tot}.`);}
+if(mathExtras.length!==100)throw Error('Math extras must be 100');
+addExtraBank('maths','mat',mathExtras,101);
+
 const questionIndex = new Map();
 for (const subject of ['social', 'arts', 'maths', 'computing', 'rme', 'integratedScience']) for (const q of questionsDB[subject]) questionIndex.set(q.id, { ...q, subject });
 
