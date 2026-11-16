@@ -2705,6 +2705,27 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   font-size:clamp(12px,3.4vw,14px) !important;
 }
 
+
+/* Keep the three appearance choices exactly equal in size, including Auto. */
+#cz-panel .cz-theme-panel .mode-seg {
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  width:100% !important;
+  max-width:none !important;
+  box-sizing:border-box !important;
+}
+#cz-panel .cz-theme-panel .mode-seg > button {
+  box-sizing:border-box !important;
+  justify-self:stretch !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  flex:none !important;
+  margin:0 !important;
+  padding-inline:4px !important;
+  text-align:center !important;
+}
+
 </style>
 
 </head>
