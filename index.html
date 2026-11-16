@@ -2832,6 +2832,45 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
 </style>
 
+<style id="overview-and-social-pages-refresh">
+.account-coins{font-size:13px;font-weight:800;color:var(--accent);white-space:nowrap;padding:3px 7px;border-radius:999px;background:var(--accent-soft)}
+#screen-duels .duel-card,#screen-shop .shop,#screen-me .profile-card{margin-top:8px}
+#screen-duels .duel-card,#screen-shop .shop{max-width:900px;margin-left:auto;margin-right:auto}
+#screen-me .profile-card{max-width:900px;margin-left:auto;margin-right:auto}
+#screen-duels .page-intro,#screen-shop .page-intro,#screen-me .page-intro{max-width:900px;margin-left:auto;margin-right:auto}
+#screen-home .hero{padding-top:38px}
+#screen-home .hero-copy{max-width:620px}
+#screen-home .hero h1{max-width:620px}
+#screen-home .daily-card{border-radius:22px}
+#screen-home .achievement-launch{border-radius:18px}
+#screen-home .subject-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+#screen-home .tool-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+#screen-home .home-tools-heading{margin:30px 0 14px}
+#screen-home .tool-card{min-width:0;min-height:84px}
+#screen-home .tool-card span{min-width:0}
+#screen-home .tool-card small{overflow-wrap:anywhere}
+@media(max-width:760px){
+ #screen-home .hero{padding:14px 0 18px;gap:12px}
+ #screen-home .hero-copy{min-width:0}
+ #screen-home .hero h1{font-size:clamp(32px,8.8vw,42px);line-height:1.04}
+ #screen-home .hero-art{width:30%;max-width:112px;opacity:.45}
+ #screen-home .hero-actions{grid-template-columns:1fr 1fr;gap:8px}
+ #screen-home .hero-actions .btn-primary{grid-column:1/-1}
+ #screen-home .snapshot{margin-bottom:16px}
+ #screen-home .subject-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ #screen-home .tool-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ #screen-home .tool-card{padding:12px;min-height:76px}
+ #screen-home .tool-card strong{font-size:14px}
+ #screen-home .tool-card small{font-size:12px;line-height:1.3}
+ .account-coins{font-size:12px;padding:3px 5px}
+}
+@media(max-width:380px){
+ #screen-home .tool-grid{gap:7px}
+ #screen-home .tool-card{padding:10px}
+ #screen-home .tool-card .tool-icon{width:20px;height:20px}
+ .account-exp{display:none}
+}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -2890,7 +2929,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <div class="hero-actions">
           <button class="btn btn-primary btn-lg" type="button" data-action="quick-practice">Start a quick practice <svg class="icon"><use href="#i-arrow"/></svg></button>
           <a class="btn btn-ghost btn-lg" href="#daily-card">Today’s challenges</a>
-          <a class="btn btn-ghost btn-lg" href="#/friends" data-open-duels>⚔️ Duel a friend</a>
+          <a class="btn btn-ghost btn-lg" href="#/duels">⚔️ Duel a friend</a>
         </div>
         <p class="caption">5 mixed questions · instant explanations</p>
       </div>
@@ -2916,10 +2955,6 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <span class="section-meta" id="bank-meta"></span>
       </div>
       <div class="subject-grid">
-        <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🔬</span><span class="subject-index">06 / Discover</span></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
-        <button class="subject-card french-card" type="button" data-subject="french"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🇫🇷</span><span class="subject-index">07 / Language</span></span><h3>French</h3><p>Start with greetings, easy words, numbers and short everyday sentences.</p><span class="subject-bottom"><span data-count="french"></span><span>Let’s practise →</span></span></button>
-<button class="subject-card" type="button" data-subject="ga"><span class="subject-top"><span class="subject-icon">🗣️</span><span class="subject-index">08 / Language</span></span><h3>Ga Language</h3><p>Practise everyday spoken Ga, greetings, family words and simple sentences.</p><span class="subject-bottom"><span data-count="ga"></span><span>Let’s practise →</span></span></button>
-<button class="subject-card" type="button" data-subject="careerTechnology"><span class="subject-top"><span class="subject-icon">🛠️</span><span class="subject-index">09 / Practical Skills</span></span><h3>Career Technology</h3><p>Learn design, tools, materials, food, textiles, safety and enterprise.</p><span class="subject-bottom"><span data-count="careerTechnology"></span><span>Let’s practise →</span></span></button>
         <button class="subject-card social-card" type="button" data-subject="social">
           <span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11"/><ellipse cx="16" cy="16" rx="5" ry="11"/><path d="M5 16H27M8 9H24M8 23H24"/></svg></span><span class="subject-index">01 / Explore</span><svg class="icon card-arrow"><use href="#i-arrow"/></svg></span>
           <h3>Social Studies</h3>
@@ -2950,9 +2985,15 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <p>Christianity, Islam, African Traditional Religion, values and citizenship.</p>
           <span class="subject-bottom"><span data-count="rme"></span><span>Let’s practise →</span></span>
         </button>
+        <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🔬</span><span class="subject-index">06 / Discover</span></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card french-card" type="button" data-subject="french"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🇫🇷</span><span class="subject-index">07 / Language</span></span><h3>French</h3><p>Start with greetings, easy words, numbers and short everyday sentences.</p><span class="subject-bottom"><span data-count="french"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card" type="button" data-subject="careerTechnology"><span class="subject-top"><span class="subject-icon">🛠️</span><span class="subject-index">08 / Practical Skills</span></span><h3>Career Technology</h3><p>Learn design, tools, materials, food, textiles, safety and enterprise.</p><span class="subject-bottom"><span data-count="careerTechnology"></span><span>Let’s practise →</span></span></button>
       </div>
+      <div class="section-heading home-tools-heading"><div><p class="eyebrow">Your study space</p><h2>Quick access</h2></div></div>
       <div class="tool-grid">
         <a class="tool-card tool-main" href="#/friends"><svg class="icon tool-icon"><use href="#i-users"/></svg><span><strong>Friends board</strong><small>Climb the leaderboard with your classmates</small></span></a>
+        <a class="tool-card" href="#/duels"><span class="tool-icon" aria-hidden="true">⚔️</span><span><strong>Duels</strong><small>Challenge a classmate</small></span></a>
+        <a class="tool-card" href="#/shop"><span class="tool-icon" aria-hidden="true">🛍️</span><span><strong>Coin shop</strong><small>Spend your earned coins</small></span></a>
         <button class="tool-card" type="button" data-action="practise-saved" id="saved-tool"><svg class="icon tool-icon"><use href="#i-bookmark"/></svg><span><strong>Saved questions</strong><small id="saved-count">Bookmark tricky questions to revisit</small></span></button>
         <a class="tool-card" href="#flashcard-studio"><svg class="icon tool-icon"><use href="#i-cards"/></svg><span><strong>Flashcards</strong><small>Quick recall, one card at a time</small></span></a>
         <a class="tool-card tool-extra" href="#/notes"><svg class="icon tool-icon"><use href="#i-book"/></svg><span><strong>Revision library</strong><small>Extra: notes, key ideas &amp; quick checks</small></span></a>
@@ -2969,7 +3010,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <div class="section-heading"><div><p class="eyebrow">Less looking. More remembering.</p><h2 id="flashcard-title">Give your memory a turn.</h2></div><span class="section-meta">Up to 10 cards a round</span></div>
       <p class="muted">Read the question, say your answer aloud, then flip the card. Be honest about what needs another look.</p>
       <div class="flash-filters">
-        <label class="field">Subject<select id="flash-subject"><option value="social">Social Studies</option><option value="arts">Creative Arts</option><option value="maths">Mathematics</option><option value="computing">Computing</option><option value="rme">RME</option><option value="integratedScience">Integrated Science</option><option value="french">French</option><option value="ga">Ga Language</option><option value="careerTechnology">Career Technology</option></select></label>
+        <label class="field">Subject<select id="flash-subject"><option value="social">Social Studies</option><option value="arts">Creative Arts</option><option value="maths">Mathematics</option><option value="computing">Computing</option><option value="rme">RME</option><option value="integratedScience">Integrated Science</option><option value="french">French</option><option value="careerTechnology">Career Technology</option></select></label>
         <label class="field">Topic<select id="flash-topic"></select></label>
         <button id="flash-start" class="btn btn-primary" type="button">Start a round</button>
       </div>
@@ -3048,8 +3089,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-notes-sub="computing" aria-pressed="false">Computing</button>
         <button type="button" data-notes-sub="rme" aria-pressed="false">RME</button>
         <button type="button" data-notes-sub="integratedScience" aria-pressed="false">Integrated Science</button>
-        <button type="button" data-notes-sub="french" aria-pressed="false">French</button>
-        <button type="button" data-notes-sub="ga" aria-pressed="false">Ga Language</button><button type="button" data-notes-sub="careerTechnology" aria-pressed="false">Career Technology</button>
+        <button type="button" data-notes-sub="french" aria-pressed="false">French</button><button type="button" data-notes-sub="careerTechnology" aria-pressed="false">Career Technology</button>
       </div>
       <div class="chip-row" role="group" aria-label="JHS level">
         <button type="button" class="chip" data-level="all" aria-pressed="true">All levels</button>
@@ -3112,8 +3152,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-setup-sub="computing" aria-pressed="false">Computing</button>
         <button type="button" data-setup-sub="rme" aria-pressed="false">RME</button>
         <button type="button" data-setup-sub="integratedScience" aria-pressed="false">Integrated Science</button>
-        <button type="button" data-setup-sub="french" aria-pressed="false">French</button>
-        <button type="button" data-setup-sub="ga" aria-pressed="false">Ga Language</button><button type="button" data-setup-sub="careerTechnology" aria-pressed="false">Career Technology</button>
+        <button type="button" data-setup-sub="french" aria-pressed="false">French</button><button type="button" data-setup-sub="careerTechnology" aria-pressed="false">Career Technology</button>
       </div>
 
       <label class="field-label" for="topic-sel">2. Focus</label>
@@ -3281,6 +3320,24 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   </div>
 </section>
 
+  <section id="screen-duels" class="screen" data-screen="duels" hidden>
+  <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
+    <div class="page-intro"><p class="eyebrow">Challenge a classmate</p><h1>Duels</h1><p class="muted">Create a challenge or join an open duel. Your results and rewards are saved to your profile.</p></div>
+    <div id="duels-body"></div>
+  </div>
+</section>
+<section id="screen-shop" class="screen" data-screen="shop" hidden>
+  <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
+    <div class="page-intro"><p class="eyebrow">Spend your rewards</p><h1>Coin shop</h1><p class="muted">Use coins earned through practice to unlock profile items and useful power-ups.</p></div>
+    <div id="shop-body"></div>
+  </div>
+</section>
+<section id="screen-me" class="screen" data-screen="me" hidden>
+  <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
+    <div class="page-intro"><p class="eyebrow">Your account</p><h1>Me</h1><p class="muted">Your profile, progress and personalisation settings.</p></div>
+    <div id="me-body"></div>
+  </div>
+</section>
 </main>
 
 <nav class="tab-bar" aria-label="Main">
@@ -7682,8 +7739,8 @@ function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
 }
 
 /* ======================= Router ======================= */
-const SCREENS = ['home', 'notes', 'setup', 'quiz', 'essays', 'friends', 'achievements'];
-const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'essays', friends: 'friends', achievements: 'achievements' };
+const SCREENS = ['home', 'notes', 'setup', 'quiz', 'essays', 'friends', 'achievements', 'duels', 'shop', 'me'];
+const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'essays', friends: 'friends', achievements: 'achievements', duels: 'duels', shop: 'shop', me: 'me' };
 const PATH_FOR = { home: '', setup: 'practice' };
 let currentScreen = null;
 
@@ -9143,7 +9200,7 @@ onRouteChange();
 <script type="module">
 const App = window.App, o = App.el, $ = id => document.getElementById(id);
 const LVL = 200;
-const SUBJ = { soc: 'Social Studies', art: 'Creative Arts', mat: 'Mathematics', com: 'Computing', rme: 'Religious & Moral Education', sci: 'Integrated Science', fre: 'French', 'ga-': 'Ga Language', 'ct-': 'Career Technology' };
+const SUBJ = { soc: 'Social Studies', art: 'Creative Arts', mat: 'Mathematics', com: 'Computing', rme: 'Religious & Moral Education', sci: 'Integrated Science', fre: 'French', 'ct-': 'Career Technology' };
 const today = () => new Date().toISOString().slice(0, 10);
 const weekStart = () => { const d = new Date(), k = (d.getUTCDay() + 6) % 7; return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - k)).toISOString().slice(0, 10); };
 const yesterday = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
@@ -9172,10 +9229,10 @@ function renderAccount() {
     if (S.doc.avatar) w.append(o('span', 'account-badge', BeceProfile.safeAv(S.doc.avatar)));
     e.append(w);
   } else if (S.doc && S.doc.avatar) e.append(o('span', 'account-avatar', BeceProfile.safeAv(S.doc.avatar)));
-  e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), o('span', 'account-exp', `${m.totalExp} EXP`));
+  e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), o('span', 'account-coins', `💰 ${S.doc.coins || 0}`), o('span', 'account-exp', `${m.totalExp} EXP`));
   if (m.streak) e.append(o('span', 'account-streak', `\u{1F525} ${m.streak}`));
-  e.setAttribute('aria-label', `${m.displayName}, level ${lv(m.totalExp).level}, ${m.totalExp} EXP. Open the friends board`);
-  e.onclick = () => App.navigate('friends');
+  e.setAttribute('aria-label', `${m.displayName}, level ${lv(m.totalExp).level}, ${m.totalExp} EXP, ${S.doc.coins || 0} coins. Open your profile`);
+  e.onclick = () => App.navigate('me');
 }
 const CHALLENGE_POOL = (() => {
   const groups = [
@@ -9193,8 +9250,7 @@ const CHALLENGE_POOL = (() => {
     ['rme', [3, 5, 7, 9], 'Values in action', n => 'Answer ' + n + ' RME questions', '🤝'],
     ['sci', [3, 5, 7, 9, 12], 'Science explorer', n => 'Answer ' + n + ' Integrated Science questions', '🔬'],
     ['fre', [3, 5, 7, 9, 12], 'French basics', n => 'Answer ' + n + ' French questions', '🇫🇷'],
-    ['ga', [3, 5, 7, 9, 12], 'Ga language practice', n => 'Answer ' + n + ' Ga Language questions', '🗣️'],
-    ['ct', [3, 5, 7, 9, 12], 'Career Technology practice', n => 'Answer ' + n + ' Career Technology questions', '🛠️']
+        ['ct', [3, 5, 7, 9, 12], 'Career Technology practice', n => 'Answer ' + n + ' Career Technology questions', '🛠️']
   ];
   const out = [];
   groups.forEach(([metric, targets, title, detail, icon]) => targets.forEach(target => {
@@ -9251,13 +9307,10 @@ const ACHIEVEMENTS = [
   { id:'french-starter',icon:'🇫🇷',title:'Bonjour!',detail:'Answer 10 French questions',metric:'fre',target:10,group:'Subject explorer' },
   { id:'french-learner',icon:'🗣️',title:'French Learner',detail:'Answer 50 French questions',metric:'fre',target:50,group:'Subject explorer' },
   { id:'french-confident',icon:'📘',title:'French Confidence',detail:'Answer 100 French questions',metric:'fre',target:100,group:'Subject explorer' },
-  { id:'ga-starter',icon:'🗣️',title:'Ga Starter',detail:'Answer 10 Ga Language questions',metric:'ga',target:10,group:'Subject explorer' },
-  { id:'ga-learner',icon:'📚',title:'Ga Learner',detail:'Answer 50 Ga Language questions',metric:'ga',target:50,group:'Subject explorer' },
-  { id:'ga-confident',icon:'🌟',title:'Ga Confidence',detail:'Answer 100 Ga Language questions',metric:'ga',target:100,group:'Subject explorer' },
   { id:'career-starter',icon:'🛠️',title:'Career Technology Starter',detail:'Answer 10 Career Technology questions',metric:'ct',target:10,group:'Subject explorer' },
   { id:'career-learner',icon:'📐',title:'Career Technology Learner',detail:'Answer 50 Career Technology questions',metric:'ct',target:50,group:'Subject explorer' },
   { id:'career-master',icon:'🏅',title:'Career Technology Master',detail:'Answer 100 Career Technology questions',metric:'ct',target:100,group:'Subject explorer' },
-  { id:'all-nine-subjects',icon:'🌐',title:'Nine-Subject Explorer',detail:'Practise all 9 available subjects',metric:'subjects',target:9,group:'Subject explorer' },
+  { id:'all-nine-subjects',icon:'🌐',title:'Eight-Subject Explorer',detail:'Practise all 8 available subjects',metric:'subjects',target:8,group:'Subject explorer' },
   // Perfect quizzes
   { id:'perfect-round',icon:'💎',title:'Perfect Round',detail:'Finish a quiz with every answer correct',metric:'perfect',target:1,group:'Perfect quizzes' },
   { id:'perfect-5',icon:'✨',title:'Flawless Five',detail:'Complete 5 perfect quizzes',metric:'perfect',target:5,group:'Perfect quizzes' },
@@ -9359,7 +9412,7 @@ App.on('quiz:finished', async ev => {
     const parts = [];
     const previousAchievements = d.achievements || {};
     const achievementStats = { ...(previousAchievements.stats || {}) };
-    const achievementSubjects = [...new Set([...(previousAchievements.subjects || []), ...ev.questionIds.map(id => id.slice(0, 3))])];
+    const achievementSubjects = [...new Set([...(previousAchievements.subjects || []).filter(code => code !== 'ga-'), ...ev.questionIds.map(id => id.slice(0, 3)).filter(code => code !== 'ga-')])];
     achievementStats.answered = (achievementStats.answered || 0) + Object.keys(ev.answers || {}).length;
     achievementStats.correct = (achievementStats.correct || 0) + (ev.correct || 0);
     achievementStats.quizzes = (achievementStats.quizzes || 0) + 1;
@@ -9368,7 +9421,7 @@ App.on('quiz:finished', async ev => {
     ev.questionIds.forEach(id => {
       const q = App.questionById(id);
       if (!q) return;
-      const metric = q.subject === 'ga' ? 'ga' : q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
+      const metric = q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
       subjectMetrics[metric] = (subjectMetrics[metric] || 0) + 1;
     });
     Object.entries(subjectMetrics).forEach(([metric, count]) => {
@@ -9381,13 +9434,13 @@ App.on('quiz:finished', async ev => {
     });
     const achievements = { stats: achievementStats, subjects: achievementSubjects, unlocked: achievementUnlocked };
     const previous = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, progress: {}, claimed: [] };
-    const challengeState = { day, progress: { ...(previous.progress || {}) }, subjects: [...(previous.subjects || [])], claimed: [...(previous.claimed || [])] };
+    const challengeState = { day, progress: { ...(previous.progress || {}) }, subjects: [...(previous.subjects || []).filter(code => code !== 'ga-')], claimed: [...(previous.claimed || [])] };
     // Daily Quiz sessions are intentionally excluded; only ordinary practice advances these missions.
     if (ev.kind !== 'daily') {
       const add = (key, amount) => { challengeState.progress[key] = (challengeState.progress[key] || 0) + amount; };
       const answeredIds = Object.keys(ev.answers || {}), subjects = new Set(), subjectCounts = {};
       answeredIds.forEach(id => {
-        const q = App.questionById(id), code = q && q.subject === 'ga' ? 'ga' : q && q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
+        const q = App.questionById(id), code = q && q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
         if (q) { subjects.add(code); subjectCounts[code] = (subjectCounts[code] || 0) + 1; }
       });
       add('answered', answeredIds.length);
@@ -9398,7 +9451,7 @@ App.on('quiz:finished', async ev => {
       if (answeredIds.length > 0 && ev.correct === answeredIds.length) add('perfect', 1);
       if ((ev.total || answeredIds.length) >= 10) add('longQuiz', 1);
       if (subjects.size >= 3) add('mixed', 1);
-      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci', 'fre', 'ga', 'ct'].includes(code)) add(code, count); });
+      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci', 'fre', 'ct'].includes(code)) add(code, count); });
       dailyChallengeSet(day).forEach(task => {
         const value = challengeState.progress[task.metric] || 0;
         if (value >= task.target && !challengeState.claimed.includes(task.id)) {
@@ -9856,17 +9909,22 @@ function buildProfileCard() {
 }
 
 function showFtab() {
-  if (!S.frWrap) return;
-  S.boardHost.hidden = S.ftab !== 'board'; Duel.card().hidden = S.ftab !== 'duels'; Shop.el().hidden = S.ftab !== 'shop'; S.pc.el.hidden = S.ftab !== 'me';
+  if (!S.frWrap || !S.ftabs) return;
+  S.boardHost.hidden = S.ftab === 'admin';
+  S.ftabs.hidden = !S.isAdmin;
   Adm.sync();
   S.ftabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.k === S.ftab)));
 }
-document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-open-duels]')) { S.ftab = 'duels'; showFtab(); } });
 function renderFriends() {
-  const body = $('friends-body'); if (!body || App.screen !== 'friends') return;
-  if (!S.db) { const c = o('div', 'card friends-gate'); c.append(o('h2', '', 'Friends board unavailable'), o('p', 'muted', 'Check your internet connection and reload the page to join the board. Quizzes and notes still work.')); body.replaceChildren(c); return; }
-  if (S.banned) { body.replaceChildren(banCard()); return; }
-  if (!S.ready) { const w = o('div', 'skeleton-wrap'); for (let i = 0; i < 3; i++) w.append(o('div', 'skeleton')); body.replaceChildren(w); return; }
+  const body = $('friends-body'); if (!body) return;
+  if (!S.db || S.banned || !S.ready) {
+    const c = o('div', 'card friends-gate');
+    c.append(o('h2', '', S.banned ? 'Account access paused' : 'Your social features are loading'),
+      o('p', 'muted', S.banned ? 'Your account cannot access the friends board, duels or shop right now.' : 'Connect to the friends service and reload to use profiles, duels and the coin shop. Your quizzes and notes remain available.'));
+    body.replaceChildren(c);
+    ['duels-body', 'shop-body', 'me-body'].forEach(id => { const host = $(id); if (host) host.replaceChildren(c.cloneNode(true)); });
+    return;
+  }
   const m = view(), base = S.players.some(p => p.id === S.uid) ? S.players : [...S.players, { id: S.uid, ...(S.doc || {}) }], wk = weekStart(), td = today(), B = S.board;
   const val = p => B === 'day' ? (p.dayKey === td ? p.dayExp || 0 : 0) : B === 'week' ? (p.weekKey === wk ? p.weekExp || 0 : 0) : (p.totalExp || 0);
   const tot = (a, b) => (b.totalExp || 0) - (a.totalExp || 0);
@@ -9920,13 +9978,17 @@ function renderFriends() {
   act.append(ul);
   const g = o('div', 'friends-grid'); g.append(lb, act);
   if (!S.frWrap) {
-    S.frWrap = o('div'); S.boardHost = o('div'); S.ftab = S.ftab || 'board'; S.ftabs = o('div', 'f-tabs'); S.ftabs.setAttribute('role', 'tablist');
-    [['board', '\u{1F3C6} Board'], ['duels', '\u2694\uFE0F Duels'], ['shop', '\u{1F6CD}\uFE0F Shop'], ['me', '\u{1F464} Me']].forEach(([k, t]) => { const b = o('button', '', t); b.type = 'button'; b.dataset.k = k; b.setAttribute('role', 'tab'); b.onclick = () => { S.ftab = k; showFtab(); }; S.ftabs.append(b); });
-    S.frWrap.append(S.ftabs, S.boardHost, Duel.card(), Shop.el(), S.pc.el);
+    S.frWrap = o('div'); S.boardHost = o('div'); S.ftab = S.ftab || 'board'; S.ftabs = o('div', 'f-tabs');
+    S.ftabs.setAttribute('role', 'tablist'); S.ftabs.hidden = true;
+    S.frWrap.append(S.ftabs, S.boardHost);
   }
   showFtab();
   S.boardHost.replaceChildren(g);
   if (body.firstChild !== S.frWrap || body.childNodes.length !== 1) body.replaceChildren(S.frWrap);
+  const duelsBody = $('duels-body'), shopBody = $('shop-body'), meBody = $('me-body');
+  if (duelsBody) { const card = Duel.card(); card.hidden = false; duelsBody.replaceChildren(card); }
+  if (shopBody) { const shop = Shop.el(); shop.hidden = false; shopBody.replaceChildren(shop); }
+  if (meBody) { S.pc.el.hidden = false; meBody.replaceChildren(S.pc.el); }
 }
 
 // ===== FIREBASE SETUP: paste your own values from the Firebase console here =====
@@ -10047,7 +10109,7 @@ const Shop = (() => {
 /* ===== 1v1 Duel (Firestore collection "duels") ===== */
 const Duel = (() => {
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  const SUBS = { mixed: 'Mixed subjects', social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'RME', integratedScience: 'Integrated Science', french: 'French', ga: 'Ga Language', careerTechnology: 'Career Technology' };
+  const SUBS = { mixed: 'Mixed subjects', social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'RME', integratedScience: 'Integrated Science', french: 'French', careerTechnology: 'Career Technology' };
   const LENS = [5, 8, 10, 15, 20], TIMES = [10, 15, 20, 30];
   const D = { open: [], code: null, doc: null, unsub: null, started: false, cd: false, idx: 0, me: null, log: [], timer: null, locked: false, card: null, list: null, err: null, cfg: { subject: 'mixed', len: 8, secs: 15, vis: 'public' } };
   const mix = a => [...a].sort(() => Math.random() - .5);
@@ -11134,7 +11196,7 @@ const fmtLeft = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >
 async function init() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   renderAccount(); renderDaily(); renderAchievements();
-  App.on('screen', s => { if (s === 'friends') renderFriends(); });
+  App.on('screen', s => { if (['friends', 'duels', 'shop', 'me'].includes(s)) renderFriends(); });
   try {
     const fb = await connectFirebase();
     S.db = fb.db; S.uid = fb.uid; Duel.start();
@@ -11169,10 +11231,10 @@ init();
 </script>
 <script>
 (() => {
-  const subjects=["social","arts","maths","computing","rme","integratedScience","french","ga","careerTechnology"];
-  const labels={social:"Social Studies",arts:"Creative Arts",maths:"Mathematics",computing:"Computing",rme:"Religious & Moral Education",integratedScience:"Integrated Science",french:"French",ga:"Ga Language",careerTechnology:"Career Technology"};
+  const subjects=["social","arts","maths","computing","rme","integratedScience","french","careerTechnology"];
+  const labels={social:"Social Studies",arts:"Creative Arts",maths:"Mathematics",computing:"Computing",rme:"Religious & Moral Education",integratedScience:"Integrated Science",french:"French",careerTechnology:"Career Technology"};
   Object.assign(SUBJECT_LABEL,labels);
-  questionsDB.ga=questionsDB.ga||[]; questionsDB.careerTechnology=questionsDB.careerTechnology||[];
+  questionsDB.careerTechnology=questionsDB.careerTechnology||[];
   const stems=[
     q=>q,
     q=>"Select the best answer: "+q,
@@ -11186,38 +11248,6 @@ init();
     q=>"A student checks their notes and asks: "+q+" Choose the accurate answer."
   ];
   const expand=(facts)=>{const chosen=facts.length<=20?facts:Array.from({length:20},(_,i)=>facts[Math.floor(i*facts.length/20)]);return chosen.flatMap(f=>stems.map(stem=>[f[0],stem(f[1]),f[2],f[3],f[4],"Read the key words, compare the options and check the explanation."]));};
-  const gaFacts=[
-    ["Greetings","What is a common Ga morning greeting?","Ojekoo",["Agoo","Akpe","Bonjour"],"Ojekoo is a widely used morning greeting in Ga."],
-    ["Greetings","What is a customary response to Ojekoo?","Ojoo",["Mina oko","Agoo","Akpe"],"Ojoo is a customary response to Ojekoo."],
-    ["Greetings","Which expression is called out before entering or announcing one's presence?","Agoo",["Oyiwaladɔ","Ojekoo","Mina oko"],"Agoo is used to announce one's presence or ask permission to enter."],
-    ["Greetings","Which expression is commonly used to say thank you in Ga learning materials?","Oyiwaladɔ",["Agoo","Ojekoo","Ojoo"],"Oyiwaladɔ is an expression of thanks; follow the spelling taught by your Ga teacher."],
-    ["Greetings","Which expression is commonly taught as an evening greeting?","Mina oko",["Ojekoo","Agoo","Ojoo"],"Mina oko is a commonly taught evening greeting."],
-    ["Conversation","Which spoken Ga question is commonly taught for 'How are you?'?","Tɛ eyɛ oten?",["Mina oko?","Agoo?","Oyiwaladɔ?"],"Tɛ eyɛ oten? is a common spoken form used to ask how someone is."],
-    ["Conversation","What is a good way to respond when someone greets you?","Reply politely and ask how the person is",["Ignore the person","Change the topic immediately","Walk away without answering"],"A greeting is part of a respectful two-way conversation."],
-    ["Conversation","What should you do if you do not understand a Ga expression?","Politely ask the speaker to repeat or explain it",["Pretend to understand","Stop listening","Give an unrelated answer"],"Asking for clarification helps communication and learning."],
-    ["Family","Which topic includes words for mother, father, siblings and children?","Family vocabulary",["Weather vocabulary","Tool vocabulary","Colour vocabulary"],"Family words help learners describe relationships."],
-    ["School","Which group contains useful school vocabulary?","Teacher, learner, book and classroom",["Hammer, nail and saw","River, mountain and ocean","Spoon, plate and pot"],"School vocabulary helps learners discuss everyday school life."],
-    ["Food","Which vocabulary group is useful at a food market?","Food names, quantities and prices",["Only greetings","Only body parts","Only school subjects"],"Market conversations require words for items, quantities and prices."],
-    ["Numbers","What is the best way to improve number vocabulary in Ga?","Practise counting aloud regularly",["Avoid saying numbers","Memorise only one number","Use numbers only in writing"],"Regular spoken practice improves recall and pronunciation."],
-    ["Time","Which vocabulary helps describe a daily routine?","Days and time expressions",["Only animal names","Only colours","Only tool names"],"Time words help learners explain when activities happen."],
-    ["Body & health","Which vocabulary helps someone describe a headache?","Body parts and health words",["Food prices","School subjects","Clothing colours"],"Body-part words help people explain health concerns."],
-    ["Pronouns","What does a pronoun do in a sentence?","It stands in place of a noun",["It measures length","It names a colour","It shows a date"],"Pronouns help avoid repeating nouns."],
-    ["Grammar","What is the main function of a verb?","It expresses an action or state",["It names a place only","It describes a colour only","It replaces punctuation"],"Verbs tell what someone does or what state they are in."],
-    ["Grammar","Which word class describes a noun?","An adjective",["A verb","A conjunction","A question mark"],"Adjectives describe qualities or features of nouns."],
-    ["Sentence building","What makes a sentence meaningful?","Words arranged to communicate a complete idea",["A random list of letters","Only a number","A list of punctuation marks"],"A sentence communicates a complete thought."],
-    ["Pronunciation","Why should learners listen to fluent Ga speakers?","To learn natural pronunciation, tone and usage",["To avoid speaking","To replace reading completely","To change every word into English"],"Listening supports accurate pronunciation and natural expression."],
-    ["Reading","What should a reader identify first when studying a short passage?","The main idea",["The longest word only","The number of commas","The last letter"],"The main idea tells what the passage is mostly about."],
-    ["Reading","How should a learner answer a comprehension question?","Use relevant details from the passage",["Guess without reading","Copy an unrelated sentence","Ignore the question"],"Answers should be supported by the passage."],
-    ["Culture","Which festival is strongly associated with the Ga people?","Homowo",["Hogbetsotso","Aboakyer","Damba"],"Homowo is a major festival celebrated by the Ga people."],
-    ["Culture","What does Homowo traditionally remember and celebrate?","Overcoming hunger and celebrating a successful harvest",["The start of a new school year","The building of a bridge","A football tournament"],"Homowo recalls a period of hunger and celebrates abundance."],
-    ["Proverbs","Why are proverbs important in Ga culture?","They communicate wisdom and community values",["They are only decoration","They replace all grammar","They have no message"],"Proverbs preserve lessons and cultural knowledge."],
-    ["Writing","What should begin a properly written sentence?","A capital letter",["A full stop","A comma","A closing bracket"],"A sentence normally begins with a capital letter."],
-    ["Writing","Which punctuation mark usually ends a direct question?","A question mark",["A comma","A full stop only","A colon"],"A question mark indicates that a sentence asks something."],
-    ["Translation","What should a good translation preserve?","The meaning and context of the message",["Only the number of words","Only the first letter","The English word order every time"],"Translation should communicate meaning naturally."],
-    ["Conversation","What is active listening?","Paying attention and responding to what the speaker says",["Speaking over the person","Ignoring the speaker","Repeating unrelated words"],"Active listening helps people understand one another."],
-    ["Respect","How should a learner speak to an older person?","Use respectful language and a polite tone",["Use insults","Interrupt repeatedly","Ignore the person"],"Respectful speech is important in family and community life."],
-    ["Study skills","Which habit best improves spoken Ga?","Short, regular conversations with patient speakers",["Avoiding practice","Reading silently only","Learning one word each month"],"Regular conversation builds confidence and fluency."]
-  ];
   const ctFacts=[
     ["Safety","What should a learner do before using a workshop tool?","Check that it is suitable and safe to use",["Use it without checking","Throw it to a friend","Remove its safety guard"],"Inspect tools and follow instructions before use."],
     ["Safety","What is the purpose of personal protective equipment?","To reduce exposure to workplace hazards",["To decorate the workshop","To replace training","To make tools heavier"],"PPE such as goggles and aprons helps protect the user."],
@@ -11259,31 +11289,13 @@ init();
     ["Quality","Why should a finished product be tested?","To check that it is safe and works as intended",["To make it heavier","To avoid feedback","To damage it"],"Testing checks function, quality and safety."],
     ["Consumers","What should a buyer consider when choosing a product?","Quality, safety, usefulness and price",["Only the colour","Only the package size","Only the seller's name"],"Consumers compare important features before buying."]
   ];
-  addExtraBank("ga","ga",expand(gaFacts),1);
+  
   addExtraBank("careerTechnology","ct",expand(ctFacts),1);
-  if(questionsDB.ga.length!==200||questionsDB.careerTechnology.length!==200) throw new Error("New subject banks must each contain 200 questions.");
-  questionsDB.ga.forEach(q=>questionIndex.set(q.id,{...q,subject:"ga"}));
+  if(questionsDB.careerTechnology.length!==200) throw new Error("Career Technology bank must contain 200 questions.");
+  
   questionsDB.careerTechnology.forEach(q=>questionIndex.set(q.id,{...q,subject:"careerTechnology"}));
   globalThis.questionsDB=questionsDB;
 
-  notesDB.ga=[
-    {id:"ga-jhs1-greetings",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Communication and culture",topic:"Everyday Ga Greetings and Polite Expressions",icon:"🗣️",readTime:"6 min read",summary:"Practise common spoken greetings and respectful expressions. Some spellings vary, so follow your teacher's preferred form.",sections:[
-      {title:"Greetings",theory:"Greetings are an important part of everyday Ga interaction. Ga is spoken by Ga communities, especially in and around Greater Accra. Listen to fluent speakers and practise the form taught by your teacher.",points:["Ojekoo is a common morning greeting; Ojoo is a customary response.","Mina oko is commonly taught as an evening greeting.","Agoo is called out to announce your presence or ask permission to enter.","Oyiwaladɔ is an expression of thanks in many learning materials; check the spelling and pronunciation used in class."]},
-      {title:"Asking how someone is",theory:"Tɛ eyɛ oten? is a commonly taught spoken form for asking 'How are you?'. Listen to the rhythm and tone and practise with a fluent speaker.",points:["Greet the person first.","Ask the question clearly and listen to the response.","Reply politely and ask a related question.","Use respectful forms of address with older people."]},
-      {title:"Conversation practice",steps:["Greet the person.","Ask how the person is.","Listen without interrupting.","Respond to what the person said.","Close the conversation politely."],examTip:"Practise spoken forms as well as the standard forms taught in class. Ask your teacher to confirm pronunciation and spelling."}]},
-    {id:"ga-jhs1-vocabulary",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Vocabulary",topic:"Family, School, Food and Market Vocabulary",icon:"📚",readTime:"7 min read",summary:"Build useful vocabulary for people, school, food and everyday conversations.",sections:[
-      {title:"Learn words in groups",theory:"Related words are easier to remember when studied together. Make a small word list for each topic and practise the words in sentences.",points:["Family: mother, father, child, sibling and elder.","School: teacher, learner, book, pen, classroom and lesson.","Food: names of common foods, drinks, fruits and ingredients.","Market: buying, selling, prices, quantities and asking for help."]},
-      {title:"Use words in sentences",theory:"Do not memorise isolated words only. Use each new word in a short sentence or question. Ask a fluent speaker to correct your pronunciation.",example:"Practise a market conversation: greet the seller, ask for an item, ask its price, listen to the answer and thank the seller.",examTip:"When translating, preserve meaning and context instead of translating each English word separately."}]},
-    {id:"ga-jhs2-grammar",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Language structure",topic:"Pronouns, Verbs and Simple Ga Sentences",icon:"✍️",readTime:"7 min read",summary:"Understand how words work together to communicate complete ideas.",sections:[
-      {title:"Parts of a sentence",theory:"A sentence communicates a complete idea. A simple sentence often tells who or what is being discussed and what is happening. Ga word order should be learnt from reliable examples.",points:["A noun names a person, place, animal or thing.","A pronoun stands in place of a noun.","A verb expresses an action or state.","An adjective describes a noun.","Practise identifying these parts in sentences from your class reader."]},
-      {title:"Build clear sentences",steps:["Choose the subject of the sentence.","Select the correct verb form.","Add an object or description if needed.","Read the sentence aloud to check that it sounds natural.","Ask a teacher or fluent speaker to confirm the word order."]}]},
-    {id:"ga-jhs2-reading",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Reading and comprehension",topic:"Reading Short Ga Passages and Proverbs",icon:"📖",readTime:"6 min read",summary:"Find the main idea, understand details and explain cultural sayings.",sections:[
-      {title:"Comprehension",theory:"Read the whole passage once to understand its general message. Read it again to find names, actions, reasons and details that answer questions.",points:["Identify the main idea.","Underline details that support it.","Use the passage to answer factual questions.","Use surrounding sentences to understand unfamiliar words.","Answer in complete and relevant sentences."]},
-      {title:"Proverbs",theory:"Proverbs express wisdom, values and community experience. Their message may differ from the literal meaning of each word.",examTip:"Explain the lesson of a proverb and give a suitable everyday example. Check with a knowledgeable speaker if you are unsure of its meaning."}]},
-    {id:"ga-jhs3-writing",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Writing and oral communication",topic:"Writing, Translation and Oral Practice",icon:"📝",readTime:"7 min read",summary:"Prepare for classroom exercises with spelling, short writing and spoken communication.",sections:[
-      {title:"Write a short passage",steps:["Read the topic carefully.","Write down three or four key ideas.","Arrange ideas in a sensible order.","Write short, clear sentences.","Check spelling, punctuation and meaning."]},
-      {title:"Translation and speaking",theory:"A good translation communicates the intended meaning naturally. Speaking practice should include pronunciation, tone and listening.",points:["Check context before choosing a word.","Use natural Ga word order.","Speak at a steady pace.","Ask for correction and repeat the corrected sentence.","Practise common spoken Ga alongside standard forms taught in class."]}]}
-  ];
   notesDB.careerTechnology=[
     {id:"ct-jhs1-safety",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Design and technology",topic:"Workshop Safety, Tools and Personal Protection",icon:"🦺",readTime:"8 min read",summary:"Learn safe behaviour, workshop rules, protective equipment and responsible tool handling.",sections:[
       {title:"Why safety matters",theory:"A workshop contains tools, materials, machines and activities that can cause injury if used carelessly. Safety means preventing accidents, protecting people and keeping the work area organised.",points:["Follow the teacher's instructions before starting work.","Wear suitable protective equipment when required.","Tie back long hair and keep loose clothing away from moving parts.","Keep floors dry and pathways clear.","Never play or distract someone using a tool."]},
@@ -11331,7 +11343,7 @@ init();
     {id:"fre-jhs3-sentences",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Communication",topic:"Present-Tense Verbs and Everyday Sentences",icon:"💬",readTime:"8 min read",summary:"Use a few common verbs to make simple statements and questions.",sections:[{title:"Useful verbs",points:["être = to be; avoir = to have; aller = to go; faire = to do or make.","Je suis = I am; tu es = you are; il/elle est = he/she is.","J'ai = I have; tu as = you have; il/elle a = he/she has.","Learn the subject pronoun together with the verb form."]},{title:"Build a simple sentence",example:"Je m'appelle Ama. = My name is Ama. J'habite à Accra. = I live in Accra. J'aime lire. = I like reading.",examTip:"Read the whole sentence, identify the subject and verb, then use context to choose the missing word. Keep French sentences short and clear."}]}
   );
   const flash=document.getElementById("flash-subject");
-  if(flash){if(![...flash.options].some(o=>o.value==="ga"))flash.add(new Option("Ga Language","ga"));if(![...flash.options].some(o=>o.value==="careerTechnology"))flash.add(new Option("Career Technology","careerTechnology"));}
+  if(flash){if(![...flash.options].some(o=>o.value==="careerTechnology"))flash.add(new Option("Career Technology","careerTechnology"));}
   const group=document.querySelector("[data-setup-sub='french']")?.parentElement;
   if(group&&!group.querySelector("[data-setup-all]")){const btn=document.createElement("button");btn.type="button";btn.dataset.setupAll="true";btn.textContent="All subjects mixed";btn.setAttribute("aria-pressed","false");group.append(btn);}
   Setup.subjects=["social"];Setup.topic="all";
@@ -11343,7 +11355,7 @@ init();
   Setup.update=function(){this.topic=document.getElementById("topic-sel").value;const count=this.pool().length;document.getElementById("setup-pool").textContent=count+" questions available in this selection";const lengths=[5,10,20,40,60,100,200,0];if(this.length&&this.length>=count)this.length=0;const box=document.getElementById("length-buttons");box.replaceChildren();lengths.forEach(n=>{if(n&&n>=count)return;const btn=document.createElement("button");btn.type="button";btn.className="length-option";btn.textContent=n?String(n):"All "+count;btn.setAttribute("aria-pressed",String(n===this.length));btn.addEventListener("click",()=>{Setup.length=n;Setup.update();});box.append(btn);});document.querySelectorAll("[data-mode]").forEach(btn=>btn.setAttribute("aria-checked",String(btn.dataset.mode===this.mode)));const total=Math.min(this.length||count,count),secs=total*40;document.getElementById("mode-description").textContent=this.mode==="exam"?"Timed mock: "+Math.floor(secs/60)+" min "+(secs%60?secs%60+" sec ":"")+"for "+total+" questions. Explanations appear when you finish.":"Practice: no timer. See explanations after answers and use hints when you need them.";};
   Setup.start=function(){const pool=this.pool();if(!pool.length){toast("There are no questions in this selection yet.");return;}ensureSelection();const label=this.subjects.length===subjects.length?"All subjects mixed":this.subjects.map(s=>labels[s]).join(" + ");Quiz.start({pool,length:this.length,mode:this.mode,subject:this.subjects.length===1?this.subjects[0]:"mixed",label:label+(this.topic!=="all"?" · "+this.topic:"")});};
   document.addEventListener("click",event=>{const one=event.target.closest("[data-setup-sub]");const all=event.target.closest("[data-setup-all]");if(one){ensureSelection();const key=one.dataset.setupSub;if(Setup.subjects.includes(key)){if(Setup.subjects.length>1)Setup.subjects=Setup.subjects.filter(x=>x!==key);}else Setup.subjects=[...Setup.subjects,key];Setup.subject=Setup.subjects[0];Setup.topic="all";}else if(all){Setup.subjects=[...subjects];Setup.subject=subjects[0];Setup.topic="all";Setup.renderSubject();}},true);
-  document.querySelectorAll("[data-notes-sub='ga'],[data-notes-sub='careerTechnology']").forEach(btn=>btn.addEventListener("click",()=>{Notes.sub=btn.dataset.notesSub;Notes.activeId=null;Notes.refresh({keepScroll:false});}));
+  document.querySelectorAll("[data-notes-sub='careerTechnology']").forEach(btn=>btn.addEventListener("click",()=>{Notes.sub=btn.dataset.notesSub;Notes.activeId=null;Notes.refresh({keepScroll:false});}));
   Home.render();
 })();
 </script>
