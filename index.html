@@ -2368,88 +2368,155 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   .rng { min-height: 32px; }
 }
 
-/* Profile customiser: follow the active app palette in both modes */
+/* ---------- Mobile Me tab: calm surfaces, one-line tabs, and safe sticky spacing ---------- */
 #cz-panel.cz {
-  background:var(--surface) !important;
+  background:transparent !important;
   color:var(--ink) !important;
   border-top:1px solid var(--line) !important;
+  scroll-margin-top:calc(var(--nav-h, 58px) + 18px);
 }
+#cz-panel .cz-head {
+  align-items:flex-start !important;
+  gap:10px !important;
+  margin-bottom:16px !important;
+}
+#cz-panel .cz-head > div { min-width:0; }
+#cz-panel .cz-head h2 { color:var(--ink) !important; line-height:1.25; }
 #cz-panel .cz-head .eyebrow,
 #cz-panel .cz-label,
 #cz-panel .cz-note { color:var(--muted) !important; }
 #cz-panel .cz-status {
   background:var(--surface-2) !important;
-  border-color:var(--line) !important;
+  border:1px solid var(--line) !important;
   color:var(--ink) !important;
 }
-#cz-panel .cz-tabs {
-  display:grid !important;
-  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+
+/* Keep Avatar, Theme and About me side-by-side on every phone width. */
+#cz-panel > .cz-tabs {
+  display:flex !important;
+  flex-flow:row nowrap !important;
+  align-items:stretch !important;
+  justify-content:stretch !important;
   width:100% !important;
+  min-width:0 !important;
+  gap:6px !important;
+  padding:5px !important;
+  margin:0 0 18px !important;
+  overflow:hidden !important;
+  background:var(--surface-2) !important;
+  border:1px solid var(--line) !important;
+  border-radius:14px !important;
+}
+#cz-panel > .cz-tabs > button {
+  display:flex !important;
+  flex:1 1 0 !important;
+  width:33.333% !important;
+  max-width:33.333% !important;
+  min-width:0 !important;
+  min-height:46px !important;
+  margin:0 !important;
+  padding:8px 3px !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:clip !important;
+  font-size:clamp(10px, 3.1vw, 13px) !important;
+  line-height:1.15 !important;
+  color:var(--muted) !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:10px !important;
+  box-shadow:none !important;
+}
+#cz-panel > .cz-tabs > button[aria-selected="true"] {
+  color:var(--accent) !important;
+  background:var(--accent-soft) !important;
+  box-shadow:inset 0 0 0 1px var(--line) !important;
+}
+
+/* Use depth only for actual controls; don't put a coloured slab behind chip groups. */
+#cz-panel .cz-avatar-panel > .cz-row,
+#cz-panel .cz-avatar-panel > form,
+#cz-panel .cz-about-panel .name-form,
+#cz-panel .cz-theme-panel > .segmented,
+#cz-panel .cz-theme-panel .cz-custom {
+  background:var(--surface-2) !important;
+  color:var(--ink) !important;
+  border-color:var(--line) !important;
+}
+#cz-panel .cz-avatar-panel > .cz-chips {
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
   gap:8px !important;
-  padding:6px !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:0 !important;
+}
+#cz-panel .cz-avatar-panel > .cz-chips .chip {
+  width:100% !important;
+  min-width:0 !important;
+  min-height:42px !important;
+  padding:8px 6px !important;
+  white-space:normal !important;
+  text-align:center !important;
+  line-height:1.2 !important;
+  color:var(--ink) !important;
   background:var(--surface-2) !important;
   border:1px solid var(--line) !important;
 }
-#cz-panel .cz-tabs button {
-  display:flex !important;
-  width:100% !important;
-  min-width:0 !important;
-  min-height:48px !important;
-  flex:none !important;
-  justify-content:center !important;
-  align-items:center !important;
-  padding:9px 5px !important;
-  white-space:normal !important;
-  color:var(--muted) !important;
-}
-#cz-panel .cz-tabs button[aria-selected="true"] {
-  background:var(--surface) !important;
+#cz-panel .cz-avatar-panel > .cz-chips .chip[aria-pressed="true"] {
   color:var(--accent) !important;
-  box-shadow:0 1px 4px rgba(0,0,0,.14) !important;
-}
-#cz-panel .cz-avatar-panel > .cz-row,
-#cz-panel .cz-avatar-panel > form,
-#cz-panel .cz-avatar-panel > .cz-chips,
-#cz-panel .cz-avatar-panel > .emoji-grid,
-#cz-panel .cz-theme-panel > .segmented,
-#cz-panel .cz-theme-panel .cz-custom,
-#cz-panel .cz-about-panel .name-form {
-  background:var(--surface-2) !important;
-  color:var(--ink) !important;
-  border-color:var(--line) !important;
+  background:var(--accent-soft) !important;
+  border-color:var(--accent) !important;
 }
 #cz-panel .emoji-pick,
 #cz-panel .cz-avatar-panel input[type="text"],
 #cz-panel .cz-about-panel input[type="text"] {
-  background:var(--surface) !important;
   color:var(--ink) !important;
-  border-color:var(--line) !important;
+  background:var(--surface) !important;
+  border:1px solid var(--line) !important;
 }
 #cz-panel .emoji-pick.is-on {
   background:var(--accent-soft) !important;
   border-color:var(--accent) !important;
 }
-#cz-panel .cz-theme-panel > .segmented button {
-  color:var(--muted) !important;
-}
+#cz-panel .cz-theme-panel > .segmented button { color:var(--muted) !important; }
 #cz-panel .cz-theme-panel > .segmented button[aria-pressed="true"] {
-  background:var(--surface) !important;
   color:var(--accent) !important;
+  background:var(--surface) !important;
 }
 #cz-panel .cz-theme-panel .theme-tile {
-  background:var(--surface-2) !important;
   color:var(--ink) !important;
+  background:var(--surface-2) !important;
   border-color:var(--line) !important;
 }
-#cz-panel .cz-theme-panel .tt-name { color:var(--ink) !important; }
+#cz-panel .cz-theme-panel .tt-name,
 #cz-panel .cz-theme-panel .cz-custom label,
 #cz-panel .cz-about-panel .name-form label { color:var(--ink) !important; }
-@media (max-width:640px) {
-  #cz-panel .cz-tabs { grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; }
-  #cz-panel .cz-tabs button { font-size:clamp(11px,3.2vw,14px) !important; padding:9px 3px !important; }
-}
 
+@media (max-width:760px) {
+  /* The Friends sub-navigation should scroll naturally instead of covering content. */
+  .f-tabs {
+    position:relative !important;
+    top:auto !important;
+    z-index:1 !important;
+  }
+  #cz-panel.cz { padding:18px 14px 18px !important; }
+  #cz-panel .cz-head { gap:8px !important; }
+  #cz-panel > .cz-tabs { gap:4px !important; padding:4px !important; }
+  #cz-panel > .cz-tabs > button {
+    min-height:44px !important;
+    padding:8px 2px !important;
+    font-size:clamp(10px, 3vw, 12px) !important;
+  }
+  #cz-panel .cz-avatar-panel > .cz-row { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+}
+@media (max-width:360px) {
+  #cz-panel > .cz-tabs > button { font-size:10px !important; gap:2px !important; }
+}
 </style>
 </head>
 <body>
