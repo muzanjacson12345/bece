@@ -1801,6 +1801,34 @@ input, select, textarea { max-width: 100%; min-width: 0; }
     padding-inline: 1px;
   }
 }
+
+/* Desktop and tablet: show all five subjects without cutting off the final option. */
+@media (min-width: 761px) {
+  .segmented[aria-label="Subject"] {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: 100%;
+    max-width: 100%;
+  }
+  .segmented[aria-label="Subject"] > button {
+    min-width: 0;
+    width: auto;
+    padding-inline: 4px;
+    white-space: normal;
+    overflow-wrap: normal;
+    text-align: center;
+    line-height: 1.2;
+  }
+}
+/* Keep short subject names intact on the narrowest phones. */
+@media (max-width: 380px) {
+  .subject-card h3 {
+    font-size: 16px !important;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+}
+
 </style>
 
 </head>
