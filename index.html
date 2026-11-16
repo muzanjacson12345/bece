@@ -9190,7 +9190,9 @@ const CHALLENGE_POOL = (() => {
     ['com', [3, 5, 7, 9], 'Computing practice', n => 'Answer ' + n + ' Computing questions', '💻'],
     ['rme', [3, 5, 7, 9], 'Values in action', n => 'Answer ' + n + ' RME questions', '🤝'],
     ['sci', [3, 5, 7, 9, 12], 'Science explorer', n => 'Answer ' + n + ' Integrated Science questions', '🔬'],
-    ['fre', [3, 5, 7, 9, 12], 'French basics', n => 'Answer ' + n + ' French questions', '🇫🇷']
+    ['fre', [3, 5, 7, 9, 12], 'French basics', n => 'Answer ' + n + ' French questions', '🇫🇷'],
+    ['ga', [3, 5, 7, 9, 12], 'Ga language practice', n => 'Answer ' + n + ' Ga Language questions', '🗣️'],
+    ['ct', [3, 5, 7, 9, 12], 'Career Technology practice', n => 'Answer ' + n + ' Career Technology questions', '🛠️']
   ];
   const out = [];
   groups.forEach(([metric, targets, title, detail, icon]) => targets.forEach(target => {
@@ -9367,7 +9369,7 @@ App.on('quiz:finished', async ev => {
       const add = (key, amount) => { challengeState.progress[key] = (challengeState.progress[key] || 0) + amount; };
       const answeredIds = Object.keys(ev.answers || {}), subjects = new Set(), subjectCounts = {};
       answeredIds.forEach(id => {
-        const q = App.questionById(id), code = id.slice(0, 3);
+        const q = App.questionById(id), code = q && q.subject === 'ga' ? 'ga' : q && q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
         if (q) { subjects.add(code); subjectCounts[code] = (subjectCounts[code] || 0) + 1; }
       });
       add('answered', answeredIds.length);
@@ -9378,7 +9380,7 @@ App.on('quiz:finished', async ev => {
       if (answeredIds.length > 0 && ev.correct === answeredIds.length) add('perfect', 1);
       if ((ev.total || answeredIds.length) >= 10) add('longQuiz', 1);
       if (subjects.size >= 3) add('mixed', 1);
-      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci', 'fre'].includes(code)) add(code, count); });
+      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci', 'fre', 'ga', 'ct'].includes(code)) add(code, count); });
       dailyChallengeSet(day).forEach(task => {
         const value = challengeState.progress[task.metric] || 0;
         if (value >= task.target && !challengeState.claimed.includes(task.id)) {
@@ -10027,7 +10029,7 @@ const Shop = (() => {
 /* ===== 1v1 Duel (Firestore collection "duels") ===== */
 const Duel = (() => {
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  const SUBS = { mixed: 'Mixed subjects', social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'RME' };
+  const SUBS = { mixed: 'Mixed subjects', social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'RME', integratedScience: 'Integrated Science', french: 'French', ga: 'Ga Language', careerTechnology: 'Career Technology' };
   const LENS = [5, 8, 10, 15, 20], TIMES = [10, 15, 20, 30];
   const D = { open: [], code: null, doc: null, unsub: null, started: false, cd: false, idx: 0, me: null, log: [], timer: null, locked: false, card: null, list: null, err: null, cfg: { subject: 'mixed', len: 8, secs: 15, vis: 'public' } };
   const mix = a => [...a].sort(() => Math.random() - .5);
