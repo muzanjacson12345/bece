@@ -11,6 +11,10 @@ on:
       - '.github/workflows/responsive-ui-audit.yml'
   workflow_dispatch:
 
+concurrency:
+  group: responsive-ui-audit-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
