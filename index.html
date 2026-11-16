@@ -11,12 +11,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BECE Hub">
-<meta name="description" content="Practise for BECE with Social Studies, Creative Arts, Mathematics, Computing, RME and Integrated Science quizzes, flashcards, revision notes and essay guides for JHS 1–3.">
+<meta name="description" content="Practise for BECE with Social Studies, Creative Arts, Mathematics, Computing, RME, Integrated Science and beginner-friendly French quizzes, flashcards, revision notes and essay guides for JHS 1–3.">
 <meta name="theme-color" content="#f7f8f3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121a15" media="(prefers-color-scheme: dark)">
 <meta property="og:site_name" content="BECE Mock Master">
 <meta property="og:title" content="BECE Mock Master &amp; GES Revision Hub">
-<meta property="og:description" content="Build confidence for BECE with interactive practice, flashcards and GES revision notes for Social Studies, Creative Arts, Mathematics, Computing, RME and Integrated Science.">
+<meta property="og:description" content="Build confidence for BECE with interactive practice, flashcards and GES revision notes for Social Studies, Creative Arts, Mathematics, Computing, RME, Integrated Science and beginner-friendly French.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23315d47'/%3E%3Ctext x='16' y='22' font-family='Georgia' font-size='18' fill='%23f7f8f3' text-anchor='middle'%3Em%3C/text%3E%3C/svg%3E">
 <script>
 // Theme engine. Two independent choices:
@@ -2915,6 +2915,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       </div>
       <div class="subject-grid">
         <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🔬</span><span class="subject-index">06 / Discover</span></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card french-card" type="button" data-subject="french"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🇫🇷</span><span class="subject-index">07 / Language</span></span><h3>French</h3><p>Start with greetings, easy words, numbers and short everyday sentences.</p><span class="subject-bottom"><span data-count="french"></span><span>Let’s practise →</span></span></button>
         <button class="subject-card social-card" type="button" data-subject="social">
           <span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11"/><ellipse cx="16" cy="16" rx="5" ry="11"/><path d="M5 16H27M8 9H24M8 23H24"/></svg></span><span class="subject-index">01 / Explore</span><svg class="icon card-arrow"><use href="#i-arrow"/></svg></span>
           <h3>Social Studies</h3>
@@ -2964,7 +2965,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <div class="section-heading"><div><p class="eyebrow">Less looking. More remembering.</p><h2 id="flashcard-title">Give your memory a turn.</h2></div><span class="section-meta">Up to 10 cards a round</span></div>
       <p class="muted">Read the question, say your answer aloud, then flip the card. Be honest about what needs another look.</p>
       <div class="flash-filters">
-        <label class="field">Subject<select id="flash-subject"><option value="social">Social Studies</option><option value="arts">Creative Arts</option><option value="maths">Mathematics</option><option value="computing">Computing</option><option value="rme">RME</option><option value="integratedScience">Integrated Science</option></select></label>
+        <label class="field">Subject<select id="flash-subject"><option value="social">Social Studies</option><option value="arts">Creative Arts</option><option value="maths">Mathematics</option><option value="computing">Computing</option><option value="rme">RME</option><option value="integratedScience">Integrated Science</option><option value="french">French</option></select></label>
         <label class="field">Topic<select id="flash-topic"></select></label>
         <button id="flash-start" class="btn btn-primary" type="button">Start a round</button>
       </div>
@@ -3043,6 +3044,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-notes-sub="computing" aria-pressed="false">Computing</button>
         <button type="button" data-notes-sub="rme" aria-pressed="false">RME</button>
         <button type="button" data-notes-sub="integratedScience" aria-pressed="false">Integrated Science</button>
+        <button type="button" data-notes-sub="french" aria-pressed="false">French</button>
       </div>
       <div class="chip-row" role="group" aria-label="JHS level">
         <button type="button" class="chip" data-level="all" aria-pressed="true">All levels</button>
@@ -3104,6 +3106,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-setup-sub="computing" aria-pressed="false">Computing</button>
         <button type="button" data-setup-sub="rme" aria-pressed="false">RME</button>
         <button type="button" data-setup-sub="integratedScience" aria-pressed="false">Integrated Science</button>
+        <button type="button" data-setup-sub="french" aria-pressed="false">French</button>
       </div>
 
       <label class="field-label" for="topic-sel">2. Focus</label>
@@ -3224,6 +3227,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-sb-sub="computing" aria-pressed="false">Computing</button>
         <button type="button" data-sb-sub="rme" aria-pressed="false">RME</button>
         <button type="button" data-sb-sub="integratedScience" aria-pressed="false">Integrated Science</button>
+        <button type="button" data-sb-sub="french" aria-pressed="false">French</button>
       </div>
       <div class="chip-row" id="sb-picker" role="group" aria-label="Choose a question"></div>
     </div>
@@ -6988,7 +6992,7 @@ function shuffle(list) {
   return arr;
 }
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-const SUBJECT_LABEL = { social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'Religious & Moral Education', integratedScience: 'Integrated Science', mixed: 'Mixed subjects' };
+const SUBJECT_LABEL = { social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'Religious & Moral Education', integratedScience: 'Integrated Science', french: 'French', mixed: 'Mixed subjects' };
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const isTyping = target => /INPUT|TEXTAREA|SELECT/.test(target.tagName) || target.isContentEditable;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -7507,8 +7511,82 @@ scienceConcepts.forEach(r=>{
 if(scienceExtras.length!==174)throw Error('Science extras count '+scienceExtras.length);
 addExtraBank('integratedScience','sci',scienceExtras,27);
 
+
+/* ================= Beginner French question bank =================
+   80 everyday vocabulary items tested in both directions (160 Qs),
+   plus 20 easy grammar patterns (40 Qs) = 200 questions.
+*/
+questionsDB.french = [];
+const frenchVocabGroups = [
+['Greetings',[
+['bonjour','hello / good morning'],['salut','hi'],['bonsoir','good evening'],['bonne nuit','good night'],['au revoir','goodbye'],['à bientôt','see you soon'],['merci','thank you'],['de rien','you are welcome'],["s’il vous plaît",'please'],['pardon','sorry / excuse me']
+]],
+['Numbers 0–9',[
+['zéro','zero'],['un','one'],['deux','two'],['trois','three'],['quatre','four'],['cinq','five'],['six','six'],['sept','seven'],['huit','eight'],['neuf','nine']
+]],
+['Colours',[
+['rouge','red'],['bleu','blue'],['vert','green'],['jaune','yellow'],['noir','black'],['blanc','white'],['rose','pink'],['orange','orange']
+]],
+['Family',[
+['mère','mother'],['père','father'],['frère','brother'],['sœur','sister'],['grand-mère','grandmother'],['grand-père','grandfather'],['famille','family'],['ami','friend']
+]],
+['School words',[
+['école','school'],['professeur','teacher'],['élève','pupil'],['livre','book'],['stylo','pen'],['crayon','pencil'],['cahier','exercise book'],['table','table'],['chaise','chair'],['sac','bag']
+]],
+['Food and drink',[
+['pain','bread'],['eau','water'],['lait','milk'],['riz','rice'],['pomme','apple'],['banane','banana'],['poisson','fish'],['poulet','chicken'],['sucre','sugar'],['jus','juice']
+]],
+['Days of the week',[
+['lundi','Monday'],['mardi','Tuesday'],['mercredi','Wednesday'],['jeudi','Thursday'],['vendredi','Friday'],['samedi','Saturday'],['dimanche','Sunday']
+]],
+['Months',[
+['janvier','January'],['février','February'],['mars','March'],['avril','April'],['mai','May'],['juin','June'],['juillet','July'],['août','August'],['septembre','September'],['octobre','October'],['novembre','November'],['décembre','December']
+]],
+['Weather',[
+['soleil','sun / sunshine'],['pluie','rain'],['vent','wind'],['chaud','hot'],['froid','cold']
+]]
+];
+const frenchExtras = [];
+frenchVocabGroups.forEach(([topic, words]) => words.forEach(([fr,en], i) => {
+  const alternatives = [1,2,3].map(step => words[(i+step)%words.length]);
+  frenchExtras.push([topic, 'What does “'+fr+'” mean in English?', en, alternatives.map(x=>x[1]),
+    '“'+fr+'” means “'+en+'”. Learn the word in small groups and say it aloud.',
+    'Match the French word to its English meaning.']);
+  frenchExtras.push([topic, 'Which French word means “'+en+'”?', fr, alternatives.map(x=>x[0]),
+    'The French word for “'+en+'” is “'+fr+'”.',
+    'Look at the English meaning and choose its French word.']);
+}));
+const frenchGrammar = [
+['Pronouns',"Which French pronoun means “I”?",'je',['tu','il','nous'],'“Je” means “I”.','Complete the sentence: ___ suis élève.','je',['tu','il','vous'],'Use “je” when talking about yourself.'],
+['Pronouns',"Which French pronoun means “you” when speaking to one friend?",'tu',['je','il','elle'],'“Tu” is the informal word for “you” when speaking to one person.','Complete: ___ es mon ami.','tu',['je','nous','ils'],'“Tu” is used when speaking to a friend or someone familiar.'],
+['Pronouns',"Which French pronoun means “he”?",'il',['elle','je','nous'],'“Il” means “he”.','Complete: ___ est un garçon.','il',['elle','tu','vous'],'Use “il” when talking about a boy or man.'],
+['Pronouns',"Which French pronoun means “she”?",'elle',['il','je','tu'],'“Elle” means “she”.','Complete: ___ est une fille.','elle',['il','nous','vous'],'Use “elle” when talking about a girl or woman.'],
+['Pronouns',"Which French pronoun means “we”?",'nous',['vous','ils','je'],'“Nous” means “we”.','Complete: ___ sommes élèves.','nous',['je','tu','elles'],'Use “nous” when talking about yourself and other people.'],
+['Pronouns',"Which French pronoun can mean polite “you” or “you all”?",'vous',['tu','je','il'],'“Vous” is used for more than one person or as a polite form of “you”.','Complete: ___ êtes professeur.','vous',['tu','je','elle'],'Use “vous” for a group or to show politeness.'],
+['Pronouns',"Which French pronoun means “they” for a masculine or mixed group?",'ils',['elles','nous','vous'],'“Ils” means “they” for a masculine or mixed group.','Complete: ___ sont amis.','ils',['elles','il','tu'],'Use “ils” for a group of boys or a mixed group.'],
+['Pronouns',"Which French pronoun means “they” for a group of girls or women?",'elles',['ils','nous','vous'],'“Elles” means “they” for a feminine group.','Complete: ___ sont amies.','elles',['ils','elle','je'],'Use “elles” for a group made up of girls or women.'],
+['Common verbs',"Which French verb means “to be”?",'être',['avoir','aller','faire'],'“Être” means “to be”.','Complete: “Je veux ___ gentil” (“I want to be kind”).','être',['avoir','faire','aller'],'The basic meaning of “être” is “to be”.'],
+['Common verbs',"Which French verb means “to have”?",'avoir',['être','aller','parler'],'“Avoir” means “to have”.','Complete: “Je veux ___ un livre” (“I want to have a book”).','avoir',['être','faire','venir'],'The basic meaning of “avoir” is “to have”.'],
+['Simple sentences',"How do you say “I am” in French?",'je suis',['tu es','il est',"j’ai"],'“Je suis” means “I am”.','Complete: “Je ___ élève.”','suis',['es','est','ai'],'With “je”, the verb “être” becomes “suis”.'],
+['Simple sentences',"How do you say “you are” (one friend) in French?",'tu es',['je suis','il est','nous sommes'],'“Tu es” means “you are” when speaking to one friend.','Complete: “Tu ___ gentil.”','es',['suis','est','sommes'],'With “tu”, the verb “être” becomes “es”.'],
+['Simple sentences',"How do you say “he is” in French?",'il est',['elle est','je suis','tu es'],'“Il est” means “he is”.','Complete: “Il ___ grand.”','est',['suis','es','êtes'],'With “il” or “elle”, “être” becomes “est”.'],
+['Simple sentences',"How do you say “I have” in French?",'j’ai',['tu as','il a','nous avons'],'“J’ai” means “I have”.','Complete: “J’___ un stylo.”','ai',['as','a','avons'],'With “je”, “avoir” becomes “ai”; “je” shortens to “j’” before a vowel sound.'],
+['Simple sentences',"How do you say “you have” (one friend) in French?",'tu as',['j’ai','il a','nous avons'],'“Tu as” means “you have”.','Complete: “Tu ___ un livre.”','as',['ai','a','avons'],'With “tu”, the verb “avoir” becomes “as”.'],
+['Simple sentences',"What does “c’est” mean in English?",'it is / this is',['I have','you are','goodbye'],'“C’est” commonly means “it is” or “this is”.','Which French phrase means “It is”?','c’est',['j’ai','tu es','au revoir'],'“C’est” is a useful simple phrase for naming or identifying something.'],
+['Articles',"Which French word is an indefinite article for a masculine singular noun?",'un',['une','la','les'],'“Un” is used before many masculine singular nouns.','Complete: “___ livre” means “a book”.','un',['une','la','des'],'“Livre” is masculine, so “un livre” means “a book”.'],
+['Articles',"Which French word is an indefinite article for a feminine singular noun?",'une',['un','le','les'],'“Une” is used before many feminine singular nouns.','Complete: “___ pomme” means “an apple”.','une',['un','le','des'],'“Pomme” is feminine, so “une pomme” means “an apple”.'],
+['Articles',"Which French word means “the” before a masculine singular noun?",'le',['la','une','des'],'“Le” is the masculine singular word for “the”.','Which phrase means “the book”?','le livre',['la livre','une livre','les livre'],'“Le livre” means “the book”; “livre” is masculine.'],
+['Questions',"Which French question word means “where”?",'où',['quand','qui','pourquoi'],'“Où” means “where”.','Which word asks about a place?','où',['qui','quand','comment'],'Use “où” to ask where someone or something is.']
+];
+frenchGrammar.forEach(r => {
+  frenchExtras.push([r[0],r[1],r[2],r[3],r[4],'Choose the simple French form and compare it with the English meaning.']);
+  frenchExtras.push([r[0],r[5],r[6],r[7],r[8],'Read the whole short sentence, then choose the missing word.']);
+});
+if (frenchExtras.length !== 200) throw Error('French question bank must contain 200 questions: '+frenchExtras.length);
+addExtraBank('french','fre',frenchExtras,1);
+
 const questionIndex = new Map();
-for (const subject of ['social', 'arts', 'maths', 'computing', 'rme', 'integratedScience']) for (const q of questionsDB[subject]) questionIndex.set(q.id, { ...q, subject });
+for (const subject of ['social', 'arts', 'maths', 'computing', 'rme', 'integratedScience', 'french']) for (const q of questionsDB[subject]) questionIndex.set(q.id, { ...q, subject });
 
 const bus = new EventTarget();
 const emit = (name, detail) => bus.dispatchEvent(new CustomEvent(name, { detail }));
@@ -9004,7 +9082,7 @@ onRouteChange();
 <script type="module">
 const App = window.App, o = App.el, $ = id => document.getElementById(id);
 const LVL = 200;
-const SUBJ = { soc: 'Social Studies', art: 'Creative Arts', mat: 'Mathematics', com: 'Computing', rme: 'Religious & Moral Education', sci: 'Integrated Science' };
+const SUBJ = { soc: 'Social Studies', art: 'Creative Arts', mat: 'Mathematics', com: 'Computing', rme: 'Religious & Moral Education', sci: 'Integrated Science', fre: 'French' };
 const today = () => new Date().toISOString().slice(0, 10);
 const weekStart = () => { const d = new Date(), k = (d.getUTCDay() + 6) % 7; return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - k)).toISOString().slice(0, 10); };
 const yesterday = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
@@ -9052,7 +9130,8 @@ const CHALLENGE_POOL = (() => {
     ['mat', [4, 6, 8, 10, 12], 'Maths practice', n => 'Answer ' + n + ' Mathematics questions', '➗'],
     ['com', [3, 5, 7, 9], 'Computing practice', n => 'Answer ' + n + ' Computing questions', '💻'],
     ['rme', [3, 5, 7, 9], 'Values in action', n => 'Answer ' + n + ' RME questions', '🤝'],
-    ['sci', [3, 5, 7, 9, 12], 'Science explorer', n => 'Answer ' + n + ' Integrated Science questions', '🔬']
+    ['sci', [3, 5, 7, 9, 12], 'Science explorer', n => 'Answer ' + n + ' Integrated Science questions', '🔬'],
+    ['fre', [3, 5, 7, 9, 12], 'French basics', n => 'Answer ' + n + ' French questions', '🇫🇷']
   ];
   const out = [];
   groups.forEach(([metric, targets, title, detail, icon]) => targets.forEach(target => {
@@ -9101,10 +9180,14 @@ const ACHIEVEMENTS = [
   // Subject exploration
   { id:'subject-explorer',icon:'🧭',title:'Subject Explorer',detail:'Practise 3 different subjects',metric:'subjects',target:3,group:'Subject explorer' },
   { id:'all-rounder',icon:'🌍',title:'All-Rounder',detail:'Practise 5 different subjects',metric:'subjects',target:5,group:'Subject explorer' },
-  { id:'all-six-subjects',icon:'🌐',title:'Complete Explorer',detail:'Practise all 6 available subjects',metric:'subjects',target:6,group:'Subject explorer' },
+  { id:'all-six-subjects',icon:'🌐',title:'Complete Explorer',detail:'Practise six different subjects',metric:'subjects',target:6,group:'Subject explorer' },
   { id:'science-starter',icon:'🔬',title:'Science Starter',detail:'Answer 10 Integrated Science questions',metric:'sci',target:10,group:'Subject explorer' },
   { id:'science-scholar',icon:'🧪',title:'Science Scholar',detail:'Answer 50 Integrated Science questions',metric:'sci',target:50,group:'Subject explorer' },
   { id:'science-master',icon:'⚗️',title:'Science Master',detail:'Answer 100 Integrated Science questions',metric:'sci',target:100,group:'Subject explorer' },
+  { id:'all-seven-subjects',icon:'🌍',title:'Seven-Subject Explorer',detail:'Practise all 7 available subjects',metric:'subjects',target:7,group:'Subject explorer' },
+  { id:'french-starter',icon:'🇫🇷',title:'Bonjour!',detail:'Answer 10 French questions',metric:'fre',target:10,group:'Subject explorer' },
+  { id:'french-learner',icon:'🗣️',title:'French Learner',detail:'Answer 50 French questions',metric:'fre',target:50,group:'Subject explorer' },
+  { id:'french-confident',icon:'📘',title:'French Confidence',detail:'Answer 100 French questions',metric:'fre',target:100,group:'Subject explorer' },
   // Perfect quizzes
   { id:'perfect-round',icon:'💎',title:'Perfect Round',detail:'Finish a quiz with every answer correct',metric:'perfect',target:1,group:'Perfect quizzes' },
   { id:'perfect-5',icon:'✨',title:'Flawless Five',detail:'Complete 5 perfect quizzes',metric:'perfect',target:5,group:'Perfect quizzes' },
@@ -9234,7 +9317,7 @@ App.on('quiz:finished', async ev => {
       if (answeredIds.length > 0 && ev.correct === answeredIds.length) add('perfect', 1);
       if ((ev.total || answeredIds.length) >= 10) add('longQuiz', 1);
       if (subjects.size >= 3) add('mixed', 1);
-      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci'].includes(code)) add(code, count); });
+      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci', 'fre'].includes(code)) add(code, count); });
       dailyChallengeSet(day).forEach(task => {
         const value = challengeState.progress[task.metric] || 0;
         if (value >= task.target && !challengeState.claimed.includes(task.id)) {
