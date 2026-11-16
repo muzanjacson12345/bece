@@ -2845,6 +2845,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 #screen-home .achievement-launch{border-radius:18px}
 #screen-home .subject-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 #screen-home .tool-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+#screen-home .home-tools-heading{margin:30px 0 14px}
 #screen-home .tool-card{min-width:0;min-height:84px}
 #screen-home .tool-card span{min-width:0}
 #screen-home .tool-card small{overflow-wrap:anywhere}
@@ -2954,10 +2955,6 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <span class="section-meta" id="bank-meta"></span>
       </div>
       <div class="subject-grid">
-        <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🔬</span><span class="subject-index">06 / Discover</span></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
-        <button class="subject-card french-card" type="button" data-subject="french"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🇫🇷</span><span class="subject-index">07 / Language</span></span><h3>French</h3><p>Start with greetings, easy words, numbers and short everyday sentences.</p><span class="subject-bottom"><span data-count="french"></span><span>Let’s practise →</span></span></button>
-
-<button class="subject-card" type="button" data-subject="careerTechnology"><span class="subject-top"><span class="subject-icon">🛠️</span><span class="subject-index">08 / Practical Skills</span></span><h3>Career Technology</h3><p>Learn design, tools, materials, food, textiles, safety and enterprise.</p><span class="subject-bottom"><span data-count="careerTechnology"></span><span>Let’s practise →</span></span></button>
         <button class="subject-card social-card" type="button" data-subject="social">
           <span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11"/><ellipse cx="16" cy="16" rx="5" ry="11"/><path d="M5 16H27M8 9H24M8 23H24"/></svg></span><span class="subject-index">01 / Explore</span><svg class="icon card-arrow"><use href="#i-arrow"/></svg></span>
           <h3>Social Studies</h3>
@@ -2988,7 +2985,11 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <p>Christianity, Islam, African Traditional Religion, values and citizenship.</p>
           <span class="subject-bottom"><span data-count="rme"></span><span>Let’s practise →</span></span>
         </button>
+        <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🔬</span><span class="subject-index">06 / Discover</span></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card french-card" type="button" data-subject="french"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🇫🇷</span><span class="subject-index">07 / Language</span></span><h3>French</h3><p>Start with greetings, easy words, numbers and short everyday sentences.</p><span class="subject-bottom"><span data-count="french"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card" type="button" data-subject="careerTechnology"><span class="subject-top"><span class="subject-icon">🛠️</span><span class="subject-index">08 / Practical Skills</span></span><h3>Career Technology</h3><p>Learn design, tools, materials, food, textiles, safety and enterprise.</p><span class="subject-bottom"><span data-count="careerTechnology"></span><span>Let’s practise →</span></span></button>
       </div>
+      <div class="section-heading home-tools-heading"><div><p class="eyebrow">Your study space</p><h2>Quick access</h2></div></div>
       <div class="tool-grid">
         <a class="tool-card tool-main" href="#/friends"><svg class="icon tool-icon"><use href="#i-users"/></svg><span><strong>Friends board</strong><small>Climb the leaderboard with your classmates</small></span></a>
         <a class="tool-card" href="#/duels"><span class="tool-icon" aria-hidden="true">⚔️</span><span><strong>Duels</strong><small>Challenge a classmate</small></span></a>
@@ -9309,7 +9310,7 @@ const ACHIEVEMENTS = [
   { id:'career-starter',icon:'🛠️',title:'Career Technology Starter',detail:'Answer 10 Career Technology questions',metric:'ct',target:10,group:'Subject explorer' },
   { id:'career-learner',icon:'📐',title:'Career Technology Learner',detail:'Answer 50 Career Technology questions',metric:'ct',target:50,group:'Subject explorer' },
   { id:'career-master',icon:'🏅',title:'Career Technology Master',detail:'Answer 100 Career Technology questions',metric:'ct',target:100,group:'Subject explorer' },
-  { id:'all-eight-subjects',icon:'🌐',title:'Eight-Subject Explorer',detail:'Practise all 8 available subjects',metric:'subjects',target:8,group:'Subject explorer' },
+  { id:'all-nine-subjects',icon:'🌐',title:'Eight-Subject Explorer',detail:'Practise all 8 available subjects',metric:'subjects',target:8,group:'Subject explorer' },
   // Perfect quizzes
   { id:'perfect-round',icon:'💎',title:'Perfect Round',detail:'Finish a quiz with every answer correct',metric:'perfect',target:1,group:'Perfect quizzes' },
   { id:'perfect-5',icon:'✨',title:'Flawless Five',detail:'Complete 5 perfect quizzes',metric:'perfect',target:5,group:'Perfect quizzes' },
@@ -9411,7 +9412,7 @@ App.on('quiz:finished', async ev => {
     const parts = [];
     const previousAchievements = d.achievements || {};
     const achievementStats = { ...(previousAchievements.stats || {}) };
-    const achievementSubjects = [...new Set([...(previousAchievements.subjects || []), ...ev.questionIds.map(id => id.slice(0, 3))])];
+    const achievementSubjects = [...new Set([...(previousAchievements.subjects || []).filter(code => code !== 'ga-'), ...ev.questionIds.map(id => id.slice(0, 3)).filter(code => code !== 'ga-')])];
     achievementStats.answered = (achievementStats.answered || 0) + Object.keys(ev.answers || {}).length;
     achievementStats.correct = (achievementStats.correct || 0) + (ev.correct || 0);
     achievementStats.quizzes = (achievementStats.quizzes || 0) + 1;
@@ -9433,7 +9434,7 @@ App.on('quiz:finished', async ev => {
     });
     const achievements = { stats: achievementStats, subjects: achievementSubjects, unlocked: achievementUnlocked };
     const previous = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, progress: {}, claimed: [] };
-    const challengeState = { day, progress: { ...(previous.progress || {}) }, subjects: [...(previous.subjects || [])], claimed: [...(previous.claimed || [])] };
+    const challengeState = { day, progress: { ...(previous.progress || {}) }, subjects: [...(previous.subjects || []).filter(code => code !== 'ga-')], claimed: [...(previous.claimed || [])] };
     // Daily Quiz sessions are intentionally excluded; only ordinary practice advances these missions.
     if (ev.kind !== 'daily') {
       const add = (key, amount) => { challengeState.progress[key] = (challengeState.progress[key] || 0) + amount; };
