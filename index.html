@@ -11165,7 +11165,7 @@ init();
     q=>"Which response correctly answers: "+q,
     q=>"A student checks their notes and asks: "+q+" Choose the accurate answer."
   ];
-  const expand=(facts)=>facts.flatMap(f=>stems.map(stem=>[f[0],stem(f[1]),f[2],f[3],f[4],"Read the key words, compare the options and check the explanation."]));
+  const expand=(facts)=>{const chosen=facts.length<=20?facts:Array.from({length:20},(_,i)=>facts[Math.floor(i*facts.length/20)]);return chosen.flatMap(f=>stems.map(stem=>[f[0],stem(f[1]),f[2],f[3],f[4],"Read the key words, compare the options and check the explanation."]));};
   const gaFacts=[
     ["Greetings","What is a common Ga morning greeting?","Ojekoo",["Agoo","Akpe","Bonjour"],"Ojekoo is a widely used morning greeting in Ga."],
     ["Greetings","What is a customary response to Ojekoo?","Ojoo",["Mina oko","Agoo","Akpe"],"Ojoo is a customary response to Ojekoo."],
