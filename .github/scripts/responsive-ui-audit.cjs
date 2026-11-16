@@ -52,6 +52,8 @@ async function main() {
     checks: [],
     pageErrors: [],
     consoleErrors: [],
+    httpErrors: [],
+    loadingTimeouts: [],
     failedRequests: [],
     failures: [],
   };
@@ -76,6 +78,12 @@ async function main() {
           viewport: viewport.name, message: message.text().slice(0, 500),
         });
       });
+      page.on('response', response => {
+        if (response.status() >= 400) report.httpErrors.push({
+          viewport: viewport.name, status: response.status(),
+          url: response.url().slice(0, 500),
+        });
+      });
       page.on('requestfailed', request => report.failedRequests.push({
         viewport: viewport.name, url: request.url().slice(0, 300),
         error: request.failure()?.errorText || 'request failed',
@@ -90,7 +98,17 @@ async function main() {
             route.screen,
             { timeout: 30000 }
           );
-          await page.waitForTimeout(450);
+          if (route.screen === 'friends') {
+            try {
+              await page.waitForFunction(() => {
+                const host = document.querySelector('#friends-body');
+                return !host || !host.querySelector('.skeleton-wrap');
+              }, null, { timeout: 10000 });
+            } catch {
+              report.loadingTimeouts.push(`${viewport.name}/friends remained in its loading state`);
+            }
+          }
+          await page.waitForTimeout(650);
 
           const diagnostics = await page.evaluate(() => {
             const root = document.documentElement;
@@ -185,6 +203,14 @@ async function main() {
   console.log(`Saved ${report.screenshots.length} screenshots.`);
   console.log(`Page errors: ${report.pageErrors.length}; console errors: ${report.consoleErrors.length}; failed requests: ${report.failedRequests.length}`);
   console.log(`Layout failures: ${report.failures.length}`);
+  for (const failure of report.httpErrors) {
+    try {
+      if (new URL(failure.url).origin === new URL(BASE).origin) {
+        report.failures.push(`${failure.viewport}: HTTP ${failure.status} ${failure.url}`);
+      }
+    } catch {}
+  }
+  for (const timeout of report.loadingTimeouts) report.failures.push(timeout);
   if (report.failures.length) {
     for (const failure of report.failures) console.error(`FAIL: ${failure}`);
     process.exitCode = 1;
