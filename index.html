@@ -8734,7 +8734,7 @@ const Adm = (() => {
   const FILTERS = [['all', 'All'], ['today', 'Active today'], ['inactive', 'Inactive 7d+'], ['banned', 'Banned'], ['staff', 'Staff']];
   const SORTS = [['exp', 'Most EXP'], ['coins', 'Most coins'], ['streak', 'Best streak'], ['recent', 'Recently active'], ['name', 'Name A\u2013Z']];
   function players() {
-    const w = elx('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search a name or ID\u2026'; q.value = st.q; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search players');
+    const w = elx('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search name, ID or private note\u2026'; q.value = st.q; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search players');
     const sort = document.createElement('select'); sort.className = 'adm-sel'; SORTS.forEach(([v, t]) => sort.append(new Option(t, v))); sort.value = st.sort; sort.setAttribute('aria-label', 'Sort players'); sort.onchange = () => { st.sort = sort.value; fill(); };
     const chips = elx('div', 'adm-chips'), count = elx('p', 'adm-info'), list = elx('div', 'adm-list');
     q.oninput = () => { st.q = q.value.trim().toLowerCase(); st.limit = 40; fill(); };
@@ -8743,7 +8743,7 @@ const Adm = (() => {
     const pass = p => st.f === 'all' ? true : st.f === 'today' ? p.lastDay === today() : st.f === 'inactive' ? daysSince(p.lastDay) >= 7 : st.f === 'banned' ? S.bans.has(p.id) : !!roleOf(p.id);
     function fill() {
       chips.querySelectorAll('button').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.k === st.f)));
-      let ps = S.players.filter(p => pass(p) && (!st.q || `${nameOf(p.id)} ${p.id}`.toLowerCase().includes(st.q)));
+      let ps = S.players.filter(p => pass(p) && (!st.q || `${nameOf(p.id)} ${p.id} ${(S.notes.get(p.id) || {}).text || ''}`.toLowerCase().includes(st.q)));
       ps = st.sort === 'name' ? ps.sort((a, b) => String(nameOf(a.id)).localeCompare(String(nameOf(b.id)))) : ps.sort((a, b) => key[st.sort](b) - key[st.sort](a));
       count.textContent = `${ps.length} of ${S.players.length} players`;
       const shown = ps.slice(0, st.limit);
