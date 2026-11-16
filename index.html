@@ -72,6 +72,8 @@
   function parse(key) {
     const m = typeof key === 'string' && /^custom:(\d{1,3}):(\d{1,3})(?::(\d{1,3}))?$/.exec(key);
     if (m) { const h = clamp(+m[1], 0, 360), s = clamp(+m[2], 0, 100), l = clamp(m[3] == null ? 50 : +m[3], 0, 100); return { key: `custom:${h}:${s}:${l}`, name: 'Custom', custom: true, h, s, l }; }
+    // Migrate accounts that previously selected the removed White preset to Black.
+    if (key === 'white') key = 'black';
     const p = PRESETS[key];
     if (p && p.hex) { const [h, s] = rgb2hsl(fromHex(p.hex)); return { key, name: p.name, h, s: clamp(s, 15, 90), hex: p.hex }; }
     return { key: 'green', name: PRESETS.green.name, isDefault: true, h: 150, s: 35 };
