@@ -518,6 +518,12 @@ html[data-theme='dark'] #theme-toggle .icon-moon { display: none; }
 .achievement-item.is-earned{border-color:var(--accent);background:var(--accent-soft)}
 .achievement-item.is-earned .achievement-icon{filter:none;opacity:1}
 .achievement-item.is-earned .achievement-status{color:var(--accent)}
+/* Locked achievements stay muted until earned; their progress remains visible. */
+.achievement-item:not(.is-earned){background:var(--surface);border-color:var(--line);color:var(--muted)}
+.achievement-item:not(.is-earned) .achievement-copy strong{color:var(--muted)}
+.achievement-item:not(.is-earned) .achievement-icon{filter:grayscale(1);opacity:.38}
+.achievement-item:not(.is-earned) .achievement-fill{background:var(--muted);opacity:.55}
+.achievement-item.is-earned .achievement-fill{background:var(--accent)}
 @media(max-width:760px){.achievement-card{padding:22px;margin-bottom:40px}.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:420px){.achievement-heading{flex-direction:column}.achievement-count{align-self:flex-start}.achievement-grid{grid-template-columns:1fr}.achievement-item{grid-template-columns:42px minmax(0,1fr) auto}.achievement-status{grid-column:auto;grid-row:1}.achievement-track{grid-column:1/-1}}
 
