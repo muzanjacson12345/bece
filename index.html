@@ -8577,7 +8577,7 @@ App.on('quiz:finished', async ev => {
     }
     const parts = [];
     const previous = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, progress: {}, claimed: [] };
-    const challengeState = { day, progress: { ...(previous.progress || {}) }, claimed: [...(previous.claimed || [])] };
+    const challengeState = { day, progress: { ...(previous.progress || {}) }, subjects: [...(previous.subjects || [])], claimed: [...(previous.claimed || [])] };
     // Daily Quiz sessions are intentionally excluded; only ordinary practice advances these missions.
     if (ev.kind !== 'daily') {
       const add = (key, amount) => { challengeState.progress[key] = (challengeState.progress[key] || 0) + amount; };
@@ -8589,7 +8589,8 @@ App.on('quiz:finished', async ev => {
       add('answered', answeredIds.length);
       add('correct', ev.correct || 0);
       add('quizzes', 1);
-      subjects.forEach(code => add('subjects', 1));
+      subjects.forEach(code => { if (!challengeState.subjects.includes(code)) challengeState.subjects.push(code); });
+      challengeState.progress.subjects = challengeState.subjects.length;
       if (answeredIds.length > 0 && ev.correct === answeredIds.length) add('perfect', 1);
       if ((ev.total || answeredIds.length) >= 10) add('longQuiz', 1);
       if (subjects.size >= 3) add('mixed', 1);
