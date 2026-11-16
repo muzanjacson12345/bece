@@ -8957,10 +8957,10 @@ const Adm = (() => {
     return elx('div', 'adm-card', elx('h4', '', '\u{1F4CB} Permanent staff roster'), elx('p', 'adm-info', 'Everyone who has ever unlocked as staff. Roster members are shielded from admins even when signed out. Only you can remove them.'), list);
   }
   function ownerOverview() {
-    const td = today(), wk = weekStart(), ps = S.players;
+    const td = today(), wk = weekStart(), ps = S.players, bugs = S.bugs || [], audit = S.audit || [];
     const activeToday = ps.filter(p => p.lastDay === td).length;
     const activeWeek = ps.filter(p => p.weekKey === wk && (p.weekExp || 0) > 0).length;
-    const openBugs = S.bugs.filter(b => (b.status || 'open') === 'open').length;
+    const openBugs = bugs.filter(b => (b.status || 'open') === 'open').length;
     const todayExp = ps.reduce((n, p) => n + (p.dayKey === td ? Number(p.dayExp) || 0 : 0), 0);
     const metrics = elx('div', 'stat-tiles',
       tile(ps.length, 'Total players'),
@@ -8971,7 +8971,7 @@ const Adm = (() => {
       tile(S.admins.size, 'Staff online')
     );
     const recent = elx('div', 'adm-list');
-    const entries = S.audit.slice(0, 5);
+    const entries = audit.slice(0, 5);
     if (entries.length) {
       entries.forEach(e => recent.append(elx('div', 'adm-log',
         elx('span', 'adm-log-ic', ACT_ICON[e.action] || '•'),
@@ -9000,7 +9000,7 @@ const Adm = (() => {
       ),
       elx('div', 'adm-card',
         elx('h4', '', '🕘 Recent staff activity'),
-        elx('p', 'adm-info', `Showing the latest ${entries.length} of ${S.audit.length} available audit entries.`),
+        elx('p', 'adm-info', `Showing the latest ${entries.length} of ${audit.length} available audit entries.`),
         recent,
         jump('Open full audit log', 'audit')
       )
