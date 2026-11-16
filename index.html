@@ -2071,6 +2071,7 @@ html[data-theme="dark"] .cz-theme-panel .cz-picker-help { color:#bbb !important;
   .cz-avatar-panel > form.cz-row .btn { width:100%; }
 }
 
+html, body { overflow-x: clip; }
 </style>
 
 <style id="admin-responsive-polish">
@@ -9297,6 +9298,8 @@ function renderAchievements() {
     section.append(heading,grid);e.append(section);
   });
 }
+globalThis.renderAchievements = renderAchievements;
+
 function renderDaily() {
   const e = $('daily-card'); if (!e) return; e.replaceChildren();
   const d = S.doc || {}, day = today();
