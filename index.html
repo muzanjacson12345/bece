@@ -2367,6 +2367,89 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   .cz-custom { gap: 13px; }
   .rng { min-height: 32px; }
 }
+
+/* Profile customiser: follow the active app palette in both modes */
+#cz-panel.cz {
+  background:var(--surface) !important;
+  color:var(--ink) !important;
+  border-top:1px solid var(--line) !important;
+}
+#cz-panel .cz-head .eyebrow,
+#cz-panel .cz-label,
+#cz-panel .cz-note { color:var(--muted) !important; }
+#cz-panel .cz-status {
+  background:var(--surface-2) !important;
+  border-color:var(--line) !important;
+  color:var(--ink) !important;
+}
+#cz-panel .cz-tabs {
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  width:100% !important;
+  gap:8px !important;
+  padding:6px !important;
+  background:var(--surface-2) !important;
+  border:1px solid var(--line) !important;
+}
+#cz-panel .cz-tabs button {
+  display:flex !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:48px !important;
+  flex:none !important;
+  justify-content:center !important;
+  align-items:center !important;
+  padding:9px 5px !important;
+  white-space:normal !important;
+  color:var(--muted) !important;
+}
+#cz-panel .cz-tabs button[aria-selected="true"] {
+  background:var(--surface) !important;
+  color:var(--accent) !important;
+  box-shadow:0 1px 4px rgba(0,0,0,.14) !important;
+}
+#cz-panel .cz-avatar-panel > .cz-row,
+#cz-panel .cz-avatar-panel > form,
+#cz-panel .cz-avatar-panel > .cz-chips,
+#cz-panel .cz-avatar-panel > .emoji-grid,
+#cz-panel .cz-theme-panel > .segmented,
+#cz-panel .cz-theme-panel .cz-custom,
+#cz-panel .cz-about-panel .name-form {
+  background:var(--surface-2) !important;
+  color:var(--ink) !important;
+  border-color:var(--line) !important;
+}
+#cz-panel .emoji-pick,
+#cz-panel .cz-avatar-panel input[type="text"],
+#cz-panel .cz-about-panel input[type="text"] {
+  background:var(--surface) !important;
+  color:var(--ink) !important;
+  border-color:var(--line) !important;
+}
+#cz-panel .emoji-pick.is-on {
+  background:var(--accent-soft) !important;
+  border-color:var(--accent) !important;
+}
+#cz-panel .cz-theme-panel > .segmented button {
+  color:var(--muted) !important;
+}
+#cz-panel .cz-theme-panel > .segmented button[aria-pressed="true"] {
+  background:var(--surface) !important;
+  color:var(--accent) !important;
+}
+#cz-panel .cz-theme-panel .theme-tile {
+  background:var(--surface-2) !important;
+  color:var(--ink) !important;
+  border-color:var(--line) !important;
+}
+#cz-panel .cz-theme-panel .tt-name { color:var(--ink) !important; }
+#cz-panel .cz-theme-panel .cz-custom label,
+#cz-panel .cz-about-panel .name-form label { color:var(--ink) !important; }
+@media (max-width:640px) {
+  #cz-panel .cz-tabs { grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; }
+  #cz-panel .cz-tabs button { font-size:clamp(11px,3.2vw,14px) !important; padding:9px 3px !important; }
+}
+
 </style>
 </head>
 <body>
