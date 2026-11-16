@@ -73,7 +73,7 @@ async function main() {
       const page = await context.newPage();
 
       page.on('pageerror', error => report.pageErrors.push({
-        viewport: viewport.name, message: String(error),
+        viewport: viewport.name, message: String(error), stack: error.stack || '',
       }));
       page.on('console', message => {
         if (message.type() === 'error') report.consoleErrors.push({
