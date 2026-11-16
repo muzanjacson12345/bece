@@ -9,6 +9,14 @@ on:
       - 'sw.js'
       - '.github/scripts/responsive-ui-audit.cjs'
       - '.github/workflows/responsive-ui-audit.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'manifest.webmanifest'
+      - 'sw.js'
+      - '.github/scripts/responsive-ui-audit.cjs'
+      - '.github/workflows/responsive-ui-audit.yml'
   workflow_dispatch:
 
 concurrency:
@@ -37,10 +45,22 @@ jobs:
           npm install --no-save --no-package-lock playwright
           npx playwright install --with-deps chromium
 
+      - name: Start local preview server
+        run: |
+          mkdir -p /tmp/bece-preview
+          ln -s "$GITHUB_WORKSPACE" /tmp/bece-preview/bece
+          python3 -m http.server 4173 --bind 127.0.0.1 --directory /tmp/bece-preview >/tmp/bece-http.log 2>&1 &
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:4173/bece/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/bece-http.log
+          exit 1
+
       - name: Capture responsive screenshots and check layout
         run: node .github/scripts/responsive-ui-audit.cjs
         env:
-          SITE_URL: https://muzanjacson12345.github.io/bece
+          SITE_URL: http://127.0.0.1:4173/bece
 
       - name: Upload screenshots and audit report
         if: always()
