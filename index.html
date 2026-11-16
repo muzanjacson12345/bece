@@ -2673,6 +2673,38 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   .adm .adm-subs { gap:5px; }
   .adm .adm-subs > button { padding-inline:10px; font-size:12px; }
 }
+
+/* Appearance mode switch: keep Light, Dark and Auto on one compact row.
+   This scoped rule intentionally comes after the older generic segmented-control
+   rules so mobile breakpoints cannot push Auto onto a second line. */
+#cz-panel .cz-theme-panel > .mode-seg,
+#cz-panel .cz-theme-panel .segmented.mode-seg {
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  grid-auto-flow:column !important;
+  align-items:stretch !important;
+  width:100% !important;
+  max-width:none !important;
+  gap:6px !important;
+}
+#cz-panel .cz-theme-panel > .mode-seg > button,
+#cz-panel .cz-theme-panel .segmented.mode-seg > button {
+  display:flex !important;
+  flex:initial !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:44px !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:5px !important;
+  padding:8px 4px !important;
+  white-space:nowrap !important;
+  overflow-wrap:normal !important;
+  word-break:normal !important;
+  line-height:1.1 !important;
+  font-size:clamp(12px,3.4vw,14px) !important;
+}
+
 </style>
 
 </head>
