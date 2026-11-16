@@ -61,6 +61,8 @@
     gold:   { name: 'Honey',  hex: '#a16207' },
     teal:   { name: 'Lagoon', hex: '#0f766e' },
     slate:  { name: 'Slate',  hex: '#475569' },
+    black:  { name: 'Black',  hex: '#171717' },
+    white:  { name: 'White',  hex: '#e5e7eb' },
   };
   // The original green design, kept exactly as it was (it is the stylesheet default, so it needs no override).
   const FOREST = {
@@ -69,8 +71,8 @@
   };
 
   function parse(key) {
-    const m = typeof key === 'string' && /^custom:(\d{1,3}):(\d{1,3})$/.exec(key);
-    if (m) { const h = clamp(+m[1], 0, 360), s = clamp(+m[2], 15, 100); return { key: `custom:${h}:${s}`, name: 'Custom', custom: true, h, s }; }
+    const m = typeof key === 'string' && /^custom:(\d{1,3}):(\d{1,3})(?::(\d{1,3}))?$/.exec(key);
+    if (m) { const h = clamp(+m[1], 0, 360), s = clamp(+m[2], 15, 100), l = clamp(m[3] == null ? 40 : +m[3], 20, 80); return { key: `custom:${h}:${s}:${l}`, name: 'Custom', custom: true, h, s, l }; }
     const p = PRESETS[key];
     if (p && p.hex) { const [h, s] = rgb2hsl(fromHex(p.hex)); return { key, name: p.name, h, s: clamp(s, 15, 90), hex: p.hex }; }
     return { key: 'green', name: PRESETS.green.name, isDefault: true, h: 150, s: 35 };
@@ -131,7 +133,7 @@
   const cache = new Map();
   function palette(key) {
     const info = parse(key);
-    if (!cache.has(info.key)) { if (cache.size > 120) cache.delete(cache.keys().next().value); cache.set(info.key, info.isDefault ? FOREST : build(info.h, info.s, info.hex)); }
+    if (!cache.has(info.key)) { if (cache.size > 120) cache.delete(cache.keys().next().value); cache.set(info.key, info.isDefault ? FOREST : build(info.h, info.s, info.hex || (info.custom ? hsl(info.h, info.s, info.l) : undefined))); }
     return cache.get(info.key);
   }
 
@@ -210,7 +212,7 @@
     PRESETS,
     COLORS: Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.hex])),
     parse, palette,
-    customKey: (h, s) => `custom:${Math.round(clamp(h, 0, 360))}:${Math.round(clamp(s, 15, 100))}`,
+    customKey: (h, s, l = 40) => `custom:${Math.round(clamp(h, 0, 360))}:${Math.round(clamp(s, 15, 100))}:${Math.round(clamp(l, 20, 80))}`,
     applyAccent: key => setAccent(key, true),
     get accent() { return accentKey; },
   };
@@ -8004,27 +8006,28 @@ function buildProfileCard() {
 
     /* custom colour sliders */
     const rng = (min, max) => { const r = o('input', 'rng'); r.type = 'range'; r.min = min; r.max = max; r.step = 1; return r; };
-    const hueIn = rng(0, 360), satIn = rng(15, 100), hueOut = o('output'), satOut = o('output');
-    hueIn.setAttribute('aria-label', 'Colour'); satIn.setAttribute('aria-label', 'Vibrancy'); hueIn.style.setProperty('--rng-bg', HUE_TRACK);
+    const hueIn = rng(0, 360), satIn = rng(15, 100), shadeIn = rng(20, 80), hueOut = o('output'), satOut = o('output'), shadeOut = o('output');
+    hueIn.setAttribute('aria-label', 'Colour'); satIn.setAttribute('aria-label', 'Vibrancy'); shadeIn.setAttribute('aria-label', 'Shade'); hueIn.style.setProperty('--rng-bg', HUE_TRACK);
     const field = (t, out, inp) => { const l = o('label'), s = o('span'); s.append(document.createTextNode(t), out); l.append(s, inp); return l; };
-    editor.append(field('Colour', hueOut, hueIn), field('Vibrancy', satOut, satIn));
+    editor.append(field('Colour', hueOut, hueIn), field('Vibrancy', satOut, satIn), field('Shade', shadeOut, shadeIn));
     const paintSliders = () => {
-      const h = +hueIn.value, s = +satIn.value, P = PF.palette(PF.customKey(h, s))[BeceTheme.mode];
-      hueOut.textContent = h + '\u00B0'; satOut.textContent = s + '%';
+      const h = +hueIn.value, s = +satIn.value, l = +shadeIn.value, P = PF.palette(PF.customKey(h, s, l))[BeceTheme.mode];
+      hueOut.textContent = h + '\u00B0'; satOut.textContent = s + '%'; shadeOut.textContent = l + '%';
       satIn.style.setProperty('--rng-bg', `linear-gradient(90deg, hsl(${h} 15% 52%), hsl(${h} 95% 46%))`);
-      hueIn.style.setProperty('--rng-thumb', P.primary); satIn.style.setProperty('--rng-thumb', P.primary);
+      shadeIn.style.setProperty('--rng-bg', `linear-gradient(90deg, hsl(${h} ${s}% 22%), hsl(${h} ${s}% 80%))`);
+      hueIn.style.setProperty('--rng-thumb', P.primary); satIn.style.setProperty('--rng-thumb', P.primary); shadeIn.style.setProperty('--rng-thumb', P.primary);
     };
     const live = () => {
-      const key = PF.customKey(+hueIn.value, +satIn.value); st.customKey = key;
+      const key = PF.customKey(+hueIn.value, +satIn.value, +shadeIn.value); st.customKey = key;
       PF.applyAccent(key); queueSave({ color: key }); customTile.dataset.key = key; paintSliders(); renderAccount();
     };
-    hueIn.oninput = satIn.oninput = live;
+    hueIn.oninput = satIn.oninput = shadeIn.oninput = live;
 
     const mark = () => {
       const cur = PF.parse(PF.accent), isC = !!cur.custom;
       tilesAll.forEach(t => t.setAttribute('aria-pressed', String(t.dataset.custom ? isC : t.dataset.key === cur.key)));
       editor.hidden = !isC;
-      if (isC) { if (document.activeElement !== hueIn) hueIn.value = cur.h; if (document.activeElement !== satIn) satIn.value = cur.s; customTile.dataset.key = cur.key; st.customKey = cur.key; }
+      if (isC) { if (document.activeElement !== hueIn) hueIn.value = cur.h; if (document.activeElement !== satIn) satIn.value = cur.s; if (document.activeElement !== shadeIn) shadeIn.value = cur.l; customTile.dataset.key = cur.key; st.customKey = cur.key; }
       tilesAll.forEach(paintTile); paintSliders();
     };
     function choose(key) { PF.applyAccent(key); queueSave({ color: key }); mark(); renderAccount(); }
