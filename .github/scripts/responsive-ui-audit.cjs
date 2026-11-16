@@ -200,7 +200,24 @@ async function main() {
             if (selected !== 'true') {
               report.failures.push(`${viewport.name}/practice: RME subject did not become selected`);
             }
-            const subjectShot = path.join('artifacts/ui-audit/screenshots', viewport.name, 'practice-rme.png');
+            const gaSubject = page.locator('[data-setup-sub="ga"]');
+            const careerSubject = page.locator('[data-setup-sub="careerTechnology"]');
+            await gaSubject.click();
+            await careerSubject.click();
+            if (await gaSubject.getAttribute('aria-pressed') !== 'true' || await careerSubject.getAttribute('aria-pressed') !== 'true') {
+              report.failures.push(`${viewport.name}/practice: multi-subject selection did not keep both Ga and Career Technology selected`);
+            }
+            const selectedPool = await page.locator('#setup-pool').textContent();
+            if (!/questions available/.test(selectedPool || '')) {
+              report.failures.push(`${viewport.name}/practice: multi-subject question pool count was not displayed`);
+            }
+            const allSubjects = page.locator('[data-setup-all]');
+            await allSubjects.click();
+            const allSelected = await page.locator('[data-setup-sub][aria-pressed="true"]').count();
+            if (allSelected !== 9) {
+              report.failures.push(`${viewport.name}/practice: All subjects mixed did not select all nine subjects`);
+            }
+            const subjectShot = path.join('artifacts/ui-audit/screenshots', viewport.name, 'practice-multi-subject.png');
             await page.screenshot({ path: subjectShot, fullPage: true, animations: 'disabled' });
             report.screenshots.push(subjectShot);
           }
