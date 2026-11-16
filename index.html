@@ -2726,6 +2726,74 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   text-align:center !important;
 }
 
+/* Final mobile pass for Friends > Me. Keep the existing design; prevent
+   profile content and customiser controls from squeezing or overflowing. */
+@media (max-width:640px) {
+  .profile-card, .pc-main, #cz-panel, #cz-panel .cz-panel,
+  #cz-panel .cz-section, #cz-panel .cz-section > * {
+    box-sizing:border-box;
+    min-width:0;
+    max-width:100%;
+  }
+  .pc-head { min-width:0; }
+  .pc-head .av { flex:0 0 auto; }
+  .pc-who { flex:1 1 0; min-width:0; }
+  .pc-name, .pc-sub, .pc-bio { min-width:0; overflow-wrap:anywhere; }
+  .pc-actions { min-width:0; }
+  #cz-panel .cz-tabs { width:100%; }
+  #cz-panel .cz-tabs > button {
+    min-width:0;
+    max-width:100%;
+    overflow-wrap:anywhere;
+    text-align:center;
+  }
+  #cz-panel .cz-theme-panel .theme-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+  }
+  #cz-panel .cz-theme-panel .theme-tile {
+    min-width:0;
+    width:100%;
+    padding:8px 6px 10px;
+  }
+  #cz-panel .cz-theme-panel .tt-name {
+    min-width:0;
+    overflow-wrap:anywhere;
+    line-height:1.2;
+  }
+  #cz-panel .cz-custom {
+    min-width:0;
+    padding:12px;
+    gap:12px;
+  }
+  #cz-panel .cz-picker {
+    width:100%;
+    height:clamp(160px,48vw,210px);
+    touch-action:pan-y;
+  }
+  #cz-panel .cz-row { min-width:0; }
+  #cz-panel .cz-row > * {
+    box-sizing:border-box;
+    min-width:0;
+    max-width:100%;
+  }
+  #cz-panel .cz-about-panel .chip-row {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    min-width:0;
+  }
+  #cz-panel .cz-about-panel .chip-row .chip {
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+}
+@media (max-width:380px) {
+  #cz-panel .cz-theme-panel .theme-grid { gap:7px; }
+  #cz-panel .cz-theme-panel .theme-tile { padding-inline:5px; }
+  #cz-panel .cz-custom { padding:10px; }
+  #cz-panel .cz-theme-panel .tt-name { font-size:12px; }
+}
+
+
 </style>
 
 </head>
