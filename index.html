@@ -7737,7 +7737,7 @@ function render(screen) {
   if (screen === 'notes') Notes.enter();
   if (screen === 'setup') Setup.enter();
   if (screen === 'essays') Essays.enter();
-  if (screen === 'achievements') renderAchievements();
+  if (screen === 'achievements') window.renderAchievements?.();
   if (changed) {
     window.scrollTo({ top: 0, behavior: 'instant' });
     const heading = $(`screen-${screen}`).querySelector('h1, h2');
