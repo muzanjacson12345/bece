@@ -11,12 +11,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BECE Hub">
-<meta name="description" content="Practise for BECE with Social Studies, Creative Arts, Maths, Computing and RME quizzes, flashcards, revision notes and essay guides for JHS 1–3.">
+<meta name="description" content="Practise for BECE with Social Studies, Creative Arts, Mathematics, Computing, RME and Integrated Science quizzes, flashcards, revision notes and essay guides for JHS 1–3.">
 <meta name="theme-color" content="#f7f8f3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121a15" media="(prefers-color-scheme: dark)">
 <meta property="og:site_name" content="BECE Mock Master">
 <meta property="og:title" content="BECE Mock Master &amp; GES Revision Hub">
-<meta property="og:description" content="Build confidence for BECE with interactive practice, flashcards and GES revision notes for Social Studies, Creative Arts, Maths, Computing and RME.">
+<meta property="og:description" content="Build confidence for BECE with interactive practice, flashcards and GES revision notes for Social Studies, Creative Arts, Mathematics, Computing, RME and Integrated Science.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23315d47'/%3E%3Ctext x='16' y='22' font-family='Georgia' font-size='18' fill='%23f7f8f3' text-anchor='middle'%3Em%3C/text%3E%3C/svg%3E">
 <script>
 // Theme engine. Two independent choices:
@@ -2254,7 +2254,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 @media (min-width: 761px) {
   .segmented[aria-label="Subject"] {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     width: 100%;
     max-width: 100%;
   }
@@ -2914,6 +2914,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <span class="section-meta" id="bank-meta"></span>
       </div>
       <div class="subject-grid">
+        <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🔬</span><span class="subject-index">06 / Discover</span></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
         <button class="subject-card social-card" type="button" data-subject="social">
           <span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11"/><ellipse cx="16" cy="16" rx="5" ry="11"/><path d="M5 16H27M8 9H24M8 23H24"/></svg></span><span class="subject-index">01 / Explore</span><svg class="icon card-arrow"><use href="#i-arrow"/></svg></span>
           <h3>Social Studies</h3>
@@ -2963,7 +2964,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <div class="section-heading"><div><p class="eyebrow">Less looking. More remembering.</p><h2 id="flashcard-title">Give your memory a turn.</h2></div><span class="section-meta">Up to 10 cards a round</span></div>
       <p class="muted">Read the question, say your answer aloud, then flip the card. Be honest about what needs another look.</p>
       <div class="flash-filters">
-        <label class="field">Subject<select id="flash-subject"><option value="social">Social Studies</option><option value="arts">Creative Arts</option><option value="maths">Mathematics</option><option value="computing">Computing</option><option value="rme">RME</option></select></label>
+        <label class="field">Subject<select id="flash-subject"><option value="social">Social Studies</option><option value="arts">Creative Arts</option><option value="maths">Mathematics</option><option value="computing">Computing</option><option value="rme">RME</option><option value="integratedScience">Integrated Science</option></select></label>
         <label class="field">Topic<select id="flash-topic"></select></label>
         <button id="flash-start" class="btn btn-primary" type="button">Start a round</button>
       </div>
@@ -3041,6 +3042,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-notes-sub="maths" aria-pressed="false">Maths</button>
         <button type="button" data-notes-sub="computing" aria-pressed="false">Computing</button>
         <button type="button" data-notes-sub="rme" aria-pressed="false">RME</button>
+        <button type="button" data-notes-sub="integratedScience" aria-pressed="false">Integrated Science</button>
       </div>
       <div class="chip-row" role="group" aria-label="JHS level">
         <button type="button" class="chip" data-level="all" aria-pressed="true">All levels</button>
@@ -3101,6 +3103,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-setup-sub="maths" aria-pressed="false">Maths</button>
         <button type="button" data-setup-sub="computing" aria-pressed="false">Computing</button>
         <button type="button" data-setup-sub="rme" aria-pressed="false">RME</button>
+        <button type="button" data-setup-sub="integratedScience" aria-pressed="false">Integrated Science</button>
       </div>
 
       <label class="field-label" for="topic-sel">2. Focus</label>
@@ -3220,6 +3223,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-sb-sub="maths" aria-pressed="false">Maths</button>
         <button type="button" data-sb-sub="computing" aria-pressed="false">Computing</button>
         <button type="button" data-sb-sub="rme" aria-pressed="false">RME</button>
+        <button type="button" data-sb-sub="integratedScience" aria-pressed="false">Integrated Science</button>
       </div>
       <div class="chip-row" id="sb-picker" role="group" aria-label="Choose a question"></div>
     </div>
@@ -5579,6 +5583,12 @@ const questionsDB = {
 };
 
 const sectionBDB = {
+  integratedScience: [
+    { id:'sb-sci-1', topic:'Photosynthesis', question:'(a) Explain photosynthesis. (b) State four conditions necessary for photosynthesis. (c) Give three reasons why photosynthesis is important.', marks:15, scheme:['(a) Photosynthesis — 3 marks:','• Green plants use light energy trapped by chlorophyll to make glucose from water and carbon dioxide.','• Oxygen is released.','','(b) Conditions — 4 marks:','• Light','• Chlorophyll','• Water','• Carbon dioxide','','(c) Importance — 6 marks:','• Produces food that supports food chains.','• Releases oxygen needed for aerobic respiration.','• Removes carbon dioxide from the atmosphere.'] },
+    { id:'sb-sci-2', topic:'Human Body and Health', question:'(a) Name four organs of the human digestive system. (b) Explain one function of each. (c) State three practices that help keep the digestive system healthy.', marks:15, scheme:['(a) Organs — any four: mouth, oesophagus, stomach, small intestine, large intestine, rectum.','(b) Functions: mouth chews food; oesophagus moves food by peristalsis; stomach churns food; small intestine absorbs nutrients; large intestine absorbs water.','(c) Healthy practices: eat a balanced diet, drink safe water, wash hands, maintain food hygiene and exercise.'] },
+    { id:'sb-sci-3', topic:'Forces and Motion', question:'(a) Define force. (b) State three effects of a force. (c) A cyclist travels 36 km in 2 hours. Calculate the average speed.', marks:10, scheme:['(a) A force is a push or pull.','(b) A force can start or stop motion, change speed or direction, and change an object’s shape.','(c) Speed = distance ÷ time = 36 km ÷ 2 h = 18 km/h.'] }
+  ],
+
   social: [
     { id:"sb-soc-1", topic:"Environment", question:"Describe four (4) human activities that lead to the degradation of the environment in Ghana. Suggest two (2) ways each of these can be controlled.", marks:20,
       scheme: [
@@ -5682,6 +5692,8 @@ const sectionBDB = {
     }
   ]
 };
+
+questionsDB.integratedScience = [{"id":"sci-1","topic":"Life Processes","question":"Which process enables green plants to make glucose using light energy?","options":[{"key":"A","text":"Respiration"},{"key":"B","text":"Photosynthesis"},{"key":"C","text":"Transpiration"},{"key":"D","text":"Germination"}],"correct":"B","explanation":"Photosynthesis uses light energy, water and carbon dioxide to make glucose; oxygen is released.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-2","topic":"Life Processes","question":"Which plant structure absorbs most water from the soil?","options":[{"key":"A","text":"Flower"},{"key":"B","text":"Root hairs"},{"key":"C","text":"Fruit"},{"key":"D","text":"Stem"}],"correct":"B","explanation":"Root hairs provide a large surface area for absorbing water and mineral salts.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-3","topic":"Life Processes","question":"Which organism is a producer in a food chain?","options":[{"key":"A","text":"Grass"},{"key":"B","text":"Grasshopper"},{"key":"C","text":"Lizard"},{"key":"D","text":"Hawk"}],"correct":"A","explanation":"Green plants make their own food and are producers.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-4","topic":"Human Body and Health","question":"Which organ pumps blood around the human body?","options":[{"key":"A","text":"Lungs"},{"key":"B","text":"Heart"},{"key":"C","text":"Kidney"},{"key":"D","text":"Liver"}],"correct":"B","explanation":"The heart pumps blood through the circulatory system.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-5","topic":"Human Body and Health","question":"Where does most absorption of digested food take place?","options":[{"key":"A","text":"Mouth"},{"key":"B","text":"Stomach"},{"key":"C","text":"Small intestine"},{"key":"D","text":"Large intestine"}],"correct":"C","explanation":"The small intestine absorbs nutrients through its villi.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-6","topic":"Human Body and Health","question":"Which nutrient is mainly needed for growth and repair of body tissues?","options":[{"key":"A","text":"Proteins"},{"key":"B","text":"Fats"},{"key":"C","text":"Vitamins"},{"key":"D","text":"Water"}],"correct":"A","explanation":"Proteins provide amino acids for growth and tissue repair.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-7","topic":"Matter and Materials","question":"Which change of state changes liquid water into water vapour?","options":[{"key":"A","text":"Freezing"},{"key":"B","text":"Condensation"},{"key":"C","text":"Evaporation"},{"key":"D","text":"Melting"}],"correct":"C","explanation":"Evaporation changes a liquid into a gas.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-8","topic":"Matter and Materials","question":"Which of these is a mixture?","options":[{"key":"A","text":"Pure water"},{"key":"B","text":"Oxygen"},{"key":"C","text":"Common salt"},{"key":"D","text":"Air"}],"correct":"D","explanation":"Air is a mixture of gases, mainly nitrogen and oxygen.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-9","topic":"Matter and Materials","question":"What is the best method for separating sand from water?","options":[{"key":"A","text":"Filtration"},{"key":"B","text":"Evaporation"},{"key":"C","text":"Magnetism"},{"key":"D","text":"Distillation"}],"correct":"A","explanation":"Filtration traps insoluble sand while water passes through.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-10","topic":"Matter and Materials","question":"A substance that turns blue litmus paper red is","options":[{"key":"A","text":"an acid"},{"key":"B","text":"an alkali"},{"key":"C","text":"neutral"},{"key":"D","text":"a metal"}],"correct":"A","explanation":"Acids turn blue litmus red; alkalis turn red litmus blue.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-11","topic":"Energy","question":"What is the main source of energy for Earth?","options":[{"key":"A","text":"The Moon"},{"key":"B","text":"The Sun"},{"key":"C","text":"The oceans"},{"key":"D","text":"The soil"}],"correct":"B","explanation":"The Sun supplies light and heat and drives many natural processes.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-12","topic":"Energy","question":"Which simple machine is a seesaw?","options":[{"key":"A","text":"Pulley"},{"key":"B","text":"Wheel and axle"},{"key":"C","text":"Lever"},{"key":"D","text":"Inclined plane"}],"correct":"C","explanation":"A seesaw is a lever that turns around a fulcrum.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-13","topic":"Energy","question":"Which form of energy is stored in a stretched elastic band?","options":[{"key":"A","text":"Chemical"},{"key":"B","text":"Elastic potential"},{"key":"C","text":"Sound"},{"key":"D","text":"Light"}],"correct":"B","explanation":"A stretched elastic band stores elastic potential energy.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-14","topic":"Energy","question":"Which material is a good electrical conductor?","options":[{"key":"A","text":"Rubber"},{"key":"B","text":"Dry wood"},{"key":"C","text":"Copper"},{"key":"D","text":"Plastic"}],"correct":"C","explanation":"Copper allows electric charge to flow easily.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-15","topic":"Forces and Motion","question":"What is the SI unit of force?","options":[{"key":"A","text":"Joule"},{"key":"B","text":"Watt"},{"key":"C","text":"Newton"},{"key":"D","text":"Metre"}],"correct":"C","explanation":"Force is measured in newtons (N).","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-16","topic":"Forces and Motion","question":"Friction generally","options":[{"key":"A","text":"opposes motion between surfaces"},{"key":"B","text":"always increases speed"},{"key":"C","text":"acts only in water"},{"key":"D","text":"has no effect"}],"correct":"A","explanation":"Friction acts against relative motion between surfaces.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-17","topic":"Forces and Motion","question":"A car travels 120 km in 2 hours. What is its average speed?","options":[{"key":"A","text":"30 km/h"},{"key":"B","text":"60 km/h"},{"key":"C","text":"120 km/h"},{"key":"D","text":"240 km/h"}],"correct":"B","explanation":"Average speed = distance ÷ time = 120 ÷ 2 = 60 km/h.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-18","topic":"Earth and Space","question":"What causes day and night?","options":[{"key":"A","text":"Earth's revolution"},{"key":"B","text":"The Moon's rotation"},{"key":"C","text":"Earth's rotation on its axis"},{"key":"D","text":"Cloud movement"}],"correct":"C","explanation":"Earth rotates on its axis; the side facing the Sun experiences day.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-19","topic":"Earth and Space","question":"Which is the outermost solid layer of Earth?","options":[{"key":"A","text":"Inner core"},{"key":"B","text":"Outer core"},{"key":"C","text":"Mantle"},{"key":"D","text":"Crust"}],"correct":"D","explanation":"The crust is Earth's thin outermost solid layer.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-20","topic":"Earth and Space","question":"Rainfall, temperature and wind are elements of","options":[{"key":"A","text":"weather"},{"key":"B","text":"soil fertility"},{"key":"C","text":"the water table"},{"key":"D","text":"animal migration"}],"correct":"A","explanation":"Weather describes atmospheric conditions over a short period.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-21","topic":"Agriculture","question":"Which soil type usually holds the most water?","options":[{"key":"A","text":"Sandy soil"},{"key":"B","text":"Clayey soil"},{"key":"C","text":"Gravel"},{"key":"D","text":"Loamy sand"}],"correct":"B","explanation":"Clay has tiny particles and generally retains more water.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-22","topic":"Agriculture","question":"Why are legumes useful in crop rotation?","options":[{"key":"A","text":"They remove all water"},{"key":"B","text":"They help add nitrogen to soil"},{"key":"C","text":"They stop all weeds"},{"key":"D","text":"They make soil rocky"}],"correct":"B","explanation":"Root-nodule bacteria in many legumes fix atmospheric nitrogen.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-23","topic":"Environment","question":"Which material is biodegradable?","options":[{"key":"A","text":"Plastic bottle"},{"key":"B","text":"Glass jar"},{"key":"C","text":"Banana peel"},{"key":"D","text":"Aluminium can"}],"correct":"C","explanation":"Microorganisms can break down a banana peel.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-24","topic":"Environment","question":"Which action helps reduce soil erosion?","options":[{"key":"A","text":"Removing vegetation"},{"key":"B","text":"Planting cover crops"},{"key":"C","text":"Burning grass"},{"key":"D","text":"Leaving soil bare"}],"correct":"B","explanation":"Cover crops protect soil and their roots hold soil particles.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-25","topic":"Scientific Skills","question":"Which instrument measures the temperature of a liquid?","options":[{"key":"A","text":"Metre rule"},{"key":"B","text":"Thermometer"},{"key":"C","text":"Stopwatch"},{"key":"D","text":"Measuring cylinder"}],"correct":"B","explanation":"A thermometer measures temperature.","hint":"Identify the scientific idea being tested, then compare the options."},{"id":"sci-26","topic":"Scientific Skills","question":"Why should an experiment be repeated?","options":[{"key":"A","text":"To change results"},{"key":"B","text":"To make it longer"},{"key":"C","text":"To improve reliability"},{"key":"D","text":"To avoid recording data"}],"correct":"C","explanation":"Repeating measurements checks consistency and helps identify unusual results.","hint":"Identify the scientific idea being tested, then compare the options."}];
 
 // Shared with the server so quiz answers can be checked consistently.
 globalThis.questionsDB = questionsDB;
@@ -6862,6 +6874,10 @@ const learningInsights = {
   'art-10': { distinction: 'Tanning preserves and stabilises hide. Weaving interlaces strands; glazing finishes surfaces such as ceramics; annealing is a heat treatment used with materials such as metals.', example: 'A hide must be processed before it becomes durable leather suitable for making a bag.', recall: 'Why is untreated animal hide unsuitable for a long-lasting leather product?' }
 };
 const essayPlans = {
+  'sb-sci-1': { task:'Organise your response into the definition, conditions and importance.', steps:['Define photosynthesis and mention light energy and chlorophyll.','List water, carbon dioxide, chlorophyll and light.','Explain food production, oxygen release and carbon dioxide removal.'], example:'Green plants use light energy trapped by chlorophyll to make glucose from water and carbon dioxide.' },
+  'sb-sci-2': { task:'Name each organ and pair it with its correct function. Finish with practical health habits.', steps:['Choose four organs from the digestive tract.','Explain what happens to food at each organ.','Give three habits linked to safe food, water, diet or hygiene.'], example:'The stomach churns food and mixes it with gastric juice.' },
+  'sb-sci-3': { task:'Give a definition, list separate effects, then show the speed formula and working.', steps:['Define force as a push or pull.','State three different effects of force.','Write speed = distance ÷ time and include the unit.'], example:'Average speed = 36 km ÷ 2 h = 18 km/h.' },
+
   'sb-soc-1': { task: 'Describe four activities, then link two control measures to each activity. A list of activities alone does not answer the whole question.', steps: ['Choose four distinct activities, such as illegal mining, deforestation, bush burning and poor waste disposal.', 'For each one, describe how it harms land, water, plants or people.', 'Give two specific controls for that same activity. Use a separate paragraph or numbered section for each activity.'], example: 'Illegal mining can remove vegetation and expose soil to erosion. Enforcing mining regulations and reclaiming damaged land can help reduce this harm.' },
   'sb-soc-2': { task: 'Explain four functions. For each function, say what the Electoral Commission does and why that work matters.', steps: ['Choose four different functions rather than rewording the same one.', 'Start each paragraph with the function, then add a sentence explaining it.', 'Keep the roles of election officials, political parties and courts distinct.'], example: 'The Electoral Commission compiles and revises the voters’ register. This identifies eligible registered voters and helps officials organise voting.' },
   'sb-soc-3': { task: 'Explain four ways culture can promote national unity. Connect each cultural practice to how it brings people together.', steps: ['Choose four distinct examples, such as shared values, inter-ethnic marriage, cultural festivals and shared national symbols.', 'Explain the link to understanding, cooperation or a shared identity.', 'Use relevant Ghanaian examples and avoid suggesting that every ethnic group has identical customs.'], example: 'Inter-ethnic marriages connect families from different communities. These relationships can encourage mutual respect and reduce prejudice.' },
@@ -6871,6 +6887,24 @@ const essayPlans = {
 };
 
 // One-sentence 'big idea' shown at the top of each revision note.
+notesDB.integratedScience = [
+  { id:'sci-jhs1-life', level:'jhs1', levelLabel:'JHS 1 (Basic 7)', strand:'Diversity of Matter and Living Things', topic:'Living Things, Cells & Classification', icon:'🔬', summary:'Revise life processes, basic cell structures, classification and how organisms depend on their environment.', sections:[
+    { title:'1. Characteristics of Living Things', theory:'Living things carry out life processes. Remember **MRS GREN**: Movement, Respiration, Sensitivity, Growth, Reproduction, Excretion and Nutrition.', points:['Movement: a change in position of an organism or part of it.','Respiration: release of energy from food in living cells.','Sensitivity: detecting and responding to changes.','Growth: a permanent increase in size and dry mass.','Reproduction: producing offspring of the same kind.','Excretion: removing metabolic waste products.','Nutrition: obtaining or making food for energy, growth and repair.'] },
+    { title:'2. Cells and Their Parts', theory:'The cell is the basic structural and functional unit of life. Plant and animal cells share a cell membrane, cytoplasm and nucleus. Typical plant cells also have a cell wall, a large vacuole and chloroplasts in green parts.', points:['Cell membrane: controls movement of substances into and out of the cell.','Cytoplasm: where many chemical reactions take place.','Nucleus: contains genetic material and controls cell activities.','Cell wall: supports and protects plant cells.','Chloroplast: contains chlorophyll for photosynthesis.','Vacuole: contains cell sap and helps maintain firmness.'] },
+    { title:'3. Classification and Food Chains', theory:'Classification groups organisms by shared features. A food chain shows how energy passes from one organism to another.', points:['Producers make their own food; consumers eat other organisms.','Decomposers break down dead material.','Example: grass → grasshopper → lizard → hawk.','Arrows show the direction of energy transfer.','A habitat is the place where an organism lives.'], examTip:'Do not confuse a habitat (where an organism lives) with a niche (its role in an ecosystem).'}
+  ]},
+  { id:'sci-jhs2-matter', level:'jhs2', levelLabel:'JHS 2 (Basic 8)', strand:'Cycles', topic:'Matter, Mixtures & Separation Techniques', icon:'🧪', summary:'Understand states of matter, changes of state, mixtures and suitable separation techniques.', sections:[
+    { title:'1. States of Matter', theory:'Matter has mass and occupies space. The three common states are solid, liquid and gas. Their particles differ in arrangement, spacing and movement.', points:['Solid: particles are closely packed and vibrate about fixed positions.','Liquid: particles remain close but can move past one another.','Gas: particles are far apart and move freely.'] },
+    { title:'2. Changes of State', theory:'A change of state is a physical change. The substance remains the same even though its state changes.', points:['Melting: solid to liquid.','Freezing: liquid to solid.','Evaporation or boiling: liquid to gas.','Condensation: gas to liquid.','Sublimation: solid changes directly to gas.'] },
+    { title:'3. Mixtures and Separation', theory:'A mixture contains substances that are not chemically combined. The best separation method depends on particle size, solubility, boiling point or magnetism.', points:['Filtration separates an insoluble solid from a liquid.','Evaporation can recover a dissolved solid.','Distillation collects a liquid after evaporation and condensation.','Sieving separates solids of different particle sizes.','A magnet separates magnetic materials such as iron filings.'], examTip:'Choose a method by identifying the property that differs between the substances.'}
+  ]},
+  { id:'sci-jhs3-energy', level:'jhs3', levelLabel:'JHS 3 (Basic 9)', strand:'Systems', topic:'Energy, Forces, Electricity & the Environment', icon:'⚡', summary:'Revise energy transfers, simple machines, motion, basic circuits and environmental care.', sections:[
+    { title:'1. Forms and Conservation of Energy', theory:'Energy is the ability to do work or cause change. It exists as kinetic, potential, chemical, electrical, heat, light and sound energy. Energy is transferred or transformed; it is not created or destroyed in an ordinary energy transfer.', points:['Kinetic energy is associated with motion.','Gravitational potential energy depends on position.','A battery stores chemical energy that can be transferred electrically.','A lamp transfers electrical energy mainly into light and heat.'] },
+    { title:'2. Forces and Simple Machines', theory:'A force is a push or pull. It can change an object’s speed, direction or shape. Simple machines make work easier by changing the size or direction of a force.', points:['Force is measured in newtons (N).','Speed = distance ÷ time.','A lever turns around a pivot or fulcrum.','A pulley can change the direction of an applied force.','Friction opposes relative motion between surfaces.'] },
+    { title:'3. Electricity and Environmental Care', theory:'An electric circuit needs a complete conducting path. A cell or battery supplies energy, while wires connect components.', points:['A closed circuit allows current to flow; an open circuit does not.','Copper is a conductor; rubber is an insulator.','Reduce, reuse and recycle to limit waste.','Protect water bodies and avoid dumping harmful substances into drains and rivers.'], examTip:'When drawing a circuit, use recognised circuit symbols and make sure the path is complete.'}
+  ]}
+];
+
 const noteTakeaways = {
   'soc-jhs1-env': 'People depend on nature and on each other. Link each environmental problem to its cause, its effect on people, and a practical solution.',
   'soc-jhs1-family': 'Families provide care, identity and social learning. Descent describes family membership; inheritance also depends on the law and a valid will.',
@@ -6954,7 +6988,7 @@ function shuffle(list) {
   return arr;
 }
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-const SUBJECT_LABEL = { social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'Religious & Moral Education', mixed: 'Mixed subjects' };
+const SUBJECT_LABEL = { social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'Religious & Moral Education', integratedScience: 'Integrated Science', mixed: 'Mixed subjects' };
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const isTyping = target => /INPUT|TEXTAREA|SELECT/.test(target.tagName) || target.isContentEditable;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -7025,7 +7059,7 @@ document.addEventListener('click', event => {
 });
 
 const questionIndex = new Map();
-for (const subject of ['social', 'arts', 'maths', 'computing', 'rme']) for (const q of questionsDB[subject]) questionIndex.set(q.id, { ...q, subject });
+for (const subject of ['social', 'arts', 'maths', 'computing', 'rme', 'integratedScience']) for (const q of questionsDB[subject]) questionIndex.set(q.id, { ...q, subject });
 
 const bus = new EventTarget();
 const emit = (name, detail) => bus.dispatchEvent(new CustomEvent(name, { detail }));
@@ -8521,7 +8555,7 @@ onRouteChange();
 <script type="module">
 const App = window.App, o = App.el, $ = id => document.getElementById(id);
 const LVL = 200;
-const SUBJ = { soc: 'Social Studies', art: 'Creative Arts', mat: 'Mathematics', com: 'Computing', rme: 'Religious & Moral Education' };
+const SUBJ = { soc: 'Social Studies', art: 'Creative Arts', mat: 'Mathematics', com: 'Computing', rme: 'Religious & Moral Education', sci: 'Integrated Science' };
 const today = () => new Date().toISOString().slice(0, 10);
 const weekStart = () => { const d = new Date(), k = (d.getUTCDay() + 6) % 7; return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - k)).toISOString().slice(0, 10); };
 const yesterday = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
@@ -8568,7 +8602,8 @@ const CHALLENGE_POOL = (() => {
     ['art', [3, 5, 7, 9], 'Creative mind', n => 'Answer ' + n + ' Creative Arts questions', '🎨'],
     ['mat', [4, 6, 8, 10, 12], 'Maths practice', n => 'Answer ' + n + ' Mathematics questions', '➗'],
     ['com', [3, 5, 7, 9], 'Computing practice', n => 'Answer ' + n + ' Computing questions', '💻'],
-    ['rme', [3, 5, 7, 9], 'Values in action', n => 'Answer ' + n + ' RME questions', '🤝']
+    ['rme', [3, 5, 7, 9], 'Values in action', n => 'Answer ' + n + ' RME questions', '🤝'],
+    ['sci', [3, 5, 7, 9, 12], 'Science explorer', n => 'Answer ' + n + ' Integrated Science questions', '🔬']
   ];
   const out = [];
   groups.forEach(([metric, targets, title, detail, icon]) => targets.forEach(target => {
@@ -8616,7 +8651,10 @@ const ACHIEVEMENTS = [
   { id:'quiz-250',icon:'👑',title:'Quiz Champion',detail:'Complete 250 quizzes',metric:'quizzes',target:250,group:'Quiz milestones' },
   // Subject exploration
   { id:'subject-explorer',icon:'🧭',title:'Subject Explorer',detail:'Practise 3 different subjects',metric:'subjects',target:3,group:'Subject explorer' },
-  { id:'all-rounder',icon:'🌍',title:'All-Rounder',detail:'Practise all 5 available subjects',metric:'subjects',target:5,group:'Subject explorer' },
+  { id:'all-rounder',icon:'🌍',title:'All-Rounder',detail:'Practise all 6 available subjects',metric:'subjects',target:6,group:'Subject explorer' },
+  { id:'science-starter',icon:'🔬',title:'Science Starter',detail:'Answer 10 Integrated Science questions',metric:'sci',target:10,group:'Subject explorer' },
+  { id:'science-scholar',icon:'🧪',title:'Science Scholar',detail:'Answer 50 Integrated Science questions',metric:'sci',target:50,group:'Subject explorer' },
+  { id:'science-master',icon:'⚗️',title:'Science Master',detail:'Answer 100 Integrated Science questions',metric:'sci',target:100,group:'Subject explorer' },
   // Perfect quizzes
   { id:'perfect-round',icon:'💎',title:'Perfect Round',detail:'Finish a quiz with every answer correct',metric:'perfect',target:1,group:'Perfect quizzes' },
   { id:'perfect-5',icon:'✨',title:'Flawless Five',detail:'Complete 5 perfect quizzes',metric:'perfect',target:5,group:'Perfect quizzes' },
@@ -8721,6 +8759,7 @@ App.on('quiz:finished', async ev => {
     achievementStats.correct = (achievementStats.correct || 0) + (ev.correct || 0);
     achievementStats.quizzes = (achievementStats.quizzes || 0) + 1;
     if (Object.keys(ev.answers || {}).length > 0 && ev.correct === Object.keys(ev.answers || {}).length) achievementStats.perfect = (achievementStats.perfect || 0) + 1;
+    achievementStats.sci = (achievementStats.sci || 0) + ev.questionIds.filter(id => id.startsWith('sci-')).length;
     const achievementUnlocked = [...(previousAchievements.unlocked || [])];
     ACHIEVEMENTS.forEach(a => {
       const value = a.metric === 'subjects' ? achievementSubjects.length : a.metric === 'streak' ? streak : Number(achievementStats[a.metric] || 0);
@@ -8745,7 +8784,7 @@ App.on('quiz:finished', async ev => {
       if (answeredIds.length > 0 && ev.correct === answeredIds.length) add('perfect', 1);
       if ((ev.total || answeredIds.length) >= 10) add('longQuiz', 1);
       if (subjects.size >= 3) add('mixed', 1);
-      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme'].includes(code)) add(code, count); });
+      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci'].includes(code)) add(code, count); });
       dailyChallengeSet(day).forEach(task => {
         const value = challengeState.progress[task.metric] || 0;
         if (value >= task.target && !challengeState.claimed.includes(task.id)) {
