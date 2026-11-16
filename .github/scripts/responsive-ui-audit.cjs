@@ -183,6 +183,13 @@ async function main() {
           report.screenshots.push(screenshot);
           console.log(`Captured ${key} — ${diagnostics.viewportWidth}px wide, overflow ${diagnostics.horizontalOverflow}px`);
 
+          // Close an owner announcement overlay before exercising the controls beneath it.
+          const announcementDismiss = page.getByRole('button', { name: 'Got it', exact: true });
+          if (await announcementDismiss.isVisible().catch(() => false)) {
+            await announcementDismiss.click({ timeout: 2000 }).catch(() => {});
+            await page.waitForTimeout(150);
+          }
+
           // Check and capture the last Practice subject at every responsive width.
           if (route.screen === 'setup') {
             const lastSubject = page.locator('[data-setup-sub="rme"]');
