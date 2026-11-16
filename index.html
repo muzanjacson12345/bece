@@ -1673,6 +1673,114 @@ html[data-theme='dark'] .bug-chip[data-s='done'] { background: #1d3a27; color: #
 }
 </style>
 
+
+<style id="mobile-layout-overflow-fix">
+/* Keep flexible content inside its parent on narrow screens. */
+*, *::before, *::after { box-sizing: border-box; }
+img, video, canvas, svg { max-width: 100%; }
+.card, .block, .view, .screen, .section-heading, .toolbar,
+.notes-reader, .note-body, .friend-box, .friends-grid,
+.f-tabs, .board-seg, .duel-pane, .pc-panel {
+  min-width: 0;
+  max-width: 100%;
+}
+p, li, h1, h2, h3, h4, label, summary, a, span, strong {
+  overflow-wrap: anywhere;
+}
+input, select, textarea { max-width: 100%; min-width: 0; }
+
+/* Three-option subject switchers use three equal columns.
+   This prevents the third option from being stranded on a row by itself. */
+@media (max-width: 760px) {
+  .segmented:not(.segmented-sm):has(> button:nth-child(3):last-child) {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    width: 100%;
+    gap: 4px;
+  }
+  .segmented:not(.segmented-sm):has(> button:nth-child(3):last-child) > button {
+    flex: initial !important;
+    width: auto !important;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    padding: 7px 4px;
+    line-height: 1.2;
+  }
+  /* Friends tabs: keep Board, Duels, Shop and Me on one balanced row. */
+  .f-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    width: 100%;
+    gap: 4px;
+  }
+  .f-tabs button {
+    min-width: 0;
+    padding: 6px 2px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.2;
+    font-size: clamp(11px, 3.2vw, 13px);
+  }
+  .board-seg {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+  }
+  .board-seg button {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    padding-inline: 2px;
+    font-size: clamp(10px, 3vw, 13px);
+    line-height: 1.15;
+  }
+  /* Reading content and callout boxes must grow with their text. */
+  .notes-reader, .note-body, .note-section,
+  .note-takeaway, .note-check, .note-extra,
+  .note-outline, .note-key-ideas, .note-answer {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .note-body, .note-body * {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .note-body pre, .note-body code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .note-body .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  .note-body .note-table {
+    width: max-content;
+    min-width: 100%;
+    max-width: none;
+  }
+  .note-takeaway, .note-check, .note-extra, .note-outline {
+    padding: 14px 16px;
+    overflow: visible;
+  }
+  .note-nav { align-items: stretch; }
+  .note-nav .btn { min-width: 0; }
+  .note-actions .btn { min-width: 0; white-space: normal; }
+  .friend-box, .friend-head, .adm-row, .adm-ban {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .friend-head > * { min-width: 0; }
+}
+@media (max-width: 380px) {
+  .f-tabs button { font-size: 10.5px; padding-inline: 1px; }
+  .board-seg { gap: 3px; padding: 3px; }
+  .board-seg button { font-size: 10px; }
+  .note-takeaway, .note-check, .note-extra, .note-outline { padding: 12px; }
+}
+</style>
+
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
