@@ -72,7 +72,7 @@
 
   function parse(key) {
     const m = typeof key === 'string' && /^custom:(\d{1,3}):(\d{1,3})(?::(\d{1,3}))?$/.exec(key);
-    if (m) { const h = clamp(+m[1], 0, 360), s = clamp(+m[2], 15, 100), l = clamp(m[3] == null ? 40 : +m[3], 20, 80); return { key: `custom:${h}:${s}:${l}`, name: 'Custom', custom: true, h, s, l }; }
+    if (m) { const h = clamp(+m[1], 0, 360), s = clamp(+m[2], 0, 100), l = clamp(m[3] == null ? 50 : +m[3], 0, 100); return { key: `custom:${h}:${s}:${l}`, name: 'Custom', custom: true, h, s, l }; }
     const p = PRESETS[key];
     if (p && p.hex) { const [h, s] = rgb2hsl(fromHex(p.hex)); return { key, name: p.name, h, s: clamp(s, 15, 90), hex: p.hex }; }
     return { key: 'green', name: PRESETS.green.name, isDefault: true, h: 150, s: 35 };
@@ -110,15 +110,15 @@
 
     // Dark: deep tinted background, slightly lighter cards, a soft pastel accent for text.
     const dS = 12 + 16 * c, dSoft = tone(22 + 16 * c, 19);
-    let dL = customShade ? clamp(76 - pL * .65, 22, 64) : 42, dPrimary = tone(26 + 30 * c, dL);
+    let dL = customShade ? clamp(30 + pL * .2, 30, 50) : 42, dPrimary = tone(26 + 30 * c, dL);
     while (contrast(dPrimary, W) < 4.6 && dL > 14) { dL -= 1; dPrimary = tone(26 + 30 * c, dL); }
     let xL = 74, dAccent = tone(34 + 22 * c, xL);
     while (contrast(dAccent, dSoft) < 6 && xL < 94) { xL += 1; dAccent = tone(34 + 22 * c, xL); }
-    const darkBgL = customShade ? clamp(3 + (pL - 20) * .19, 3, 14) : 8;
+    const darkBgL = customShade ? clamp(4 + pL * .16, 4, 20) : 8;
     const dbg = tone(dS, darkBgL);
     const dark = {
       onPrimary: contrast(dPrimary, '#ffffff') >= contrast(dPrimary, '#111111') ? '#ffffff' : '#111111',
-      bg: dbg, surface: tone(dS - 2, darkBgL + 3.5), surface2: tone(dS, darkBgL + 7.5), surfaceWarm: neutral ? mix('#202020', dbg, .4) : mix('#2a2820', dbg, .4),
+      bg: dbg, surface: tone(dS - 2, darkBgL + 4), surface2: tone(dS, darkBgL + 9), surfaceWarm: neutral ? mix('#202020', dbg, .4) : mix('#2a2820', dbg, .4),
       ink: tone(14 + 4 * c, 91), inkSoft: tone(12, 82), muted: tone(9 + 4 * c, 66),
       line: tone(dS - 4, 20), lineStrong: tone(dS - 6, 28),
       accent: dAccent, accentSoft: dSoft, primary: dPrimary, primaryHover: tone(26 + 30 * c, dL + 6), ring: dAccent,
@@ -230,7 +230,7 @@
     PRESETS,
     COLORS: Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.hex])),
     parse, palette,
-    customKey: (h, s, l = 40) => `custom:${Math.round(clamp(h, 0, 360))}:${Math.round(clamp(s, 15, 100))}:${Math.round(clamp(l, 20, 80))}`,
+    customKey: (h, s, l = 50) => `custom:${Math.round(clamp(h, 0, 360))}:${Math.round(clamp(s, 0, 100))}:${Math.round(clamp(l, 0, 100))}`, 
     applyAccent: key => setAccent(key, true),
     get accent() { return accentKey; },
   };
@@ -8051,7 +8051,7 @@ function buildProfileCard() {
 
     /* custom colour sliders */
     const rng = (min, max) => { const r = o('input', 'rng'); r.type = 'range'; r.min = min; r.max = max; r.step = 1; return r; };
-    const satIn = { value: '60' }, shadeIn = { value: '40' };
+    const satIn = { value: '60' }, shadeIn = { value: '50' };
     const hueIn = rng(0, 360), hueOut = o('output');
     hueIn.setAttribute('aria-label', 'Hue'); hueIn.style.setProperty('--rng-bg', HUE_TRACK);
     const field = (t, out, inp) => { const l = o('label'), s = o('span'); s.append(document.createTextNode(t), out); l.append(s, inp); return l; };
@@ -8065,8 +8065,8 @@ function buildProfileCard() {
       const r = picker.getBoundingClientRect();
       const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
       const y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
-      satIn.value = String(Math.round(15 + x * 85));
-      shadeIn.value = String(Math.round(20 + (1 - y) * 60));
+      satIn.value = String(Math.round(x * 100));
+      shadeIn.value = String(Math.round((1 - y) * 100));
     };
     const hueState = () => ({ h: +hueIn.value, s: +satIn.value, l: +shadeIn.value });
     const pickerInput = e => { getPoint(e); live(); };
@@ -8075,9 +8075,9 @@ function buildProfileCard() {
     picker.addEventListener('keydown', e => {
       const step = e.shiftKey ? 5 : 1, v = hueState();
       if (e.key === 'ArrowRight') satIn.value = String(Math.min(100, v.s + step));
-      else if (e.key === 'ArrowLeft') satIn.value = String(Math.max(15, v.s - step));
-      else if (e.key === 'ArrowUp') shadeIn.value = String(Math.min(80, v.l + step));
-      else if (e.key === 'ArrowDown') shadeIn.value = String(Math.max(20, v.l - step));
+      else if (e.key === 'ArrowLeft') satIn.value = String(Math.max(0, v.s - step));
+      else if (e.key === 'ArrowUp') shadeIn.value = String(Math.min(100, v.l + step));
+      else if (e.key === 'ArrowDown') shadeIn.value = String(Math.max(0, v.l - step));
       else return;
       e.preventDefault(); live();
     });
@@ -8085,8 +8085,8 @@ function buildProfileCard() {
       const h = +hueIn.value, s = +satIn.value, l = +shadeIn.value, P = PF.palette(PF.customKey(h, s, l))[BeceTheme.mode];
       hueOut.textContent = h + '\u00B0'; pickerValue.textContent = Math.round(s) + '% · ' + Math.round(l) + '%';
       picker.style.setProperty('--picker-h', h);
-      pickerThumb.style.left = ((s - 15) / 85 * 100) + '%';
-      pickerThumb.style.top = ((80 - l) / 60 * 100) + '%';
+      pickerThumb.style.left = s + '%';
+      pickerThumb.style.top = (100 - l) + '%';
       pickerThumb.style.background = `hsl(${h} ${s}% ${l}%)`;
       hueIn.style.setProperty('--rng-thumb', P.primary);
     };
