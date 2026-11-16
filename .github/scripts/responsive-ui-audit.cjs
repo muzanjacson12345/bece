@@ -73,7 +73,7 @@ async function main() {
       const page = await context.newPage();
 
       page.on('pageerror', error => report.pageErrors.push({
-        viewport: viewport.name, message: String(error),
+        viewport: viewport.name, message: String(error), stack: error.stack || '',
       }));
       page.on('console', message => {
         if (message.type() === 'error') report.consoleErrors.push({
@@ -100,6 +100,7 @@ async function main() {
             route.screen,
             { timeout: 30000 }
           );
+          await page.locator('#ann-pop button').filter({ hasText: 'Got it' }).click({ timeout: 1500 }).catch(() => {});
           if (route.screen === 'friends') {
             try {
               await page.waitForFunction(() => {
@@ -200,9 +201,50 @@ async function main() {
             if (selected !== 'true') {
               report.failures.push(`${viewport.name}/practice: RME subject did not become selected`);
             }
-            const subjectShot = path.join('artifacts/ui-audit/screenshots', viewport.name, 'practice-rme.png');
+            const gaSubject = page.locator('[data-setup-sub="ga"]');
+            const careerSubject = page.locator('[data-setup-sub="careerTechnology"]');
+            await gaSubject.click();
+            await careerSubject.click();
+            if (await gaSubject.getAttribute('aria-pressed') !== 'true' || await careerSubject.getAttribute('aria-pressed') !== 'true') {
+              report.failures.push(`${viewport.name}/practice: multi-subject selection did not keep both Ga and Career Technology selected`);
+            }
+            const selectedPool = await page.locator('#setup-pool').textContent();
+            if (!/questions available/.test(selectedPool || '')) {
+              report.failures.push(`${viewport.name}/practice: multi-subject question pool count was not displayed`);
+            }
+            const allSubjects = page.locator('[data-setup-all]');
+            await allSubjects.click();
+            const allSelected = await page.locator('[data-setup-sub][aria-pressed="true"]').count();
+            if (allSelected !== 9) {
+              report.failures.push(`${viewport.name}/practice: All subjects mixed did not select all nine subjects`);
+            }
+            const subjectShot = path.join('artifacts/ui-audit/screenshots', viewport.name, 'practice-multi-subject.png');
             await page.screenshot({ path: subjectShot, fullPage: true, animations: 'disabled' });
             report.screenshots.push(subjectShot);
+          }
+
+          if (route.screen === 'home') {
+            for (const key of ['ga', 'careerTechnology']) {
+              const countText = await page.locator(`[data-count="${key}"]`).textContent();
+              if (!/200 questions/.test(countText || '')) {
+                report.failures.push(`${viewport.name}/home: ${key} does not show its 200-question bank`);
+              }
+            }
+            for (const key of ['ga', 'careerTechnology']) {
+              if (await page.locator(`#flash-subject option[value="${key}"]`).count() !== 1) {
+                report.failures.push(`${viewport.name}/home: ${key} is missing from the flashcard subject selector`);
+              }
+            }
+          }
+
+          if (route.screen === 'notes') {
+            for (const key of ['ga', 'careerTechnology']) {
+              await page.locator(`[data-notes-sub="${key}"]`).click();
+              const noteCount = await page.locator('#notes-sidebar .topic-item').count();
+              if (noteCount < 1) {
+                report.failures.push(`${viewport.name}/notes: ${key} has no visible revision notes`);
+              }
+            }
           }
 
           // Visit all Friends tabs; a tab can be present but its content can still overflow.

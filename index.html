@@ -967,8 +967,10 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
   .toasts { bottom: calc(var(--tab-h) + 16px + env(safe-area-inset-bottom)); }
   body[data-screen='quiz'] .toasts { bottom: calc(96px + env(safe-area-inset-bottom)); }
 
-  .hero { grid-template-columns: 1fr; padding: 28px 0 28px; gap: 0; position: relative; }
-  .hero-copy { position: relative; z-index: 1; }
+  .hero { grid-template-columns: minmax(0, 1fr); padding: 28px 0 28px; gap: 0; position: relative; min-width: 0; }
+  .hero-copy { position: relative; z-index: 1; min-width: 0; width: 100%; max-width: 100%; }
+  .hero-actions { min-width: 0; max-width: 100%; }
+  .hero-actions .btn { min-width: 0; max-width: 100%; }
   .hero h1 { font-size: clamp(46px, 13vw, 64px); }
   .lead { font-size: 16px; margin: 16px 0 22px; }
   .hero-art { position: absolute; right: 0; top: 8px; width: 42%; max-width: 190px; opacity: .55; pointer-events: none; }
@@ -2916,6 +2918,8 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <div class="subject-grid">
         <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🔬</span><span class="subject-index">06 / Discover</span></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
         <button class="subject-card french-card" type="button" data-subject="french"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🇫🇷</span><span class="subject-index">07 / Language</span></span><h3>French</h3><p>Start with greetings, easy words, numbers and short everyday sentences.</p><span class="subject-bottom"><span data-count="french"></span><span>Let’s practise →</span></span></button>
+<button class="subject-card" type="button" data-subject="ga"><span class="subject-top"><span class="subject-icon">🗣️</span><span class="subject-index">08 / Language</span></span><h3>Ga Language</h3><p>Practise everyday spoken Ga, greetings, family words and simple sentences.</p><span class="subject-bottom"><span data-count="ga"></span><span>Let’s practise →</span></span></button>
+<button class="subject-card" type="button" data-subject="careerTechnology"><span class="subject-top"><span class="subject-icon">🛠️</span><span class="subject-index">09 / Practical Skills</span></span><h3>Career Technology</h3><p>Learn design, tools, materials, food, textiles, safety and enterprise.</p><span class="subject-bottom"><span data-count="careerTechnology"></span><span>Let’s practise →</span></span></button>
         <button class="subject-card social-card" type="button" data-subject="social">
           <span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11"/><ellipse cx="16" cy="16" rx="5" ry="11"/><path d="M5 16H27M8 9H24M8 23H24"/></svg></span><span class="subject-index">01 / Explore</span><svg class="icon card-arrow"><use href="#i-arrow"/></svg></span>
           <h3>Social Studies</h3>
@@ -2965,7 +2969,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <div class="section-heading"><div><p class="eyebrow">Less looking. More remembering.</p><h2 id="flashcard-title">Give your memory a turn.</h2></div><span class="section-meta">Up to 10 cards a round</span></div>
       <p class="muted">Read the question, say your answer aloud, then flip the card. Be honest about what needs another look.</p>
       <div class="flash-filters">
-        <label class="field">Subject<select id="flash-subject"><option value="social">Social Studies</option><option value="arts">Creative Arts</option><option value="maths">Mathematics</option><option value="computing">Computing</option><option value="rme">RME</option><option value="integratedScience">Integrated Science</option><option value="french">French</option></select></label>
+        <label class="field">Subject<select id="flash-subject"><option value="social">Social Studies</option><option value="arts">Creative Arts</option><option value="maths">Mathematics</option><option value="computing">Computing</option><option value="rme">RME</option><option value="integratedScience">Integrated Science</option><option value="french">French</option><option value="ga">Ga Language</option><option value="careerTechnology">Career Technology</option></select></label>
         <label class="field">Topic<select id="flash-topic"></select></label>
         <button id="flash-start" class="btn btn-primary" type="button">Start a round</button>
       </div>
@@ -3045,6 +3049,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-notes-sub="rme" aria-pressed="false">RME</button>
         <button type="button" data-notes-sub="integratedScience" aria-pressed="false">Integrated Science</button>
         <button type="button" data-notes-sub="french" aria-pressed="false">French</button>
+        <button type="button" data-notes-sub="ga" aria-pressed="false">Ga Language</button><button type="button" data-notes-sub="careerTechnology" aria-pressed="false">Career Technology</button>
       </div>
       <div class="chip-row" role="group" aria-label="JHS level">
         <button type="button" class="chip" data-level="all" aria-pressed="true">All levels</button>
@@ -3098,7 +3103,8 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <h1 class="setup-title">Make this session yours</h1>
       <p class="muted">A small, focused session is a great place to start.</p>
 
-      <p class="field-label">1. Subject</p>
+      <p class="field-label">1. Subjects (choose any number)</p>
+      <p class="hint-text">Tap subjects to add or remove them. Choose one subject, combine several, or select All subjects mixed.</p>
       <div class="segmented segmented-full" role="group" aria-label="Subject">
         <button type="button" data-setup-sub="social" aria-pressed="true">Social Studies</button>
         <button type="button" data-setup-sub="arts" aria-pressed="false">Creative Arts</button>
@@ -3107,6 +3113,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-setup-sub="rme" aria-pressed="false">RME</button>
         <button type="button" data-setup-sub="integratedScience" aria-pressed="false">Integrated Science</button>
         <button type="button" data-setup-sub="french" aria-pressed="false">French</button>
+        <button type="button" data-setup-sub="ga" aria-pressed="false">Ga Language</button><button type="button" data-setup-sub="careerTechnology" aria-pressed="false">Career Technology</button>
       </div>
 
       <label class="field-label" for="topic-sel">2. Focus</label>
@@ -7730,7 +7737,7 @@ function render(screen) {
   if (screen === 'notes') Notes.enter();
   if (screen === 'setup') Setup.enter();
   if (screen === 'essays') Essays.enter();
-  if (screen === 'achievements') renderAchievements();
+  if (screen === 'achievements') window.renderAchievements?.();
   if (changed) {
     window.scrollTo({ top: 0, behavior: 'instant' });
     const heading = $(`screen-${screen}`).querySelector('h1, h2');
@@ -7790,14 +7797,15 @@ const Home = {
     $('bank-meta').textContent = `${Object.keys(questionsDB).length} subjects · ${questionIndex.size} questions`;
     document.querySelectorAll('[data-count]').forEach(node => {
       const subject = node.dataset.count;
-      const topics = new Set(questionsDB[subject].map(q => q.topic)).size;
-      node.textContent = `${questionsDB[subject].length} questions · ${topics} topics`;
+      const bank = questionsDB[subject] || [];
+      const topics = new Set(bank.map(q => q.topic)).size;
+      node.textContent = `${bank.length} questions · ${topics} topics`;
     });
     $('saved-count').textContent = bookmarks.length
       ? `${plural(bookmarks.length, 'question')} ready to practise`
       : 'Bookmark tricky questions to revisit';
 
-    renderAchievements();
+    window.renderAchievements?.();
 
     const history = store.get('bece_history', []);
     const snapshot = $('my-snapshot');
@@ -9135,7 +9143,7 @@ onRouteChange();
 <script type="module">
 const App = window.App, o = App.el, $ = id => document.getElementById(id);
 const LVL = 200;
-const SUBJ = { soc: 'Social Studies', art: 'Creative Arts', mat: 'Mathematics', com: 'Computing', rme: 'Religious & Moral Education', sci: 'Integrated Science', fre: 'French' };
+const SUBJ = { soc: 'Social Studies', art: 'Creative Arts', mat: 'Mathematics', com: 'Computing', rme: 'Religious & Moral Education', sci: 'Integrated Science', fre: 'French', 'ga-': 'Ga Language', 'ct-': 'Career Technology' };
 const today = () => new Date().toISOString().slice(0, 10);
 const weekStart = () => { const d = new Date(), k = (d.getUTCDay() + 6) % 7; return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - k)).toISOString().slice(0, 10); };
 const yesterday = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
@@ -9184,7 +9192,9 @@ const CHALLENGE_POOL = (() => {
     ['com', [3, 5, 7, 9], 'Computing practice', n => 'Answer ' + n + ' Computing questions', '💻'],
     ['rme', [3, 5, 7, 9], 'Values in action', n => 'Answer ' + n + ' RME questions', '🤝'],
     ['sci', [3, 5, 7, 9, 12], 'Science explorer', n => 'Answer ' + n + ' Integrated Science questions', '🔬'],
-    ['fre', [3, 5, 7, 9, 12], 'French basics', n => 'Answer ' + n + ' French questions', '🇫🇷']
+    ['fre', [3, 5, 7, 9, 12], 'French basics', n => 'Answer ' + n + ' French questions', '🇫🇷'],
+    ['ga', [3, 5, 7, 9, 12], 'Ga language practice', n => 'Answer ' + n + ' Ga Language questions', '🗣️'],
+    ['ct', [3, 5, 7, 9, 12], 'Career Technology practice', n => 'Answer ' + n + ' Career Technology questions', '🛠️']
   ];
   const out = [];
   groups.forEach(([metric, targets, title, detail, icon]) => targets.forEach(target => {
@@ -9241,6 +9251,13 @@ const ACHIEVEMENTS = [
   { id:'french-starter',icon:'🇫🇷',title:'Bonjour!',detail:'Answer 10 French questions',metric:'fre',target:10,group:'Subject explorer' },
   { id:'french-learner',icon:'🗣️',title:'French Learner',detail:'Answer 50 French questions',metric:'fre',target:50,group:'Subject explorer' },
   { id:'french-confident',icon:'📘',title:'French Confidence',detail:'Answer 100 French questions',metric:'fre',target:100,group:'Subject explorer' },
+  { id:'ga-starter',icon:'🗣️',title:'Ga Starter',detail:'Answer 10 Ga Language questions',metric:'ga',target:10,group:'Subject explorer' },
+  { id:'ga-learner',icon:'📚',title:'Ga Learner',detail:'Answer 50 Ga Language questions',metric:'ga',target:50,group:'Subject explorer' },
+  { id:'ga-confident',icon:'🌟',title:'Ga Confidence',detail:'Answer 100 Ga Language questions',metric:'ga',target:100,group:'Subject explorer' },
+  { id:'career-starter',icon:'🛠️',title:'Career Technology Starter',detail:'Answer 10 Career Technology questions',metric:'ct',target:10,group:'Subject explorer' },
+  { id:'career-learner',icon:'📐',title:'Career Technology Learner',detail:'Answer 50 Career Technology questions',metric:'ct',target:50,group:'Subject explorer' },
+  { id:'career-master',icon:'🏅',title:'Career Technology Master',detail:'Answer 100 Career Technology questions',metric:'ct',target:100,group:'Subject explorer' },
+  { id:'all-nine-subjects',icon:'🌐',title:'Nine-Subject Explorer',detail:'Practise all 9 available subjects',metric:'subjects',target:9,group:'Subject explorer' },
   // Perfect quizzes
   { id:'perfect-round',icon:'💎',title:'Perfect Round',detail:'Finish a quiz with every answer correct',metric:'perfect',target:1,group:'Perfect quizzes' },
   { id:'perfect-5',icon:'✨',title:'Flawless Five',detail:'Complete 5 perfect quizzes',metric:'perfect',target:5,group:'Perfect quizzes' },
@@ -9297,6 +9314,8 @@ function renderAchievements() {
     section.append(heading,grid);e.append(section);
   });
 }
+globalThis.renderAchievements = renderAchievements;
+
 function renderDaily() {
   const e = $('daily-card'); if (!e) return; e.replaceChildren();
   const d = S.doc || {}, day = today();
@@ -9345,7 +9364,16 @@ App.on('quiz:finished', async ev => {
     achievementStats.correct = (achievementStats.correct || 0) + (ev.correct || 0);
     achievementStats.quizzes = (achievementStats.quizzes || 0) + 1;
     if (Object.keys(ev.answers || {}).length > 0 && ev.correct === Object.keys(ev.answers || {}).length) achievementStats.perfect = (achievementStats.perfect || 0) + 1;
-    achievementStats.sci = (achievementStats.sci || 0) + ev.questionIds.filter(id => id.startsWith('sci-')).length;
+    const subjectMetrics = {};
+    ev.questionIds.forEach(id => {
+      const q = App.questionById(id);
+      if (!q) return;
+      const metric = q.subject === 'ga' ? 'ga' : q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
+      subjectMetrics[metric] = (subjectMetrics[metric] || 0) + 1;
+    });
+    Object.entries(subjectMetrics).forEach(([metric, count]) => {
+      achievementStats[metric] = (achievementStats[metric] || 0) + count;
+    });
     const achievementUnlocked = [...(previousAchievements.unlocked || [])];
     ACHIEVEMENTS.forEach(a => {
       const value = a.metric === 'subjects' ? achievementSubjects.length : a.metric === 'streak' ? streak : Number(achievementStats[a.metric] || 0);
@@ -9359,7 +9387,7 @@ App.on('quiz:finished', async ev => {
       const add = (key, amount) => { challengeState.progress[key] = (challengeState.progress[key] || 0) + amount; };
       const answeredIds = Object.keys(ev.answers || {}), subjects = new Set(), subjectCounts = {};
       answeredIds.forEach(id => {
-        const q = App.questionById(id), code = id.slice(0, 3);
+        const q = App.questionById(id), code = q && q.subject === 'ga' ? 'ga' : q && q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
         if (q) { subjects.add(code); subjectCounts[code] = (subjectCounts[code] || 0) + 1; }
       });
       add('answered', answeredIds.length);
@@ -9370,7 +9398,7 @@ App.on('quiz:finished', async ev => {
       if (answeredIds.length > 0 && ev.correct === answeredIds.length) add('perfect', 1);
       if ((ev.total || answeredIds.length) >= 10) add('longQuiz', 1);
       if (subjects.size >= 3) add('mixed', 1);
-      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci', 'fre'].includes(code)) add(code, count); });
+      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci', 'fre', 'ga', 'ct'].includes(code)) add(code, count); });
       dailyChallengeSet(day).forEach(task => {
         const value = challengeState.progress[task.metric] || 0;
         if (value >= task.target && !challengeState.claimed.includes(task.id)) {
@@ -10019,7 +10047,7 @@ const Shop = (() => {
 /* ===== 1v1 Duel (Firestore collection "duels") ===== */
 const Duel = (() => {
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  const SUBS = { mixed: 'Mixed subjects', social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'RME' };
+  const SUBS = { mixed: 'Mixed subjects', social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'RME', integratedScience: 'Integrated Science', french: 'French', ga: 'Ga Language', careerTechnology: 'Career Technology' };
   const LENS = [5, 8, 10, 15, 20], TIMES = [10, 15, 20, 30];
   const D = { open: [], code: null, doc: null, unsub: null, started: false, cd: false, idx: 0, me: null, log: [], timer: null, locked: false, card: null, list: null, err: null, cfg: { subject: 'mixed', len: 8, secs: 15, vis: 'public' } };
   const mix = a => [...a].sort(() => Math.random() - .5);
@@ -11138,6 +11166,186 @@ async function init() {
   } catch { S.db = null; renderAccount(); renderFriends(); }
 }
 init();
+</script>
+<script>
+(() => {
+  const subjects=["social","arts","maths","computing","rme","integratedScience","french","ga","careerTechnology"];
+  const labels={social:"Social Studies",arts:"Creative Arts",maths:"Mathematics",computing:"Computing",rme:"Religious & Moral Education",integratedScience:"Integrated Science",french:"French",ga:"Ga Language",careerTechnology:"Career Technology"};
+  Object.assign(SUBJECT_LABEL,labels);
+  questionsDB.ga=questionsDB.ga||[]; questionsDB.careerTechnology=questionsDB.careerTechnology||[];
+  const stems=[
+    q=>q,
+    q=>"Select the best answer: "+q,
+    q=>"A learner is asked in class: "+q+" Which option is correct?",
+    q=>"During revision, what is the correct response to: "+q,
+    q=>"Choose the answer that correctly completes this question: "+q,
+    q=>"Which option should be selected for this question: "+q,
+    q=>"In a BECE practice exercise, the question is: "+q+" Which answer is right?",
+    q=>"Test your understanding. "+q,
+    q=>"Which response correctly answers: "+q,
+    q=>"A student checks their notes and asks: "+q+" Choose the accurate answer."
+  ];
+  const expand=(facts)=>{const chosen=facts.length<=20?facts:Array.from({length:20},(_,i)=>facts[Math.floor(i*facts.length/20)]);return chosen.flatMap(f=>stems.map(stem=>[f[0],stem(f[1]),f[2],f[3],f[4],"Read the key words, compare the options and check the explanation."]));};
+  const gaFacts=[
+    ["Greetings","What is a common Ga morning greeting?","Ojekoo",["Agoo","Akpe","Bonjour"],"Ojekoo is a widely used morning greeting in Ga."],
+    ["Greetings","What is a customary response to Ojekoo?","Ojoo",["Mina oko","Agoo","Akpe"],"Ojoo is a customary response to Ojekoo."],
+    ["Greetings","Which expression is called out before entering or announcing one's presence?","Agoo",["Oyiwaladɔ","Ojekoo","Mina oko"],"Agoo is used to announce one's presence or ask permission to enter."],
+    ["Greetings","Which expression is commonly used to say thank you in Ga learning materials?","Oyiwaladɔ",["Agoo","Ojekoo","Ojoo"],"Oyiwaladɔ is an expression of thanks; follow the spelling taught by your Ga teacher."],
+    ["Greetings","Which expression is commonly taught as an evening greeting?","Mina oko",["Ojekoo","Agoo","Ojoo"],"Mina oko is a commonly taught evening greeting."],
+    ["Conversation","Which spoken Ga question is commonly taught for 'How are you?'?","Tɛ eyɛ oten?",["Mina oko?","Agoo?","Oyiwaladɔ?"],"Tɛ eyɛ oten? is a common spoken form used to ask how someone is."],
+    ["Conversation","What is a good way to respond when someone greets you?","Reply politely and ask how the person is",["Ignore the person","Change the topic immediately","Walk away without answering"],"A greeting is part of a respectful two-way conversation."],
+    ["Conversation","What should you do if you do not understand a Ga expression?","Politely ask the speaker to repeat or explain it",["Pretend to understand","Stop listening","Give an unrelated answer"],"Asking for clarification helps communication and learning."],
+    ["Family","Which topic includes words for mother, father, siblings and children?","Family vocabulary",["Weather vocabulary","Tool vocabulary","Colour vocabulary"],"Family words help learners describe relationships."],
+    ["School","Which group contains useful school vocabulary?","Teacher, learner, book and classroom",["Hammer, nail and saw","River, mountain and ocean","Spoon, plate and pot"],"School vocabulary helps learners discuss everyday school life."],
+    ["Food","Which vocabulary group is useful at a food market?","Food names, quantities and prices",["Only greetings","Only body parts","Only school subjects"],"Market conversations require words for items, quantities and prices."],
+    ["Numbers","What is the best way to improve number vocabulary in Ga?","Practise counting aloud regularly",["Avoid saying numbers","Memorise only one number","Use numbers only in writing"],"Regular spoken practice improves recall and pronunciation."],
+    ["Time","Which vocabulary helps describe a daily routine?","Days and time expressions",["Only animal names","Only colours","Only tool names"],"Time words help learners explain when activities happen."],
+    ["Body & health","Which vocabulary helps someone describe a headache?","Body parts and health words",["Food prices","School subjects","Clothing colours"],"Body-part words help people explain health concerns."],
+    ["Pronouns","What does a pronoun do in a sentence?","It stands in place of a noun",["It measures length","It names a colour","It shows a date"],"Pronouns help avoid repeating nouns."],
+    ["Grammar","What is the main function of a verb?","It expresses an action or state",["It names a place only","It describes a colour only","It replaces punctuation"],"Verbs tell what someone does or what state they are in."],
+    ["Grammar","Which word class describes a noun?","An adjective",["A verb","A conjunction","A question mark"],"Adjectives describe qualities or features of nouns."],
+    ["Sentence building","What makes a sentence meaningful?","Words arranged to communicate a complete idea",["A random list of letters","Only a number","A list of punctuation marks"],"A sentence communicates a complete thought."],
+    ["Pronunciation","Why should learners listen to fluent Ga speakers?","To learn natural pronunciation, tone and usage",["To avoid speaking","To replace reading completely","To change every word into English"],"Listening supports accurate pronunciation and natural expression."],
+    ["Reading","What should a reader identify first when studying a short passage?","The main idea",["The longest word only","The number of commas","The last letter"],"The main idea tells what the passage is mostly about."],
+    ["Reading","How should a learner answer a comprehension question?","Use relevant details from the passage",["Guess without reading","Copy an unrelated sentence","Ignore the question"],"Answers should be supported by the passage."],
+    ["Culture","Which festival is strongly associated with the Ga people?","Homowo",["Hogbetsotso","Aboakyer","Damba"],"Homowo is a major festival celebrated by the Ga people."],
+    ["Culture","What does Homowo traditionally remember and celebrate?","Overcoming hunger and celebrating a successful harvest",["The start of a new school year","The building of a bridge","A football tournament"],"Homowo recalls a period of hunger and celebrates abundance."],
+    ["Proverbs","Why are proverbs important in Ga culture?","They communicate wisdom and community values",["They are only decoration","They replace all grammar","They have no message"],"Proverbs preserve lessons and cultural knowledge."],
+    ["Writing","What should begin a properly written sentence?","A capital letter",["A full stop","A comma","A closing bracket"],"A sentence normally begins with a capital letter."],
+    ["Writing","Which punctuation mark usually ends a direct question?","A question mark",["A comma","A full stop only","A colon"],"A question mark indicates that a sentence asks something."],
+    ["Translation","What should a good translation preserve?","The meaning and context of the message",["Only the number of words","Only the first letter","The English word order every time"],"Translation should communicate meaning naturally."],
+    ["Conversation","What is active listening?","Paying attention and responding to what the speaker says",["Speaking over the person","Ignoring the speaker","Repeating unrelated words"],"Active listening helps people understand one another."],
+    ["Respect","How should a learner speak to an older person?","Use respectful language and a polite tone",["Use insults","Interrupt repeatedly","Ignore the person"],"Respectful speech is important in family and community life."],
+    ["Study skills","Which habit best improves spoken Ga?","Short, regular conversations with patient speakers",["Avoiding practice","Reading silently only","Learning one word each month"],"Regular conversation builds confidence and fluency."]
+  ];
+  const ctFacts=[
+    ["Safety","What should a learner do before using a workshop tool?","Check that it is suitable and safe to use",["Use it without checking","Throw it to a friend","Remove its safety guard"],"Inspect tools and follow instructions before use."],
+    ["Safety","What is the purpose of personal protective equipment?","To reduce exposure to workplace hazards",["To decorate the workshop","To replace training","To make tools heavier"],"PPE such as goggles and aprons helps protect the user."],
+    ["Safety","What should be done if an electrical cable is damaged?","Stop using the equipment and report it",["Touch the exposed wire","Pour water on it","Continue working"],"Damaged electrical equipment must not be used."],
+    ["Safety","Why should workshop floors be kept tidy and dry?","To prevent slips, trips and falls",["To make the room darker","To hide tools","To increase noise"],"Good housekeeping reduces common accidents."],
+    ["Safety","How should scissors be passed to another person?","Handle-first with the blades closed",["Thrown across the room","With blades pointing forward","Left open on a chair"],"Passing tools carefully helps prevent injury."],
+    ["Design","What is the first step in solving a design problem?","Identify the need or problem",["Start painting immediately","Buy every material","Ignore the user"],"A designer first understands the need and the intended user."],
+    ["Design","Why is a sketch made before constructing a product?","To plan the shape, parts and appearance",["To avoid measuring","To waste materials","To replace testing"],"A sketch communicates the design idea."],
+    ["Design","What is a prototype?","An early model used to test a design",["A finished product in a shop","A kind of glue","A safety sign"],"A prototype helps test function and identify improvements."],
+    ["Measurement","Which instrument measures a short length?","A ruler or measuring tape",["A paintbrush","A saw","A mixing bowl"],"Use a measuring tool suited to the size and accuracy needed."],
+    ["Measurement","Which unit is suitable for the length of a small object?","Centimetre",["Litre","Kilogram","Degree Celsius"],"Centimetres are commonly used for small lengths."],
+    ["Tools","Which tool is used to drive a nail into wood?","Hammer",["Spanner","Sewing needle","Sieve"],"A hammer is used for striking and driving nails."],
+    ["Tools","Which tool tightens or loosens a nut?","Spanner",["Paint roller","Hand saw","Measuring jug"],"A spanner grips a nut or bolt head."],
+    ["Tools","What is a saw mainly used for in woodworking?","Cutting wood",["Polishing cloth","Measuring temperature","Joining wires"],"A saw has a toothed blade designed for cutting."],
+    ["Materials","Why is copper commonly used for electrical wires?","It conducts electricity well",["It is an electrical insulator","It dissolves in water","It is transparent"],"Copper is a good electrical conductor and can be drawn into wire."],
+    ["Materials","Why is rubber used to cover many electrical wires?","It is an electrical insulator",["It is a metal","It attracts water","It produces electricity"],"Rubber helps prevent current from passing to the user."],
+    ["Materials","Which material from trees is commonly used to make furniture?","Wood",["Glass","Clay only","Cotton fibre"],"Wood is widely used for furniture and construction."],
+    ["Woodwork","What is sanding used for?","Smoothing a wooden surface",["Making wood wet","Measuring angles","Cutting metal"],"Abrasive paper removes roughness from wood."],
+    ["Woodwork","Why is a joint used in a wooden product?","To connect pieces of wood",["To colour the wood","To measure its weight","To sharpen a saw"],"Joints hold wooden components together."],
+    ["Metalwork","What is corrosion?","Gradual damage caused by a chemical reaction with the environment",["Polishing wood","Weaving cloth","Drying food"],"Rusting is a common form of corrosion in iron."],
+    ["Metalwork","Which action can help prevent iron from rusting?","Apply paint or another protective coating",["Leave it wet","Scratch off its coating","Store it in salty water"],"A protective coating reduces contact with water and oxygen."],
+    ["Textiles","What is a fibre?","A thin strand used to make yarn or fabric",["A hammer","A cooking pot","A metal fastener"],"Fibres are the basic strands used to make yarn and fabric."],
+    ["Textiles","What is weaving?","Interlacing lengthwise and crosswise yarns to make fabric",["Cutting wood into boards","Heating water","Joining metal with bolts"],"Weaving crosses warp and weft yarns."],
+    ["Textiles","Which tool is used to sew fabric by hand?","Needle",["Spanner","Chisel","Trowel"],"A needle carries thread through fabric."],
+    ["Food & nutrition","Which nutrient is a main source of energy?","Carbohydrate",["Vitamin C only","Water only","Mineral salts only"],"Carbohydrates provide energy for daily activities."],
+    ["Food hygiene","Why should hands be washed before preparing food?","To reduce the spread of germs",["To make food sweeter","To change food colour","To remove all nutrients"],"Handwashing helps prevent food contamination."],
+    ["Food preparation","Which method cooks food using hot water vapour?","Steaming",["Freezing","Drying","Refrigerating"],"Steaming uses vapour from heated water."],
+    ["Nutrition","What does a balanced diet provide?","Different nutrients in suitable amounts",["Only one kind of food","Only sugar","No water"],"A balanced diet supports growth, health and energy needs."],
+    ["Food safety","What is food contamination?","The presence of harmful substances or germs in food",["Correct food storage","Washing clean plates","Weighing ingredients"],"Contamination can make food unsafe to eat."],
+    ["Agriculture","What is compost?","Decayed organic matter used to improve soil",["A metal tool","A plastic fibre","A type of fuel"],"Compost adds organic matter to soil."],
+    ["Agriculture","Why are weeds removed from crop fields?","They compete with crops for water, light and nutrients",["They make all crops grow faster","They produce tools","They replace rainfall"],"Weeds compete with crops for resources."],
+    ["Enterprise","Who is an entrepreneur?","A person who organises a business and takes calculated risks",["A person who never plans","A person who only buys for personal use","A person who avoids decisions"],"Entrepreneurs identify opportunities and organise resources."],
+    ["Enterprise","Why should a business record sales and expenses?","To understand income, costs and profit",["To make customers wait","To hide every transaction","To avoid planning"],"Records help a business monitor performance."],
+    ["Energy","Which of these is a renewable energy source?","Sunlight",["Coal","Petroleum","Natural gas"],"Sunlight is naturally replenished."],
+    ["Energy","What is one safe way to save electricity at home?","Switch off lights when they are not needed",["Leave appliances on","Touch exposed wires","Overload sockets"],"Switching off unused lights reduces energy waste."],
+    ["Environment","Why should workshop waste be sorted?","To support safe disposal and recycling",["To mix all waste together","To block drains","To increase pollution"],"Sorting separates reusable, recyclable and hazardous materials."],
+    ["Finishing","Why is a finish applied to a wooden product?","To improve appearance and protect the surface",["To make it impossible to measure","To weaken every joint","To turn it into cloth"],"Finishes can protect surfaces and improve appearance."],
+    ["First aid","What is the first sensible action after a workshop accident?","Stop the activity and alert the teacher",["Hide the accident","Continue using the machine","Crowd around the injured person"],"Stop work and get a responsible adult or trained first aider."],
+    ["Quality","Why should a finished product be tested?","To check that it is safe and works as intended",["To make it heavier","To avoid feedback","To damage it"],"Testing checks function, quality and safety."],
+    ["Consumers","What should a buyer consider when choosing a product?","Quality, safety, usefulness and price",["Only the colour","Only the package size","Only the seller's name"],"Consumers compare important features before buying."]
+  ];
+  addExtraBank("ga","ga",expand(gaFacts),1);
+  addExtraBank("careerTechnology","ct",expand(ctFacts),1);
+  if(questionsDB.ga.length!==200||questionsDB.careerTechnology.length!==200) throw new Error("New subject banks must each contain 200 questions.");
+  questionsDB.ga.forEach(q=>questionIndex.set(q.id,{...q,subject:"ga"}));
+  questionsDB.careerTechnology.forEach(q=>questionIndex.set(q.id,{...q,subject:"careerTechnology"}));
+  globalThis.questionsDB=questionsDB;
+
+  notesDB.ga=[
+    {id:"ga-jhs1-greetings",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Communication and culture",topic:"Everyday Ga Greetings and Polite Expressions",icon:"🗣️",readTime:"6 min read",summary:"Practise common spoken greetings and respectful expressions. Some spellings vary, so follow your teacher's preferred form.",sections:[
+      {title:"Greetings",theory:"Greetings are an important part of everyday Ga interaction. Ga is spoken by Ga communities, especially in and around Greater Accra. Listen to fluent speakers and practise the form taught by your teacher.",points:["Ojekoo is a common morning greeting; Ojoo is a customary response.","Mina oko is commonly taught as an evening greeting.","Agoo is called out to announce your presence or ask permission to enter.","Oyiwaladɔ is an expression of thanks in many learning materials; check the spelling and pronunciation used in class."]},
+      {title:"Asking how someone is",theory:"Tɛ eyɛ oten? is a commonly taught spoken form for asking 'How are you?'. Listen to the rhythm and tone and practise with a fluent speaker.",points:["Greet the person first.","Ask the question clearly and listen to the response.","Reply politely and ask a related question.","Use respectful forms of address with older people."]},
+      {title:"Conversation practice",steps:["Greet the person.","Ask how the person is.","Listen without interrupting.","Respond to what the person said.","Close the conversation politely."],examTip:"Practise spoken forms as well as the standard forms taught in class. Ask your teacher to confirm pronunciation and spelling."}]},
+    {id:"ga-jhs1-vocabulary",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Vocabulary",topic:"Family, School, Food and Market Vocabulary",icon:"📚",readTime:"7 min read",summary:"Build useful vocabulary for people, school, food and everyday conversations.",sections:[
+      {title:"Learn words in groups",theory:"Related words are easier to remember when studied together. Make a small word list for each topic and practise the words in sentences.",points:["Family: mother, father, child, sibling and elder.","School: teacher, learner, book, pen, classroom and lesson.","Food: names of common foods, drinks, fruits and ingredients.","Market: buying, selling, prices, quantities and asking for help."]},
+      {title:"Use words in sentences",theory:"Do not memorise isolated words only. Use each new word in a short sentence or question. Ask a fluent speaker to correct your pronunciation.",example:"Practise a market conversation: greet the seller, ask for an item, ask its price, listen to the answer and thank the seller.",examTip:"When translating, preserve meaning and context instead of translating each English word separately."}]},
+    {id:"ga-jhs2-grammar",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Language structure",topic:"Pronouns, Verbs and Simple Ga Sentences",icon:"✍️",readTime:"7 min read",summary:"Understand how words work together to communicate complete ideas.",sections:[
+      {title:"Parts of a sentence",theory:"A sentence communicates a complete idea. A simple sentence often tells who or what is being discussed and what is happening. Ga word order should be learnt from reliable examples.",points:["A noun names a person, place, animal or thing.","A pronoun stands in place of a noun.","A verb expresses an action or state.","An adjective describes a noun.","Practise identifying these parts in sentences from your class reader."]},
+      {title:"Build clear sentences",steps:["Choose the subject of the sentence.","Select the correct verb form.","Add an object or description if needed.","Read the sentence aloud to check that it sounds natural.","Ask a teacher or fluent speaker to confirm the word order."]}]},
+    {id:"ga-jhs2-reading",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Reading and comprehension",topic:"Reading Short Ga Passages and Proverbs",icon:"📖",readTime:"6 min read",summary:"Find the main idea, understand details and explain cultural sayings.",sections:[
+      {title:"Comprehension",theory:"Read the whole passage once to understand its general message. Read it again to find names, actions, reasons and details that answer questions.",points:["Identify the main idea.","Underline details that support it.","Use the passage to answer factual questions.","Use surrounding sentences to understand unfamiliar words.","Answer in complete and relevant sentences."]},
+      {title:"Proverbs",theory:"Proverbs express wisdom, values and community experience. Their message may differ from the literal meaning of each word.",examTip:"Explain the lesson of a proverb and give a suitable everyday example. Check with a knowledgeable speaker if you are unsure of its meaning."}]},
+    {id:"ga-jhs3-writing",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Writing and oral communication",topic:"Writing, Translation and Oral Practice",icon:"📝",readTime:"7 min read",summary:"Prepare for classroom exercises with spelling, short writing and spoken communication.",sections:[
+      {title:"Write a short passage",steps:["Read the topic carefully.","Write down three or four key ideas.","Arrange ideas in a sensible order.","Write short, clear sentences.","Check spelling, punctuation and meaning."]},
+      {title:"Translation and speaking",theory:"A good translation communicates the intended meaning naturally. Speaking practice should include pronunciation, tone and listening.",points:["Check context before choosing a word.","Use natural Ga word order.","Speak at a steady pace.","Ask for correction and repeat the corrected sentence.","Practise common spoken Ga alongside standard forms taught in class."]}]}
+  ];
+  notesDB.careerTechnology=[
+    {id:"ct-jhs1-safety",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Design and technology",topic:"Workshop Safety, Tools and Personal Protection",icon:"🦺",readTime:"8 min read",summary:"Learn safe behaviour, workshop rules, protective equipment and responsible tool handling.",sections:[
+      {title:"Why safety matters",theory:"A workshop contains tools, materials, machines and activities that can cause injury if used carelessly. Safety means preventing accidents, protecting people and keeping the work area organised.",points:["Follow the teacher's instructions before starting work.","Wear suitable protective equipment when required.","Tie back long hair and keep loose clothing away from moving parts.","Keep floors dry and pathways clear.","Never play or distract someone using a tool."]},
+      {title:"Tools and safe handling",points:["A hammer drives nails; a hand saw cuts wood; a spanner turns nuts and bolts.","A ruler or tape measures length; a try square checks a right angle.","Carry sharp tools carefully with the working edge directed away from people.","Do not use damaged tools or machines.","Report accidents and unsafe conditions immediately."]},
+      {title:"Responding to an accident",theory:"Stop the activity, make the area safe if this can be done without risk, and alert the teacher or trained first aider. Do not attempt a task beyond your training.",examTip:"Choose the action that prevents further harm and gets responsible help."}]},
+    {id:"ct-jhs1-design",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Design process",topic:"Design Thinking, Sketching and Measurement",icon:"📐",readTime:"8 min read",summary:"Follow a design process from identifying a need to planning and testing a solution.",sections:[
+      {title:"The design process",theory:"Design and technology uses practical thinking to solve real needs. A designer studies the problem, plans a solution, chooses materials, makes a product and tests it.",steps:["Identify the need and the user.","Research and collect information.","Sketch possible solutions and label important parts.","Choose suitable materials, tools and measurements.","Make a model or prototype safely.","Test the product and improve weak areas."]},
+      {title:"Drawing and measurement",points:["Length may be measured in millimetres, centimetres or metres.","A ruler and tape measure are used for length.","A try square checks a right angle.","A prototype is an early model used to test a design.","A good design should be useful, safe and suitable for its user."]}]},
+    {id:"ct-jhs2-materials",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Materials and processes",topic:"Wood, Metals, Plastics and Material Properties",icon:"🪵",readTime:"9 min read",summary:"Compare common materials, their properties, uses and ways of protecting them.",sections:[
+      {title:"Choosing materials",theory:"Materials are selected according to their properties, cost, availability and the purpose of the product.",points:["Wood is used for furniture and construction; it can be cut, shaped and joined.","Metals are often strong and durable. Copper conducts electricity well.","Plastics are light and can be moulded into many shapes.","Glass is hard and transparent but can be brittle.","Rubber is flexible and often used as an electrical insulator."]},
+      {title:"Joining and finishing",points:["Wooden parts may be joined using nails, screws, glue or suitable joints.","Metal parts may be connected using bolts or rivets.","Sanding smooths a wooden surface before finishing.","Paint and protective coatings can reduce corrosion or surface damage.","Choose a joining method that suits the material and product."]}]},
+    {id:"ct-jhs2-food",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Home economics",topic:"Food, Nutrition, Hygiene and Preparation",icon:"🥗",readTime:"9 min read",summary:"Understand nutrients, balanced diets, kitchen hygiene and safe cooking methods.",sections:[
+      {title:"Nutrients",points:["Carbohydrates provide energy.","Proteins support growth and repair of body tissues.","Fats provide stored energy and help the body use some vitamins.","Vitamins and minerals support normal body functions.","Water helps transport substances and regulate body temperature; fibre supports digestion."]},
+      {title:"Balanced diet and food hygiene",theory:"A balanced diet contains a variety of foods in suitable amounts. Food hygiene prevents contamination and food-borne illness.",points:["Wash hands before preparing or eating food.","Use clean utensils and safe water.","Keep raw and cooked foods separate.","Store food at suitable temperatures and cover it.","Wash fruits and vegetables before eating or preparing them."]},
+      {title:"Cooking methods",points:["Boiling cooks food in bubbling water.","Steaming uses hot water vapour.","Baking uses dry heat in an oven.","Grilling uses direct heat.","Choose a method that suits the food and avoids unnecessary waste."]}]},
+    {id:"ct-jhs3-enterprise",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Enterprise and sustainability",topic:"Entrepreneurship, Costing and Environmental Care",icon:"💡",readTime:"9 min read",summary:"Explore small business planning, records, quality, renewable energy and responsible waste management.",sections:[
+      {title:"Entrepreneurship",theory:"An entrepreneur identifies an opportunity, organises resources and takes calculated risks to provide a product or service.",points:["Identify a need in the community.","Describe the product or service.","Estimate material, labour and other costs.","Set a fair selling price and plan how to reach customers.","Keep records of sales, expenses and stock."]},
+      {title:"Cost and quality",theory:"Profit is the amount left when total costs are subtracted from sales revenue.",example:"If an item sells for GH₵30 and its total cost is GH₵22, the profit is GH₵8.",points:["Check measurements and workmanship.","Test that the product is safe and works as intended.","Use customer feedback to improve the product."]},
+      {title:"Environment and energy",points:["Reuse suitable materials and recycle where possible.","Sort waste instead of dumping everything together.","Use water and electricity carefully.","Solar energy is renewable because sunlight is naturally replenished.","Keep hazardous materials away from drains and water bodies."]}]}
+  ];
+
+  notesDB.maths.push(
+    {id:"mat-jhs1-number",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Number",topic:"Whole Numbers, Factors, Multiples and Integers",icon:"🔢",readTime:"7 min read",summary:"Revise place value, operations, factors, multiples and integers.",sections:[{title:"Number operations",theory:"Place value tells the value of a digit because of its position. Use the correct order of operations: brackets, powers, division and multiplication, then addition and subtraction.",points:["A factor divides a number exactly.","A multiple is found by multiplying a number by a whole number.","A prime number has exactly two factors: 1 and itself.","When adding integers with different signs, subtract their absolute values and keep the sign of the larger absolute value.","Estimate an answer to check whether it is reasonable."]},{title:"Fractions and percentages",points:["To add fractions, first use a common denominator.","To multiply fractions, multiply the numerators and denominators.","To divide by a fraction, multiply by its reciprocal.","Percentage means 'out of 100'.","Convert a percentage to a decimal by dividing by 100."]}]},
+    {id:"mat-jhs2-algebra",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Algebra",topic:"Expressions, Equations and Substitution",icon:"✏️",readTime:"7 min read",summary:"Understand variables, simplify expressions and solve simple equations.",sections:[{title:"Algebraic expressions",theory:"A variable is a letter that represents a number. A term is a number, a variable or a product of numbers and variables. Like terms have the same variable part.",points:["3x + 2x = 5x because the terms are alike.","3x + 2y cannot be combined into one term.","Substitution means replacing a variable with a given value.","Use inverse operations to solve equations.","Whatever operation is done to one side of an equation must also be done to the other side."]},{title:"Worked example",example:"If 3x + 4 = 19, subtract 4 from both sides: 3x = 15. Divide by 3: x = 5.",examTip:"Show each step clearly and check your answer by substituting it into the original equation."}]},
+    {id:"mat-jhs3-geometry",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Shape and space",topic:"Angles, Triangles, Area and Volume",icon:"📐",readTime:"8 min read",summary:"Revise angle rules and common measurement formulae.",sections:[{title:"Angle facts",points:["Angles on a straight line add up to 180°.","Angles around a point add up to 360°.","Vertically opposite angles are equal.","Angles in a triangle add up to 180°.","The interior angles of a quadrilateral add up to 360°."]},{title:"Measurement formulae",points:["Rectangle area = length × width.","Triangle area = ½ × base × perpendicular height.","Parallelogram area = base × perpendicular height.","Cuboid volume = length × width × height.","Always write the correct unit, such as cm² for area and cm³ for volume."]},{title:"Solving geometry questions",steps:["Mark the angles or lengths given in the diagram.","Identify the angle or area rule that applies.","Write the equation before calculating.","Substitute the known values carefully.","Check that the answer is sensible and include the unit."]}]}
+  );
+  notesDB.computing.push(
+    {id:"com-jhs1-files",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Digital literacy",topic:"Files, Folders, Operating Systems and Devices",icon:"🖥️",readTime:"7 min read",summary:"Learn how a computer manages information and how common devices work.",sections:[{title:"Hardware and software",theory:"Hardware is the physical part of a computer. Software is the set of programs and instructions that tell the computer what to do.",points:["Input devices send data into a computer, such as a keyboard and mouse.","Output devices present results, such as a monitor, printer and speaker.","The CPU processes instructions.","RAM stores data temporarily while programs are running.","An operating system manages hardware, files and applications."]},{title:"Files and folders",points:["A file stores information such as a document, picture or sound.","A folder helps organise files.","Use meaningful file names so you can find work later.","Save work regularly and keep a backup of important files.","Do not delete a file unless you are sure it is no longer needed."]}]},
+    {id:"com-jhs2-internet",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Networks and communication",topic:"Internet, Networks and Responsible Online Behaviour",icon:"🌐",readTime:"8 min read",summary:"Understand networks, browsers, online communication and digital safety.",sections:[{title:"Networks and the internet",theory:"A computer network connects devices so they can share information and resources. The internet is a worldwide network of connected networks.",points:["A web browser is used to open websites.","A search engine helps find information online.","Email is used to send electronic messages.","A strong password should be difficult to guess and kept private.","Not everything published online is accurate; check the source and date."]},{title:"Staying safe online",points:["Do not share passwords or private information with strangers.","Ask a trusted adult or teacher for help with suspicious messages.","Avoid unknown downloads and links.","Use respectful language and do not bully others online.","Tell a trusted adult if something online makes you feel unsafe."]}]},
+    {id:"com-jhs3-programming",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Computational thinking",topic:"Algorithms, Flowcharts and Basic Programming",icon:"🧩",readTime:"8 min read",summary:"Plan clear instructions and use sequence, selection and repetition.",sections:[{title:"Algorithms",theory:"An algorithm is a clear sequence of steps for solving a problem. A good algorithm has a clear start, ordered instructions and a definite result.",points:["Sequence means instructions happen in order.","Selection means choosing a path based on a condition.","Repetition means repeating instructions while a condition is met or for a set number of times.","A flowchart uses standard symbols to show steps and decisions.","Testing helps find mistakes in an algorithm or program."]},{title:"Problem-solving example",steps:["Identify the problem and the expected output.","List the input values needed.","Write the steps in plain language or pseudocode.","Trace the steps with sample data.","Correct errors and test again."],examTip:"Use a diamond for a decision in a flowchart and arrows to show the direction of flow."}]}
+  );
+  notesDB.rme.push(
+    {id:"rme-jhs1-values",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Moral values",topic:"Honesty, Respect, Responsibility and Self-Control",icon:"🤝",readTime:"7 min read",summary:"Understand values that guide good behaviour at home, school and in the community.",sections:[{title:"Meaning of moral values",theory:"Moral values are principles that help people decide what is right and wrong. They guide behaviour and support peaceful relationships.",points:["Honesty means telling the truth and acting sincerely.","Respect means treating people with dignity.","Responsibility means accepting duties and their consequences.","Self-control means managing feelings and actions.","Fairness means treating people justly."]},{title:"Applying values",example:"A learner finds a classmate's lost book. Returning it to its owner is an example of honesty and responsibility.",examTip:"When asked about a value, define it and give a clear example from daily life."}]},
+    {id:"rme-jhs2-religions",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Religious practices",topic:"Worship, Prayer, Festivals and Sacred Texts",icon:"🕊️",readTime:"8 min read",summary:"Compare how religious communities express faith and worship.",sections:[{title:"Religious practices",theory:"Religion can shape beliefs, worship, moral teaching and community life. Practices differ between traditions and communities.",points:["Prayer is a way believers communicate with the Supreme Being.","Worship may include prayer, songs, readings and acts of service.","Festivals can help communities remember important events and teachings.","Sacred texts guide belief and practice.","Show respect when learning about religions different from your own."]},{title:"Learning respectfully",theory:"When comparing religions, describe each tradition accurately instead of assuming all believers practise in exactly the same way.",examTip:"Use examples from the religions studied in class and avoid disrespectful language."}]},
+    {id:"rme-jhs3-peace",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Community and citizenship",topic:"Peace, Tolerance, Conflict Resolution and Service",icon:"🕊️",readTime:"8 min read",summary:"Explore peaceful ways to resolve disagreement and contribute to society.",sections:[{title:"Peaceful living",points:["Tolerance means accepting that people may have different beliefs and opinions.","Dialogue allows people to explain their views and listen to others.","Forgiveness can help repair relationships after wrongdoing.","Cooperation helps groups achieve shared goals.","Community service means helping improve the lives of others."]},{title:"Resolving conflict",steps:["Stay calm and make sure everyone is safe.","Listen to each person's point of view.","Identify the issue rather than attacking the person.","Look for a fair solution or ask a trusted mediator for help.","Agree on how to prevent the problem from happening again."]}]}
+  );
+  notesDB.integratedScience.push(
+    {id:"sci-jhs1-matter",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Diversity of matter",topic:"Matter, States and Changes of State",icon:"🧪",readTime:"8 min read",summary:"Describe matter and explain how heating and cooling cause changes of state.",sections:[{title:"What is matter?",theory:"Matter is anything that has mass and occupies space. The three common states are solid, liquid and gas.",points:["Solids have a fixed shape and volume.","Liquids have a fixed volume but take the shape of their container.","Gases have no fixed shape or volume and spread to fill their container.","Melting changes a solid into a liquid.","Evaporation changes a liquid into a gas; condensation changes gas into liquid."]},{title:"Physical and chemical changes",theory:"A physical change does not form a new substance, while a chemical change forms one or more new substances.",points:["Melting ice is a physical change.","Dissolving sugar in water is usually a physical change.","Rusting iron is a chemical change.","Burning paper is a chemical change.","Observe evidence such as colour change, gas production or formation of a new solid."]}]},
+    {id:"sci-jhs2-energy",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Energy",topic:"Forms, Sources and Transfer of Energy",icon:"⚡",readTime:"8 min read",summary:"Identify common energy forms and explain how energy is transferred.",sections:[{title:"Forms of energy",points:["Light energy enables us to see and supports photosynthesis.","Sound energy is produced by vibrations.","Heat energy is transferred from warmer objects to cooler ones.","Electrical energy powers many appliances.","Chemical energy is stored in fuels and food."]},{title:"Energy sources",theory:"Renewable sources are naturally replenished, while non-renewable sources are finite and take a very long time to form.",points:["Solar and wind energy are renewable.","Coal, petroleum and natural gas are non-renewable fossil fuels.","Energy can be transferred from one form to another.","Use energy efficiently to reduce waste and pollution."]}]},
+    {id:"sci-jhs3-forces",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Forces and motion",topic:"Forces, Friction, Pressure and Simple Machines",icon:"🧲",readTime:"8 min read",summary:"Understand how forces affect motion and how simple machines make work easier.",sections:[{title:"Forces",theory:"A force is a push or pull. Forces can change an object's speed, direction or shape.",points:["Friction acts against motion between surfaces in contact.","Gravity attracts objects towards the Earth.","A balanced set of forces does not change an object's motion.","Pressure is force acting per unit area.","A simple machine changes the size or direction of a force."]},{title:"Simple machines",points:["A lever turns around a fixed point called a fulcrum.","A pulley can change the direction of a force.","An inclined plane is a sloping surface.","Machines make tasks easier but do not remove the need for energy.","Give examples of simple machines found at home and school."]}]}
+  );
+  notesDB.french.push(
+    {id:"fre-jhs1-vocabulary",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"French basics",topic:"Numbers, Days, Months and Classroom Words",icon:"🇫🇷",readTime:"7 min read",summary:"Build beginner vocabulary for counting, dates and the classroom.",sections:[{title:"Numbers",theory:"Learn numbers in small groups and say them aloud. Use them when giving your age, counting objects and stating prices.",points:["un = one; deux = two; trois = three; quatre = four; cinq = five.","six = six; sept = seven; huit = eight; neuf = nine; dix = ten.","Practise saying numbers in order and then in random order."]},{title:"Days and classroom words",points:["lundi = Monday; mardi = Tuesday; mercredi = Wednesday.","jeudi = Thursday; vendredi = Friday; samedi = Saturday; dimanche = Sunday.","un livre = a book; un stylo = a pen; une classe = a classroom.","Quelle date sommes-nous ? = What is the date?"]}]},
+    {id:"fre-jhs2-articles",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Grammar",topic:"French Articles, Gender and Simple Adjectives",icon:"📘",readTime:"8 min read",summary:"Learn how articles match nouns and how simple adjectives describe people and things.",sections:[{title:"Articles",theory:"French nouns are masculine or feminine. Articles change according to gender and number.",points:["un and le are masculine singular forms.","une and la are feminine singular forms.","des and les are plural forms.","Learn each new noun with its article, for example un livre and une table.","Do not assume a noun's gender from its English meaning."]},{title:"Adjectives",theory:"An adjective describes a noun. Many French adjectives change spelling to agree with the noun.",points:["grand can describe something masculine; grande is a common feminine form.","petit and petite mean small.","Place adjectives according to the pattern taught for that adjective.","Practise with short noun phrases before writing longer sentences."]}]},
+    {id:"fre-jhs3-sentences",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Communication",topic:"Present-Tense Verbs and Everyday Sentences",icon:"💬",readTime:"8 min read",summary:"Use a few common verbs to make simple statements and questions.",sections:[{title:"Useful verbs",points:["être = to be; avoir = to have; aller = to go; faire = to do or make.","Je suis = I am; tu es = you are; il/elle est = he/she is.","J'ai = I have; tu as = you have; il/elle a = he/she has.","Learn the subject pronoun together with the verb form."]},{title:"Build a simple sentence",example:"Je m'appelle Ama. = My name is Ama. J'habite à Accra. = I live in Accra. J'aime lire. = I like reading.",examTip:"Read the whole sentence, identify the subject and verb, then use context to choose the missing word. Keep French sentences short and clear."}]}
+  );
+  const flash=document.getElementById("flash-subject");
+  if(flash){if(![...flash.options].some(o=>o.value==="ga"))flash.add(new Option("Ga Language","ga"));if(![...flash.options].some(o=>o.value==="careerTechnology"))flash.add(new Option("Career Technology","careerTechnology"));}
+  const group=document.querySelector("[data-setup-sub='french']")?.parentElement;
+  if(group&&!group.querySelector("[data-setup-all]")){const btn=document.createElement("button");btn.type="button";btn.dataset.setupAll="true";btn.textContent="All subjects mixed";btn.setAttribute("aria-pressed","false");group.append(btn);}
+  Setup.subjects=["social"];Setup.topic="all";
+  const ensureSelection=()=>{if(!Array.isArray(Setup.subjects)||!Setup.subjects.length)Setup.subjects=[Setup.subject||"social"];Setup.subject=Setup.subjects[0];};
+  Setup.open=function(subject){this.subjects=subject&&subjects.includes(subject)?[subject]:[this.subject||"social"];this.subject=this.subjects[0];this.topic="all";navigate("setup");};
+  Setup.pool=function(){ensureSelection();const topic=document.getElementById("topic-sel").value||"all";return this.subjects.flatMap(sub=>(questionsDB[sub]||[]).filter(q=>topic==="all"||q.topic===topic));};
+  Setup.allPool=function(){ensureSelection();return this.subjects.flatMap(sub=>questionsDB[sub]||[]);};
+  Setup.renderSubject=function(){ensureSelection();document.querySelectorAll("[data-setup-sub]").forEach(btn=>btn.setAttribute("aria-pressed",String(this.subjects.includes(btn.dataset.setupSub))));const all=document.querySelector("[data-setup-all]");if(all)all.setAttribute("aria-pressed",String(this.subjects.length===subjects.length));const counts={};this.allPool().forEach(q=>counts[q.topic]=(counts[q.topic]||0)+1);const sel=document.getElementById("topic-sel");sel.replaceChildren(new Option("All topics ("+this.allPool().length+")","all"),...Object.keys(counts).sort().map(t=>new Option(t+" ("+counts[t]+")",t)));sel.value=this.topic&&counts[this.topic]?this.topic:"all";this.update();};
+  Setup.update=function(){this.topic=document.getElementById("topic-sel").value;const count=this.pool().length;document.getElementById("setup-pool").textContent=count+" questions available in this selection";const lengths=[5,10,20,40,60,100,200,0];if(this.length&&this.length>=count)this.length=0;const box=document.getElementById("length-buttons");box.replaceChildren();lengths.forEach(n=>{if(n&&n>=count)return;const btn=document.createElement("button");btn.type="button";btn.className="length-option";btn.textContent=n?String(n):"All "+count;btn.setAttribute("aria-pressed",String(n===this.length));btn.addEventListener("click",()=>{Setup.length=n;Setup.update();});box.append(btn);});document.querySelectorAll("[data-mode]").forEach(btn=>btn.setAttribute("aria-checked",String(btn.dataset.mode===this.mode)));const total=Math.min(this.length||count,count),secs=total*40;document.getElementById("mode-description").textContent=this.mode==="exam"?"Timed mock: "+Math.floor(secs/60)+" min "+(secs%60?secs%60+" sec ":"")+"for "+total+" questions. Explanations appear when you finish.":"Practice: no timer. See explanations after answers and use hints when you need them.";};
+  Setup.start=function(){const pool=this.pool();if(!pool.length){toast("There are no questions in this selection yet.");return;}ensureSelection();const label=this.subjects.length===subjects.length?"All subjects mixed":this.subjects.map(s=>labels[s]).join(" + ");Quiz.start({pool,length:this.length,mode:this.mode,subject:this.subjects.length===1?this.subjects[0]:"mixed",label:label+(this.topic!=="all"?" · "+this.topic:"")});};
+  document.addEventListener("click",event=>{const one=event.target.closest("[data-setup-sub]");const all=event.target.closest("[data-setup-all]");if(one){ensureSelection();const key=one.dataset.setupSub;if(Setup.subjects.includes(key)){if(Setup.subjects.length>1)Setup.subjects=Setup.subjects.filter(x=>x!==key);}else Setup.subjects=[...Setup.subjects,key];Setup.subject=Setup.subjects[0];Setup.topic="all";}else if(all){Setup.subjects=[...subjects];Setup.subject=subjects[0];Setup.topic="all";Setup.renderSubject();}},true);
+  document.querySelectorAll("[data-notes-sub='ga'],[data-notes-sub='careerTechnology']").forEach(btn=>btn.addEventListener("click",()=>{Notes.sub=btn.dataset.notesSub;Notes.activeId=null;Notes.refresh({keepScroll:false});}));
+  Home.render();
+})();
 </script>
 </body>
 </html>
