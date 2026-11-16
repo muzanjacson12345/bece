@@ -109,16 +109,16 @@
     };
 
     // Dark: deep tinted background, slightly lighter cards, a soft pastel accent for text.
-    const dS = 12 + 16 * c, dSoft = tone(22 + 16 * c, 19);
+    const dS = customShade ? clamp(s * .55, 0, 55) : 12 + 16 * c, dSoft = tone(22 + 16 * c, 19);
     let dL = customShade ? clamp(30 + pL * .2, 30, 50) : 42, dPrimary = tone(26 + 30 * c, dL);
     while (contrast(dPrimary, W) < 4.6 && dL > 14) { dL -= 1; dPrimary = tone(26 + 30 * c, dL); }
     let xL = 74, dAccent = tone(34 + 22 * c, xL);
     while (contrast(dAccent, dSoft) < 6 && xL < 94) { xL += 1; dAccent = tone(34 + 22 * c, xL); }
-    const darkBgL = customShade ? clamp(4 + pL * .16, 4, 20) : 8;
+    const darkBgL = customShade ? clamp(3 + pL * .22, 3, 25) : 8;
     const dbg = tone(dS, darkBgL);
     const dark = {
       onPrimary: contrast(dPrimary, '#ffffff') >= contrast(dPrimary, '#111111') ? '#ffffff' : '#111111',
-      bg: dbg, surface: tone(dS - 2, darkBgL + 4), surface2: tone(dS, darkBgL + 9), surfaceWarm: neutral ? mix('#202020', dbg, .4) : mix('#2a2820', dbg, .4),
+      bg: dbg, surface: tone(dS - 2, Math.min(31, darkBgL + 5)), surface2: tone(dS, Math.min(38, darkBgL + 11)), surfaceWarm: neutral ? mix('#202020', dbg, .4) : mix('#2a2820', dbg, .4),
       ink: tone(14 + 4 * c, 91), inkSoft: tone(12, 82), muted: tone(9 + 4 * c, 66),
       line: tone(dS - 4, 20), lineStrong: tone(dS - 6, 28),
       accent: dAccent, accentSoft: dSoft, primary: dPrimary, primaryHover: tone(26 + 30 * c, dL + 6), ring: dAccent,
@@ -1536,7 +1536,7 @@ html[data-theme='dark'] .adm-prev[data-kind='warn'] { background: #4a3710; color
 .cz-custom output { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 500; }
 .cz-picker-wrap { display: grid; gap: 8px; }
 .cz-picker-head { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
-.cz-picker { position: relative; width: 100%; height: clamp(170px, 32vw, 230px); border-radius: 13px; border: 1px solid var(--line-strong); overflow: hidden; background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(var(--picker-h, 210) 100% 50%)); cursor: crosshair; touch-action: none; user-select: none; }
+.cz-picker { position: relative; width: 100%; height: clamp(170px, 32vw, 230px); border-radius: 13px; border: 1px solid var(--line-strong); overflow: hidden; background: linear-gradient(to bottom, #fff 0%, transparent 50%, #000 100%), linear-gradient(to right, hsl(var(--picker-h, 210) 0% 50%), hsl(var(--picker-h, 210) 100% 50%)); cursor: crosshair; touch-action: none; user-select: none; }
 .cz-picker:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
 .cz-picker-thumb { position: absolute; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 1px 5px #0009, 0 0 0 1px #0006; transform: translate(-50%, -50%); pointer-events: none; }
 .cz-picker-help { color: var(--muted); font-size: 12px; font-weight: 400; }
