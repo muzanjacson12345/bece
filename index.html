@@ -7797,14 +7797,15 @@ const Home = {
     $('bank-meta').textContent = `${Object.keys(questionsDB).length} subjects · ${questionIndex.size} questions`;
     document.querySelectorAll('[data-count]').forEach(node => {
       const subject = node.dataset.count;
-      const topics = new Set(questionsDB[subject].map(q => q.topic)).size;
-      node.textContent = `${questionsDB[subject].length} questions · ${topics} topics`;
+      const bank = questionsDB[subject] || [];
+      const topics = new Set(bank.map(q => q.topic)).size;
+      node.textContent = `${bank.length} questions · ${topics} topics`;
     });
     $('saved-count').textContent = bookmarks.length
       ? `${plural(bookmarks.length, 'question')} ready to practise`
       : 'Bookmark tricky questions to revisit';
 
-    renderAchievements();
+    window.renderAchievements?.();
 
     const history = store.get('bece_history', []);
     const snapshot = $('my-snapshot');
