@@ -10417,7 +10417,7 @@ const fmtLeft = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >
 
 async function init() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
-  renderAccount(); renderDaily();
+  renderAccount(); renderDaily(); renderAchievements();
   App.on('screen', s => { if (s === 'friends') renderFriends(); });
   try {
     const fb = await connectFirebase();
@@ -10437,7 +10437,7 @@ async function init() {
     S.db.collection('players').onSnapshot(async snap => {
       S.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const mine = S.players.find(p => p.id === S.uid); S.doc = mine ? { ...mine } : S.doc || {}; delete S.doc.id; if (S.pend) S.doc = { ...S.doc, ...S.pend };
-      S.ready = true; renderAccount(); renderDaily(); renderFriends(); Adm.paint();
+      S.ready = true; renderAccount(); renderDaily(); renderAchievements(); renderFriends(); Adm.paint();
       if (!S.asked && !(S.doc && S.doc.displayName)) {
         S.asked = true;
         setTimeout(() => {
