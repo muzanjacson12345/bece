@@ -1901,6 +1901,141 @@ html[data-accent="black"][data-theme="dark"] .cz {
   .f-tabs button { font-size:11px; padding:5px 1px; }
 }
 
+
+/* ---------- Me tab: align avatar actions and make Theme panel follow the selected mode ---------- */
+.cz-avatar-panel > .cz-row {
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;
+  gap:10px;
+}
+.cz-avatar-panel > .cz-row > .btn,
+.cz-avatar-panel > .cz-row > label.btn {
+  display:flex;
+  width:100%;
+  min-width:0;
+  min-height:44px;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  white-space:normal;
+  line-height:1.25;
+  padding:9px 10px;
+}
+.cz-avatar-panel > .cz-row > [hidden],
+.cz-avatar-panel [hidden] { display:none !important; }
+.cz-avatar-panel > .cz-chips {
+  display:grid !important;
+  grid-template-columns:repeat(auto-fit,minmax(105px,1fr));
+  gap:8px;
+  overflow:visible;
+  margin:0;
+  padding:0;
+}
+.cz-avatar-panel > .cz-chips .chip {
+  width:100%;
+  min-width:0;
+  min-height:40px;
+  padding:8px 7px;
+  white-space:normal;
+  text-align:center;
+  line-height:1.2;
+}
+.cz-avatar-panel > form.cz-row {
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+}
+.cz-avatar-panel > form.cz-row input[type="text"] {
+  width:100%;
+  min-width:0;
+  min-height:44px;
+}
+.cz-avatar-panel > form.cz-row .btn { min-width:76px; }
+.cz-avatar-panel .emoji-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(52px,1fr));
+  gap:8px;
+}
+.cz-avatar-panel .emoji-pick { width:100%; min-width:0; }
+
+/* Theme controls use the app's active surface/text variables, never a forced black surface. */
+.cz-theme-panel { background:transparent !important; color:var(--ink) !important; }
+.cz-theme-panel > .segmented {
+  background:var(--surface-2) !important;
+  color:var(--ink) !important;
+  border:1px solid var(--line) !important;
+}
+.cz-theme-panel > .segmented button {
+  color:var(--muted) !important;
+  background:transparent;
+}
+.cz-theme-panel > .segmented button[aria-pressed="true"] {
+  background:var(--surface) !important;
+  color:var(--ink) !important;
+  box-shadow:0 1px 4px rgb(0 0 0 / 12%);
+}
+.cz-theme-panel .theme-tile {
+  background:var(--surface) !important;
+  color:var(--ink) !important;
+  border-color:var(--line) !important;
+  box-shadow:0 0 0 1px var(--line) inset;
+}
+.cz-theme-panel .theme-tile[aria-pressed="true"] {
+  border-color:var(--t-primary) !important;
+}
+.cz-theme-panel .tt-name { color:var(--ink) !important; }
+.cz-theme-panel .cz-custom {
+  background:var(--surface) !important;
+  color:var(--ink) !important;
+  border-color:var(--line) !important;
+}
+.cz-theme-panel .cz-custom label,
+.cz-theme-panel .cz-picker-head { color:var(--ink) !important; }
+.cz-theme-panel .cz-custom output,
+.cz-theme-panel .cz-picker-help { color:var(--muted) !important; }
+.cz-theme-panel .cz-picker { border-color:var(--line-strong); }
+html:not([data-theme="dark"]) .cz-theme-panel .theme-tile {
+  background:#fff !important;
+  color:#111 !important;
+  border-color:#dedede !important;
+}
+html:not([data-theme="dark"]) .cz-theme-panel .tt-name { color:#111 !important; }
+html:not([data-theme="dark"]) .cz-theme-panel .cz-custom {
+  background:#f5f5f5 !important;
+  color:#111 !important;
+  border-color:#dedede !important;
+}
+html:not([data-theme="dark"]) .cz-theme-panel .cz-custom label,
+html:not([data-theme="dark"]) .cz-theme-panel .cz-picker-head { color:#111 !important; }
+html:not([data-theme="dark"]) .cz-theme-panel .cz-custom output,
+html:not([data-theme="dark"]) .cz-theme-panel .cz-picker-help { color:#555 !important; }
+html:not([data-theme="dark"]) .cz-theme-panel > .segmented {
+  background:#f2f2f2 !important;
+  border-color:#dedede !important;
+}
+html:not([data-theme="dark"]) .cz-theme-panel > .segmented button { color:#444 !important; }
+html:not([data-theme="dark"]) .cz-theme-panel > .segmented button[aria-pressed="true"] {
+  background:#111 !important;
+  color:#fff !important;
+}
+html[data-theme="dark"] .cz-theme-panel .cz-custom {
+  background:#101010 !important;
+  color:#fff !important;
+  border-color:#303030 !important;
+}
+html[data-theme="dark"] .cz-theme-panel .cz-custom label,
+html[data-theme="dark"] .cz-theme-panel .cz-picker-head { color:#fff !important; }
+html[data-theme="dark"] .cz-theme-panel .cz-custom output,
+html[data-theme="dark"] .cz-theme-panel .cz-picker-help { color:#bbb !important; }
+@media (max-width:420px) {
+  .cz-avatar-panel > .cz-row { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+  .cz-avatar-panel > .cz-row > .btn,
+  .cz-avatar-panel > .cz-row > label.btn { padding:8px 6px; font-size:12px; }
+  .cz-avatar-panel > .cz-chips { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .cz-avatar-panel > form.cz-row { grid-template-columns:minmax(0,1fr); }
+  .cz-avatar-panel > form.cz-row .btn { width:100%; }
+}
+
 </style>
 
 <style id="admin-responsive-polish">
