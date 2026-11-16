@@ -81,7 +81,7 @@
   /* ---------- palette generator ---------- */
   function build(h, s, base, neutral = false) {
     const c = clamp(s, 0, 100) / 100, W = '#ffffff';
-    const tone = (sat, light) => tone(neutral ? 0 : sat, light);
+    const tone = (sat, light) => hsl(h, neutral ? 0 : sat, light);
 
     // Light: tinted paper background, white cards, a strong readable accent.
     const bgS = 14 + 20 * c;
@@ -91,7 +91,7 @@
     let aL = pL, accent = primary;
     while (contrast(accent, accentSoft) < 4.8 && aL > 10) { aL -= 1; accent = tone(s, aL); }
     const bg = tone(bgS, 96), surface2 = tone(bgS + 3, 93);
-    const ink = tone(20 + 8 * c, 15), inkRGB = hsl2rgb(h, 30, 15).join(' ');
+    const ink = tone(20 + 8 * c, 15), inkRGB = hsl2rgb(h, neutral ? 0 : 30, 15).join(' ');
     const light = {
       bg, surface: W, surface2, surfaceWarm: mix('#f4f0e6', bg, .4),
       ink, inkSoft: tone(14 + 4 * c, 24), muted: tone(8 + 6 * c, 37),
