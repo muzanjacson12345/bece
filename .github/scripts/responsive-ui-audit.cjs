@@ -100,6 +100,7 @@ async function main() {
             route.screen,
             { timeout: 30000 }
           );
+          await page.locator('#ann-pop button').filter({ hasText: 'Got it' }).click({ timeout: 1500 }).catch(() => {});
           if (route.screen === 'friends') {
             try {
               await page.waitForFunction(() => {
