@@ -81,7 +81,7 @@
   /* ---------- palette generator ---------- */
   function build(h, s, base, neutral = false, customShade = false) {
     const c = clamp(s, 0, 100) / 100, W = '#ffffff';
-    const tone = (sat, light) => hsl(h, neutral ? 0 : sat, light);
+    const tone = (sat, light) => hsl(h, neutral ? 0 : (customShade ? sat * c : sat), light);
 
     // Light: tinted paper background, white cards, a strong readable accent.
     const bgS = 14 + 20 * c;
@@ -110,15 +110,15 @@
     };
 
     // Dark: deep tinted background, slightly lighter cards, a soft pastel accent for text.
-    const dS = customShade ? clamp(s * .55, 0, 55) : 12 + 16 * c, dSoft = tone(22 + 16 * c, 19);
+    const dS = customShade ? 55 : 12 + 16 * c, dSoft = tone(22 + 16 * c, 19);
     // Keep the dark palette tied to the user's actual picker brightness, not the
     // light-mode contrast-corrected value. This makes the same selection visibly
     // recolour dark backgrounds, cards and buttons too.
-    let dL = customShade ? clamp(42 + chosenL * .24, 42, 66) : 42, dPrimary = tone(26 + 30 * c, dL);
+    let dL = customShade ? clamp(30 + chosenL * .42, 30, 72) : 42, dPrimary = tone(26 + 30 * c, dL);
     while (contrast(dPrimary, W) < 4.6 && dL > 14) { dL -= 1; dPrimary = tone(26 + 30 * c, dL); }
     let xL = customShade ? clamp(70 + chosenL * .22, 70, 92) : 74, dAccent = tone(34 + 22 * c, xL);
     while (contrast(dAccent, dSoft) < 6 && xL < 94) { xL += 1; dAccent = tone(34 + 22 * c, xL); }
-    const darkBgL = customShade ? clamp(3 + chosenL * .19, 3, 22) : 8;
+    const darkBgL = customShade ? clamp(2 + chosenL * .24, 2, 26) : 8;
     const dbg = tone(dS, darkBgL);
     const dark = {
       onPrimary: contrast(dPrimary, '#ffffff') >= contrast(dPrimary, '#111111') ? '#ffffff' : '#111111',
