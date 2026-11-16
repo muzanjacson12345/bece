@@ -7282,6 +7282,68 @@ const socialExtras = [
 if(socialExtras.length!==100)throw Error('Social extras count '+socialExtras.length);
 addExtraBank('social','soc',socialExtras,101);
 
+
+const artsConcepts = [
+['Elements of Art','Which element is the path made by a moving point?','Which element can show direction and outline in a drawing?','Line',['Texture','Colour','Form'],'A line is a mark with length and direction.'],
+['Elements of Art','Which element describes how a surface feels or appears to feel?','Which element may look rough, smooth, soft or coarse?','Texture',['Space','Shape','Tone'],'Texture describes the surface quality of an artwork.'],
+['Elements of Art','Which element refers to lightness and darkness?','Which element helps an artist show shadows and highlights?','Value (tone)',['Pattern','Movement','Proportion'],'Value describes how light or dark an area appears.'],
+['Elements of Art','Which element is a flat enclosed area?','Which element can be geometric or organic and is two-dimensional?','Shape',['Form','Texture','Space'],'A shape is a two-dimensional enclosed area.'],
+['Elements of Art','Which element describes three-dimensional volume?','Which element gives an object the appearance of a cube or sphere?','Form',['Line','Pattern','Space'],'Form describes three-dimensional volume.'],
+['Elements of Art','What is the area around, between or within objects in an artwork?','Which element helps create depth and distance in a composition?','Space',['Tone','Rhythm','Texture'],'Space refers to areas around, between and within forms.'],
+['Colour Theory','Which is a primary colour in the traditional RYB model?','Which colour cannot be made by mixing other RYB primary colours?','Yellow',['Green','Orange','Purple'],'Red, yellow and blue are primary colours in the traditional RYB model.'],
+['Colour Theory','What colour results from mixing red and yellow paint?','Which secondary colour is made from red plus yellow?','Orange',['Green','Violet','Blue'],'Red and yellow mix to make orange.'],
+['Colour Theory','What colour results from mixing blue and yellow paint?','Which secondary colour is made from blue plus yellow?','Green',['Orange','Violet','Red'],'Blue and yellow mix to make green.'],
+['Colour Theory','What colour results from mixing red and blue paint?','Which secondary colour is made from red plus blue?','Violet',['Green','Orange','Yellow'],'Red and blue mix to make violet or purple.'],
+['Colour Theory','Which group contains warm colours?','Which colours are commonly associated with heat and fire?','Red, orange and yellow',['Blue, green and violet','Black, white and grey','Blue, black and white'],'Reds, oranges and yellows are commonly described as warm colours.'],
+['Colour Theory','Which group contains cool colours?','Which colours are commonly associated with water and coolness?','Blue, green and violet',['Red, orange and yellow','Brown, orange and red','Yellow, orange and white'],'Blues, greens and violets are commonly described as cool colours.'],
+['Colour Theory','What is a tint?','What do you call a colour made lighter by adding white?','A colour mixed with white',['A colour mixed with black','A colour mixed with its complement','A colour with no pigment'],'Adding white makes a tint lighter.'],
+['Colour Theory','What is a shade in colour theory?','What do you call a colour made darker by adding black?','A colour mixed with black',['A colour mixed with white','A colour mixed with water only','A colour with added texture'],'Adding black makes a shade darker.'],
+['Colour Theory','What is a monochromatic colour scheme?','Which colour scheme uses one hue with different lightness levels?','Different values of one hue',['Only opposite colours','Every colour in equal amounts','Only primary colours'],'Monochromatic schemes use one hue with variations in value.'],
+['Principles of Design','Which principle creates equal visual weight on both sides of a design?','Which principle helps a composition feel stable and evenly arranged?','Balance',['Contrast','Emphasis','Texture'],'Balance distributes visual weight in a stable way.'],
+['Principles of Design','Which principle makes one part of an artwork stand out?','Which principle directs attention to a focal point?','Emphasis',['Unity','Pattern','Proportion'],'Emphasis makes an area or object attract attention.'],
+['Principles of Design','Which principle refers to the size relationship between parts?','Which principle helps elements look correctly related in size?','Proportion',['Rhythm','Texture','Contrast'],'Proportion concerns the size relationship between parts.'],
+['Principles of Design','Which principle creates visual difference between elements?','Which principle can use light and dark to make forms stand out?','Contrast',['Unity','Repetition','Harmony'],'Contrast uses differences to create interest and clarity.'],
+['Principles of Design','Which principle makes different parts of an artwork feel connected?','Which principle gives a composition a sense of wholeness?','Unity',['Distortion','Isolation','Randomness'],'Unity creates a sense that the parts belong together.'],
+['Drawing','Which tool is suitable for light preliminary drawing lines?','Which pencil grade is commonly used for general sketching?','HB pencil',['Permanent marker','Chisel','Paint roller'],'An HB pencil makes moderate marks that can be adjusted or erased.'],
+['Drawing','What is shading used for in drawing?','Which technique helps show light, shadow and volume?','Shading',['Weaving','Measuring sound','Cutting paper'],'Shading helps represent depth, form and the direction of light.'],
+['Drawing','What is a still life drawing?','Which drawing shows arranged objects such as fruit or bottles?','A drawing of arranged inanimate objects',['A moving dance','A map of a country','A portrait of a crowd'],'Still life focuses on inanimate objects.'],
+['Drawing','What is a portrait?','Which artwork represents a particular person?','An artwork representing a person',['A landscape map','A repeated pattern','A picture of buildings only'],'A portrait represents a person.'],
+['Drawing','Which technique uses small dots to build tone?','What is the name of drawing with carefully placed dots?','Stippling',['Blending','Collage','Carving'],'Stippling creates tone and texture through dots.'],
+['Drawing','What is a landscape artwork mainly about?','Which artwork represents scenery such as hills, rivers and sky?','Scenery such as land, sky and natural features',['A person’s face only','A bowl of fruit only','A machine part only'],'Landscape art represents outdoor scenery.'],
+['Drawing','What is the foreground in a picture?','Which part of a composition appears nearest to the viewer?','The part that appears nearest to the viewer',['The part farthest away','The title below the image','The frame around the picture'],'The foreground is the front area of a composition.'],
+['Drawing','What is perspective used to create?','Which drawing method gives a flat picture an illusion of depth?','An illusion of depth on a flat surface',['A stronger glue','A brighter sound','A thicker sheet of paper'],'Perspective represents three-dimensional space on a flat surface.'],
+['Textiles','What is weaving?','Which process interlaces warp and weft yarns to make fabric?','Interlacing two sets of yarns at right angles',['Joining paper with glue','Shaping clay on a wheel','Carving wood'],'Weaving interlaces warp and weft yarns to make cloth.'],
+['Textiles','What are warp threads?','Which threads run lengthwise and are held under tension on a loom?','Threads running lengthwise on a loom',['Threads running across the fabric','Loose stuffing fibres','Decorative beads'],'Warp threads run lengthwise on a loom.'],
+['Textiles','What are weft threads?','Which threads pass across the warp during weaving?','Threads woven across the warp',['Threads running lengthwise only','The frame of a loom','A type of dye'],'Weft threads pass across the warp.'],
+['Textiles','What is tie-dye?','Which process ties sections of cloth before dyeing to make patterns?','A method of tying fabric before dyeing',['A method of carving wood','A way of joining metal','A type of paper folding'],'Tied sections resist dye and create patterns.'],
+['Textiles','What is batik traditionally made with?','Which textile process uses wax to resist dye?','Wax and dye on fabric',['Chalk on stone','Clay and sawdust','Metal wire and glass'],'Wax resists dye in selected areas to form patterns.'],
+['Textiles','What is embroidery?','Which technique decorates fabric using needle and thread?','Decorating fabric with stitches',['Printing a photograph','Making a clay pot','Weaving a basket'],'Embroidery uses stitches to decorate fabric.'],
+['Textiles','What is a garment pattern?','Which template guides the cutting of fabric pieces before sewing?','A template used to cut fabric pieces',['A finished button','A sewing machine motor','A type of dye'],'A pattern guides cutting fabric pieces for a garment.'],
+['Textiles','What is seam allowance?','What is the extra fabric between a cut edge and stitching line?','Extra fabric left beside a seam for stitching',['The width of a button','The length of a zip','The colour of thread'],'Seam allowance is the fabric left for stitching.'],
+['Crafts','Which material is commonly used for modelling pottery?','Which material can be shaped while moist and hardened by firing?','Clay',['Cotton thread','Glass paper','Cardboard only'],'Clay can be shaped while moist and hardened by firing.'],
+['Crafts','What is a sculpture?','Which art form has physical three-dimensional form?','A three-dimensional artwork',['A flat written essay','A sound recording','A two-dimensional graph'],'Sculpture has physical form and can be viewed from different directions.'],
+['Crafts','Which process removes material from wood to create a form?','Which technique shapes wood by cutting away unwanted parts?','Carving',['Weaving','Dyeing','Stitching'],'Carving shapes wood by removing material.'],
+['Crafts','What is papier-mâché made from?','Which craft material combines paper with paste or glue?','Paper pieces or pulp mixed with adhesive',['Metal filings and oil','Clay and glass','Wool and wax'],'Papier-mâché uses paper and adhesive to build shapes.'],
+['Crafts','What is casting in sculpture?','Which process pours material into a mould to form an object?','Pouring a material into a mould',['Drawing with a ruler','Joining fabric with thread','Printing a design'],'Casting forms objects in a mould.'],
+['Music','What is rhythm in music?','Which musical feature organises sounds and silences in time?','The pattern of sounds and silences in time',['The loudness only','The colour of an instrument','The shape of a stage'],'Rhythm organises musical sounds and silences through time.'],
+['Music','What is tempo?','Which musical term describes how fast or slow a piece is played?','The speed of a piece of music',['The pitch of the highest note','The size of an instrument','The words of a song'],'Tempo describes the speed of music.'],
+['Music','What is pitch?','Which feature tells whether a sound is high or low?','How high or low a sound is',['How long a song lasts','How loudly people clap','How large a drum is'],'Pitch describes the perceived highness or lowness of a sound.'],
+['Music','What do dynamics refer to in music?','Which musical feature indicates loud and soft performance?','Variations in loudness',['The number of performers','The colour of costumes','The length of a stage'],'Dynamics indicate how loudly or softly music is performed.'],
+['Music','Which instrument belongs to the percussion family?','Which instrument produces sound when its surface is struck?','Drum',['Flute','Trumpet','Violin'],'A drum is a percussion instrument.'],
+['Dance and Drama','What is choreography?','Which activity plans and arranges movements for a dance?','The planned arrangement of dance movements',['The painting of scenery','The tuning of a drum','The sewing of costumes'],'Choreography organises movements into a dance.'],
+['Dance and Drama','What is a dance formation?','Which term describes how dancers are positioned in a group?','The arrangement of dancers in space',['The colour of stage lights','The sound of a drum','The name of a teacher'],'Formation describes dancers’ positions relative to one another.'],
+['Dance and Drama','What is improvisation in dance?','Which approach creates movements spontaneously?','Creating movements spontaneously',['Repeating only a fixed script','Repairing a stage','Painting a backdrop'],'Improvisation involves creating movement in the moment.'],
+['Dance and Drama','What is a script?','Which written document contains dialogue and directions for a play?','The written text and directions for a play',['A stage light','A costume rack','A ticket list'],'A script contains dialogue and often performance directions.'],
+['Dance and Drama','What is dialogue?','What is the spoken conversation between characters called?','Conversation between characters',['A silent costume change','A stage curtain','A lighting effect'],'Dialogue is the spoken exchange between characters.']
+];
+const artsExtras=[];
+artsConcepts.forEach((r,i)=>{
+  artsExtras.push([r[0],r[1],r[3],r[4],r[5]]);
+  artsExtras.push([r[0],r[2],r[3],[r[4][2],r[4][1],r[4][0]],r[5]]);
+});
+if(artsExtras.length!==100)throw Error('Arts extras count '+artsExtras.length);
+addExtraBank('arts','art',artsExtras,101);
+
 const questionIndex = new Map();
 for (const subject of ['social', 'arts', 'maths', 'computing', 'rme', 'integratedScience']) for (const q of questionsDB[subject]) questionIndex.set(q.id, { ...q, subject });
 
