@@ -9249,6 +9249,13 @@ const ACHIEVEMENTS = [
   { id:'french-starter',icon:'🇫🇷',title:'Bonjour!',detail:'Answer 10 French questions',metric:'fre',target:10,group:'Subject explorer' },
   { id:'french-learner',icon:'🗣️',title:'French Learner',detail:'Answer 50 French questions',metric:'fre',target:50,group:'Subject explorer' },
   { id:'french-confident',icon:'📘',title:'French Confidence',detail:'Answer 100 French questions',metric:'fre',target:100,group:'Subject explorer' },
+  { id:'ga-starter',icon:'🗣️',title:'Ga Starter',detail:'Answer 10 Ga Language questions',metric:'ga',target:10,group:'Subject explorer' },
+  { id:'ga-learner',icon:'📚',title:'Ga Learner',detail:'Answer 50 Ga Language questions',metric:'ga',target:50,group:'Subject explorer' },
+  { id:'ga-confident',icon:'🌟',title:'Ga Confidence',detail:'Answer 100 Ga Language questions',metric:'ga',target:100,group:'Subject explorer' },
+  { id:'career-starter',icon:'🛠️',title:'Career Technology Starter',detail:'Answer 10 Career Technology questions',metric:'ct',target:10,group:'Subject explorer' },
+  { id:'career-learner',icon:'📐',title:'Career Technology Learner',detail:'Answer 50 Career Technology questions',metric:'ct',target:50,group:'Subject explorer' },
+  { id:'career-master',icon:'🏅',title:'Career Technology Master',detail:'Answer 100 Career Technology questions',metric:'ct',target:100,group:'Subject explorer' },
+  { id:'all-nine-subjects',icon:'🌐',title:'Nine-Subject Explorer',detail:'Practise all 9 available subjects',metric:'subjects',target:9,group:'Subject explorer' },
   // Perfect quizzes
   { id:'perfect-round',icon:'💎',title:'Perfect Round',detail:'Finish a quiz with every answer correct',metric:'perfect',target:1,group:'Perfect quizzes' },
   { id:'perfect-5',icon:'✨',title:'Flawless Five',detail:'Complete 5 perfect quizzes',metric:'perfect',target:5,group:'Perfect quizzes' },
@@ -9355,7 +9362,16 @@ App.on('quiz:finished', async ev => {
     achievementStats.correct = (achievementStats.correct || 0) + (ev.correct || 0);
     achievementStats.quizzes = (achievementStats.quizzes || 0) + 1;
     if (Object.keys(ev.answers || {}).length > 0 && ev.correct === Object.keys(ev.answers || {}).length) achievementStats.perfect = (achievementStats.perfect || 0) + 1;
-    achievementStats.sci = (achievementStats.sci || 0) + ev.questionIds.filter(id => id.startsWith('sci-')).length;
+    const subjectMetrics = {};
+    ev.questionIds.forEach(id => {
+      const q = App.questionById(id);
+      if (!q) return;
+      const metric = q.subject === 'ga' ? 'ga' : q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
+      subjectMetrics[metric] = (subjectMetrics[metric] || 0) + 1;
+    });
+    Object.entries(subjectMetrics).forEach(([metric, count]) => {
+      achievementStats[metric] = (achievementStats[metric] || 0) + count;
+    });
     const achievementUnlocked = [...(previousAchievements.unlocked || [])];
     ACHIEVEMENTS.forEach(a => {
       const value = a.metric === 'subjects' ? achievementSubjects.length : a.metric === 'streak' ? streak : Number(achievementStats[a.metric] || 0);
