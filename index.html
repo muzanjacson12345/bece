@@ -1887,6 +1887,51 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   .duel-create-pane { padding: 16px 10px; gap: 16px; }
   .duel-create-pane .duel-seg button { flex-basis: 82px; padding-inline: 8px; }
 }
+
+/* Give Join with code the same centered, balanced setup as Create a duel. */
+.duel-join-pane {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 20px 16px;
+  text-align: center;
+}
+.duel-join-pane > p {
+  width: min(100%, 390px);
+  margin: 0 auto;
+  line-height: 1.55;
+  text-align: center;
+}
+.duel-join-pane > .button-row,
+.duel-join-pane > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 440px);
+  margin: 0 auto;
+}
+.duel-join-pane .duel-in {
+  flex: 1 1 220px;
+  width: 100%;
+  max-width: 320px;
+  min-width: 0;
+  text-align: center;
+  letter-spacing: .2em;
+}
+.duel-join-pane button {
+  flex: 0 1 140px;
+  min-width: 120px;
+  min-height: 44px;
+}
+@media (max-width: 420px) {
+  .duel-join-pane { padding: 16px 10px; gap: 14px; }
+  .duel-join-pane > .button-row,
+  .duel-join-pane > div { flex-direction: column; }
+  .duel-join-pane .duel-in,
+  .duel-join-pane button { width: min(100%, 320px); max-width: 320px; flex: none; }
+}
 </style>
 
 </head>
@@ -8564,7 +8609,7 @@ const Duel = (() => {
     const modes = o('div', 'duel-modes'); modes.append(D.mb.open, D.mb.create, D.mb.join);
     D.pOpen = o('div', 'duel-pane'); D.pOpen.append(D.list);
     D.pCreate = o('div', 'duel-pane duel-create-pane'); D.pCreate.append(sw, seg('Questions', LENS, 'len', v => String(v)), seg('Time per question', TIMES, 'secs', v => v + 's'), vis, hint, btn('Create duel', 'btn-primary btn-block', create));
-    D.pJoin = o('div', 'duel-pane'); D.pJoin.append(o('p', 'muted', 'Got a code from a friend? Enter it to jump straight in.'), row(inp, btn('Join', 'btn-primary btn-sm', () => join(inp.value))));
+    D.pJoin = o('div', 'duel-pane duel-join-pane'); D.pJoin.append(o('p', 'muted', 'Got a code from a friend? Enter it to jump straight in.'), row(inp, btn('Join', 'btn-primary btn-sm', () => join(inp.value))));
     const c = o('section', 'card duel-card'); c.append(tiles, modes, D.pOpen, D.pCreate, D.pJoin);
     D.card = c; mode(); paint(); return c;
   }
