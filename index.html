@@ -1831,6 +1831,64 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
 </style>
 
+
+<style id="duel-create-layout-polish">
+/* Keep the Create a duel setup visually aligned with the rest of BECE Hub. */
+.duel-create-pane {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 20px 16px;
+  text-align: center;
+}
+.duel-create-pane > .duel-field {
+  width: min(100%, 440px);
+  justify-items: center;
+  gap: 9px;
+}
+.duel-create-pane .duel-lbl {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: .78rem;
+  letter-spacing: .09em;
+}
+.duel-create-pane .duel-sel {
+  width: min(100%, 380px);
+  min-width: 0;
+  text-align: center;
+  text-align-last: center;
+}
+.duel-create-pane .duel-seg {
+  width: 100%;
+  justify-content: center;
+  gap: 8px;
+}
+.duel-create-pane .duel-seg button {
+  flex: 1 1 90px;
+  max-width: 150px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 12px;
+}
+.duel-create-pane .duel-hint {
+  width: min(100%, 390px);
+  margin: -6px auto 0;
+  text-align: center;
+  line-height: 1.55;
+}
+.duel-create-pane > .btn-block {
+  width: min(100%, 320px);
+  justify-self: center;
+  margin: 2px auto 0;
+  min-height: 46px;
+}
+@media (max-width: 420px) {
+  .duel-create-pane { padding: 16px 10px; gap: 16px; }
+  .duel-create-pane .duel-seg button { flex-basis: 82px; padding-inline: 8px; }
+}
+</style>
+
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -8505,7 +8563,7 @@ const Duel = (() => {
     D.mb = { open: mk('open', 'Open'), create: mk('create', 'Create'), join: mk('join', 'Join code') };
     const modes = o('div', 'duel-modes'); modes.append(D.mb.open, D.mb.create, D.mb.join);
     D.pOpen = o('div', 'duel-pane'); D.pOpen.append(D.list);
-    D.pCreate = o('div', 'duel-pane'); D.pCreate.append(sw, seg('Questions', LENS, 'len', v => String(v)), seg('Time per question', TIMES, 'secs', v => v + 's'), vis, hint, btn('Create duel', 'btn-primary btn-block', create));
+    D.pCreate = o('div', 'duel-pane duel-create-pane'); D.pCreate.append(sw, seg('Questions', LENS, 'len', v => String(v)), seg('Time per question', TIMES, 'secs', v => v + 's'), vis, hint, btn('Create duel', 'btn-primary btn-block', create));
     D.pJoin = o('div', 'duel-pane'); D.pJoin.append(o('p', 'muted', 'Got a code from a friend? Enter it to jump straight in.'), row(inp, btn('Join', 'btn-primary btn-sm', () => join(inp.value))));
     const c = o('section', 'card duel-card'); c.append(tiles, modes, D.pOpen, D.pCreate, D.pJoin);
     D.card = c; mode(); paint(); return c;
