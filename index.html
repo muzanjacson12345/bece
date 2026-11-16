@@ -8500,33 +8500,64 @@ function renderAccount() {
   e.setAttribute('aria-label', `${m.displayName}, level ${lv(m.totalExp).level}, ${m.totalExp} EXP. Open the friends board`);
   e.onclick = () => App.navigate('friends');
 }
+const CHALLENGE_POOL = (() => {
+  const groups = [
+    ['answered', [5,  8, 10, 12, 15, 20, 25], 'Question explorer', n => 'Answer ' + n + ' questions in your practice sessions', '✍️'],
+    ['correct', [3, 5, 8, 10, 12, 15, 20], 'Accuracy builder', n => 'Get ' + n + ' answers correct', '🎯'],
+    ['quizzes', [1, 2, 3, 4], 'Keep the momentum', n => 'Finish ' + n + ' practice ' + (n === 1 ? 'quiz' : 'quizzes'), '🏁'],
+    ['subjects', [2, 3, 4, 5], 'Subject explorer', n => 'Practise questions from ' + n + ' different subjects', '📚'],
+    ['perfect', [1, 2, 3], 'Flawless round', n => 'Complete ' + n + ' quiz' + (n === 1 ? '' : 'zes') + ' with every answer correct', '⭐'],
+    ['longQuiz', [1, 2, 3], 'Go the distance', n => 'Complete ' + n + ' quiz' + (n === 1 ? '' : 'zes') + ' with at least 10 questions', '🚀'],
+    ['mixed', [1, 2, 3], 'Mix it up', n => 'Complete ' + n + ' quiz' + (n === 1 ? '' : 'zes') + ' covering 3 or more subjects', '🌈'],
+    ['soc', [4, 6, 8, 10], 'Social Studies focus', n => 'Answer ' + n + ' Social Studies questions', '🌍'],
+    ['art', [3, 5, 7, 9], 'Creative mind', n => 'Answer ' + n + ' Creative Arts questions', '🎨'],
+    ['mat', [4, 6, 8, 10, 12], 'Maths practice', n => 'Answer ' + n + ' Mathematics questions', '➗'],
+    ['com', [3, 5, 7, 9], 'Computing practice', n => 'Answer ' + n + ' Computing questions', '💻'],
+    ['rme', [3, 5, 7, 9], 'Values in action', n => 'Answer ' + n + ' RME questions', '🤝']
+  ];
+  const out = [];
+  groups.forEach(([metric, targets, title, detail, icon]) => targets.forEach(target => {
+    out.push({ id: metric + '-' + target, metric, target, title, detail: detail(target), icon, reward: 12 + Math.min(24, Math.ceil(target * 1.5)) });
+  }));
+  return out;
+})();
+function challengeHash(value) {
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i++) { h ^= value.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function dailyChallengeSet(day) {
+  const pool = CHALLENGE_POOL.slice();
+  let seed = challengeHash('bece-challenges-' + day);
+  for (let i = pool.length - 1; i > 0; i--) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    const j = seed % (i + 1); [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 3);
+}
 function renderDaily() {
   const e = $('daily-card'); if (!e) return; e.replaceChildren();
   const d = S.doc || {}, day = today();
-  const state = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, answered: 0, correct: 0, quizzes: 0, claimed: [] };
-  const tasks = [
-    { id: 'questions', title: 'Warm up', detail: 'Answer 10 questions in any practice quiz', target: 10, progress: state.answered || 0, reward: 20, icon: '✍️' },
-    { id: 'accuracy', title: 'Accuracy counts', detail: 'Get 8 questions correct today', target: 8, progress: state.correct || 0, reward: 25, icon: '🎯' },
-    { id: 'quiz', title: 'Finish a round', detail: 'Complete at least one quiz today', target: 1, progress: state.quizzes || 0, reward: 15, icon: '🏁' }
-  ];
-  const claimed = state.claimed || [], done = tasks.filter(t => claimed.includes(t.id)).length;
+  const state = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, progress: {}, claimed: [] };
+  const tasks = dailyChallengeSet(day), progressData = state.progress || {}, claimed = state.claimed || [];
+  const done = tasks.filter(t => claimed.includes(t.id)).length;
   const head = o('div', 'challenge-heading'), info = o('div', 'daily-info');
-  info.append(o('p', 'eyebrow', 'Your missions for today'), o('h2', '', 'Daily Challenges'));
-  info.append(o('p', 'muted', 'Complete these missions during your normal practice and earn bonus EXP.'));
-  const summary = o('div', 'challenge-summary'); summary.append(o('strong', '', `${done}/3`), o('span', '', 'completed'));
+  info.append(o('p', 'eyebrow', '3 fresh missions every day'), o('h2', '', 'Daily Challenges'));
+  info.append(o('p', 'muted', CHALLENGE_POOL.length + ' possible missions. Your three are randomly selected each day, with changing targets and bonus EXP.'));
+  const summary = o('div', 'challenge-summary'); summary.append(o('strong', '', done + '/3'), o('span', '', 'completed'));
   head.append(info, summary);
   const list = o('div', 'challenge-list');
   tasks.forEach(t => {
-    const complete = claimed.includes(t.id), progress = Math.min(t.target, t.progress);
+    const complete = claimed.includes(t.id), current = Number(progressData[t.metric] || 0), progress = Math.min(t.target, current);
     const card = o('article', 'challenge-item' + (complete ? ' is-complete' : ''));
     const top = o('div', 'challenge-top'), name = o('div', 'challenge-name'), copy = o('div');
     name.append(o('span', 'challenge-icon', t.icon)); copy.append(o('strong', '', t.title), o('small', '', t.detail)); name.append(copy);
-    top.append(name, o('span', 'challenge-reward', complete ? '✓ Completed' : `+${t.reward} EXP`));
+    top.append(name, o('span', 'challenge-reward', complete ? '✓ Completed' : '+' + t.reward + ' EXP'));
     const track = o('div', 'challenge-track'), fill = o('span', 'challenge-fill'); fill.style.width = (progress / t.target * 100) + '%'; track.append(fill);
-    const foot = o('div', 'challenge-foot'); foot.append(o('span', '', complete ? 'Reward earned' : `${progress} / ${t.target}`), o('span', '', 'Resets daily'));
+    const foot = o('div', 'challenge-foot'); foot.append(o('span', '', complete ? 'Reward earned' : progress + ' / ' + t.target), o('span', '', 'Resets daily'));
     card.append(top, track, foot); list.append(card);
   });
-  e.append(head, list, o('p', 'challenge-note', !S.db || !S.uid ? 'Sign in to the Friends board to save progress and bonus EXP.' : 'Progress updates automatically when you finish a practice quiz. New challenges arrive tomorrow.'));
+  e.append(head, list, o('p', 'challenge-note', !S.db || !S.uid ? 'Sign in to the Friends board to save progress and bonus EXP.' : 'Only normal practice sessions count. Your missions refresh tomorrow.'));
 }
 App.on('quiz:finished', async ev => {
   const box = $('exp-result'); box.hidden = false;
@@ -8545,12 +8576,31 @@ App.on('quiz:finished', async ev => {
       else { streak = 1; extended = true; }
     }
     const parts = [];
-    const previous = d.challengeState && d.challengeState.day === day ? d.challengeState : { answered: 0, correct: 0, quizzes: 0, claimed: [] };
-    const challengeState = { day, answered: (previous.answered || 0) + Object.keys(ev.answers).length, correct: (previous.correct || 0) + ev.correct, quizzes: (previous.quizzes || 0) + 1, claimed: [...(previous.claimed || [])] };
-    const defs = [{ id: 'questions', target: 10, reward: 20, label: 'Daily challenge: answer 10 questions' }, { id: 'accuracy', target: 8, reward: 25, label: 'Daily challenge: get 8 correct' }, { id: 'quiz', target: 1, reward: 15, label: 'Daily challenge: finish a quiz' }];
-    for (const task of defs) {
-      const value = task.id === 'questions' ? challengeState.answered : task.id === 'accuracy' ? challengeState.correct : challengeState.quizzes;
-      if (value >= task.target && !challengeState.claimed.includes(task.id)) { challengeState.claimed.push(task.id); parts.push({ label: task.label, exp: task.reward }); }
+    const previous = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, progress: {}, claimed: [] };
+    const challengeState = { day, progress: { ...(previous.progress || {}) }, claimed: [...(previous.claimed || [])] };
+    // Daily Quiz sessions are intentionally excluded; only ordinary practice advances these missions.
+    if (ev.kind !== 'daily') {
+      const add = (key, amount) => { challengeState.progress[key] = (challengeState.progress[key] || 0) + amount; };
+      const answeredIds = Object.keys(ev.answers || {}), subjects = new Set(), subjectCounts = {};
+      answeredIds.forEach(id => {
+        const q = App.questionById(id), code = id.slice(0, 3);
+        if (q) { subjects.add(code); subjectCounts[code] = (subjectCounts[code] || 0) + 1; }
+      });
+      add('answered', answeredIds.length);
+      add('correct', ev.correct || 0);
+      add('quizzes', 1);
+      subjects.forEach(code => add('subjects', 1));
+      if (answeredIds.length > 0 && ev.correct === answeredIds.length) add('perfect', 1);
+      if ((ev.total || answeredIds.length) >= 10) add('longQuiz', 1);
+      if (subjects.size >= 3) add('mixed', 1);
+      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme'].includes(code)) add(code, count); });
+      dailyChallengeSet(day).forEach(task => {
+        const value = challengeState.progress[task.metric] || 0;
+        if (value >= task.target && !challengeState.claimed.includes(task.id)) {
+          challengeState.claimed.push(task.id);
+          parts.push({ label: 'Daily challenge: ' + task.detail, exp: task.reward });
+        }
+      });
     }
     const bonusExp = parts.reduce((a, p) => a + p.exp, 0);
     const xpMult = (d.xpBoost || 0) > 0 ? 2 : 1;
