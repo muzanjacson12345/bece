@@ -1612,13 +1612,13 @@ html[data-theme='dark'] .bug-chip[data-s='done'] { background: #1d3a27; color: #
 .adm-bar { grid-template-columns: minmax(76px, 112px) minmax(0, 1fr) 34px; }
 @media (min-width: 900px) {
   .adm { padding: 24px; gap: 18px; }
-  .adm-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px; }
-  .adm-body > .adm-card { margin-top: 0; }
-  .adm-body > .adm-card:first-child,
-  .adm-body > .adm-list,
-  .adm-body > .adm-two,
-  .adm-body > .adm-search { grid-column: 1 / -1; }
-  .adm-body > .adm-card:has(.adm-list) { grid-column: 1 / -1; }
+  .adm-body > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px; }
+  .adm-body > div > .adm-card { margin-top: 0; }
+  .adm-body > div > .adm-card:first-child,
+  .adm-body > div > .adm-list,
+  .adm-body > div > .adm-two,
+  .adm-body > div > .adm-search { grid-column: 1 / -1; }
+  .adm-body > div > .adm-card:has(.adm-list) { grid-column: 1 / -1; }
 }
 @media (max-width: 760px) {
   .adm { padding: 12px; gap: 10px; border-radius: 14px; }
