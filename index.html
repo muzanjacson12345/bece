@@ -498,6 +498,7 @@ html[data-theme='dark'] #theme-toggle .icon-moon { display: none; }
 .snap-tile span { font-size: 13px; color: var(--muted); }
 
 .daily-card { display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: center; padding: 28px 30px; margin: 0 0 56px; border-radius: var(--radius); background: linear-gradient(120deg, var(--accent-soft), var(--surface) 70%); border: 1px solid var(--line); box-shadow: var(--shadow); scroll-margin-top: calc(var(--nav-h) + 16px); }
+.challenge-card{display:block}.challenge-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px}.challenge-heading .daily-info{min-width:0}.challenge-heading h2{margin:0 0 8px}.challenge-summary{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:112px;padding:14px 18px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--line)}.challenge-summary strong{color:var(--accent);font:700 30px/1.1 var(--sans)}.challenge-summary span{color:var(--muted);font-size:12px;text-align:center}.challenge-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.challenge-item{min-width:0;padding:16px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--line)}.challenge-item.is-complete{border-color:var(--accent)}.challenge-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-height:62px}.challenge-name{display:flex;align-items:flex-start;gap:9px;min-width:0}.challenge-icon{font-size:22px;line-height:1.2}.challenge-name strong,.challenge-name small{display:block}.challenge-name strong{font-size:14px}.challenge-name small{color:var(--muted);font-size:12px;line-height:1.4;margin-top:4px}.challenge-reward{color:var(--accent);font-size:11px;font-weight:700;white-space:nowrap}.challenge-track{height:7px;border-radius:99px;overflow:hidden;background:var(--surface-2);margin:12px 0 8px}.challenge-fill{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .25s ease}.challenge-foot{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.challenge-note{margin:16px 0 0;color:var(--muted);font-size:13px}@media(max-width:760px){.challenge-list{grid-template-columns:1fr}.challenge-item{padding:14px}.challenge-top{min-height:0}}@media(max-width:420px){.challenge-heading{gap:10px}.challenge-summary{min-width:88px;padding:10px}.challenge-summary strong{font-size:25px}}
 .daily-card h2 { font: 600 clamp(22px, 2.8vw, 28px)/1.25 var(--sans); letter-spacing: -.02em; margin-bottom: 8px; }
 .daily-card .muted { max-width: 580px; }
 .daily-bonus { font-size: 14px; color: var(--accent); font-weight: 600; margin-top: 10px; }
@@ -2853,7 +2854,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <p class="lead">Your BECE revision space for Social Studies, Creative Arts, Mathematics, Computing and RME. Understand the ideas, practise them, and learn from every answer.</p>
         <div class="hero-actions">
           <button class="btn btn-primary btn-lg" type="button" data-action="quick-practice">Start a quick practice <svg class="icon"><use href="#i-arrow"/></svg></button>
-          <a class="btn btn-ghost btn-lg" href="#daily-card">Today’s daily quiz</a>
+          <a class="btn btn-ghost btn-lg" href="#daily-card">Today’s challenges</a>
           <a class="btn btn-ghost btn-lg" href="#/friends" data-open-duels>⚔️ Duel a friend</a>
         </div>
         <p class="caption">5 mixed questions · instant explanations</p>
@@ -2866,7 +2867,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
     <section id="my-snapshot" class="snapshot" aria-label="Your progress on this device"></section>
 
-    <section id="daily-card" class="daily-card" aria-label="Daily quiz" aria-live="polite"></section>
+    <section id="daily-card" class="daily-card challenge-card" aria-label="Daily challenges" aria-live="polite"></section>
 
     <section class="block" aria-labelledby="subjects-title">
       <div class="section-heading">
@@ -2965,7 +2966,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <details><summary>Which study mode should I choose?</summary><p>Practice mode explains each answer as you go. Timed mock mode gives you 40 seconds per question across the whole quiz and saves feedback until you finish. Start with practice when a topic is new.</p></details>
       <details><summary>What is included in the revision library?</summary><p>Social Studies and Creative Arts topics organised by JHS level. Each note combines explanations, key points and, where available, comparison tables, memory aids and quick checks. It is a focused revision resource rather than a complete BECE subject collection.</p></details>
       <details><summary>How do essay answers and scores work?</summary><p>Essays are for self-assessment: write your response, then compare it with the practice answer guide. Your drafts are saved in this browser automatically. Quiz percentages describe a practice attempt; they are not an official BECE grade.</p></details>
-      <details><summary>How do EXP and streaks work?</summary><p>Log in and every correct answer earns 10 EXP (each question counts once per day). The daily quiz adds bonus EXP, and finishing any quiz each day keeps your streak alive. Your recent scores, bookmarks and essay drafts stay in this browser.</p></details>
+      <details><summary>How do EXP and streaks work?</summary><p>Log in and every correct answer earns 10 EXP (each question counts once per day). Daily challenges award bonus EXP, and finishing any quiz each day keeps your streak alive. Your recent scores, bookmarks and essay drafts stay in this browser.</p></details>
     </section>
 
     <footer class="site-footer"><span>Learn at your pace. You’ve got this.</span><button type="button" class="foot-bug" id="bug-open">🐞 Report a bug</button><span class="serif-note">Made for your next chapter ↗</span></footer>
@@ -3207,7 +3208,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
     <div class="page-intro">
       <p class="eyebrow">Learn together</p>
       <h1>Your study circle.</h1>
-      <p class="muted">Earn 10 EXP for every correct answer, take the daily quiz for bonus EXP, and keep your streak alive by finishing a quiz every day.</p>
+      <p class="muted">Earn 10 EXP for every correct answer, complete daily challenges for bonus EXP, and keep your streak alive by finishing a quiz every day.</p>
     </div>
     <div id="friends-body"></div>
   </div>
@@ -8464,7 +8465,7 @@ onRouteChange();
 </script>
 <script type="module">
 const App = window.App, o = App.el, $ = id => document.getElementById(id);
-const LVL = 200, BONUS = { completion: 20, perfect: 20, perStreakDay: 5, streakCap: 25 };
+const LVL = 200;
 const SUBJ = { soc: 'Social Studies', art: 'Creative Arts', mat: 'Mathematics', com: 'Computing', rme: 'Religious & Moral Education' };
 const today = () => new Date().toISOString().slice(0, 10);
 const weekStart = () => { const d = new Date(), k = (d.getUTCDay() + 6) % 7; return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - k)).toISOString().slice(0, 10); };
@@ -8472,18 +8473,11 @@ const yesterday = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
 const lv = e => ({ level: Math.floor(e / LVL) + 1, into: e % LVL });
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const ago = t => { const s = Math.max(0, (Date.now() - t) / 1e3); return s < 60 ? 'just now' : s < 3600 ? `${Math.floor(s / 60)}m ago` : s < 86400 ? `${Math.floor(s / 3600)}h ago` : `${Math.floor(s / 86400)}d ago`; };
-const S = { board: 'day', db: null, user: null, uid: null, doc: null, players: [], names: {}, daily: null, ready: false, admins: new Set(), badgeMap: new Map(), adminAt: 0, pinFails: 0, pinLock: 0, bans: new Map(), isAdmin: false, banned: false, ann: null };
+const S = { board: 'day', db: null, user: null, uid: null, doc: null, players: [], names: {}, ready: false, admins: new Set(), badgeMap: new Map(), adminAt: 0, pinFails: 0, pinLock: 0, bans: new Map(), isAdmin: false, banned: false, ann: null };
 
-function makeDaily() {
-  const d = today(); let h = 0; for (const c of d) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  const r = () => (h = (Math.imul(h, 1664525) + 1013904223) >>> 0) / 4294967296;
-  const pick = (a, n) => { const c = [...a], out = []; while (out.length < n && c.length) out.push(c.splice(Math.floor(r() * c.length), 1)[0].id); return out; };
-  const b = typeof questionsDB !== 'undefined' ? questionsDB : {};
-  return { day: d, local: false, questionIds: [...pick(b.social || [], 1), ...pick(b.arts || [], 1), ...pick(b.maths || [], 2), ...pick(b.rme || [], 1)], bonus: BONUS };
-}
 function view() { // the signed-in player's stats as the UI expects them
   const d = S.doc; if (!d) return null;
-  return { displayName: nameOf(S.uid), totalExp: d.totalExp || 0, streak: d.lastDay === today() || d.lastDay === yesterday() ? d.streak || 0 : 0, bestStreak: d.bestStreak || 0, activeToday: d.lastDay === today(), dailyDone: d.dailyDone && d.dailyDone.day === today() ? d.dailyDone : null };
+  return { displayName: nameOf(S.uid), totalExp: d.totalExp || 0, streak: d.lastDay === today() || d.lastDay === yesterday() ? d.streak || 0 : 0, bestStreak: d.bestStreak || 0, activeToday: d.lastDay === today(), };
 }
 function nameOf(id) { const p = S.players.find(x => x.id === id); const d = id === S.uid ? S.doc : p; return (d && d.displayName) || S.names[id] || (id === S.uid ? 'You' : 'Player'); }
 async function loadNames() {
@@ -8508,29 +8502,32 @@ function renderAccount() {
 }
 function renderDaily() {
   const e = $('daily-card'); if (!e) return; e.replaceChildren();
-  const n = S.daily, m = view(), t = o('div', 'daily-info'), r = o('div', 'button-row');
-  t.append(o('p', 'eyebrow', 'Today\u2019s daily quiz'));
-  const st = m ? m.streak : 0, c = o('div', 'daily-streak');
-  c.append(o('strong', '', `\u{1F525} ${st}`), o('span', '', 'day streak'));
-  if (m && !m.activeToday && st) c.append(o('em', '', 'Play today to keep it!'));
-  if (m && m.bestStreak) c.append(o('small', '', `Best: ${m.bestStreak}`));
-  if (m && m.dailyDone) {
-    const i = m.dailyDone;
-    t.append(o('h2', '', 'Daily quiz done \u2713'), o('p', 'muted', `You scored ${i.correct}/${i.total} and earned ${i.exp} EXP. A new set unlocks tomorrow.`));
-    const a = o('button', 'btn btn-primary', 'See the friends board'); a.type = 'button'; a.onclick = () => App.navigate('friends');
-    const b = o('button', 'btn btn-ghost', 'Practise today\u2019s set again'); b.type = 'button'; b.onclick = () => startDaily(false); r.append(a, b);
-  } else {
-    t.append(o('h2', '', 'Five questions. Bonus EXP.'), o('p', 'muted', 'Everyone gets the same five mixed questions today. Finish them to grow your streak and climb the friends board.'),
-      o('p', 'daily-bonus', `+${n.bonus.completion} EXP for finishing \u00B7 +${n.bonus.perfect} for a perfect score \u00B7 +${n.bonus.perStreakDay} per streak day (up to +${n.bonus.streakCap})`));
-    const a = o('button', 'btn btn-primary', 'Start the daily quiz'); a.type = 'button'; a.onclick = () => startDaily(true); r.append(a);
-  }
-  t.append(r); e.append(t, c);
+  const d = S.doc || {}, day = today();
+  const state = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, answered: 0, correct: 0, quizzes: 0, claimed: [] };
+  const tasks = [
+    { id: 'questions', title: 'Warm up', detail: 'Answer 10 questions in any practice quiz', target: 10, progress: state.answered || 0, reward: 20, icon: '✍️' },
+    { id: 'accuracy', title: 'Accuracy counts', detail: 'Get 8 questions correct today', target: 8, progress: state.correct || 0, reward: 25, icon: '🎯' },
+    { id: 'quiz', title: 'Finish a round', detail: 'Complete at least one quiz today', target: 1, progress: state.quizzes || 0, reward: 15, icon: '🏁' }
+  ];
+  const claimed = state.claimed || [], done = tasks.filter(t => claimed.includes(t.id)).length;
+  const head = o('div', 'challenge-heading'), info = o('div', 'daily-info');
+  info.append(o('p', 'eyebrow', 'Your missions for today'), o('h2', '', 'Daily Challenges'));
+  info.append(o('p', 'muted', 'Complete these missions during your normal practice and earn bonus EXP.'));
+  const summary = o('div', 'challenge-summary'); summary.append(o('strong', '', `${done}/3`), o('span', '', 'completed'));
+  head.append(info, summary);
+  const list = o('div', 'challenge-list');
+  tasks.forEach(t => {
+    const complete = claimed.includes(t.id), progress = Math.min(t.target, t.progress);
+    const card = o('article', 'challenge-item' + (complete ? ' is-complete' : ''));
+    const top = o('div', 'challenge-top'), name = o('div', 'challenge-name'), copy = o('div');
+    name.append(o('span', 'challenge-icon', t.icon)); copy.append(o('strong', '', t.title), o('small', '', t.detail)); name.append(copy);
+    top.append(name, o('span', 'challenge-reward', complete ? '✓ Completed' : `+${t.reward} EXP`));
+    const track = o('div', 'challenge-track'), fill = o('span', 'challenge-fill'); fill.style.width = (progress / t.target * 100) + '%'; track.append(fill);
+    const foot = o('div', 'challenge-foot'); foot.append(o('span', '', complete ? 'Reward earned' : `${progress} / ${t.target}`), o('span', '', 'Resets daily'));
+    card.append(top, track, foot); list.append(card);
+  });
+  e.append(head, list, o('p', 'challenge-note', !S.db || !S.uid ? 'Sign in to the Friends board to save progress and bonus EXP.' : 'Progress updates automatically when you finish a practice quiz. New challenges arrive tomorrow.'));
 }
-function startDaily(bonus) {
-  const qs = S.daily.questionIds.map(i => App.questionById(i)).filter(Boolean); if (!qs.length) return;
-  App.startQuiz({ pool: qs, length: 0, mode: 'practice', kind: bonus ? 'daily' : 'practice', subject: 'mixed', keepOrder: true, label: bonus ? 'Daily quiz \xB7 bonus EXP on completion' : 'Daily set \xB7 practice' });
-}
-
 App.on('quiz:finished', async ev => {
   const box = $('exp-result'); box.hidden = false;
   if (!Object.keys(ev.answers).length) { box.replaceChildren(o('p', 'exp-status', 'Answer at least one question to earn EXP.')); return; }
@@ -8548,12 +8545,12 @@ App.on('quiz:finished', async ev => {
       else { streak = 1; extended = true; }
     }
     const parts = [];
-    let dailyDone = d.dailyDone;
-    if (ev.kind === 'daily' && !(dailyDone && dailyDone.day === day)) {
-      parts.push({ label: 'Daily quiz finished', exp: BONUS.completion });
-      if (ev.correct === ev.total) parts.push({ label: 'Perfect score', exp: BONUS.perfect });
-      parts.push({ label: `${plural(streak, 'day')} streak`, exp: Math.min(streak * BONUS.perStreakDay, BONUS.streakCap) });
-      dailyDone = { day, correct: ev.correct, total: ev.total, exp: fresh * 10 + parts.reduce((a, p) => a + p.exp, 0) };
+    const previous = d.challengeState && d.challengeState.day === day ? d.challengeState : { answered: 0, correct: 0, quizzes: 0, claimed: [] };
+    const challengeState = { day, answered: (previous.answered || 0) + Object.keys(ev.answers).length, correct: (previous.correct || 0) + ev.correct, quizzes: (previous.quizzes || 0) + 1, claimed: [...(previous.claimed || [])] };
+    const defs = [{ id: 'questions', target: 10, reward: 20, label: 'Daily challenge: answer 10 questions' }, { id: 'accuracy', target: 8, reward: 25, label: 'Daily challenge: get 8 correct' }, { id: 'quiz', target: 1, reward: 15, label: 'Daily challenge: finish a quiz' }];
+    for (const task of defs) {
+      const value = task.id === 'questions' ? challengeState.answered : task.id === 'accuracy' ? challengeState.correct : challengeState.quizzes;
+      if (value >= task.target && !challengeState.claimed.includes(task.id)) { challengeState.claimed.push(task.id); parts.push({ label: task.label, exp: task.reward }); }
     }
     const bonusExp = parts.reduce((a, p) => a + p.exp, 0);
     const xpMult = (d.xpBoost || 0) > 0 ? 2 : 1;
@@ -8571,7 +8568,7 @@ App.on('quiz:finished', async ev => {
     const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: earned + bonusExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
     const sfreezes = usedFreeze ? Math.max(0, (d.sfreezes || 0) - 1) : (d.sfreezes || 0);
     const xpBoost = xpMult > 1 ? Math.max(0, (d.xpBoost || 0) - 1) : (d.xpBoost || 0);
-    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, ...(dailyDone ? { dailyDone } : {}), recent };
+    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, challengeState, recent };
     await S.db.doc('players/' + S.uid).set(next); S.doc = next;
     renderAccount(); renderDaily();
     showResult({ coins: coinsEarned, coinParts, balance: (next.coins || 0), earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended, usedFreeze, xpMult });
@@ -8627,7 +8624,7 @@ function showFriend(p) {
   const tiles = o('div', 'stat-tiles');
   tiles.append(tile(`Lv ${level}`, `${LVL - into} EXP to next`), tile(String(tExp), 'Total EXP'), tile(String(wExp), 'EXP this week'), tile(`\u{1F525} ${live ? p.streak || 0 : 0}`, `Day streak \u00B7 best ${p.bestStreak || 0}`), tile(allRank, 'All-time rank'), tile(weekRank, 'Weekly rank'), tile(`${p.duelW || 0}-${p.duelL || 0}-${p.duelD || 0}`, 'Duels W-L-D'));
   const mt = o('progress', 'meter'); mt.max = LVL; mt.value = into;
-  const dd = p.dailyDone && p.dailyDone.day === today() ? `Daily quiz today: done \u2713 (${p.dailyDone.correct}/${p.dailyDone.total})` : 'Daily quiz today: not done yet';
+  const dd = p.dailyDone && p.dailyDone.day === today() ? `Daily challenges today: done \u2713 (${p.dailyDone.correct}/${p.dailyDone.total})` : 'Daily quiz today: not done yet';
   const ul = o('ul', 'activity-list'), rec = p.recent || [];
   if (!rec.length) ul.append(o('li', 'muted', 'No quizzes finished yet.'));
   rec.forEach(r => { const li = o('li'), q = o('p'); q.append(document.createTextNode(`${r.kind === 'daily' ? 'Daily quiz' : 'Practised ' + r.subject} \u00B7 ${r.correct}/${r.total}`)); li.append(q, o('span', 'activity-exp', `+${r.exp}`), o('span', 'activity-time', ago(r.at))); ul.append(li); });
@@ -10281,7 +10278,7 @@ const fmtLeft = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >
 
 async function init() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
-  S.daily = makeDaily(); renderAccount(); renderDaily();
+  renderAccount(); renderDaily();
   App.on('screen', s => { if (s === 'friends') renderFriends(); });
   try {
     const fb = await connectFirebase();
