@@ -79,53 +79,54 @@
   }
 
   /* ---------- palette generator ---------- */
-  function build(h, s, base) {
+  function build(h, s, base, neutral = false) {
     const c = clamp(s, 0, 100) / 100, W = '#ffffff';
+    const tone = (sat, light) => tone(neutral ? 0 : sat, light);
 
     // Light: tinted paper background, white cards, a strong readable accent.
     const bgS = 14 + 20 * c;
-    let pL = base ? rgb2hsl(fromHex(base))[2] : 40, primary = base || hsl(h, s, pL);
-    while (contrast(primary, W) < 4.6 && pL > 12) { pL -= 1; primary = hsl(h, s, pL); }
-    const accentSoft = hsl(h, 28 + 22 * c, 91);
+    let pL = base ? rgb2hsl(fromHex(base))[2] : 40, primary = base || tone(s, pL);
+    while (contrast(primary, W) < 4.6 && pL > 12) { pL -= 1; primary = tone(s, pL); }
+    const accentSoft = tone(28 + 22 * c, 91);
     let aL = pL, accent = primary;
-    while (contrast(accent, accentSoft) < 4.8 && aL > 10) { aL -= 1; accent = hsl(h, s, aL); }
-    const bg = hsl(h, bgS, 96), surface2 = hsl(h, bgS + 3, 93);
-    const ink = hsl(h, 20 + 8 * c, 15), inkRGB = hsl2rgb(h, 30, 15).join(' ');
+    while (contrast(accent, accentSoft) < 4.8 && aL > 10) { aL -= 1; accent = tone(s, aL); }
+    const bg = tone(bgS, 96), surface2 = tone(bgS + 3, 93);
+    const ink = tone(20 + 8 * c, 15), inkRGB = hsl2rgb(h, 30, 15).join(' ');
     const light = {
       bg, surface: W, surface2, surfaceWarm: mix('#f4f0e6', bg, .4),
-      ink, inkSoft: hsl(h, 14 + 4 * c, 24), muted: hsl(h, 8 + 6 * c, 37),
-      line: hsl(h, bgS, 87.5), lineStrong: hsl(h, bgS - 2, 79),
-      accent, accentSoft, primary, primaryHover: hsl(h, s, Math.max(8, Math.min(pL, aL) - 5)), ring: accent,
+      ink, inkSoft: tone(14 + 4 * c, 24), muted: tone(8 + 6 * c, 37),
+      line: tone(bgS, 87.5), lineStrong: tone(bgS - 2, 79),
+      accent, accentSoft, primary, primaryHover: tone(s, Math.max(8, Math.min(pL, aL) - 5)), ring: accent,
       shadow: `0 1px 2px rgb(${inkRGB} / 4%), 0 8px 24px -12px rgb(${inkRGB} / 18%)`,
       shadowHover: `0 14px 34px rgb(${inkRGB} / 14%)`,
-      brand: hsl(h, clamp(s * .75, 18, 55), 28), brandInk: hsl(h, 25, 96), brandDot: hsl(h, 30, 76),
-      heroEm: hsl(h, 14 + 8 * c, 52),
-      artDisc: hsl(h, bgS + 3, 90), artRing: hsl(h, bgS - 6, 77), artShadow: hsl(h, bgS - 3, 82), artPage: hsl(h, bgS + 10, 97.5), artEdge: hsl(h, bgS, 87), artLine: hsl(h, 14, 46),
-      artBook: hsl(h, 32, 30), artSide: hsl(h, 16, 56), artBookLine: hsl(h, 30, 20), artLeaf: hsl(h, 22, 47), artLeaf2: hsl(h, 22, 62),
-      scBg: hsl(h, bgS + 4, 92.5), scBorder: hsl(h, bgS, 86), scIconLine: hsl(h, bgS, 80), scIcon: hsl(h, 12 + 22 * c, 40),
-      chevron: hsl(h, 10, 50),
+      brand: tone(clamp(s * .75, 18, 55), 28), brandInk: tone(25, 96), brandDot: tone(30, 76),
+      heroEm: tone(14 + 8 * c, 52),
+      artDisc: tone(bgS + 3, 90), artRing: tone(bgS - 6, 77), artShadow: tone(bgS - 3, 82), artPage: tone(bgS + 10, 97.5), artEdge: tone(bgS, 87), artLine: tone(14, 46),
+      artBook: tone(32, 30), artSide: tone(16, 56), artBookLine: tone(30, 20), artLeaf: tone(22, 47), artLeaf2: tone(22, 62),
+      scBg: tone(bgS + 4, 92.5), scBorder: tone(bgS, 86), scIconLine: tone(bgS, 80), scIcon: tone(12 + 22 * c, 40),
+      chevron: tone(10, 50),
     };
 
     // Dark: deep tinted background, slightly lighter cards, a soft pastel accent for text.
-    const dS = 12 + 16 * c, dSoft = hsl(h, 22 + 16 * c, 19);
-    let dL = 42, dPrimary = hsl(h, 26 + 30 * c, dL);
-    while (contrast(dPrimary, W) < 4.6 && dL > 14) { dL -= 1; dPrimary = hsl(h, 26 + 30 * c, dL); }
-    let xL = 74, dAccent = hsl(h, 34 + 22 * c, xL);
-    while (contrast(dAccent, dSoft) < 6 && xL < 94) { xL += 1; dAccent = hsl(h, 34 + 22 * c, xL); }
-    const dbg = hsl(h, dS, 8);
+    const dS = 12 + 16 * c, dSoft = tone(22 + 16 * c, 19);
+    let dL = 42, dPrimary = tone(26 + 30 * c, dL);
+    while (contrast(dPrimary, W) < 4.6 && dL > 14) { dL -= 1; dPrimary = tone(26 + 30 * c, dL); }
+    let xL = 74, dAccent = tone(34 + 22 * c, xL);
+    while (contrast(dAccent, dSoft) < 6 && xL < 94) { xL += 1; dAccent = tone(34 + 22 * c, xL); }
+    const dbg = tone(dS, 8);
     const dark = {
-      bg: dbg, surface: hsl(h, dS - 2, 11.5), surface2: hsl(h, dS, 15.5), surfaceWarm: mix('#2a2820', dbg, .4),
-      ink: hsl(h, 14 + 4 * c, 91), inkSoft: hsl(h, 12, 82), muted: hsl(h, 9 + 4 * c, 66),
-      line: hsl(h, dS - 4, 20), lineStrong: hsl(h, dS - 6, 28),
-      accent: dAccent, accentSoft: dSoft, primary: dPrimary, primaryHover: hsl(h, 26 + 30 * c, dL + 6), ring: dAccent,
+      bg: dbg, surface: tone(dS - 2, 11.5), surface2: tone(dS, 15.5), surfaceWarm: mix('#2a2820', dbg, .4),
+      ink: tone(14 + 4 * c, 91), inkSoft: tone(12, 82), muted: tone(9 + 4 * c, 66),
+      line: tone(dS - 4, 20), lineStrong: tone(dS - 6, 28),
+      accent: dAccent, accentSoft: dSoft, primary: dPrimary, primaryHover: tone(26 + 30 * c, dL + 6), ring: dAccent,
       shadow: '0 1px 2px rgb(0 0 0 / 30%), 0 10px 30px -14px rgb(0 0 0 / 60%)',
       shadowHover: '0 14px 34px rgb(0 0 0 / 45%)',
       brand: light.brand, brandInk: light.brandInk, brandDot: light.brandDot,
-      heroEm: hsl(h, 22 + 10 * c, 72),
-      artDisc: hsl(h, dS, 15), artRing: hsl(h, dS - 4, 28), artShadow: hsl(h, dS, 11), artPage: hsl(h, 18, 87), artEdge: hsl(h, 14, 72), artLine: hsl(h, 14, 46),
-      artBook: hsl(h, 32, 30), artSide: hsl(h, 16, 56), artBookLine: hsl(h, 30, 20), artLeaf: hsl(h, 22, 47), artLeaf2: hsl(h, 22, 62),
-      scBg: hsl(h, dS + 2, 14.5), scBorder: hsl(h, dS - 2, 23), scIconLine: hsl(h, dS - 4, 29), scIcon: hsl(h, 22 + 14 * c, 72),
-      chevron: hsl(h, 10, 62),
+      heroEm: tone(22 + 10 * c, 72),
+      artDisc: tone(dS, 15), artRing: tone(dS - 4, 28), artShadow: tone(dS, 11), artPage: tone(18, 87), artEdge: tone(14, 72), artLine: tone(14, 46),
+      artBook: tone(32, 30), artSide: tone(16, 56), artBookLine: tone(30, 20), artLeaf: tone(22, 47), artLeaf2: tone(22, 62),
+      scBg: tone(dS + 2, 14.5), scBorder: tone(dS - 2, 23), scIconLine: tone(dS - 4, 29), scIcon: tone(22 + 14 * c, 72),
+      chevron: tone(10, 62),
     };
     return { light, dark };
   }
@@ -133,7 +134,7 @@
   const cache = new Map();
   function palette(key) {
     const info = parse(key);
-    if (!cache.has(info.key)) { if (cache.size > 120) cache.delete(cache.keys().next().value); cache.set(info.key, info.isDefault ? FOREST : build(info.h, info.s, info.hex || (info.custom ? hsl(info.h, info.s, info.l) : undefined))); }
+    if (!cache.has(info.key)) { if (cache.size > 120) cache.delete(cache.keys().next().value); cache.set(info.key, info.isDefault ? FOREST : (info.key === 'black' || info.key === 'white' ? build(0, 0, info.key === 'black' ? '#171717' : '#e5e7eb', true) : build(info.h, info.s, info.hex || (info.custom ? hsl(info.h, info.s, info.l) : undefined)))); }
     return cache.get(info.key);
   }
 
@@ -1936,6 +1937,27 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 }
 </style>
 
+<style id="theme-customizer-responsive">
+/* Keep the expanded theme picker comfortable on touch screens and wide screens. */
+.theme-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 128px), 1fr));
+  align-items: stretch;
+}
+.theme-tile { min-width: 0; }
+.cz-custom {
+  width: 100%;
+  max-width: 620px;
+  margin: 14px auto 0;
+  padding: clamp(14px, 2vw, 20px);
+}
+.cz-custom label { min-width: 0; }
+.rng { touch-action: pan-y; }
+@media (max-width: 640px) {
+  .theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .cz-custom { gap: 13px; }
+  .rng { min-height: 32px; }
+}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
