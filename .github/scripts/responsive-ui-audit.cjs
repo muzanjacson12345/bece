@@ -182,6 +182,58 @@ async function main() {
           await page.screenshot({ path: screenshot, fullPage: true, animations: 'disabled' });
           report.screenshots.push(screenshot);
           console.log(`Captured ${key} — ${diagnostics.viewportWidth}px wide, overflow ${diagnostics.horizontalOverflow}px`);
+
+          // Check and capture the last Practice subject at every responsive width.
+          if (route.screen === 'setup') {
+            const lastSubject = page.locator('[data-setup-sub="rme"]');
+            await lastSubject.click();
+            const selected = await lastSubject.getAttribute('aria-pressed');
+            if (selected !== 'true') {
+              report.failures.push(`${viewport.name}/practice: RME subject did not become selected`);
+            }
+            const subjectShot = path.join('artifacts/ui-audit/screenshots', viewport.name, 'practice-rme.png');
+            await page.screenshot({ path: subjectShot, fullPage: true, animations: 'disabled' });
+            report.screenshots.push(subjectShot);
+          }
+
+          // Visit all Friends tabs; a tab can be present but its content can still overflow.
+          if (route.screen === 'friends') {
+            const gotIt = page.getByRole('button', { name: 'Got it', exact: true });
+            if (await gotIt.isVisible().catch(() => false)) {
+              await gotIt.click().catch(() => {});
+              await page.waitForTimeout(150);
+            }
+            const tabButtons = page.locator('.f-tabs > button');
+            const tabCount = await tabButtons.count();
+            const tabLayout = await page.evaluate(() => {
+              const buttons = [...document.querySelectorAll('.f-tabs > button')];
+              const tops = buttons.map(b => Math.round(b.getBoundingClientRect().top));
+              return { count: buttons.length, rows: new Set(tops).size, keys: buttons.map(b => b.dataset.k) };
+            });
+            if (tabLayout.rows > 1) {
+              report.failures.push(`${viewport.name}/friends: Friends tabs wrap onto ${tabLayout.rows} rows`);
+            }
+            for (let tabIndex = 0; tabIndex < tabCount; tabIndex++) {
+              const tab = tabButtons.nth(tabIndex);
+              const keyName = await tab.getAttribute('data-k');
+              await tab.click();
+              await page.waitForTimeout(250);
+              const selectedKey = await page.locator('.f-tabs > button[aria-selected="true"]').getAttribute('data-k');
+              if (selectedKey !== keyName) {
+                report.failures.push(`${viewport.name}/friends: failed to open ${keyName} tab`);
+              }
+              const tabDiagnostics = await page.evaluate(() => ({
+                width: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
+                viewport: window.innerWidth,
+              }));
+              if (tabDiagnostics.width - tabDiagnostics.viewport > 2) {
+                report.failures.push(`${viewport.name}/friends-${keyName}: horizontal overflow ${tabDiagnostics.width - tabDiagnostics.viewport}px`);
+              }
+              const tabShot = path.join('artifacts/ui-audit/screenshots', viewport.name, `friends-${keyName}.png`);
+              await page.screenshot({ path: tabShot, fullPage: true, animations: 'disabled' });
+              report.screenshots.push(tabShot);
+            }
+          }
         } catch (error) {
           report.failures.push(`${viewport.name}/${route.name}: ${String(error)}`);
           const fallback = path.join('artifacts/ui-audit/screenshots', viewport.name, `${route.name}-error.png`);
