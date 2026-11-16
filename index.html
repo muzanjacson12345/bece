@@ -7557,7 +7557,7 @@ const scienceConcepts = [
 ['Scientific Skills','Why should chemicals never be tasted in a laboratory?','What is the safe rule for identifying an unknown laboratory chemical?','Never taste it; follow the teacher’s instructions and safety labels',['Taste a tiny amount','Mix it with food','Smell it directly from the container'],'Chemicals may be harmful; use approved labels and safe identification methods.']
 ];
 const scienceExtras=[];
-scienceConcepts.forEach(r=>{
+scienceConcepts.slice(0,87).forEach(r=>{
  scienceExtras.push([r[0],r[1],r[3],r[4],r[5]]);
  scienceExtras.push([r[0],r[2],r[3],[r[4][2],r[4][1],r[4][0]],r[5]]);
 });
