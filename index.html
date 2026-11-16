@@ -8051,6 +8051,7 @@ function buildProfileCard() {
 
     /* custom colour sliders */
     const rng = (min, max) => { const r = o('input', 'rng'); r.type = 'range'; r.min = min; r.max = max; r.step = 1; return r; };
+    const satIn = { value: '60' }, shadeIn = { value: '40' };
     const hueIn = rng(0, 360), hueOut = o('output');
     hueIn.setAttribute('aria-label', 'Hue'); hueIn.style.setProperty('--rng-bg', HUE_TRACK);
     const field = (t, out, inp) => { const l = o('label'), s = o('span'); s.append(document.createTextNode(t), out); l.append(s, inp); return l; };
