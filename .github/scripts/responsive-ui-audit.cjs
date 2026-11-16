@@ -222,6 +222,30 @@ async function main() {
             report.screenshots.push(subjectShot);
           }
 
+          if (route.screen === 'home') {
+            for (const key of ['ga', 'careerTechnology']) {
+              const countText = await page.locator(`[data-count="${key}"]`).textContent();
+              if (!/200 questions/.test(countText || '')) {
+                report.failures.push(`${viewport.name}/home: ${key} does not show its 200-question bank`);
+              }
+            }
+            for (const key of ['ga', 'careerTechnology']) {
+              if (await page.locator(`#flash-subject option[value="${key}"]`).count() !== 1) {
+                report.failures.push(`${viewport.name}/home: ${key} is missing from the flashcard subject selector`);
+              }
+            }
+          }
+
+          if (route.screen === 'notes') {
+            for (const key of ['ga', 'careerTechnology']) {
+              await page.locator(`[data-notes-sub="${key}"]`).click();
+              const noteCount = await page.locator('#notes-sidebar .topic-item').count();
+              if (noteCount < 1) {
+                report.failures.push(`${viewport.name}/notes: ${key} has no visible revision notes`);
+              }
+            }
+          }
+
           // Visit all Friends tabs; a tab can be present but its content can still overflow.
           if (route.screen === 'friends') {
             const gotIt = page.getByRole('button', { name: 'Got it', exact: true });
