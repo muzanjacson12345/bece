@@ -93,7 +93,7 @@
     const bg = tone(bgS, 96), surface2 = tone(bgS + 3, 93);
     const ink = tone(20 + 8 * c, 15), inkRGB = hsl2rgb(h, neutral ? 0 : 30, 15).join(' ');
     const light = {
-      bg, surface: W, surface2, surfaceWarm: mix('#f4f0e6', bg, .4),
+      bg, surface: W, surface2, surfaceWarm: neutral ? mix('#f2f2f2', bg, .4) : mix('#f4f0e6', bg, .4),
       ink, inkSoft: tone(14 + 4 * c, 24), muted: tone(8 + 6 * c, 37),
       line: tone(bgS, 87.5), lineStrong: tone(bgS - 2, 79),
       accent, accentSoft, primary, primaryHover: tone(s, Math.max(8, Math.min(pL, aL) - 5)), ring: accent,
@@ -115,7 +115,7 @@
     while (contrast(dAccent, dSoft) < 6 && xL < 94) { xL += 1; dAccent = tone(34 + 22 * c, xL); }
     const dbg = tone(dS, 8);
     const dark = {
-      bg: dbg, surface: tone(dS - 2, 11.5), surface2: tone(dS, 15.5), surfaceWarm: mix('#2a2820', dbg, .4),
+      bg: dbg, surface: tone(dS - 2, 11.5), surface2: tone(dS, 15.5), surfaceWarm: neutral ? mix('#202020', dbg, .4) : mix('#2a2820', dbg, .4),
       ink: tone(14 + 4 * c, 91), inkSoft: tone(12, 82), muted: tone(9 + 4 * c, 66),
       line: tone(dS - 4, 20), lineStrong: tone(dS - 6, 28),
       accent: dAccent, accentSoft: dSoft, primary: dPrimary, primaryHover: tone(26 + 30 * c, dL + 6), ring: dAccent,
