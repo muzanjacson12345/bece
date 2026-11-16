@@ -7394,7 +7394,7 @@ const artsConcepts = [
 ['Dance and Drama','What is dialogue?','What is the spoken conversation between characters called?','Conversation between characters',['A silent costume change','A stage curtain','A lighting effect'],'Dialogue is the spoken exchange between characters.']
 ];
 const artsExtras=[];
-artsConcepts.forEach((r,i)=>{
+artsConcepts.slice(0,50).forEach((r,i)=>{
   artsExtras.push([r[0],r[1],r[3],r[4],r[5]]);
   artsExtras.push([r[0],r[2],r[3],[r[4][2],r[4][1],r[4][0]],r[5]]);
 });
