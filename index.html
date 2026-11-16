@@ -7449,7 +7449,7 @@ const rmeConcepts = [
 ['Moral Values','Why is forgiveness important in society?','Which value can help restore relationships after wrongdoing?','Forgiveness',['Revenge','Rumour spreading','Intolerance'],'Forgiveness can reduce resentment and support peaceful relationships.']
 ];
 const rmeExtras=[];
-rmeConcepts.forEach(r=>{
+rmeConcepts.slice(0,43).forEach(r=>{
  rmeExtras.push([r[0],r[1],r[3],r[4],r[5]]);
  rmeExtras.push([r[0],r[2],r[3],[r[4][2],r[4][1],r[4][0]],r[5]]);
 });
