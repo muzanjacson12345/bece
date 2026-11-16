@@ -9420,7 +9420,7 @@ App.on('quiz:finished', async ev => {
     ev.questionIds.forEach(id => {
       const q = App.questionById(id);
       if (!q) return;
-      const metric = q.subject === 'ga' ? 'ga' : q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
+      const metric = q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
       subjectMetrics[metric] = (subjectMetrics[metric] || 0) + 1;
     });
     Object.entries(subjectMetrics).forEach(([metric, count]) => {
@@ -9439,7 +9439,7 @@ App.on('quiz:finished', async ev => {
       const add = (key, amount) => { challengeState.progress[key] = (challengeState.progress[key] || 0) + amount; };
       const answeredIds = Object.keys(ev.answers || {}), subjects = new Set(), subjectCounts = {};
       answeredIds.forEach(id => {
-        const q = App.questionById(id), code = q && q.subject === 'ga' ? 'ga' : q && q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
+        const q = App.questionById(id), code = q && q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
         if (q) { subjects.add(code); subjectCounts[code] = (subjectCounts[code] || 0) + 1; }
       });
       add('answered', answeredIds.length);
@@ -9450,7 +9450,7 @@ App.on('quiz:finished', async ev => {
       if (answeredIds.length > 0 && ev.correct === answeredIds.length) add('perfect', 1);
       if ((ev.total || answeredIds.length) >= 10) add('longQuiz', 1);
       if (subjects.size >= 3) add('mixed', 1);
-      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci', 'fre', 'ga', 'ct'].includes(code)) add(code, count); });
+      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci', 'fre', 'ct'].includes(code)) add(code, count); });
       dailyChallengeSet(day).forEach(task => {
         const value = challengeState.progress[task.metric] || 0;
         if (value >= task.target && !challengeState.claimed.includes(task.id)) {
@@ -11230,10 +11230,10 @@ init();
 </script>
 <script>
 (() => {
-  const subjects=["social","arts","maths","computing","rme","integratedScience","french","ga","careerTechnology"];
-  const labels={social:"Social Studies",arts:"Creative Arts",maths:"Mathematics",computing:"Computing",rme:"Religious & Moral Education",integratedScience:"Integrated Science",french:"French",ga:"Ga Language",careerTechnology:"Career Technology"};
+  const subjects=["social","arts","maths","computing","rme","integratedScience","french","careerTechnology"];
+  const labels={social:"Social Studies",arts:"Creative Arts",maths:"Mathematics",computing:"Computing",rme:"Religious & Moral Education",integratedScience:"Integrated Science",french:"French",careerTechnology:"Career Technology"};
   Object.assign(SUBJECT_LABEL,labels);
-  questionsDB.ga=questionsDB.ga||[]; questionsDB.careerTechnology=questionsDB.careerTechnology||[];
+  questionsDB.careerTechnology=questionsDB.careerTechnology||[];
   const stems=[
     q=>q,
     q=>"Select the best answer: "+q,
@@ -11247,38 +11247,6 @@ init();
     q=>"A student checks their notes and asks: "+q+" Choose the accurate answer."
   ];
   const expand=(facts)=>{const chosen=facts.length<=20?facts:Array.from({length:20},(_,i)=>facts[Math.floor(i*facts.length/20)]);return chosen.flatMap(f=>stems.map(stem=>[f[0],stem(f[1]),f[2],f[3],f[4],"Read the key words, compare the options and check the explanation."]));};
-  const gaFacts=[
-    ["Greetings","What is a common Ga morning greeting?","Ojekoo",["Agoo","Akpe","Bonjour"],"Ojekoo is a widely used morning greeting in Ga."],
-    ["Greetings","What is a customary response to Ojekoo?","Ojoo",["Mina oko","Agoo","Akpe"],"Ojoo is a customary response to Ojekoo."],
-    ["Greetings","Which expression is called out before entering or announcing one's presence?","Agoo",["Oyiwaladɔ","Ojekoo","Mina oko"],"Agoo is used to announce one's presence or ask permission to enter."],
-    ["Greetings","Which expression is commonly used to say thank you in Ga learning materials?","Oyiwaladɔ",["Agoo","Ojekoo","Ojoo"],"Oyiwaladɔ is an expression of thanks; follow the spelling taught by your Ga teacher."],
-    ["Greetings","Which expression is commonly taught as an evening greeting?","Mina oko",["Ojekoo","Agoo","Ojoo"],"Mina oko is a commonly taught evening greeting."],
-    ["Conversation","Which spoken Ga question is commonly taught for 'How are you?'?","Tɛ eyɛ oten?",["Mina oko?","Agoo?","Oyiwaladɔ?"],"Tɛ eyɛ oten? is a common spoken form used to ask how someone is."],
-    ["Conversation","What is a good way to respond when someone greets you?","Reply politely and ask how the person is",["Ignore the person","Change the topic immediately","Walk away without answering"],"A greeting is part of a respectful two-way conversation."],
-    ["Conversation","What should you do if you do not understand a Ga expression?","Politely ask the speaker to repeat or explain it",["Pretend to understand","Stop listening","Give an unrelated answer"],"Asking for clarification helps communication and learning."],
-    ["Family","Which topic includes words for mother, father, siblings and children?","Family vocabulary",["Weather vocabulary","Tool vocabulary","Colour vocabulary"],"Family words help learners describe relationships."],
-    ["School","Which group contains useful school vocabulary?","Teacher, learner, book and classroom",["Hammer, nail and saw","River, mountain and ocean","Spoon, plate and pot"],"School vocabulary helps learners discuss everyday school life."],
-    ["Food","Which vocabulary group is useful at a food market?","Food names, quantities and prices",["Only greetings","Only body parts","Only school subjects"],"Market conversations require words for items, quantities and prices."],
-    ["Numbers","What is the best way to improve number vocabulary in Ga?","Practise counting aloud regularly",["Avoid saying numbers","Memorise only one number","Use numbers only in writing"],"Regular spoken practice improves recall and pronunciation."],
-    ["Time","Which vocabulary helps describe a daily routine?","Days and time expressions",["Only animal names","Only colours","Only tool names"],"Time words help learners explain when activities happen."],
-    ["Body & health","Which vocabulary helps someone describe a headache?","Body parts and health words",["Food prices","School subjects","Clothing colours"],"Body-part words help people explain health concerns."],
-    ["Pronouns","What does a pronoun do in a sentence?","It stands in place of a noun",["It measures length","It names a colour","It shows a date"],"Pronouns help avoid repeating nouns."],
-    ["Grammar","What is the main function of a verb?","It expresses an action or state",["It names a place only","It describes a colour only","It replaces punctuation"],"Verbs tell what someone does or what state they are in."],
-    ["Grammar","Which word class describes a noun?","An adjective",["A verb","A conjunction","A question mark"],"Adjectives describe qualities or features of nouns."],
-    ["Sentence building","What makes a sentence meaningful?","Words arranged to communicate a complete idea",["A random list of letters","Only a number","A list of punctuation marks"],"A sentence communicates a complete thought."],
-    ["Pronunciation","Why should learners listen to fluent Ga speakers?","To learn natural pronunciation, tone and usage",["To avoid speaking","To replace reading completely","To change every word into English"],"Listening supports accurate pronunciation and natural expression."],
-    ["Reading","What should a reader identify first when studying a short passage?","The main idea",["The longest word only","The number of commas","The last letter"],"The main idea tells what the passage is mostly about."],
-    ["Reading","How should a learner answer a comprehension question?","Use relevant details from the passage",["Guess without reading","Copy an unrelated sentence","Ignore the question"],"Answers should be supported by the passage."],
-    ["Culture","Which festival is strongly associated with the Ga people?","Homowo",["Hogbetsotso","Aboakyer","Damba"],"Homowo is a major festival celebrated by the Ga people."],
-    ["Culture","What does Homowo traditionally remember and celebrate?","Overcoming hunger and celebrating a successful harvest",["The start of a new school year","The building of a bridge","A football tournament"],"Homowo recalls a period of hunger and celebrates abundance."],
-    ["Proverbs","Why are proverbs important in Ga culture?","They communicate wisdom and community values",["They are only decoration","They replace all grammar","They have no message"],"Proverbs preserve lessons and cultural knowledge."],
-    ["Writing","What should begin a properly written sentence?","A capital letter",["A full stop","A comma","A closing bracket"],"A sentence normally begins with a capital letter."],
-    ["Writing","Which punctuation mark usually ends a direct question?","A question mark",["A comma","A full stop only","A colon"],"A question mark indicates that a sentence asks something."],
-    ["Translation","What should a good translation preserve?","The meaning and context of the message",["Only the number of words","Only the first letter","The English word order every time"],"Translation should communicate meaning naturally."],
-    ["Conversation","What is active listening?","Paying attention and responding to what the speaker says",["Speaking over the person","Ignoring the speaker","Repeating unrelated words"],"Active listening helps people understand one another."],
-    ["Respect","How should a learner speak to an older person?","Use respectful language and a polite tone",["Use insults","Interrupt repeatedly","Ignore the person"],"Respectful speech is important in family and community life."],
-    ["Study skills","Which habit best improves spoken Ga?","Short, regular conversations with patient speakers",["Avoiding practice","Reading silently only","Learning one word each month"],"Regular conversation builds confidence and fluency."]
-  ];
   const ctFacts=[
     ["Safety","What should a learner do before using a workshop tool?","Check that it is suitable and safe to use",["Use it without checking","Throw it to a friend","Remove its safety guard"],"Inspect tools and follow instructions before use."],
     ["Safety","What is the purpose of personal protective equipment?","To reduce exposure to workplace hazards",["To decorate the workshop","To replace training","To make tools heavier"],"PPE such as goggles and aprons helps protect the user."],
@@ -11320,31 +11288,13 @@ init();
     ["Quality","Why should a finished product be tested?","To check that it is safe and works as intended",["To make it heavier","To avoid feedback","To damage it"],"Testing checks function, quality and safety."],
     ["Consumers","What should a buyer consider when choosing a product?","Quality, safety, usefulness and price",["Only the colour","Only the package size","Only the seller's name"],"Consumers compare important features before buying."]
   ];
-  addExtraBank("ga","ga",expand(gaFacts),1);
+  
   addExtraBank("careerTechnology","ct",expand(ctFacts),1);
-  if(questionsDB.ga.length!==200||questionsDB.careerTechnology.length!==200) throw new Error("New subject banks must each contain 200 questions.");
-  questionsDB.ga.forEach(q=>questionIndex.set(q.id,{...q,subject:"ga"}));
+  if(questionsDB.careerTechnology.length!==200) throw new Error("Career Technology bank must contain 200 questions.");
+  
   questionsDB.careerTechnology.forEach(q=>questionIndex.set(q.id,{...q,subject:"careerTechnology"}));
   globalThis.questionsDB=questionsDB;
 
-  notesDB.ga=[
-    {id:"ga-jhs1-greetings",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Communication and culture",topic:"Everyday Ga Greetings and Polite Expressions",icon:"🗣️",readTime:"6 min read",summary:"Practise common spoken greetings and respectful expressions. Some spellings vary, so follow your teacher's preferred form.",sections:[
-      {title:"Greetings",theory:"Greetings are an important part of everyday Ga interaction. Ga is spoken by Ga communities, especially in and around Greater Accra. Listen to fluent speakers and practise the form taught by your teacher.",points:["Ojekoo is a common morning greeting; Ojoo is a customary response.","Mina oko is commonly taught as an evening greeting.","Agoo is called out to announce your presence or ask permission to enter.","Oyiwaladɔ is an expression of thanks in many learning materials; check the spelling and pronunciation used in class."]},
-      {title:"Asking how someone is",theory:"Tɛ eyɛ oten? is a commonly taught spoken form for asking 'How are you?'. Listen to the rhythm and tone and practise with a fluent speaker.",points:["Greet the person first.","Ask the question clearly and listen to the response.","Reply politely and ask a related question.","Use respectful forms of address with older people."]},
-      {title:"Conversation practice",steps:["Greet the person.","Ask how the person is.","Listen without interrupting.","Respond to what the person said.","Close the conversation politely."],examTip:"Practise spoken forms as well as the standard forms taught in class. Ask your teacher to confirm pronunciation and spelling."}]},
-    {id:"ga-jhs1-vocabulary",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Vocabulary",topic:"Family, School, Food and Market Vocabulary",icon:"📚",readTime:"7 min read",summary:"Build useful vocabulary for people, school, food and everyday conversations.",sections:[
-      {title:"Learn words in groups",theory:"Related words are easier to remember when studied together. Make a small word list for each topic and practise the words in sentences.",points:["Family: mother, father, child, sibling and elder.","School: teacher, learner, book, pen, classroom and lesson.","Food: names of common foods, drinks, fruits and ingredients.","Market: buying, selling, prices, quantities and asking for help."]},
-      {title:"Use words in sentences",theory:"Do not memorise isolated words only. Use each new word in a short sentence or question. Ask a fluent speaker to correct your pronunciation.",example:"Practise a market conversation: greet the seller, ask for an item, ask its price, listen to the answer and thank the seller.",examTip:"When translating, preserve meaning and context instead of translating each English word separately."}]},
-    {id:"ga-jhs2-grammar",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Language structure",topic:"Pronouns, Verbs and Simple Ga Sentences",icon:"✍️",readTime:"7 min read",summary:"Understand how words work together to communicate complete ideas.",sections:[
-      {title:"Parts of a sentence",theory:"A sentence communicates a complete idea. A simple sentence often tells who or what is being discussed and what is happening. Ga word order should be learnt from reliable examples.",points:["A noun names a person, place, animal or thing.","A pronoun stands in place of a noun.","A verb expresses an action or state.","An adjective describes a noun.","Practise identifying these parts in sentences from your class reader."]},
-      {title:"Build clear sentences",steps:["Choose the subject of the sentence.","Select the correct verb form.","Add an object or description if needed.","Read the sentence aloud to check that it sounds natural.","Ask a teacher or fluent speaker to confirm the word order."]}]},
-    {id:"ga-jhs2-reading",level:"jhs2",levelLabel:"JHS 2 (Basic 8)",strand:"Reading and comprehension",topic:"Reading Short Ga Passages and Proverbs",icon:"📖",readTime:"6 min read",summary:"Find the main idea, understand details and explain cultural sayings.",sections:[
-      {title:"Comprehension",theory:"Read the whole passage once to understand its general message. Read it again to find names, actions, reasons and details that answer questions.",points:["Identify the main idea.","Underline details that support it.","Use the passage to answer factual questions.","Use surrounding sentences to understand unfamiliar words.","Answer in complete and relevant sentences."]},
-      {title:"Proverbs",theory:"Proverbs express wisdom, values and community experience. Their message may differ from the literal meaning of each word.",examTip:"Explain the lesson of a proverb and give a suitable everyday example. Check with a knowledgeable speaker if you are unsure of its meaning."}]},
-    {id:"ga-jhs3-writing",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Writing and oral communication",topic:"Writing, Translation and Oral Practice",icon:"📝",readTime:"7 min read",summary:"Prepare for classroom exercises with spelling, short writing and spoken communication.",sections:[
-      {title:"Write a short passage",steps:["Read the topic carefully.","Write down three or four key ideas.","Arrange ideas in a sensible order.","Write short, clear sentences.","Check spelling, punctuation and meaning."]},
-      {title:"Translation and speaking",theory:"A good translation communicates the intended meaning naturally. Speaking practice should include pronunciation, tone and listening.",points:["Check context before choosing a word.","Use natural Ga word order.","Speak at a steady pace.","Ask for correction and repeat the corrected sentence.","Practise common spoken Ga alongside standard forms taught in class."]}]}
-  ];
   notesDB.careerTechnology=[
     {id:"ct-jhs1-safety",level:"jhs1",levelLabel:"JHS 1 (Basic 7)",strand:"Design and technology",topic:"Workshop Safety, Tools and Personal Protection",icon:"🦺",readTime:"8 min read",summary:"Learn safe behaviour, workshop rules, protective equipment and responsible tool handling.",sections:[
       {title:"Why safety matters",theory:"A workshop contains tools, materials, machines and activities that can cause injury if used carelessly. Safety means preventing accidents, protecting people and keeping the work area organised.",points:["Follow the teacher's instructions before starting work.","Wear suitable protective equipment when required.","Tie back long hair and keep loose clothing away from moving parts.","Keep floors dry and pathways clear.","Never play or distract someone using a tool."]},
@@ -11392,7 +11342,7 @@ init();
     {id:"fre-jhs3-sentences",level:"jhs3",levelLabel:"JHS 3 (Basic 9)",strand:"Communication",topic:"Present-Tense Verbs and Everyday Sentences",icon:"💬",readTime:"8 min read",summary:"Use a few common verbs to make simple statements and questions.",sections:[{title:"Useful verbs",points:["être = to be; avoir = to have; aller = to go; faire = to do or make.","Je suis = I am; tu es = you are; il/elle est = he/she is.","J'ai = I have; tu as = you have; il/elle a = he/she has.","Learn the subject pronoun together with the verb form."]},{title:"Build a simple sentence",example:"Je m'appelle Ama. = My name is Ama. J'habite à Accra. = I live in Accra. J'aime lire. = I like reading.",examTip:"Read the whole sentence, identify the subject and verb, then use context to choose the missing word. Keep French sentences short and clear."}]}
   );
   const flash=document.getElementById("flash-subject");
-  if(flash){if(![...flash.options].some(o=>o.value==="ga"))flash.add(new Option("Ga Language","ga"));if(![...flash.options].some(o=>o.value==="careerTechnology"))flash.add(new Option("Career Technology","careerTechnology"));}
+  if(flash){if(![...flash.options].some(o=>o.value==="careerTechnology"))flash.add(new Option("Career Technology","careerTechnology"));}
   const group=document.querySelector("[data-setup-sub='french']")?.parentElement;
   if(group&&!group.querySelector("[data-setup-all]")){const btn=document.createElement("button");btn.type="button";btn.dataset.setupAll="true";btn.textContent="All subjects mixed";btn.setAttribute("aria-pressed","false");group.append(btn);}
   Setup.subjects=["social"];Setup.topic="all";
@@ -11404,12 +11354,7 @@ init();
   Setup.update=function(){this.topic=document.getElementById("topic-sel").value;const count=this.pool().length;document.getElementById("setup-pool").textContent=count+" questions available in this selection";const lengths=[5,10,20,40,60,100,200,0];if(this.length&&this.length>=count)this.length=0;const box=document.getElementById("length-buttons");box.replaceChildren();lengths.forEach(n=>{if(n&&n>=count)return;const btn=document.createElement("button");btn.type="button";btn.className="length-option";btn.textContent=n?String(n):"All "+count;btn.setAttribute("aria-pressed",String(n===this.length));btn.addEventListener("click",()=>{Setup.length=n;Setup.update();});box.append(btn);});document.querySelectorAll("[data-mode]").forEach(btn=>btn.setAttribute("aria-checked",String(btn.dataset.mode===this.mode)));const total=Math.min(this.length||count,count),secs=total*40;document.getElementById("mode-description").textContent=this.mode==="exam"?"Timed mock: "+Math.floor(secs/60)+" min "+(secs%60?secs%60+" sec ":"")+"for "+total+" questions. Explanations appear when you finish.":"Practice: no timer. See explanations after answers and use hints when you need them.";};
   Setup.start=function(){const pool=this.pool();if(!pool.length){toast("There are no questions in this selection yet.");return;}ensureSelection();const label=this.subjects.length===subjects.length?"All subjects mixed":this.subjects.map(s=>labels[s]).join(" + ");Quiz.start({pool,length:this.length,mode:this.mode,subject:this.subjects.length===1?this.subjects[0]:"mixed",label:label+(this.topic!=="all"?" · "+this.topic:"")});};
   document.addEventListener("click",event=>{const one=event.target.closest("[data-setup-sub]");const all=event.target.closest("[data-setup-all]");if(one){ensureSelection();const key=one.dataset.setupSub;if(Setup.subjects.includes(key)){if(Setup.subjects.length>1)Setup.subjects=Setup.subjects.filter(x=>x!==key);}else Setup.subjects=[...Setup.subjects,key];Setup.subject=Setup.subjects[0];Setup.topic="all";}else if(all){Setup.subjects=[...subjects];Setup.subject=subjects[0];Setup.topic="all";Setup.renderSubject();}},true);
-  document.querySelectorAll("[data-notes-sub='ga'],[data-notes-sub='careerTechnology']").forEach(btn=>btn.addEventListener("click",()=>{Notes.sub=btn.dataset.notesSub;Notes.activeId=null;Notes.refresh({keepScroll:false});}));
-  if (typeof questionsDB !== 'undefined') delete questionsDB.ga;
-  if (typeof notesDB !== 'undefined') delete notesDB.ga;
-  if (typeof questionIndex !== 'undefined' && questionIndex && questionIndex.forEach) {
-    [...questionIndex.entries()].forEach(([id, q]) => { if (q && q.subject === 'ga') questionIndex.delete(id); });
-  }
+  document.querySelectorAll("[data-notes-sub='careerTechnology']").forEach(btn=>btn.addEventListener("click",()=>{Notes.sub=btn.dataset.notesSub;Notes.activeId=null;Notes.refresh({keepScroll:false});}));
   Home.render();
 })();
 </script>
