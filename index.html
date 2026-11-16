@@ -93,6 +93,7 @@
     const bg = tone(bgS, 96), surface2 = tone(bgS + 3, 93);
     const ink = tone(20 + 8 * c, 15), inkRGB = hsl2rgb(h, neutral ? 0 : 30, 15).join(' ');
     const light = {
+      onPrimary: contrast(primary, '#ffffff') >= contrast(primary, '#111111') ? '#ffffff' : '#111111',
       bg, surface: W, surface2, surfaceWarm: neutral ? mix('#f2f2f2', bg, .4) : mix('#f4f0e6', bg, .4),
       ink, inkSoft: tone(14 + 4 * c, 24), muted: tone(8 + 6 * c, 37),
       line: tone(bgS, 87.5), lineStrong: tone(bgS - 2, 79),
@@ -116,6 +117,7 @@
     const darkBgL = customShade ? clamp(3 + (pL - 20) * .19, 3, 14) : 8;
     const dbg = tone(dS, darkBgL);
     const dark = {
+      onPrimary: contrast(dPrimary, '#ffffff') >= contrast(dPrimary, '#111111') ? '#ffffff' : '#111111',
       bg: dbg, surface: tone(dS - 2, darkBgL + 3.5), surface2: tone(dS, darkBgL + 7.5), surfaceWarm: neutral ? mix('#202020', dbg, .4) : mix('#2a2820', dbg, .4),
       ink: tone(14 + 4 * c, 91), inkSoft: tone(12, 82), muted: tone(9 + 4 * c, 66),
       line: tone(dS - 4, 20), lineStrong: tone(dS - 6, 28),
@@ -142,11 +144,11 @@
         const p = build(0, 0, info.key === 'black' ? '#171717' : '#e5e5e5', true);
         const black = info.key === 'black';
         const light = black
-          ? { ...p.light, bg: '#e5e5e5', surface: '#f7f7f7', surface2: '#d8d8d8', surfaceWarm: '#dedede', ink: '#111111', inkSoft: '#292929', muted: '#555555', line: '#c4c4c4', lineStrong: '#a8a8a8', accent: '#171717', accentSoft: '#d0d0d0', primary: '#171717', primaryHover: '#333333', ring: '#222222', brand: '#171717', brandInk: '#ffffff', brandDot: '#222222' }
-          : { ...p.light, bg: '#ffffff', surface: '#ffffff', surface2: '#f5f5f5', surfaceWarm: '#fafafa', ink: '#171717', inkSoft: '#333333', muted: '#666666', line: '#dedede', lineStrong: '#c8c8c8', accent: '#333333', accentSoft: '#eeeeee', primary: '#333333', primaryHover: '#111111', ring: '#444444', brand: '#222222', brandInk: '#ffffff', brandDot: '#333333' };
+          ? { ...p.light, bg: '#e5e5e5', surface: '#f7f7f7', surface2: '#d8d8d8', surfaceWarm: '#dedede', ink: '#111111', inkSoft: '#292929', muted: '#555555', line: '#c4c4c4', lineStrong: '#a8a8a8', accent: '#171717', accentSoft: '#d0d0d0', primary: '#171717', primaryHover: '#333333', ring: '#222222', brand: '#171717', brandInk: '#ffffff', brandDot: '#222222', onPrimary: '#ffffff' }
+          : { ...p.light, bg: '#ffffff', surface: '#ffffff', surface2: '#f5f5f5', surfaceWarm: '#fafafa', ink: '#171717', inkSoft: '#333333', muted: '#666666', line: '#dedede', lineStrong: '#c8c8c8', accent: '#333333', accentSoft: '#eeeeee', primary: '#333333', primaryHover: '#111111', ring: '#444444', brand: '#222222', brandInk: '#ffffff', brandDot: '#333333', onPrimary: '#ffffff' };
         const dark = black
-          ? { ...p.dark, bg: '#050505', surface: '#101010', surface2: '#191919', surfaceWarm: '#141414', ink: '#f5f5f5', inkSoft: '#dddddd', muted: '#aaaaaa', line: '#303030', lineStrong: '#484848', accent: '#f0f0f0', accentSoft: '#292929', primary: '#eeeeee', primaryHover: '#ffffff', ring: '#eeeeee', brand: '#eeeeee', brandInk: '#111111', brandDot: '#ffffff' }
-          : { ...p.dark, bg: '#242424', surface: '#303030', surface2: '#3b3b3b', surfaceWarm: '#343434', ink: '#ffffff', inkSoft: '#eeeeee', muted: '#c0c0c0', line: '#505050', lineStrong: '#686868', accent: '#ffffff', accentSoft: '#454545', primary: '#f5f5f5', primaryHover: '#ffffff', ring: '#ffffff', brand: '#f5f5f5', brandInk: '#111111', brandDot: '#ffffff' };
+          ? { ...p.dark, bg: '#050505', surface: '#101010', surface2: '#191919', surfaceWarm: '#141414', ink: '#f5f5f5', inkSoft: '#dddddd', muted: '#aaaaaa', line: '#303030', lineStrong: '#484848', accent: '#f0f0f0', accentSoft: '#292929', primary: '#eeeeee', primaryHover: '#ffffff', ring: '#eeeeee', brand: '#eeeeee', brandInk: '#111111', brandDot: '#ffffff', onPrimary: '#111111' }
+          : { ...p.dark, bg: '#242424', surface: '#303030', surface2: '#3b3b3b', surfaceWarm: '#343434', ink: '#ffffff', inkSoft: '#eeeeee', muted: '#c0c0c0', line: '#505050', lineStrong: '#686868', accent: '#ffffff', accentSoft: '#454545', primary: '#f5f5f5', primaryHover: '#ffffff', ring: '#ffffff', brand: '#f5f5f5', brandInk: '#111111', brandDot: '#ffffff', onPrimary: '#111111' };
         cache.set(info.key, { light, dark });
       } else cache.set(info.key, build(info.h, info.s, info.hex || (info.custom ? hsl(info.h, info.s, info.l) : undefined), false, !!info.custom));
     }
@@ -156,7 +158,7 @@
   const chev = c => `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23${c.slice(1)}' stroke-width='1.8'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E")`;
   const decls = P => [
     ['bg', P.bg], ['surface', P.surface], ['surface-2', P.surface2], ['surface-warm', P.surfaceWarm], ['ink', P.ink], ['ink-soft', P.inkSoft], ['muted', P.muted],
-    ['line', P.line], ['line-strong', P.lineStrong], ['accent', P.accent], ['accent-soft', P.accentSoft], ['primary', P.primary], ['primary-hover', P.primaryHover], ['ring', P.ring],
+    ['line', P.line], ['line-strong', P.lineStrong], ['accent', P.accent], ['accent-soft', P.accentSoft], ['primary', P.primary], ['primary-hover', P.primaryHover], ['on-primary', P.onPrimary || (contrast(P.primary, '#ffffff') >= contrast(P.primary, '#111111') ? '#ffffff' : '#111111')], ['ring', P.ring],
     ['shadow', P.shadow], ['shadow-hover', P.shadowHover], ['brand', P.brand], ['brand-ink', P.brandInk], ['brand-dot', P.brandDot], ['hero-em', P.heroEm],
     ['art-disc', P.artDisc], ['art-ring', P.artRing], ['art-shadow', P.artShadow], ['art-page', P.artPage], ['art-edge', P.artEdge], ['art-line', P.artLine], ['art-book', P.artBook], ['art-side', P.artSide], ['art-book-line', P.artBookLine], ['art-leaf', P.artLeaf], ['art-leaf2', P.artLeaf2],
     ['sc-bg', P.scBg], ['sc-border', P.scBorder], ['sc-icon-line', P.scIconLine], ['sc-icon', P.scIcon], ['chev', chev(P.chevron)],
@@ -1532,6 +1534,12 @@ html[data-theme='dark'] .adm-prev[data-kind='warn'] { background: #4a3710; color
 .cz-custom label { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
 .cz-custom label span { display: flex; justify-content: space-between; }
 .cz-custom output { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 500; }
+.cz-picker-wrap { display: grid; gap: 8px; }
+.cz-picker-head { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
+.cz-picker { position: relative; width: 100%; height: clamp(170px, 32vw, 230px); border-radius: 13px; border: 1px solid var(--line-strong); overflow: hidden; background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(var(--picker-h, 210) 100% 50%)); cursor: crosshair; touch-action: none; user-select: none; }
+.cz-picker:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+.cz-picker-thumb { position: absolute; width: 22px; height: 22px; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 1px 5px #0009, 0 0 0 1px #0006; transform: translate(-50%, -50%); pointer-events: none; }
+.cz-picker-help { color: var(--muted); font-size: 12px; font-weight: 400; }
 .rng { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; min-height: 28px; padding: 0; border: 0; border-radius: 99px; background: var(--rng-bg); background-clip: content-box; padding-block: 7px; cursor: pointer; }
 .rng::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 5px solid var(--rng-thumb, var(--primary)); box-shadow: 0 1px 5px rgb(0 0 0 / 35%); cursor: grab; }
 .rng::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 5px solid var(--rng-thumb, var(--primary)); box-shadow: 0 1px 5px rgb(0 0 0 / 35%); cursor: grab; }
@@ -8043,28 +8051,55 @@ function buildProfileCard() {
 
     /* custom colour sliders */
     const rng = (min, max) => { const r = o('input', 'rng'); r.type = 'range'; r.min = min; r.max = max; r.step = 1; return r; };
-    const hueIn = rng(0, 360), satIn = rng(15, 100), shadeIn = rng(20, 80), hueOut = o('output'), satOut = o('output'), shadeOut = o('output');
-    hueIn.setAttribute('aria-label', 'Colour'); satIn.setAttribute('aria-label', 'Vibrancy'); shadeIn.setAttribute('aria-label', 'Shade'); hueIn.style.setProperty('--rng-bg', HUE_TRACK);
+    const hueIn = rng(0, 360), hueOut = o('output');
+    hueIn.setAttribute('aria-label', 'Hue'); hueIn.style.setProperty('--rng-bg', HUE_TRACK);
     const field = (t, out, inp) => { const l = o('label'), s = o('span'); s.append(document.createTextNode(t), out); l.append(s, inp); return l; };
-    editor.append(field('Colour', hueOut, hueIn), field('Vibrancy', satOut, satIn), field('Shade', shadeOut, shadeIn));
+    const pickerWrap = o('div', 'cz-picker-wrap'), pickerHead = o('div', 'cz-picker-head');
+    const pickerTitle = o('span', '', 'Saturation & brightness'), pickerValue = o('output');
+    const picker = o('div', 'cz-picker'), pickerThumb = o('span', 'cz-picker-thumb');
+    picker.setAttribute('role', 'application'); picker.setAttribute('aria-label', 'Colour selection area. Drag horizontally for saturation and vertically for brightness.'); picker.tabIndex = 0;
+    picker.append(pickerThumb); pickerHead.append(pickerTitle, pickerValue); pickerWrap.append(pickerHead, picker, o('small', 'cz-picker-help', 'Drag anywhere in the box to choose your colour'));
+    editor.append(field('Hue', hueOut, hueIn), pickerWrap);
+    const getPoint = e => {
+      const r = picker.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      const y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+      satIn.value = String(Math.round(15 + x * 85));
+      shadeIn.value = String(Math.round(20 + (1 - y) * 60));
+    };
+    const hueState = () => ({ h: +hueIn.value, s: +satIn.value, l: +shadeIn.value });
+    const pickerInput = e => { getPoint(e); live(); };
+    picker.addEventListener('pointerdown', e => { picker.setPointerCapture(e.pointerId); pickerInput(e); });
+    picker.addEventListener('pointermove', e => { if (picker.hasPointerCapture(e.pointerId)) pickerInput(e); });
+    picker.addEventListener('keydown', e => {
+      const step = e.shiftKey ? 5 : 1, v = hueState();
+      if (e.key === 'ArrowRight') satIn.value = String(Math.min(100, v.s + step));
+      else if (e.key === 'ArrowLeft') satIn.value = String(Math.max(15, v.s - step));
+      else if (e.key === 'ArrowUp') shadeIn.value = String(Math.min(80, v.l + step));
+      else if (e.key === 'ArrowDown') shadeIn.value = String(Math.max(20, v.l - step));
+      else return;
+      e.preventDefault(); live();
+    });
     const paintSliders = () => {
       const h = +hueIn.value, s = +satIn.value, l = +shadeIn.value, P = PF.palette(PF.customKey(h, s, l))[BeceTheme.mode];
-      hueOut.textContent = h + '\u00B0'; satOut.textContent = s + '%'; shadeOut.textContent = l + '%';
-      satIn.style.setProperty('--rng-bg', `linear-gradient(90deg, hsl(${h} 15% 52%), hsl(${h} 95% 46%))`);
-      shadeIn.style.setProperty('--rng-bg', `linear-gradient(90deg, hsl(${h} ${s}% 22%), hsl(${h} ${s}% 80%))`);
-      hueIn.style.setProperty('--rng-thumb', P.primary); satIn.style.setProperty('--rng-thumb', P.primary); shadeIn.style.setProperty('--rng-thumb', P.primary);
+      hueOut.textContent = h + '\u00B0'; pickerValue.textContent = Math.round(s) + '% · ' + Math.round(l) + '%';
+      picker.style.setProperty('--picker-h', h);
+      pickerThumb.style.left = ((s - 15) / 85 * 100) + '%';
+      pickerThumb.style.top = ((80 - l) / 60 * 100) + '%';
+      pickerThumb.style.background = `hsl(${h} ${s}% ${l}%)`;
+      hueIn.style.setProperty('--rng-thumb', P.primary);
     };
     const live = () => {
       const key = PF.customKey(+hueIn.value, +satIn.value, +shadeIn.value); st.customKey = key;
       PF.applyAccent(key); queueSave({ color: key }); customTile.dataset.key = key; paintSliders(); renderAccount();
     };
-    hueIn.oninput = satIn.oninput = shadeIn.oninput = live;
+    hueIn.oninput = live;
 
     const mark = () => {
       const cur = PF.parse(PF.accent), isC = !!cur.custom;
       tilesAll.forEach(t => t.setAttribute('aria-pressed', String(t.dataset.custom ? isC : t.dataset.key === cur.key)));
       editor.hidden = !isC;
-      if (isC) { if (document.activeElement !== hueIn) hueIn.value = cur.h; if (document.activeElement !== satIn) satIn.value = cur.s; if (document.activeElement !== shadeIn) shadeIn.value = cur.l; customTile.dataset.key = cur.key; st.customKey = cur.key; }
+      if (isC) { if (document.activeElement !== hueIn) hueIn.value = cur.h; if (document.activeElement !== picker) { satIn.value = cur.s; shadeIn.value = cur.l; } customTile.dataset.key = cur.key; st.customKey = cur.key; }
       tilesAll.forEach(paintTile); paintSliders();
     };
     function choose(key) { PF.applyAccent(key); queueSave({ color: key }); mark(); renderAccount(); }
