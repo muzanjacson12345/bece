@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
-const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\\/+$/, '');
+const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
@@ -142,7 +142,7 @@ async function main() {
               documentWidth: Math.max(root.scrollWidth, body.scrollWidth),
               horizontalOverflow,
               viewportMeta,
-              zoomDisabled: /user-scalable\\s*=\\s*no|max(?:imum)?-scale\\s*=\\s*1(?:\\.0)?/i.test(viewportMeta),
+              zoomDisabled: /user-scalable\s*=\s*no|max(?:imum)?-scale\s*=\s*1(?:\.0)?/i.test(viewportMeta),
               outOfBounds,
               clipped,
               title: document.title,
@@ -180,6 +180,7 @@ async function main() {
     await browser.close();
   }
 
+  for (const error of report.pageErrors) report.failures.push(`${error.viewport}: uncaught browser exception: ${error.message}`);
   fs.writeFileSync('artifacts/ui-audit/report.json', JSON.stringify(report, null, 2));
   console.log(`Saved ${report.screenshots.length} screenshots.`);
   console.log(`Page errors: ${report.pageErrors.length}; console errors: ${report.consoleErrors.length}; failed requests: ${report.failedRequests.length}`);
