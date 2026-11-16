@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="bece-build" content="me-owner-admin-mobile-2026-11-16-r1">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -2518,6 +2519,158 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   #cz-panel > .cz-tabs > button { font-size:10px !important; gap:2px !important; }
 }
 </style>
+
+<style id="me-owner-admin-mobile-final">
+/* Me: a real three-column tab strip, including the narrowest supported phones. */
+#cz-panel.cz { background:transparent !important; color:var(--ink) !important; }
+#cz-panel > .cz-tabs {
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  grid-auto-flow:column !important;
+  grid-auto-columns:minmax(0,1fr) !important;
+  width:100% !important;
+  min-width:0 !important;
+  gap:5px !important;
+  padding:5px !important;
+  overflow:hidden !important;
+  background:var(--surface-2) !important;
+  border:1px solid var(--line) !important;
+  border-radius:14px !important;
+}
+#cz-panel > .cz-tabs > button {
+  display:flex !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:46px !important;
+  margin:0 !important;
+  padding:7px 2px !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:3px !important;
+  white-space:nowrap !important;
+  font-size:clamp(10px,3.1vw,13px) !important;
+  line-height:1.1 !important;
+  color:var(--muted) !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:10px !important;
+  box-shadow:none !important;
+}
+#cz-panel > .cz-tabs > button[aria-selected="true"] {
+  color:var(--accent) !important;
+  background:var(--accent-soft) !important;
+  box-shadow:inset 0 0 0 1px var(--line) !important;
+}
+#cz-panel .cz-about-panel { display:grid; gap:12px; min-width:0; }
+#cz-panel .cz-about-panel .name-form {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:9px;
+  align-items:end;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--surface-2);
+}
+#cz-panel .cz-about-panel .name-form label { grid-column:1/-1; color:var(--ink); font-weight:700; }
+#cz-panel .cz-about-panel .name-form input {
+  grid-column:1; width:100%; min-width:0; min-height:44px;
+  padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+  background:var(--surface); color:var(--ink);
+}
+#cz-panel .cz-about-panel .name-form button { grid-column:2; grid-row:2; min-height:44px; white-space:nowrap; }
+#cz-panel .cz-about-panel > input {
+  width:100%; min-width:0; min-height:46px;
+  padding:11px 12px; border:1px solid var(--line); border-radius:11px;
+  background:var(--surface); color:var(--ink);
+}
+#cz-panel .cz-about-panel .chip-row {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;
+}
+#cz-panel .cz-about-panel .chip-row .chip {
+  min-width:0; min-height:40px; padding:8px 7px;
+  white-space:normal; line-height:1.2; text-align:center;
+}
+#cz-panel .cz-about-panel .cz-note { margin:0; line-height:1.5; color:var(--muted); }
+
+/* Owner/Admin: use a horizontal, scroll-snapping section bar on phones. */
+.adm .adm-subs {
+  display:flex !important;
+  flex-flow:row nowrap !important;
+  width:100% !important;
+  min-width:0;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  overscroll-behavior-x:contain;
+  scrollbar-width:thin;
+  scroll-snap-type:x proximity;
+  scroll-padding-inline:12px;
+  gap:7px;
+  padding:3px 3px 8px;
+}
+.adm .adm-subs > button {
+  flex:0 0 auto !important;
+  min-width:max-content;
+  min-height:42px;
+  padding:8px 12px;
+  white-space:nowrap;
+  scroll-snap-align:center;
+}
+.adm .adm-subs > button[aria-selected="true"] {
+  color:var(--accent);
+  background:var(--accent-soft);
+  border-color:var(--line-strong);
+  box-shadow:inset 0 0 0 1px var(--line);
+}
+.adm.is-owner .adm-subs > button[aria-selected="true"] {
+  color:var(--ink);
+  background:color-mix(in srgb,#d4a017 20%,var(--surface));
+  border-color:#d4a017;
+}
+.adm .cz-head { min-width:0; }
+.adm .cz-head h2 { overflow-wrap:anywhere; }
+.adm .adm-body, .adm .adm-body > div, .adm .adm-card, .adm .adm-row { min-width:0; max-width:100%; }
+.adm .adm-info { word-break:normal; overflow-wrap:anywhere; line-height:1.45; }
+.adm .adm-btns, .adm .adm-btns3 { width:100%; min-width:0; }
+.adm .adm-btns .btn, .adm .adm-btns3 .btn {
+  min-width:0; min-height:42px; padding:8px 9px;
+  white-space:normal; overflow-wrap:anywhere; line-height:1.2;
+}
+.adm .adm-card { border-radius:14px; }
+@media (max-width:760px) {
+  #cz-panel > .cz-tabs { gap:4px !important; padding:4px !important; }
+  #cz-panel > .cz-tabs > button { min-height:44px !important; font-size:clamp(10px,3vw,12px) !important; }
+  .adm .cz-head {
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) !important;
+    align-items:start !important;
+    gap:10px !important;
+  }
+  .adm-hact { display:flex; width:100%; max-width:100%; flex-wrap:wrap; align-items:center; justify-content:flex-start; gap:7px; }
+  .adm-timer { flex:1 1 120px; min-width:0; }
+  .adm .adm-card { padding:13px; gap:10px; }
+  .adm .adm-list { gap:9px; }
+  .adm .adm-ctl { padding-inline:10px; }
+}
+@media (max-width:420px) {
+  #cz-panel .cz-about-panel .name-form { grid-template-columns:minmax(0,1fr); }
+  #cz-panel .cz-about-panel .name-form label,
+  #cz-panel .cz-about-panel .name-form input,
+  #cz-panel .cz-about-panel .name-form button { grid-column:1; grid-row:auto; }
+  #cz-panel .cz-about-panel .name-form button { width:100%; }
+  #cz-panel .cz-about-panel .chip-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .adm .adm-hact .btn { min-height:42px; }
+  .adm .adm-btns, .adm .adm-btns3 { gap:7px; }
+  .adm .adm-btns3 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .adm .adm-ban { align-items:flex-start; }
+}
+@media (max-width:360px) {
+  #cz-panel > .cz-tabs > button { font-size:10px !important; gap:2px !important; padding-inline:1px !important; }
+  .adm .adm-subs { gap:5px; }
+  .adm .adm-subs > button { padding-inline:10px; font-size:12px; }
+}
+</style>
+
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -8394,24 +8547,39 @@ function paintBubble(b, p) {
 function bubble(p, size) { const b = o('span', 'av'); paintBubble(b, p); if (size) b.style.setProperty('--s', size + 'px'); return b; }
 
 // Changes show immediately, then save ~0.6s after the last tweak. `merge` means only the changed fields are written.
+let saveRetryDelay = 1500, saveRetryNoticeShown = false;
 function queueSave(patch) {
   S.doc = { ...(S.doc || {}), ...patch }; S.pend = { ...(S.pend || {}), ...patch };
   if (S.pc) S.pc.status('saving');
+  saveRetryDelay = 1500;
   clearTimeout(S.saveT); S.saveT = setTimeout(flushSave, 650);
 }
 async function flushSave() {
   S.saveT = 0;
   const patch = S.pend; if (!patch || !S.db || !S.uid) return;
   S.pend = null;
+  if (S.pc) S.pc.status('saving');
   try {
     await S.db.doc('players/' + S.uid).set(patch, { merge: true });
+    saveRetryDelay = 1500;
+    saveRetryNoticeShown = false;
     if (S.pc) S.pc.status(S.pend || S.saveT ? 'saving' : 'saved');
   } catch (er) {
     S.pend = { ...patch, ...(S.pend || {}) };
     if (S.pc) S.pc.status('error');
-    App.toast(er.message || 'Couldn\u2019t save your profile. We\u2019ll try again.', 'warn');
+    if (!S.saveT) {
+      S.saveT = setTimeout(flushSave, saveRetryDelay);
+      saveRetryDelay = Math.min(saveRetryDelay * 2, 30000);
+    }
+    if (!saveRetryNoticeShown) {
+      App.toast('Couldn\u2019t save your profile. Your changes are queued and will retry automatically.', 'warn');
+      saveRetryNoticeShown = true;
+    }
   }
 }
+window.addEventListener('online', () => {
+  if (S.pend && !S.saveT) S.saveT = setTimeout(flushSave, 250);
+});
 
 /* ---------- Photo cropper: drag to move, slider / pinch / scroll to resize ---------- */
 function openCropper(file, onDone) {
@@ -8657,16 +8825,17 @@ function buildProfileCard() {
     const form = o('form', 'name-form'), lab = o('label', '', 'Name on the board'), inp = o('input'), save = o('button', 'btn btn-ghost btn-sm', 'Save name');
     inp.id = 'display-name'; inp.type = 'text'; inp.value = nameOf(S.uid); inp.maxLength = 30; inp.minLength = 2; inp.required = true; lab.htmlFor = 'display-name'; save.type = 'submit';
     form.append(lab, inp, save);
-    form.onsubmit = e => { e.preventDefault(); const v = inp.value.trim(); if (v.length < 2) return; queueSave({ displayName: v }); paint(); renderAccount(); App.toast('Name updated.', 'good'); };
+    form.onsubmit = e => { e.preventDefault(); const v = inp.value.trim(); if (v.length < 2) return; queueSave({ displayName: v }); paint(); renderAccount(); };
 
     const bl = o('p', 'cz-label'), cnt = o('small', 'bio-count', `${(d.bio || '').length}/60`), bio = o('input');
+    cnt.setAttribute('aria-live', 'polite'); cnt.setAttribute('aria-label', 'Status line character count');
     bl.append(document.createTextNode('Status line'), cnt);
     bio.type = 'text'; bio.id = 'bio-input'; bio.maxLength = 60; bio.placeholder = 'What are you revising for?'; bio.value = d.bio || ''; bio.setAttribute('aria-label', 'Status line');
     const apply = v => { cnt.textContent = `${v.length}/60`; queueSave({ bio: v.trim() }); paint(); };
     bio.oninput = () => apply(bio.value);
     const ideas = o('div', 'chip-row'); ideas.style.marginTop = '12px';
     BIO_IDEAS.forEach(t => { const c = o('button', 'chip', t); c.type = 'button'; c.onclick = () => { bio.value = t; apply(t); }; ideas.append(c); });
-    w.append(form, bl, bio, ideas, o('p', 'cz-note', 'Friends see your status when they open your stats.'));
+    w.append(form, bl, bio, ideas, o('p', 'cz-note', 'Friends see this line when they open your profile. It saves automatically.'));
     st.refresh = () => { if (document.activeElement !== bio) { bio.value = me().bio || ''; cnt.textContent = `${bio.value.length}/60`; } if (document.activeElement !== inp) inp.value = nameOf(S.uid); };
     return w;
   }
@@ -9916,9 +10085,30 @@ const Adm = (() => {
     if (!force && body && body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;   // don't wipe what you're typing
     if (!S.isOwner && (st.sub === 'owner' || st.sub === 'audit')) st.sub = 'players';
     const t = tabList(), key = t.map(x => x[1]).join('|');
-    if (key !== tabsKey) { tabsKey = key; tabs.replaceChildren(...t.map(([k, l]) => { const b = elx('button', '', l); b.type = 'button'; b.dataset.k = k; b.onclick = () => { st.sub = k; paint(true); }; return b; })); }
-    tabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === st.sub)));
-    root.classList.toggle('is-owner', S.isOwner); eyebrow.textContent = S.isOwner ? 'Owner console' : 'Overseer'; title.textContent = S.isOwner ? '\u{1F451} Owner panel' : 'Admin panel';
+    tabs.setAttribute('aria-label', S.isOwner ? 'Owner panel sections' : 'Admin panel sections');
+    if (key !== tabsKey) {
+      tabsKey = key;
+      tabs.replaceChildren(...t.map(([k, l]) => {
+        const b = elx('button', '', l); b.type = 'button'; b.dataset.k = k;
+        b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', 'adm-panel-body');
+        b.onclick = () => { st.sub = k; paint(true); };
+        return b;
+      }));
+    }
+    tabs.querySelectorAll('button').forEach(b => {
+      const selected = b.dataset.k === st.sub;
+      b.setAttribute('aria-pressed', String(selected));
+      b.setAttribute('aria-selected', String(selected));
+      b.tabIndex = selected ? 0 : -1;
+    });
+    root.classList.toggle('is-owner', S.isOwner);
+    eyebrow.textContent = S.isOwner ? 'Owner console' : 'Overseer';
+    title.textContent = S.isOwner ? '\u{1F451} Owner panel' : 'Admin panel';
+    const activeTab = tabs.querySelector('[data-k="' + st.sub + '"]');
+    if (activeTab && window.matchMedia && window.matchMedia('(max-width: 760px)').matches) {
+      const tr = tabs.getBoundingClientRect(), ar = activeTab.getBoundingClientRect();
+      tabs.scrollLeft = Math.max(0, tabs.scrollLeft + ar.left - tr.left - (tabs.clientWidth - ar.width) / 2);
+    }
     body.replaceChildren(view());
   }
   function el() {
@@ -9926,8 +10116,21 @@ const Adm = (() => {
     root = elx('section', 'card adm'); root.hidden = true;
     timer = elx('span', 'adm-timer'); eyebrow = elx('p', 'eyebrow', 'Overseer'); title = elx('h2', '', 'Admin panel');
     const hd = elx('div', 'cz-head', elx('div', '', eyebrow, title), elx('div', 'adm-hact', timer, btn('Renew', 'btn-ghost btn-sm', () => openPin(S.isOwner ? 'owner' : 'admin', true)), btn('\u{1F512} Lock', 'btn-ghost btn-sm', () => lockAll())));
-    tabs = elx('div', 'segmented adm-subs'); tabs.setAttribute('role', 'group');
-    body = elx('div', 'adm-body'); root.append(hd, tabs, body); return root;
+    tabs = elx('div', 'segmented adm-subs'); tabs.setAttribute('role', 'tablist');
+    body = elx('div', 'adm-body'); body.id = 'adm-panel-body'; body.setAttribute('role', 'tabpanel');
+    tabs.addEventListener('keydown', e => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+      const buttons = [...tabs.querySelectorAll('[role="tab"]')];
+      const current = buttons.indexOf(document.activeElement);
+      if (current < 0 || !buttons.length) return;
+      const next = e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1
+        : (current + (e.key === 'ArrowRight' ? 1 : buttons.length - 1)) % buttons.length;
+      const key = buttons[next].dataset.k;
+      st.sub = key; paint(true);
+      tabs.querySelector('[data-k="' + key + '"]')?.focus();
+      e.preventDefault();
+    });
+    root.append(hd, tabs, body); return root;
   }
   function sync() {
     if (!S.frWrap || !S.ftabs) return;
