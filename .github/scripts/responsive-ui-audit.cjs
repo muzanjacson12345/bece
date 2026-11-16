@@ -6,6 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
+const EXPECTED_BUILD = 'me-owner-admin-mobile-2026-11-16-r1';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -30,12 +31,12 @@ async function waitForLatestDeployment() {
     try {
       const response = await fetch(`${BASE}/?ui-audit=${Date.now()}`, { cache: 'no-store' });
       const html = await response.text();
-      if (response.ok && html.includes(EXPECTED_VIEWPORT)) return;
+      if (response.ok && html.includes(EXPECTED_VIEWPORT) && html.includes(`<meta name="bece-build" content="${EXPECTED_BUILD}">`)) return;
     } catch {}
     console.log(`Waiting for the latest GitHub Pages deployment (${attempt}/24)…`);
     await pause(10000);
   }
-  throw new Error('The updated GitHub Pages version did not appear within four minutes.');
+  throw new Error(`GitHub Pages did not publish build ${EXPECTED_BUILD} within four minutes.`);
 }
 
 async function main() {
@@ -50,6 +51,7 @@ async function main() {
     viewportCount: VIEWPORTS.length,
     screenshots: [],
     checks: [],
+    staffPanelChecks: [],
     pageErrors: [],
     consoleErrors: [],
     httpErrors: [],
@@ -239,6 +241,117 @@ async function main() {
               const tabShot = path.join('artifacts/ui-audit/screenshots', viewport.name, `friends-${keyName}.png`);
               await page.screenshot({ path: tabShot, fullPage: true, animations: 'disabled' });
               report.screenshots.push(tabShot);
+            }
+
+            // Exercise all three Me sub-tabs and verify they remain a single row at phone widths.
+            const meButton = page.locator('.f-tabs > button[data-k="me"]');
+            if (await meButton.count()) {
+              await meButton.click();
+              await page.waitForTimeout(200);
+              const profileTabs = page.locator('#cz-panel > .cz-tabs > button');
+              const profileCount = await profileTabs.count();
+              const profileLayout = await page.evaluate(() => {
+                const buttons = [...document.querySelectorAll('#cz-panel > .cz-tabs > button')];
+                const rects = buttons.map(b => b.getBoundingClientRect());
+                return {
+                  count: buttons.length,
+                  rows: new Set(rects.map(r => Math.round(r.top))).size,
+                  widths: rects.map(r => Math.round(r.width)),
+                  labels: buttons.map(b => b.textContent.trim()),
+                };
+              });
+              if (profileCount !== 3) {
+                report.failures.push(`${viewport.name}/friends-me: expected 3 profile tabs, found ${profileCount}`);
+              }
+              if (profileLayout.rows > 1) {
+                report.failures.push(`${viewport.name}/friends-me: Avatar, Theme and About me wrap onto ${profileLayout.rows} rows`);
+              }
+              const profilePanels = {
+                avatar: '.cz-avatar-panel',
+                theme: '.cz-theme-panel',
+                about: '.cz-about-panel',
+              };
+              for (let profileIndex = 0; profileIndex < Math.min(profileCount, 3); profileIndex++) {
+                const tab = profileTabs.nth(profileIndex);
+                const tabId = (await tab.getAttribute('id') || '').replace('cz-tab-', '');
+                await tab.click();
+                await page.waitForTimeout(220);
+                if (await tab.getAttribute('aria-selected') !== 'true') {
+                  report.failures.push(`${viewport.name}/friends-me: failed to select ${tabId}`);
+                }
+                if (!profilePanels[tabId] || !(await page.locator(`#cz-panel ${profilePanels[tabId]}`).count())) {
+                  report.failures.push(`${viewport.name}/friends-me: ${tabId} panel content did not appear`);
+                }
+                if (tabId === 'avatar' && !(await page.locator('#cz-panel .emoji-grid .emoji-pick').count())) {
+                  report.failures.push(`${viewport.name}/friends-me: avatar choices did not render`);
+                }
+                if (tabId === 'theme' && await page.locator('#cz-panel .mode-seg button[data-mode]').count() !== 3) {
+                  report.failures.push(`${viewport.name}/friends-me: Light/Dark/Auto controls did not render`);
+                }
+                if (tabId === 'about') {
+                  if (!(await page.locator('#display-name').count()) || !(await page.locator('#bio-input').count())) {
+                    report.failures.push(`${viewport.name}/friends-me: name or status-line editor is missing`);
+                  }
+                }
+                const profileShot = path.join('artifacts/ui-audit/screenshots', viewport.name, `friends-me-${tabId}.png`);
+                await page.screenshot({ path: profileShot, fullPage: true, animations: 'disabled' });
+                report.screenshots.push(profileShot);
+              }
+
+              // Exercise both appearance modes without writing to any player document.
+              const originalMode = await page.evaluate(() => document.documentElement.dataset.theme || 'light');
+              const darkMode = page.locator('#cz-panel .mode-seg button[data-mode="dark"]');
+              const lightMode = page.locator('#cz-panel .mode-seg button[data-mode="light"]');
+              await page.locator('#cz-tab-theme').click();
+              if (await darkMode.count() && await lightMode.count()) {
+                await darkMode.click();
+                await page.waitForTimeout(180);
+                if (await page.evaluate(() => document.documentElement.dataset.theme) !== 'dark') {
+                  report.failures.push(`${viewport.name}/friends-me: Dark mode control did not apply`);
+                }
+                if (['phone-390', 'desktop-1366'].includes(viewport.name)) {
+                  const darkShot = path.join('artifacts/ui-audit/screenshots', viewport.name, 'friends-me-theme-dark.png');
+                  await page.screenshot({ path: darkShot, fullPage: true, animations: 'disabled' });
+                  report.screenshots.push(darkShot);
+                }
+                await lightMode.click();
+                await page.waitForTimeout(180);
+                if (await page.evaluate(() => document.documentElement.dataset.theme) === 'dark') {
+                  report.failures.push(`${viewport.name}/friends-me: Light mode control did not apply`);
+                }
+                if (['phone-390', 'desktop-1366'].includes(viewport.name)) {
+                  const lightShot = path.join('artifacts/ui-audit/screenshots', viewport.name, 'friends-me-theme-light.png');
+                  await page.screenshot({ path: lightShot, fullPage: true, animations: 'disabled' });
+                  report.screenshots.push(lightShot);
+                }
+                if (originalMode === 'dark') await darkMode.click();
+                else await lightMode.click();
+              }
+            }
+
+            // The audit browser has no staff login by default. When a staff session is available,
+            // exercise each Owner/Admin section and save a real browser screenshot of it.
+            const staffTab = page.locator('.f-tabs > button[data-k="admin"]');
+            if (await staffTab.count()) {
+              await staffTab.click();
+              await page.waitForTimeout(250);
+              const staffButtons = page.locator('.adm-subs > button');
+              const staffCount = await staffButtons.count();
+              for (let staffIndex = 0; staffIndex < staffCount; staffIndex++) {
+                const staffButton = staffButtons.nth(staffIndex);
+                const staffKey = await staffButton.getAttribute('data-k');
+                await staffButton.click();
+                await page.waitForTimeout(180);
+                if (await staffButton.getAttribute('aria-selected') !== 'true') {
+                  report.failures.push(`${viewport.name}/staff: failed to select ${staffKey}`);
+                }
+                const staffShot = path.join('artifacts/ui-audit/screenshots', viewport.name, `staff-${staffKey}.png`);
+                await page.screenshot({ path: staffShot, fullPage: true, animations: 'disabled' });
+                report.screenshots.push(staffShot);
+              }
+              report.staffPanelChecks.push({ viewport: viewport.name, available: true, tabCount: staffCount });
+            } else {
+              report.staffPanelChecks.push({ viewport: viewport.name, available: false, note: 'No staff session is present in the audit browser context.' });
             }
           }
         } catch (error) {
