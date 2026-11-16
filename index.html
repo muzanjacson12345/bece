@@ -1590,6 +1590,39 @@ html[data-theme='dark'] .bug-chip[data-s='done'] { background: #1d3a27; color: #
 .adm-bug { padding: 12px; display: grid; gap: 8px; }
 .bug-card .adm-info, .adm-bug .adm-info { word-break: normal; overflow-wrap: anywhere; }
 .adm-bug-text { margin: 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+ 
+/* ---------- Mobile polish: keep the original admin/owner layout ---------- */
+.adm, .adm * { box-sizing: border-box; }
+.adm { min-width: 0; width: 100%; }
+.adm .cz-head, .adm .cz-head > div:first-child { min-width: 0; }
+.adm .cz-head h2 { line-height: 1.2; overflow-wrap: anywhere; }
+.adm-body, .adm-card, .adm-row, .adm-list { min-width: 0; }
+.adm-card > p, .adm-info, .adm-log-t { overflow-wrap: anywhere; }
+.adm-search, .adm-amt, .adm-ta, .adm-sel { min-width: 0; max-width: 100%; }
+.adm-modal { width: min(100%, 560px); max-height: min(90dvh, 900px); overflow: auto; overscroll-behavior: contain; }
+.adm .btn { min-height: 40px; }
+@media (max-width: 700px) {
+  .adm { padding: 14px; gap: 12px; }
+  .adm-subs { gap: 7px; padding: 2px 2px 8px; scroll-padding-inline: 10px; }
+  .adm-subs button { flex: 0 0 auto; min-height: 42px; white-space: nowrap; }
+  .adm-hact { max-width: 100%; }
+  .adm .btn { white-space: normal; overflow-wrap: anywhere; }
+  .adm-btns3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adm-btns3 .btn { min-width: 0; }
+  .adm-bar { grid-template-columns: minmax(68px, 96px) minmax(0, 1fr) 32px; gap: 6px; }
+  .adm-modal { width: 100%; max-height: 92dvh; }
+}
+@media (max-width: 380px) {
+  .adm { padding: 12px; gap: 10px; }
+  .adm .cz-head { align-items: flex-start; }
+  .adm .cz-head h2 { font-size: 21px; }
+  .adm-hact { gap: 5px; }
+  .adm-hact .btn { min-height: 38px; padding-inline: 9px; }
+  .adm-btns3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adm-pad { padding: 9px 10px; }
+}
+
 </style>
 </head>
 <body>
