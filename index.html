@@ -1779,6 +1779,28 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   .board-seg button { font-size: 10px; }
   .note-takeaway, .note-check, .note-extra, .note-outline { padding: 12px; }
 }
+
+
+/* The Friends navigation has four core tabs, plus a fifth staff tab.
+   Give each real tab its own column at every screen width. */
+.f-tabs {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.f-tabs > button {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+.f-tabs:has(> button[data-k="admin"]) {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+@media (max-width: 760px) {
+  .f-tabs:has(> button[data-k="admin"]) > button {
+    font-size: clamp(10px, 2.8vw, 12px);
+    padding-inline: 1px;
+  }
+}
 </style>
 
 </head>
@@ -9186,7 +9208,6 @@ const Adm = (() => {
 const fmtLeft = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
 
 async function init() {
-  ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   S.daily = makeDaily(); renderAccount(); renderDaily();
   App.on('screen', s => { if (s === 'friends') renderFriends(); });
