@@ -499,6 +499,28 @@ html[data-theme='dark'] #theme-toggle .icon-moon { display: none; }
 
 .daily-card { display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: center; padding: 28px 30px; margin: 0 0 56px; border-radius: var(--radius); background: linear-gradient(120deg, var(--accent-soft), var(--surface) 70%); border: 1px solid var(--line); box-shadow: var(--shadow); scroll-margin-top: calc(var(--nav-h) + 16px); }
 .challenge-card{display:block}.challenge-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px}.challenge-heading .daily-info{min-width:0}.challenge-heading h2{margin:0 0 8px}.challenge-summary{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:112px;padding:14px 18px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--line)}.challenge-summary strong{color:var(--accent);font:700 30px/1.1 var(--sans)}.challenge-summary span{color:var(--muted);font-size:12px;text-align:center}.challenge-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.challenge-item{min-width:0;padding:16px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--line)}.challenge-item.is-complete{border-color:var(--accent)}.challenge-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-height:62px}.challenge-name{display:flex;align-items:flex-start;gap:9px;min-width:0}.challenge-icon{font-size:22px;line-height:1.2}.challenge-name strong,.challenge-name small{display:block}.challenge-name strong{font-size:14px}.challenge-name small{color:var(--muted);font-size:12px;line-height:1.4;margin-top:4px}.challenge-reward{color:var(--accent);font-size:11px;font-weight:700;white-space:nowrap}.challenge-track{height:7px;border-radius:99px;overflow:hidden;background:var(--surface-2);margin:12px 0 8px}.challenge-fill{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .25s ease}.challenge-foot{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.challenge-note{margin:16px 0 0;color:var(--muted);font-size:13px}@media(max-width:760px){.challenge-list{grid-template-columns:1fr}.challenge-item{padding:14px}.challenge-top{min-height:0}}@media(max-width:420px){.challenge-heading{gap:10px}.challenge-summary{min-width:88px;padding:10px}.challenge-summary strong{font-size:25px}}
+
+/* ---------- Achievements ---------- */
+.achievement-card{display:block;margin:0 0 56px;padding:28px 30px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}
+.achievement-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
+.achievement-heading h2{margin:0 0 8px;font:600 clamp(22px,2.8vw,28px)/1.25 var(--sans)}
+.achievement-heading .muted{max-width:580px}
+.achievement-count{flex:0 0 auto;padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface2);font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap}
+.achievement-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.achievement-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center;min-width:0;padding:14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface2)}
+.achievement-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--surface);font-size:23px;filter:grayscale(1);opacity:.55}
+.achievement-copy{min-width:0;display:flex;flex-direction:column;gap:3px}
+.achievement-copy strong{font-size:14px}
+.achievement-copy small{font-size:12px;line-height:1.4;color:var(--muted)}
+.achievement-status{grid-column:1/-1;font-size:11px;font-weight:700;color:var(--muted)}
+.achievement-track{grid-column:1/-1;height:6px;overflow:hidden;border-radius:99px;background:var(--line)}
+.achievement-fill{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .25s ease}
+.achievement-item.is-earned{border-color:var(--accent);background:var(--accent-soft)}
+.achievement-item.is-earned .achievement-icon{filter:none;opacity:1}
+.achievement-item.is-earned .achievement-status{color:var(--accent)}
+@media(max-width:760px){.achievement-card{padding:22px;margin-bottom:40px}.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.achievement-heading{flex-direction:column}.achievement-count{align-self:flex-start}.achievement-grid{grid-template-columns:1fr}.achievement-item{grid-template-columns:42px minmax(0,1fr) auto}.achievement-status{grid-column:auto;grid-row:1}.achievement-track{grid-column:1/-1}}
+
 .daily-card h2 { font: 600 clamp(22px, 2.8vw, 28px)/1.25 var(--sans); letter-spacing: -.02em; margin-bottom: 8px; }
 .daily-card .muted { max-width: 580px; }
 .daily-bonus { font-size: 14px; color: var(--accent); font-weight: 600; margin-top: 10px; }
@@ -2868,6 +2890,8 @@ input, select, textarea { max-width: 100%; min-width: 0; }
     <section id="my-snapshot" class="snapshot" aria-label="Your progress on this device"></section>
 
     <section id="daily-card" class="daily-card challenge-card" aria-label="Daily challenges" aria-live="polite"></section>
+
+    <section id="achievement-card" class="achievement-card" aria-label="Your achievements" aria-live="polite"></section>
 
     <section class="block" aria-labelledby="subjects-title">
       <div class="section-heading">
@@ -7130,6 +7154,8 @@ const Home = {
       ? `${plural(bookmarks.length, 'question')} ready to practise`
       : 'Bookmark tricky questions to revisit';
 
+    renderAchievements();
+
     const history = store.get('bece_history', []);
     const snapshot = $('my-snapshot');
     snapshot.replaceChildren();
@@ -8535,6 +8561,49 @@ function dailyChallengeSet(day) {
   }
   return pool.slice(0, 3);
 }
+const ACHIEVEMENTS = [
+  { id: 'first-answer', icon: '🌱', title: 'First Step', detail: 'Answer your first question', metric: 'answered', target: 1 },
+  { id: 'curious-mind', icon: '📖', title: 'Curious Mind', detail: 'Answer 25 questions', metric: 'answered', target: 25 },
+  { id: 'question-pro', icon: '🧠', title: 'Question Pro', detail: 'Answer 100 questions', metric: 'answered', target: 100 },
+  { id: 'getting-sharp', icon: '🎯', title: 'Getting Sharp', detail: 'Get 25 answers correct', metric: 'correct', target: 25 },
+  { id: 'accuracy-star', icon: '⭐', title: 'Accuracy Star', detail: 'Get 100 answers correct', metric: 'correct', target: 100 },
+  { id: 'quiz-beginner', icon: '🏁', title: 'Quiz Starter', detail: 'Complete your first quiz', metric: 'quizzes', target: 1 },
+  { id: 'quiz-regular', icon: '🔥', title: 'Quiz Regular', detail: 'Complete 10 quizzes', metric: 'quizzes', target: 10 },
+  { id: 'subject-explorer', icon: '🧭', title: 'Subject Explorer', detail: 'Practise 3 different subjects', metric: 'subjects', target: 3 },
+  { id: 'all-rounder', icon: '🌍', title: 'All-Rounder', detail: 'Practise all 5 available subjects', metric: 'subjects', target: 5 },
+  { id: 'perfect-round', icon: '💎', title: 'Perfect Round', detail: 'Finish a quiz with every answer correct', metric: 'perfect', target: 1 },
+  { id: 'three-day-streak', icon: '🔥', title: 'On a Roll', detail: 'Build a 3-day study streak', metric: 'streak', target: 3 },
+  { id: 'week-streak', icon: '🏆', title: 'A Full Week', detail: 'Build a 7-day study streak', metric: 'streak', target: 7 },
+];
+function renderAchievements() {
+  const e = $('achievement-card'); if (!e) return;
+  const data = S.doc && S.doc.achievements || {}, stats = data.stats || {};
+  const subjects = Array.isArray(data.subjects) ? data.subjects : [];
+  const unlocked = Array.isArray(data.unlocked) ? data.unlocked : [];
+  const done = unlocked.length;
+  e.replaceChildren();
+  const head = o('div', 'achievement-heading');
+  const intro = o('div');
+  intro.append(o('p', 'eyebrow', 'Little wins add up'), o('h2', '', 'Achievements'));
+  intro.append(o('p', 'muted', 'Earn badges as you practise, improve and explore different subjects.'));
+  head.append(intro, o('div', 'achievement-count', done + ' / ' + ACHIEVEMENTS.length + ' earned'));
+  const grid = o('div', 'achievement-grid');
+  ACHIEVEMENTS.forEach(a => {
+    const value = a.metric === 'subjects' ? subjects.length : Number(a.metric === 'streak' ? (S.doc && S.doc.streak || 0) : stats[a.metric] || 0);
+    const earned = unlocked.includes(a.id);
+    const card = o('article', 'achievement-item' + (earned ? ' is-earned' : ''));
+    const icon = o('span', 'achievement-icon', a.icon);
+    const copy = o('div', 'achievement-copy');
+    copy.append(o('strong', '', a.title), o('small', '', a.detail));
+    const status = o('span', 'achievement-status', earned ? '✓ Earned' : Math.min(value, a.target) + ' / ' + a.target);
+    const track = o('div', 'achievement-track'), fill = o('span', 'achievement-fill');
+    fill.style.width = (Math.min(a.target, value) / a.target * 100) + '%';
+    track.append(fill);
+    card.append(icon, copy, status, track);
+    grid.append(card);
+  });
+  e.append(head, grid);
+}
 function renderDaily() {
   const e = $('daily-card'); if (!e) return; e.replaceChildren();
   const d = S.doc || {}, day = today();
@@ -8576,6 +8645,19 @@ App.on('quiz:finished', async ev => {
       else { streak = 1; extended = true; }
     }
     const parts = [];
+    const previousAchievements = d.achievements || {};
+    const achievementStats = { ...(previousAchievements.stats || {}) };
+    const achievementSubjects = [...new Set([...(previousAchievements.subjects || []), ...ev.questionIds.map(id => id.slice(0, 3))])];
+    achievementStats.answered = (achievementStats.answered || 0) + Object.keys(ev.answers || {}).length;
+    achievementStats.correct = (achievementStats.correct || 0) + (ev.correct || 0);
+    achievementStats.quizzes = (achievementStats.quizzes || 0) + 1;
+    if (Object.keys(ev.answers || {}).length > 0 && ev.correct === Object.keys(ev.answers || {}).length) achievementStats.perfect = (achievementStats.perfect || 0) + 1;
+    const achievementUnlocked = [...(previousAchievements.unlocked || [])];
+    ACHIEVEMENTS.forEach(a => {
+      const value = a.metric === 'subjects' ? achievementSubjects.length : a.metric === 'streak' ? streak : Number(achievementStats[a.metric] || 0);
+      if (value >= a.target && !achievementUnlocked.includes(a.id)) achievementUnlocked.push(a.id);
+    });
+    const achievements = { stats: achievementStats, subjects: achievementSubjects, unlocked: achievementUnlocked };
     const previous = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, progress: {}, claimed: [] };
     const challengeState = { day, progress: { ...(previous.progress || {}) }, subjects: [...(previous.subjects || [])], claimed: [...(previous.claimed || [])] };
     // Daily Quiz sessions are intentionally excluded; only ordinary practice advances these missions.
@@ -8619,9 +8701,9 @@ App.on('quiz:finished', async ev => {
     const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: earned + bonusExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
     const sfreezes = usedFreeze ? Math.max(0, (d.sfreezes || 0) - 1) : (d.sfreezes || 0);
     const xpBoost = xpMult > 1 ? Math.max(0, (d.xpBoost || 0) - 1) : (d.xpBoost || 0);
-    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, challengeState, recent };
+    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, challengeState, achievements, recent };
     await S.db.doc('players/' + S.uid).set(next); S.doc = next;
-    renderAccount(); renderDaily();
+    renderAccount(); renderDaily(); renderAchievements();
     showResult({ coins: coinsEarned, coinParts, balance: (next.coins || 0), earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended, usedFreeze, xpMult });
   } catch (err) { box.replaceChildren(o('p', 'exp-status', 'Couldn\u2019t save your EXP. ' + (err && err.message || ''))); }
 });
