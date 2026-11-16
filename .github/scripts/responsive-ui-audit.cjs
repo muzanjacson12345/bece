@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'me-owner-admin-mobile-2026-11-16-r1';
+const EXPECTED_BUILD = 'me-owner-admin-mobile-2026-11-16-r2';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -253,11 +253,20 @@ async function main() {
               const profileLayout = await page.evaluate(() => {
                 const buttons = [...document.querySelectorAll('#cz-panel > .cz-tabs > button')];
                 const rects = buttons.map(b => b.getBoundingClientRect());
+                const clipped = buttons.filter((b, i) => {
+                  const range = document.createRange();
+                  range.selectNodeContents(b);
+                  const textRect = range.getBoundingClientRect();
+                  const buttonRect = rects[i];
+                  return textRect.width > 0 &&
+                    (textRect.left < buttonRect.left - 1 || textRect.right > buttonRect.right + 1);
+                }).map(b => b.textContent.trim());
                 return {
                   count: buttons.length,
                   rows: new Set(rects.map(r => Math.round(r.top))).size,
                   widths: rects.map(r => Math.round(r.width)),
                   labels: buttons.map(b => b.textContent.trim()),
+                  clipped,
                 };
               });
               if (profileCount !== 3) {
@@ -265,6 +274,9 @@ async function main() {
               }
               if (profileLayout.rows > 1) {
                 report.failures.push(`${viewport.name}/friends-me: Avatar, Theme and About me wrap onto ${profileLayout.rows} rows`);
+              }
+              if (profileLayout.clipped.length) {
+                report.failures.push(`${viewport.name}/friends-me: profile tab labels are clipped: ${profileLayout.clipped.join(', ')}`);
               }
               const profilePanels = {
                 avatar: '.cz-avatar-panel',
