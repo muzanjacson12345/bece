@@ -967,8 +967,10 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
   .toasts { bottom: calc(var(--tab-h) + 16px + env(safe-area-inset-bottom)); }
   body[data-screen='quiz'] .toasts { bottom: calc(96px + env(safe-area-inset-bottom)); }
 
-  .hero { grid-template-columns: 1fr; padding: 28px 0 28px; gap: 0; position: relative; }
-  .hero-copy { position: relative; z-index: 1; }
+  .hero { grid-template-columns: minmax(0, 1fr); padding: 28px 0 28px; gap: 0; position: relative; min-width: 0; }
+  .hero-copy { position: relative; z-index: 1; min-width: 0; width: 100%; max-width: 100%; }
+  .hero-actions { min-width: 0; max-width: 100%; }
+  .hero-actions .btn { min-width: 0; max-width: 100%; }
   .hero h1 { font-size: clamp(46px, 13vw, 64px); }
   .lead { font-size: 16px; margin: 16px 0 22px; }
   .hero-art { position: absolute; right: 0; top: 8px; width: 42%; max-width: 190px; opacity: .55; pointer-events: none; }
@@ -2071,7 +2073,7 @@ html[data-theme="dark"] .cz-theme-panel .cz-picker-help { color:#bbb !important;
   .cz-avatar-panel > form.cz-row .btn { width:100%; }
 }
 
-html, body { overflow-x: clip; }
+
 </style>
 
 <style id="admin-responsive-polish">
