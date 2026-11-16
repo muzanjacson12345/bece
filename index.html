@@ -500,32 +500,37 @@ html[data-theme='dark'] #theme-toggle .icon-moon { display: none; }
 .daily-card { display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: center; padding: 28px 30px; margin: 0 0 56px; border-radius: var(--radius); background: linear-gradient(120deg, var(--accent-soft), var(--surface) 70%); border: 1px solid var(--line); box-shadow: var(--shadow); scroll-margin-top: calc(var(--nav-h) + 16px); }
 .challenge-card{display:block}.challenge-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px}.challenge-heading .daily-info{min-width:0}.challenge-heading h2{margin:0 0 8px}.challenge-summary{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:112px;padding:14px 18px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--line)}.challenge-summary strong{color:var(--accent);font:700 30px/1.1 var(--sans)}.challenge-summary span{color:var(--muted);font-size:12px;text-align:center}.challenge-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.challenge-item{min-width:0;padding:16px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--line)}.challenge-item.is-complete{border-color:var(--accent)}.challenge-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-height:62px}.challenge-name{display:flex;align-items:flex-start;gap:9px;min-width:0}.challenge-icon{font-size:22px;line-height:1.2}.challenge-name strong,.challenge-name small{display:block}.challenge-name strong{font-size:14px}.challenge-name small{color:var(--muted);font-size:12px;line-height:1.4;margin-top:4px}.challenge-reward{color:var(--accent);font-size:11px;font-weight:700;white-space:nowrap}.challenge-track{height:7px;border-radius:99px;overflow:hidden;background:var(--surface-2);margin:12px 0 8px}.challenge-fill{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .25s ease}.challenge-foot{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.challenge-note{margin:16px 0 0;color:var(--muted);font-size:13px}@media(max-width:760px){.challenge-list{grid-template-columns:1fr}.challenge-item{padding:14px}.challenge-top{min-height:0}}@media(max-width:420px){.challenge-heading{gap:10px}.challenge-summary{min-width:88px;padding:10px}.challenge-summary strong{font-size:25px}}
 
-/* ---------- Achievements ---------- */
-.achievement-card{display:block;margin:0 0 56px;padding:28px 30px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}
-.achievement-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px}
-.achievement-heading h2{margin:0 0 8px;font:600 clamp(22px,2.8vw,28px)/1.25 var(--sans)}
-.achievement-heading .muted{max-width:580px}
-.achievement-count{flex:0 0 auto;padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface2);font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap}
-.achievement-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.achievement-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center;min-width:0;padding:14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface2)}
-.achievement-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--surface);font-size:23px;filter:grayscale(1);opacity:.55}
-.achievement-copy{min-width:0;display:flex;flex-direction:column;gap:3px}
-.achievement-copy strong{font-size:14px}
-.achievement-copy small{font-size:12px;line-height:1.4;color:var(--muted)}
-.achievement-status{grid-column:1/-1;font-size:11px;font-weight:700;color:var(--muted)}
-.achievement-track{grid-column:1/-1;height:6px;overflow:hidden;border-radius:99px;background:var(--line)}
-.achievement-fill{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .25s ease}
+/* ---------- Achievement Hall ---------- */
+.achievement-launch{display:flex;align-items:center;gap:16px;margin:22px 0 30px;padding:20px 22px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--text);text-decoration:none;box-shadow:var(--shadow);transition:transform .2s,border-color .2s}
+.achievement-launch:hover{transform:translateY(-2px);border-color:var(--accent)}
+.achievement-launch-icon{display:grid;place-items:center;flex:0 0 52px;width:52px;height:52px;border-radius:16px;background:var(--accent-soft);font-size:28px}
+.achievement-launch-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.achievement-launch-copy strong{font-size:17px}.achievement-launch-copy small{font-size:13px;color:var(--muted);line-height:1.4}
+.achievement-launch-arrow{font-size:25px;color:var(--accent)}
+.achievement-page-intro{margin-bottom:24px}
+.achievement-page-card{padding-bottom:40px}
+.achievement-overview{padding:20px;margin-bottom:28px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.achievement-total{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.achievement-total strong{font-size:30px}.achievement-total span{color:var(--muted);font-size:14px}
+.achievement-overall-track{height:10px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.achievement-overall-fill{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .3s}
+.achievement-group{margin:0 0 34px}
+.achievement-group-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.achievement-group-heading h2{font-size:19px;margin:0}.achievement-group-heading span{font-size:12px;color:var(--muted);white-space:nowrap}
+.achievement-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.achievement-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;min-width:0;padding:17px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface2)}
+.achievement-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--surface);font-size:25px;filter:grayscale(1);opacity:.45}
+.achievement-copy{min-width:0;display:flex;flex-direction:column;gap:4px}.achievement-copy strong{font-size:14px}.achievement-copy small{font-size:12px;line-height:1.45;color:var(--muted)}
+.achievement-status{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--muted)}
+.achievement-track{grid-column:1/-1;height:8px;overflow:hidden;border-radius:99px;background:var(--line)}
+.achievement-fill{display:block;height:100%;border-radius:inherit;background:var(--muted);opacity:.55;transition:width .25s ease}
 .achievement-item.is-earned{border-color:var(--accent);background:var(--accent-soft)}
 .achievement-item.is-earned .achievement-icon{filter:none;opacity:1}
 .achievement-item.is-earned .achievement-status{color:var(--accent)}
-/* Locked achievements stay muted until earned; their progress remains visible. */
-.achievement-item:not(.is-earned){background:var(--surface);border-color:var(--line);color:var(--muted)}
+.achievement-item.is-earned .achievement-fill{background:var(--accent);opacity:1}
 .achievement-item:not(.is-earned) .achievement-copy strong{color:var(--muted)}
-.achievement-item:not(.is-earned) .achievement-icon{filter:grayscale(1);opacity:.38}
-.achievement-item:not(.is-earned) .achievement-fill{background:var(--muted);opacity:.55}
-.achievement-item.is-earned .achievement-fill{background:var(--accent)}
-@media(max-width:760px){.achievement-card{padding:22px;margin-bottom:40px}.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:420px){.achievement-heading{flex-direction:column}.achievement-count{align-self:flex-start}.achievement-grid{grid-template-columns:1fr}.achievement-item{grid-template-columns:42px minmax(0,1fr) auto}.achievement-status{grid-column:auto;grid-row:1}.achievement-track{grid-column:1/-1}}
+@media(max-width:760px){.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.achievement-launch{padding:16px}.achievement-group{margin-bottom:28px}}
+@media(max-width:420px){.achievement-grid{grid-template-columns:1fr}.achievement-item{grid-template-columns:48px minmax(0,1fr) auto;padding:14px}.achievement-status{grid-column:auto;grid-row:1}.achievement-track{grid-column:1/-1}.achievement-group-heading h2{font-size:17px}}
 
 .daily-card h2 { font: 600 clamp(22px, 2.8vw, 28px)/1.25 var(--sans); letter-spacing: -.02em; margin-bottom: 8px; }
 .daily-card .muted { max-width: 580px; }
@@ -2897,7 +2902,11 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
     <section id="daily-card" class="daily-card challenge-card" aria-label="Daily challenges" aria-live="polite"></section>
 
-    <section id="achievement-card" class="achievement-card" aria-label="Your achievements" aria-live="polite"></section>
+    <a class="achievement-launch" href="#/achievements" aria-label="Open your achievements">
+      <span class="achievement-launch-icon" aria-hidden="true">🏆</span>
+      <span class="achievement-launch-copy"><strong>Achievements</strong><small>Track your badges, milestones and progress</small></span>
+      <span class="achievement-launch-arrow" aria-hidden="true">→</span>
+    </a>
 
     <section class="block" aria-labelledby="subjects-title">
       <div class="section-heading">
@@ -3000,6 +3009,19 @@ input, select, textarea { max-width: 100%; min-width: 0; }
     </section>
 
     <footer class="site-footer"><span>Learn at your pace. You’ve got this.</span><button type="button" class="foot-bug" id="bug-open">🐞 Report a bug</button><span class="serif-note">Made for your next chapter ↗</span></footer>
+  </div>
+</section>
+
+<!-- ================= ACHIEVEMENTS ================= -->
+<section id="screen-achievements" class="screen" data-screen="achievements" hidden>
+  <div class="container container-wide">
+    <a class="back-link" href="#/">← Back to overview</a>
+    <div class="page-intro achievement-page-intro">
+      <p class="eyebrow">Every step counts</p>
+      <h1>Your Achievement Hall</h1>
+      <p class="muted">Keep practising, collecting badges and beating your personal best. Locked achievements are greyed out, with a progress bar showing how close you are.</p>
+    </div>
+    <div id="achievement-card" class="achievement-page-card" aria-live="polite"></div>
   </div>
 </section>
 
@@ -7039,8 +7061,8 @@ function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
 }
 
 /* ======================= Router ======================= */
-const SCREENS = ['home', 'notes', 'setup', 'quiz', 'essays', 'friends'];
-const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'essays', friends: 'friends' };
+const SCREENS = ['home', 'notes', 'setup', 'quiz', 'essays', 'friends', 'achievements'];
+const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'essays', friends: 'friends', achievements: 'achievements' };
 const PATH_FOR = { home: '', setup: 'practice' };
 let currentScreen = null;
 
@@ -7094,6 +7116,7 @@ function render(screen) {
   if (screen === 'notes') Notes.enter();
   if (screen === 'setup') Setup.enter();
   if (screen === 'essays') Essays.enter();
+  if (screen === 'achievements') renderAchievements();
   if (changed) {
     window.scrollTo({ top: 0, behavior: 'instant' });
     const heading = $(`screen-${screen}`).querySelector('h1, h2');
@@ -8568,47 +8591,87 @@ function dailyChallengeSet(day) {
   return pool.slice(0, 3);
 }
 const ACHIEVEMENTS = [
-  { id: 'first-answer', icon: '🌱', title: 'First Step', detail: 'Answer your first question', metric: 'answered', target: 1 },
-  { id: 'curious-mind', icon: '📖', title: 'Curious Mind', detail: 'Answer 25 questions', metric: 'answered', target: 25 },
-  { id: 'question-pro', icon: '🧠', title: 'Question Pro', detail: 'Answer 100 questions', metric: 'answered', target: 100 },
-  { id: 'getting-sharp', icon: '🎯', title: 'Getting Sharp', detail: 'Get 25 answers correct', metric: 'correct', target: 25 },
-  { id: 'accuracy-star', icon: '⭐', title: 'Accuracy Star', detail: 'Get 100 answers correct', metric: 'correct', target: 100 },
-  { id: 'quiz-beginner', icon: '🏁', title: 'Quiz Starter', detail: 'Complete your first quiz', metric: 'quizzes', target: 1 },
-  { id: 'quiz-regular', icon: '🔥', title: 'Quiz Regular', detail: 'Complete 10 quizzes', metric: 'quizzes', target: 10 },
-  { id: 'subject-explorer', icon: '🧭', title: 'Subject Explorer', detail: 'Practise 3 different subjects', metric: 'subjects', target: 3 },
-  { id: 'all-rounder', icon: '🌍', title: 'All-Rounder', detail: 'Practise all 5 available subjects', metric: 'subjects', target: 5 },
-  { id: 'perfect-round', icon: '💎', title: 'Perfect Round', detail: 'Finish a quiz with every answer correct', metric: 'perfect', target: 1 },
-  { id: 'three-day-streak', icon: '🔥', title: 'On a Roll', detail: 'Build a 3-day study streak', metric: 'streak', target: 3 },
-  { id: 'week-streak', icon: '🏆', title: 'A Full Week', detail: 'Build a 7-day study streak', metric: 'streak', target: 7 },
+  // Question milestones
+  { id:'first-answer',icon:'🌱',title:'First Step',detail:'Answer your first question',metric:'answered',target:1,group:'Question milestones' },
+  { id:'curious-mind',icon:'📖',title:'Curious Mind',detail:'Answer 25 questions',metric:'answered',target:25,group:'Question milestones' },
+  { id:'question-pro',icon:'🧠',title:'Question Pro',detail:'Answer 100 questions',metric:'answered',target:100,group:'Question milestones' },
+  { id:'question-veteran',icon:'📚',title:'Bookworm',detail:'Answer 250 questions',metric:'answered',target:250,group:'Question milestones' },
+  { id:'question-master',icon:'🎓',title:'Knowledge Seeker',detail:'Answer 500 questions',metric:'answered',target:500,group:'Question milestones' },
+  { id:'question-legend',icon:'🚀',title:'Question Legend',detail:'Answer 1,000 questions',metric:'answered',target:1000,group:'Question milestones' },
+  { id:'question-1500',icon:'🌠',title:'Unstoppable Learner',detail:'Answer 1,500 questions',metric:'answered',target:1500,group:'Question milestones' },
+  { id:'question-2500',icon:'🏛️',title:'Hall of Knowledge',detail:'Answer 2,500 questions',metric:'answered',target:2500,group:'Question milestones' },
+  // Accuracy milestones
+  { id:'getting-sharp',icon:'🎯',title:'Getting Sharp',detail:'Get 25 answers correct',metric:'correct',target:25,group:'Accuracy milestones' },
+  { id:'accuracy-star',icon:'⭐',title:'Accuracy Star',detail:'Get 100 answers correct',metric:'correct',target:100,group:'Accuracy milestones' },
+  { id:'accuracy-250',icon:'🥉',title:'Bronze Brain',detail:'Get 250 answers correct',metric:'correct',target:250,group:'Accuracy milestones' },
+  { id:'accuracy-500',icon:'🥈',title:'Silver Scholar',detail:'Get 500 answers correct',metric:'correct',target:500,group:'Accuracy milestones' },
+  { id:'accuracy-1000',icon:'🥇',title:'Golden Genius',detail:'Get 1,000 answers correct',metric:'correct',target:1000,group:'Accuracy milestones' },
+  { id:'accuracy-2000',icon:'💡',title:'Bright Mind',detail:'Get 2,000 answers correct',metric:'correct',target:2000,group:'Accuracy milestones' },
+  // Quiz milestones
+  { id:'quiz-beginner',icon:'🏁',title:'Quiz Starter',detail:'Complete your first quiz',metric:'quizzes',target:1,group:'Quiz milestones' },
+  { id:'quiz-regular',icon:'🔥',title:'Quiz Regular',detail:'Complete 10 quizzes',metric:'quizzes',target:10,group:'Quiz milestones' },
+  { id:'quiz-25',icon:'🗓️',title:'Practice Habit',detail:'Complete 25 quizzes',metric:'quizzes',target:25,group:'Quiz milestones' },
+  { id:'quiz-50',icon:'🎖️',title:'Dedicated Student',detail:'Complete 50 quizzes',metric:'quizzes',target:50,group:'Quiz milestones' },
+  { id:'quiz-100',icon:'🏅',title:'Century Club',detail:'Complete 100 quizzes',metric:'quizzes',target:100,group:'Quiz milestones' },
+  { id:'quiz-250',icon:'👑',title:'Quiz Champion',detail:'Complete 250 quizzes',metric:'quizzes',target:250,group:'Quiz milestones' },
+  // Subject exploration
+  { id:'subject-explorer',icon:'🧭',title:'Subject Explorer',detail:'Practise 3 different subjects',metric:'subjects',target:3,group:'Subject explorer' },
+  { id:'all-rounder',icon:'🌍',title:'All-Rounder',detail:'Practise all 5 available subjects',metric:'subjects',target:5,group:'Subject explorer' },
+  // Perfect quizzes
+  { id:'perfect-round',icon:'💎',title:'Perfect Round',detail:'Finish a quiz with every answer correct',metric:'perfect',target:1,group:'Perfect quizzes' },
+  { id:'perfect-5',icon:'✨',title:'Flawless Five',detail:'Complete 5 perfect quizzes',metric:'perfect',target:5,group:'Perfect quizzes' },
+  { id:'perfect-10',icon:'💠',title:'Perfectionist',detail:'Complete 10 perfect quizzes',metric:'perfect',target:10,group:'Perfect quizzes' },
+  { id:'perfect-25',icon:'🌟',title:'Perfect Performer',detail:'Complete 25 perfect quizzes',metric:'perfect',target:25,group:'Perfect quizzes' },
+  // Study streaks
+  { id:'three-day-streak',icon:'🔥',title:'On a Roll',detail:'Build a 3-day study streak',metric:'streak',target:3,group:'Study streaks' },
+  { id:'week-streak',icon:'🏆',title:'A Full Week',detail:'Build a 7-day study streak',metric:'streak',target:7,group:'Study streaks' },
+  { id:'streak-14',icon:'🌤️',title:'Two-Week Trail',detail:'Build a 14-day study streak',metric:'streak',target:14,group:'Study streaks' },
+  { id:'streak-30',icon:'🌙',title:'Monthly Momentum',detail:'Build a 30-day study streak',metric:'streak',target:30,group:'Study streaks' },
+  { id:'streak-60',icon:'☀️',title:'Consistency Star',detail:'Build a 60-day study streak',metric:'streak',target:60,group:'Study streaks' },
+  { id:'streak-100',icon:'💫',title:'100-Day Legend',detail:'Build a 100-day study streak',metric:'streak',target:100,group:'Study streaks' },
 ];
+function achievementValue(a, data, stats) {
+  if (a.metric === 'subjects') return (Array.isArray(data.subjects) ? data.subjects.length : 0);
+  if (a.metric === 'streak') return Number(S.doc && S.doc.streak || 0);
+  return Number(stats[a.metric] || 0);
+}
 function renderAchievements() {
   const e = $('achievement-card'); if (!e) return;
   const data = S.doc && S.doc.achievements || {}, stats = data.stats || {};
-  const subjects = Array.isArray(data.subjects) ? data.subjects : [];
   const unlocked = Array.isArray(data.unlocked) ? data.unlocked : [];
-  const done = unlocked.length;
+  const earnedCount = ACHIEVEMENTS.filter(a => unlocked.includes(a.id)).length;
+  const total = ACHIEVEMENTS.length;
+  const overall = ACHIEVEMENTS.reduce((n,a) => n + (unlocked.includes(a.id) ? 1 : 0),0);
   e.replaceChildren();
-  const head = o('div', 'achievement-heading');
-  const intro = o('div');
-  intro.append(o('p', 'eyebrow', 'Little wins add up'), o('h2', '', 'Achievements'));
-  intro.append(o('p', 'muted', 'Earn badges as you practise, improve and explore different subjects.'));
-  head.append(intro, o('div', 'achievement-count', done + ' / ' + ACHIEVEMENTS.length + ' earned'));
-  const grid = o('div', 'achievement-grid');
-  ACHIEVEMENTS.forEach(a => {
-    const value = a.metric === 'subjects' ? subjects.length : Number(a.metric === 'streak' ? (S.doc && S.doc.streak || 0) : stats[a.metric] || 0);
-    const earned = unlocked.includes(a.id);
-    const card = o('article', 'achievement-item' + (earned ? ' is-earned' : ''));
-    const icon = o('span', 'achievement-icon', a.icon);
-    const copy = o('div', 'achievement-copy');
-    copy.append(o('strong', '', a.title), o('small', '', a.detail));
-    const status = o('span', 'achievement-status', earned ? '✓ Earned' : Math.min(value, a.target) + ' / ' + a.target);
-    const track = o('div', 'achievement-track'), fill = o('span', 'achievement-fill');
-    fill.style.width = (Math.min(a.target, value) / a.target * 100) + '%';
-    track.append(fill);
-    card.append(icon, copy, status, track);
-    grid.append(card);
+  const top = o('div','achievement-overview');
+  const count = o('div','achievement-total');
+  count.append(o('strong','',overall + ' / ' + total),o('span','','achievements earned'));
+  const track=o('div','achievement-overall-track'),fill=o('span','achievement-overall-fill');
+  fill.style.width=(overall/total*100)+'%';track.append(fill);
+  top.append(count,track);
+  const groups = [...new Set(ACHIEVEMENTS.map(a=>a.group))];
+  e.append(top);
+  groups.forEach(group=>{
+    const section=o('section','achievement-group');
+    const heading=o('div','achievement-group-heading');
+    const items=ACHIEVEMENTS.filter(a=>a.group===group);
+    const groupEarned=items.filter(a=>unlocked.includes(a.id)).length;
+    heading.append(o('h2','',group),o('span','',groupEarned+' / '+items.length+' earned'));
+    const grid=o('div','achievement-grid');
+    items.forEach(a=>{
+      const value=achievementValue(a,data,stats), earned=unlocked.includes(a.id);
+      const card=o('article','achievement-item'+(earned?' is-earned':''));
+      const icon=o('span','achievement-icon',a.icon);
+      const copy=o('div','achievement-copy');
+      copy.append(o('strong','',a.title),o('small','',a.detail));
+      const status=o('span','achievement-status',earned?'✓ Earned':Math.min(value,a.target)+' / '+a.target);
+      const track=o('div','achievement-track'),bar=o('span','achievement-fill');
+      bar.style.width=(Math.min(value,a.target)/a.target*100)+'%';
+      track.append(bar);
+      card.append(icon,copy,status,track);grid.append(card);
+    });
+    section.append(heading,grid);e.append(section);
   });
-  e.append(head, grid);
 }
 function renderDaily() {
   const e = $('daily-card'); if (!e) return; e.replaceChildren();
