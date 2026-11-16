@@ -114,17 +114,17 @@
     // Keep the dark palette tied to the user's actual picker brightness, not the
     // light-mode contrast-corrected value. This makes the same selection visibly
     // recolour dark backgrounds, cards and buttons too.
-    let dL = customShade ? clamp(34 + chosenL * .20, 34, 54) : 42, dPrimary = tone(26 + 30 * c, dL);
+    let dL = customShade ? clamp(42 + chosenL * .24, 42, 66) : 42, dPrimary = tone(26 + 30 * c, dL);
     while (contrast(dPrimary, W) < 4.6 && dL > 14) { dL -= 1; dPrimary = tone(26 + 30 * c, dL); }
-    let xL = customShade ? clamp(66 + chosenL * .20, 66, 86) : 74, dAccent = tone(34 + 22 * c, xL);
+    let xL = customShade ? clamp(70 + chosenL * .22, 70, 92) : 74, dAccent = tone(34 + 22 * c, xL);
     while (contrast(dAccent, dSoft) < 6 && xL < 94) { xL += 1; dAccent = tone(34 + 22 * c, xL); }
-    const darkBgL = customShade ? clamp(4 + chosenL * .13, 4, 17) : 8;
+    const darkBgL = customShade ? clamp(3 + chosenL * .19, 3, 22) : 8;
     const dbg = tone(dS, darkBgL);
     const dark = {
       onPrimary: contrast(dPrimary, '#ffffff') >= contrast(dPrimary, '#111111') ? '#ffffff' : '#111111',
-      bg: dbg, surface: tone(dS - 2, Math.min(31, darkBgL + 5)), surface2: tone(dS, Math.min(38, darkBgL + 11)), surfaceWarm: neutral ? mix('#202020', dbg, .4) : mix('#2a2820', dbg, .4),
+      bg: dbg, surface: tone(dS * .82, Math.min(34, darkBgL + 6)), surface2: tone(dS, Math.min(42, darkBgL + 13)), surfaceWarm: neutral ? mix('#202020', dbg, .4) : tone(dS * .72, Math.min(30, darkBgL + 8)),
       ink: tone(14 + 4 * c, 91), inkSoft: tone(12, 82), muted: tone(9 + 4 * c, 66),
-      line: tone(dS - 4, 20), lineStrong: tone(dS - 6, 28),
+      line: tone(dS * .72, 22), lineStrong: tone(dS * .68, 32),
       accent: dAccent, accentSoft: dSoft, primary: dPrimary, primaryHover: tone(26 + 30 * c, dL + 6), ring: dAccent,
       shadow: '0 1px 2px rgb(0 0 0 / 30%), 0 10px 30px -14px rgb(0 0 0 / 60%)',
       shadowHover: '0 14px 34px rgb(0 0 0 / 45%)',
