@@ -5631,7 +5631,7 @@ const sectionBDB = {
   ]
 };
 
-// Shared with the server so quiz answers can be checked and the daily quiz picked consistently.
+// Shared with the server so quiz answers can be checked consistently.
 globalThis.questionsDB = questionsDB;
 
 </script>
@@ -8556,10 +8556,10 @@ App.on('quiz:finished', async ev => {
     const xpMult = (d.xpBoost || 0) > 0 ? 2 : 1;
     if (xpMult > 1) parts.push({ label: '\u26A1 XP Boost active', exp: fresh * 10 });
     const earned = fresh * 10 * xpMult;
-    // coins: 1 per new correct answer, a quarter of the daily-quiz bonus, and a streak bonus (+1 for every 3 days in a row, up to +5)
+    // coins: 1 per new correct answer, a quarter of the daily-challenge bonus, and a streak bonus (+1 for every 3 days in a row, up to +5)
     const coinParts = [];
     if (fresh) coinParts.push({ label: `${plural(fresh, 'new correct answer')}`, n: fresh });
-    if (Math.floor(bonusExp / 4)) coinParts.push({ label: 'Daily quiz bonus', n: Math.floor(bonusExp / 4) });
+    if (Math.floor(bonusExp / 4)) coinParts.push({ label: 'Daily challenge bonus', n: Math.floor(bonusExp / 4) });
     const streakCoins = fresh > 0 ? Math.min(5, Math.floor(streak / 3)) : 0;
     if (streakCoins) coinParts.push({ label: `\u{1F525} ${streak}-day streak bonus`, n: streakCoins });
     const coinsEarned = coinParts.reduce((a, c) => a + c.n, 0);
@@ -8624,7 +8624,7 @@ function showFriend(p) {
   const tiles = o('div', 'stat-tiles');
   tiles.append(tile(`Lv ${level}`, `${LVL - into} EXP to next`), tile(String(tExp), 'Total EXP'), tile(String(wExp), 'EXP this week'), tile(`\u{1F525} ${live ? p.streak || 0 : 0}`, `Day streak \u00B7 best ${p.bestStreak || 0}`), tile(allRank, 'All-time rank'), tile(weekRank, 'Weekly rank'), tile(`${p.duelW || 0}-${p.duelL || 0}-${p.duelD || 0}`, 'Duels W-L-D'));
   const mt = o('progress', 'meter'); mt.max = LVL; mt.value = into;
-  const dd = p.dailyDone && p.dailyDone.day === today() ? `Daily challenges today: done \u2713 (${p.dailyDone.correct}/${p.dailyDone.total})` : 'Daily quiz today: not done yet';
+  const dd = p.challengeState && p.challengeState.day === today() ? `${(p.challengeState.claimed || []).length}/3 daily challenges completed` : 'No daily challenges completed yet';
   const ul = o('ul', 'activity-list'), rec = p.recent || [];
   if (!rec.length) ul.append(o('li', 'muted', 'No quizzes finished yet.'));
   rec.forEach(r => { const li = o('li'), q = o('p'); q.append(document.createTextNode(`${r.kind === 'daily' ? 'Daily quiz' : 'Practised ' + r.subject} \u00B7 ${r.correct}/${r.total}`)); li.append(q, o('span', 'activity-exp', `+${r.exp}`), o('span', 'activity-time', ago(r.at))); ul.append(li); });
@@ -9041,7 +9041,7 @@ function renderFriends() {
     addTitleBadge(n, p);
     const live = p.lastDay === today() || p.lastDay === yesterday();
     li.append(o('span', 'board-rank', i < 3 && B !== 'everyone' ? medals[i] : String(i + 1)), bubble(p, 36));
-    w.append(n, o('span', '', B === 'everyone' ? `${p.totalExp || 0} EXP \xB7 ${actv(p)}${p.duelW || p.duelL ? ` \xB7 \u2694\uFE0F ${p.duelW || 0}-${p.duelL || 0}` : ''}` : `Level ${lv(p.totalExp || 0).level}${live && p.streak ? ` \xB7 \u{1F525} ${p.streak}` : ''}${p.dailyDone && p.dailyDone.day === today() ? ' \xB7 daily \u2713' : ''}`));
+    w.append(n, o('span', '', B === 'everyone' ? `${p.totalExp || 0} EXP \xB7 ${actv(p)}${p.duelW || p.duelL ? ` \xB7 \u2694\uFE0F ${p.duelW || 0}-${p.duelL || 0}` : ''}` : `Level ${lv(p.totalExp || 0).level}${live && p.streak ? ` \xB7 \u{1F525} ${p.streak}` : ''}${p.challengeState && p.challengeState.day === today() && (p.challengeState.claimed || []).length ? ' \xB7 challenges \u2713' : ''}`));
     if (p.bio) w.append(o('span', 'board-bio', p.bio));
     li.append(w, o('span', 'board-exp', B === 'everyone' ? `Lv ${lv(p.totalExp || 0).level}` : `${val(p)} EXP`));
     li.tabIndex = 0; li.setAttribute('role', 'button'); li.setAttribute('aria-label', `See ${nameOf(p.id)}\u2019s stats`);
@@ -9183,7 +9183,7 @@ const Shop = (() => {
   function build() {
     el = o('section', 'card shop'); bal = o('strong', 'shop-bal'); body = o('div', 'shop-body');
     const head = o('div', 'shop-head'); head.append(o('span', 'duel-lbl', 'Your coins'), bal,
-      o('p', 'muted', 'Earn coins: 1 per new correct answer, bonus coins from the daily quiz and streaks, and from duels (win 5, draw 2, played 1; up to 10 duels a day).'));
+      o('p', 'muted', 'Earn coins: 1 per new correct answer, bonus coins from daily challenges and streaks, and from duels (win 5, draw 2, played 1; up to 10 duels a day).'));
     el.append(head, body); render(); return el;
   }
   return { el: () => el || build(), render };
