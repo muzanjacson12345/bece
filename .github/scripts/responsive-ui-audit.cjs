@@ -286,13 +286,20 @@ async function main() {
             }
           }
 
-          if (route.screen === 'notes') {
+          if (route.name === 'notes') {
             for (const key of ['social', 'arts', 'maths', 'computing', 'rme', 'integratedScience', 'french', 'careerTechnology']) {
               await page.locator(`[data-notes-sub="${key}"]`).click();
               const noteCount = await page.locator('#notes-sidebar .topic-item').count();
               if (noteCount < 1) {
                 report.failures.push(`${viewport.name}/notes: ${key} has no visible revision notes`);
               }
+            }
+          }
+
+          if (route.name === 'essays') {
+            const essayQuestion = page.locator('#sb-q');
+            if (!(await essayQuestion.isVisible()) || !(await essayQuestion.textContent())?.trim()) {
+              report.failures.push(`${viewport.name}/essays: the essay question content did not appear`);
             }
           }
 
