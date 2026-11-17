@@ -11838,7 +11838,7 @@ const Adm = (() => {
     }
     if(!Object.keys(p).length)throw Error('No supported profile fields found.');return p;
   }
-  async function importAllJson(){
+  async function importAllJson(bagMode){
     if(!S.isOwner)return App.toast('Owner access required.','warn');
     const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.setAttribute('aria-label','Choose player backup');
     input.onchange=async()=>{
@@ -11849,6 +11849,7 @@ const Adm = (() => {
         const bagOnly=!!(data&&data.format==='bece-bag-backup'&&data.version===1&&Array.isArray(data.players));
         const records=data&&data.format==='bece-player-record'&&data.version===1&&data.player&&data.player.id?[data.player]:data&&data.format==='bece-player-backup'&&data.version===1&&Array.isArray(data.players)?data.players:bagOnly?data.players:null;
         if(!records)throw Error('Unsupported BECE backup. Choose a full backup or a single-player JSON export from this panel.');
+        if(bagMode&&!bagOnly)throw Error('This button accepts bag-only backups. Choose a file named bece-bags-only-backup or a single player bag export.');
         if(records.length>5000)throw Error('Maximum 5,000 player records per restore.');
         const current=new Map(S.players.map(p=>[p.id,p])),staged=new Map();let missing=0,protectedN=0,invalid=0;
         for(const row of records){
@@ -12207,7 +12208,7 @@ const Adm = (() => {
       card('\u{1F4C8} Global practice economy', 'Set the EXP and coin multipliers earned by every player in new practice quizzes.', elx('p', 'adm-info', 'Current rates: ' + (Number(S.settings.expMultiplier) || 1) + '× EXP · ' + (Number(S.settings.coinMultiplier) || 1) + '× coins'), btn('Change reward rates…', 'btn-primary btn-sm', setRewardRates)),
       card('\u{1F6D2} Shop control', S.settings.shopPaused ? 'Purchases are currently paused for every player. Owned items can still be equipped.' : 'Purchases are open for everyone. You can temporarily pause new purchases without removing anyone’s items.', btn(S.settings.shopPaused ? 'Reopen shop purchases' : 'Pause shop purchases', S.settings.shopPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleShop)),
       card('🗄️ Full player data backup', 'Export all loaded player documents as JSON to inspect and correct profiles or item bags. Restore only updates existing players and supported fields; other Owner accounts are protected.', btn('Download full JSON backup', 'btn-primary btn-sm', exportAllJson), btn('Import / restore JSON backup…', 'btn-ghost btn-sm', importAllJson)),
-      card('🎒 Bag-only backup', 'Export only owned items, equipped items and power-up counts. Useful for reviewing inventory without sharing photos, bios or other profile fields. Account IDs are still included, so keep the file private.', btn('Download all bags only', 'btn-ghost btn-sm', exportBagsJson), btn('Import / restore bags only…', 'btn-ghost btn-sm', importAllJson)),
+      card('🎒 Bag-only backup', 'Export only owned items, equipped items and power-up counts. Useful for reviewing inventory without sharing photos, bios or other profile fields. Account IDs are still included, so keep the file private.', btn('Download all bags only', 'btn-ghost btn-sm', exportBagsJson), btn('Import / restore bags only…', 'btn-ghost btn-sm', () => importAllJson(true))),
       card('\u{1F4C1} Owner exports', 'Download a copy of the moderation audit history for your own records.', btn('Export audit log CSV', 'btn-ghost btn-sm', downloadAuditCsv)),
       card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins…', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false))));
   }
