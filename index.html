@@ -8197,7 +8197,7 @@ const Setup = {
     Quiz.start({pool,length:this.length,mode:this.mode,subject:this.subjects.length===1?this.subjects[0]:'mixed',label:`${label}${this.subjects.length===1&&topic!=='all'?` · ${topic}`:''}`});
   },
 };
-document.querySelectorAll('[data-setup-sub]').forEach(b=>b.addEventListener('click',()=>{const subject=b.dataset.setupSub,max=Setup.selectedCount(),at=Setup.subjects.indexOf(subject);if(at>=0)Setup.subjects.splice(at,1);else if(Setup.subjects.length<max)Setup.subjects.push(subject);Setup.subject=Setup.subjects[0]||'social';Setup.topic='all';Setup.paintSubjects();}));
+// Quiz subject clicks are handled once by the final setup controller below.
 $('topic-sel').addEventListener('change',()=>Setup.update());
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{Setup.mode=b.dataset.mode;Setup.update();}));
 document.querySelector('.mode-grid').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();Setup.mode=Setup.mode==='practice'?'exam':'practice';Setup.update();document.querySelector(`[data-mode="${Setup.mode}"]`).focus();});
@@ -11648,17 +11648,105 @@ init();
   );
   const flash=document.getElementById("flash-subject");
   if(flash){if(![...flash.options].some(o=>o.value==="careerTechnology"))flash.add(new Option("Career Technology","careerTechnology"));}
-  const group=document.querySelector("[data-setup-sub='french']")?.parentElement;
-  if(group&&!group.querySelector("[data-setup-all]")){const btn=document.createElement("button");btn.type="button";btn.dataset.setupAll="true";btn.textContent="All subjects mixed";btn.setAttribute("aria-pressed","false");group.append(btn);}
-  Setup.subjects=["social"];Setup.topic="all";
+  Setup.subjects=["social"];Setup.subjectCount=1;Setup.topic="all";
   const ensureSelection=()=>{if(!Array.isArray(Setup.subjects)||!Setup.subjects.length)Setup.subjects=[Setup.subject||"social"];Setup.subject=Setup.subjects[0];};
-  Setup.open=function(subject){this.subjects=subject&&subjects.includes(subject)?[subject]:[this.subject||"social"];this.subject=this.subjects[0];this.topic="all";navigate("setup");};
+  const subjectLimit=()=>Setup.subjectCount==="multiple"?subjects.length:Number(Setup.subjectCount||1);
+  const subjectChoiceValid=()=>Setup.subjectCount==="multiple"?Setup.subjects.length>=2:Setup.subjects.length===subjectLimit();
+  Setup.open=function(subject){if(subject&&subjects.includes(subject)){this.subjects=[subject];this.subject=subject;this.subjectCount=1;}else{ensureSelection();}this.topic="all";navigate("setup");};
   Setup.pool=function(){ensureSelection();const topic=document.getElementById("topic-sel").value||"all";return this.subjects.flatMap(sub=>(questionsDB[sub]||[]).filter(q=>topic==="all"||q.topic===topic));};
   Setup.allPool=function(){ensureSelection();return this.subjects.flatMap(sub=>questionsDB[sub]||[]);};
-  Setup.renderSubject=function(){ensureSelection();document.querySelectorAll("[data-setup-sub]").forEach(btn=>btn.setAttribute("aria-pressed",String(this.subjects.includes(btn.dataset.setupSub))));const all=document.querySelector("[data-setup-all]");if(all)all.setAttribute("aria-pressed",String(this.subjects.length===subjects.length));const counts={};this.allPool().forEach(q=>counts[q.topic]=(counts[q.topic]||0)+1);const sel=document.getElementById("topic-sel");sel.replaceChildren(new Option("All topics ("+this.allPool().length+")","all"),...Object.keys(counts).sort().map(t=>new Option(t+" ("+counts[t]+")",t)));sel.value=this.topic&&counts[this.topic]?this.topic:"all";this.update();};
-  Setup.update=function(){this.topic=document.getElementById("topic-sel").value;const count=this.pool().length;document.getElementById("setup-pool").textContent=count+" questions available in this selection";const lengths=[5,10,20,40,60,100,200,0];if(this.length&&this.length>=count)this.length=0;const box=document.getElementById("length-buttons");box.replaceChildren();lengths.forEach(n=>{if(n&&n>=count)return;const btn=document.createElement("button");btn.type="button";btn.className="length-option";btn.textContent=n?String(n):"All "+count;btn.setAttribute("aria-pressed",String(n===this.length));btn.addEventListener("click",()=>{Setup.length=n;Setup.update();});box.append(btn);});document.querySelectorAll("[data-mode]").forEach(btn=>btn.setAttribute("aria-checked",String(btn.dataset.mode===this.mode)));const total=Math.min(this.length||count,count),secs=total*40;document.getElementById("mode-description").textContent=this.mode==="exam"?"Timed mock: "+Math.floor(secs/60)+" min "+(secs%60?secs%60+" sec ":"")+"for "+total+" questions. Explanations appear when you finish.":"Practice: no timer. See explanations after answers and use hints when you need them.";};
-  Setup.start=function(){const pool=this.pool();if(!pool.length){toast("There are no questions in this selection yet.");return;}ensureSelection();const label=this.subjects.length===subjects.length?"All subjects mixed":this.subjects.map(s=>labels[s]).join(" + ");Quiz.start({pool,length:this.length,mode:this.mode,subject:this.subjects.length===1?this.subjects[0]:"mixed",label:label+(this.topic!=="all"?" · "+this.topic:"")});};
-  document.addEventListener("click",event=>{const one=event.target.closest("[data-setup-sub]");const all=event.target.closest("[data-setup-all]");if(one){ensureSelection();const key=one.dataset.setupSub;if(Setup.subjects.includes(key)){if(Setup.subjects.length>1)Setup.subjects=Setup.subjects.filter(x=>x!==key);}else Setup.subjects=[...Setup.subjects,key];Setup.subject=Setup.subjects[0];Setup.topic="all";}else if(all){Setup.subjects=[...subjects];Setup.subject=subjects[0];Setup.topic="all";Setup.renderSubject();}},true);
+  Setup.renderSubject=function(){
+    ensureSelection();
+    const countBox=document.getElementById("quiz-subject-count");
+    if(countBox&&!countBox.dataset.ready){
+      [1,2,3,4,5,"multiple"].forEach(n=>{
+        const btn=document.createElement("button");
+        btn.type="button";btn.className="length-option";
+        btn.textContent=n==="multiple"?"Multi":String(n);
+        btn.dataset.subjectCount=String(n);
+        btn.setAttribute("aria-label",n==="multiple"?"Choose multiple subjects":("Choose "+n+" "+(n===1?"subject":"subjects")));
+        btn.title=btn.getAttribute("aria-label");
+        btn.addEventListener("click",()=>{
+          this.subjectCount=n;
+          const max=n==="multiple"?subjects.length:Number(n);
+          if(this.subjects.length>max)this.subjects=this.subjects.slice(0,max);
+          this.topic="all";
+          this.renderSubject();
+        });
+        countBox.append(btn);
+      });
+      countBox.dataset.ready="1";
+    }
+    const max=subjectLimit(),selected=this.subjects.length,multiple=this.subjectCount==="multiple";
+    document.querySelectorAll("[data-setup-sub]").forEach(btn=>{
+      const active=this.subjects.includes(btn.dataset.setupSub);
+      btn.setAttribute("aria-pressed",String(active));
+      btn.disabled=!active&&selected>=max;
+    });
+    document.querySelectorAll("[data-subject-count]").forEach(btn=>btn.setAttribute("aria-pressed",String(btn.dataset.subjectCount===String(this.subjectCount))));
+    countBox?.querySelectorAll("button").forEach(btn=>btn.setAttribute("aria-pressed",String(btn.dataset.subjectCount===String(this.subjectCount))));
+    const hint=document.getElementById("quiz-subject-hint");
+    if(hint)hint.textContent=multiple?("2 or more · "+selected+" selected"):(selected+"/"+max+" selected");
+    const start=document.getElementById("setup-start");
+    if(start)start.disabled=!subjectChoiceValid();
+    const multi=selected>1;
+    document.getElementById("topic-label").hidden=multi;
+    document.getElementById("topic-sel").hidden=multi;
+    document.getElementById("setup-pool").hidden=multi;
+    this.topic=multi?"all":(this.topic||"all");
+    const counts={};this.allPool().forEach(q=>counts[q.topic]=(counts[q.topic]||0)+1);
+    const sel=document.getElementById("topic-sel");
+    sel.replaceChildren(new Option("All topics ("+this.allPool().length+")","all"),...Object.keys(counts).sort().map(t=>new Option(t+" ("+counts[t]+")",t)));
+    sel.value=!multi&&this.topic&&counts[this.topic]?this.topic:"all";
+    this.update();
+  };
+  Setup.update=function(){
+    const sel=document.getElementById("topic-sel");
+    this.topic=sel.value||"all";
+    const count=this.pool().length;
+    document.getElementById("setup-pool").textContent=count+" questions available in this selection";
+    const lengths=[5,10,20,40,60,100,200,0];
+    if(this.length&&this.length>=count)this.length=0;
+    const box=document.getElementById("length-buttons");
+    box.replaceChildren();
+    lengths.forEach(n=>{
+      if(n&&n>=count)return;
+      const btn=document.createElement("button");
+      btn.type="button";btn.className="length-option";btn.textContent=n?String(n):"All "+count;
+      btn.setAttribute("aria-pressed",String(n===this.length));
+      btn.addEventListener("click",()=>{Setup.length=n;Setup.update();});
+      box.append(btn);
+    });
+    document.querySelectorAll("[data-mode]").forEach(btn=>btn.setAttribute("aria-checked",String(btn.dataset.mode===this.mode)));
+    const total=Math.min(this.length||count,count),secs=total*40;
+    document.getElementById("mode-description").textContent=this.mode==="exam"
+      ?"Timed mock: "+Math.floor(secs/60)+" min "+(secs%60?secs%60+" sec ":"")+"for "+total+" questions. Explanations appear when you finish."
+      :"Practice: no timer. See explanations after answers and use hints when you need them.";
+  };
+  Setup.start=function(){
+    ensureSelection();
+    if(!subjectChoiceValid()){
+      toast(this.subjectCount==="multiple"?"Choose at least two subjects.":"Choose exactly "+subjectLimit()+" subjects.");
+      return;
+    }
+    const pool=this.pool();
+    if(!pool.length){toast("There are no questions in this selection yet.");return;}
+    const label=this.subjects.map(s=>labels[s]).join(" + ");
+    Quiz.start({pool,length:this.length,mode:this.mode,subject:this.subjects.length===1?this.subjects[0]:"mixed",label:label+(this.topic!=="all"?" · "+this.topic:"")});
+  };
+  document.addEventListener("click",event=>{
+    const one=event.target.closest("[data-setup-sub]");
+    if(!one||one.disabled)return;
+    ensureSelection();
+    const key=one.dataset.setupSub;
+    const max=subjectLimit();
+    if(Setup.subjects.includes(key)){
+      if(Setup.subjects.length>1)Setup.subjects=Setup.subjects.filter(x=>x!==key);
+    }else if(Setup.subjects.length<max)Setup.subjects.push(key);
+    Setup.subject=Setup.subjects[0]||"social";
+    Setup.topic="all";
+    Setup.renderSubject();
+  });
   document.querySelectorAll("[data-notes-sub='careerTechnology']").forEach(btn=>btn.addEventListener("click",()=>{Notes.sub=btn.dataset.notesSub;Notes.activeId=null;Notes.refresh({keepScroll:false});}));
   Home.render();
 })();
