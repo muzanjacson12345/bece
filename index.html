@@ -11284,7 +11284,7 @@ function ask(cfg) {
     (cfg.fields || []).forEach(fd => {
       let inp;
       if (fd.options) { inp = document.createElement('select'); fd.options.forEach(([v, t]) => inp.append(new Option(t, v))); }
-      else if (fd.multiline) { inp = document.createElement('textarea'); inp.rows = 3; }
+      else if (fd.multiline) { inp = document.createElement('textarea'); inp.rows = fd.rows || 3; }
       else { inp = document.createElement('input'); inp.type = fd.type || 'text'; if (fd.type === 'number') inp.inputMode = 'numeric'; }
       inp.className = 'adm-search'; if (fd.placeholder) inp.placeholder = fd.placeholder; if (fd.max) inp.maxLength = fd.max;
       if (fd.type === 'checkbox') inp.checked = !!fd.value; else if (fd.value !== undefined) inp.value = fd.value;
@@ -11719,6 +11719,53 @@ const Adm = (() => {
     if(!await ask({title:'Save profile changes?',intro:'This will replace '+Object.keys(patch).length+' supported fields for '+nameOf(p.id)+'. Other player data remains unchanged.',ok:'Save profile'}))return;
     if(await run(()=>pdoc(p.id).update(patch),'Player profile updated.'))logAct('profile-edit',p.id,Object.keys(patch).join(', '));
   }
+
+  async function editFullPlayerJson(p){
+    if(!S.isOwner||!canAct(p))return App.toast('Owner access is required for the advanced player editor.','warn');
+    let d;try{d=await readFresh(p);}catch(e){return fail(e);}
+    const safeTree=(v,depth=0)=>{
+      if(depth>24)return false;
+      if(!v||typeof v!=='object')return true;
+      if(Array.isArray(v))return v.every(x=>safeTree(x,depth+1));
+      return Object.keys(v).every(k=>k!=='__proto__'&&k!=='constructor'&&!/^__.*__$/.test(k)&&safeTree(v[k],depth+1));
+    };
+    const v=await ask({
+      title:'Advanced player data · '+nameOf(p.id),
+      intro:'Owner-only editor for the complete player document, including fields not listed in the guided editor. Keep the JSON valid. Existing Firestore values that are unchanged are preserved. Maximum document size: 700 KB.',
+      fields:[{key:'json',label:'Complete player document JSON',multiline:true,rows:16,max:700000,value:JSON.stringify(d,null,2)}],
+      ok:'Review full record',
+      validate:x=>{
+        let parsed;try{parsed=JSON.parse(x.json);}catch{return 'The JSON is invalid. Check commas, quotes and brackets.';}
+        if(!record(parsed))return 'The player document must be a JSON object.';
+        if(Object.prototype.hasOwnProperty.call(parsed,'id'))return 'Do not add an id field. The player ID is fixed by the document.';
+        if(!safeTree(parsed))return 'The JSON contains a reserved or unsafe field name, or is nested too deeply.';
+        if(JSON.stringify(parsed).length>700000)return 'The player document is too large. Keep it below 700 KB.';
+        return '';
+      }
+    });
+    if(!v)return;
+    const next=JSON.parse(v.json),patch={},changed=[],removed=[];
+    for(const [key,value] of Object.entries(next)){
+      if(JSON.stringify(d[key])!==JSON.stringify(value)){patch[key]=value;changed.push(key);}
+    }
+    for(const key of Object.keys(d)){
+      if(!Object.prototype.hasOwnProperty.call(next,key)){patch[key]=del();removed.push(key);}
+    }
+    if(!Object.keys(patch).length)return App.toast('No player data changes detected.');
+    const verify=await ask({
+      title:'Apply advanced player changes?',
+      intro:'Player: '+nameOf(p.id)+' · '+changed.length+' field(s) changed · '+removed.length+' field(s) removed. This is a full-document correction, not just a guided profile edit. Export a backup first if you may need to undo it.',
+      fields:[{key:'confirm',label:'Type APPLY to confirm',max:20}],
+      ok:'Apply player changes',
+      danger:true,
+      validate:x=>x.confirm.trim()==='APPLY'?'':'Type APPLY exactly.'
+    });
+    if(!verify)return;
+    if(await run(()=>pdoc(p.id).update(patch),'Advanced player data updated.')){
+      logAct('full-json-edit',p.id,'changed: '+changed.join(', ').slice(0,100)+'; removed: '+removed.join(', ').slice(0,80));
+    }
+  }
+
   async function editBag(p){
     if(!canAct(p))return App.toast('You cannot edit this inventory.','warn');
     let d;try{d=await readFresh(p);}catch(e){return fail(e);}
@@ -11803,7 +11850,7 @@ const Adm = (() => {
     const g3 = elx('div', 'adm-btns3', btn('\u270F\uFE0F Rename', 'btn-ghost btn-sm', () => rename(p), !can), btn('Remove photo', 'btn-ghost btn-sm', () => clearField(p, 'photo', 'photo'), !can || !p.photo), btn('Remove bio', 'btn-ghost btn-sm', () => clearField(p, 'bio', 'bio'), !can || !p.bio));
     const g4 = elx('div', 'adm-btns3', btn('Reset progress', 'btn-ghost btn-sm adm-danger', () => reset(p), !kill), banned ? btn('Unban', 'btn-primary btn-sm', () => unban(p.id), !can) : btn('\u{1F6AB} Ban', 'btn-ghost btn-sm adm-danger', () => ban(p), !kill), btn('\u{1F5D1}\uFE0F Delete', 'btn-ghost btn-sm adm-danger', () => remove(p), !kill));
     const g5 = S.isOwner && p.id !== S.uid && roleOf(p.id) !== 'owner' ? elx('div', 'adm-btns', isAppointed(p.id) ? btn('\u{1F6E1}\uFE0F Remove admin role', 'btn-ghost btn-sm adm-danger', () => removeStaff(p.id, 'admin')) : btn(roleOf(p.id) ? '\u{1F6E1}\uFE0F Make permanent admin' : '\u{1F6E1}\uFE0F Make admin', 'btn-primary btn-sm', () => appoint(p))) : elx('div');
-    const gx = elx('div', 'adm-btns', btn('🧰 Edit bag & items', 'btn-ghost btn-sm', () => editBag(p), !can), btn('📝 Full profile editor', 'btn-primary btn-sm', () => editProfile(p), !can), ...(S.isOwner ? [btn('⬇ Export player JSON', 'btn-ghost btn-sm', () => exportPlayerJson(p))] : []));
+    const gx = elx('div', 'adm-btns', btn('🧰 Edit bag & items', 'btn-ghost btn-sm', () => editBag(p), !can), btn('📝 Full profile editor', 'btn-primary btn-sm', () => editProfile(p), !can), ...(S.isOwner ? [btn('🛠️ Advanced JSON editor', 'btn-ghost btn-sm', () => editFullPlayerJson(p), !can), btn('⬇ Export player JSON', 'btn-ghost btn-sm', () => exportPlayerJson(p))] : []));
     const note = document.createElement('textarea'); note.className = 'adm-ta'; note.rows = 2; note.maxLength = 500; note.placeholder = 'Private note about this player (only admins and the owner can see it)'; note.value = (S.notes.get(p.id) || {}).text || ''; note.setAttribute('aria-label', 'Private note');
     const nb = btn('Save note', 'btn-ghost btn-sm', () => saveNote(p, note.value));
     const nmeta = S.notes.get(p.id); const nm = nmeta ? elx('p', 'adm-info', `Last edited by ${nmeta.by || 'staff'} \u00B7 ${fmtTime(nmeta.at)}`) : null;
