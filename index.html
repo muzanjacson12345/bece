@@ -7809,15 +7809,17 @@ function render(screen) {
   });
   currentScreen = screen;
   if (screen === 'home') Home.render();
-  if (screen === 'notes') Notes.enter();
-  if (screen === 'setup') Setup.enter();
   if (screen === 'notes') {
     const essayView = /(?:[?&])view=essays(?:&|$)/.test(currentHash()) || /^#\/essays(?:[?#]|$)/.test(currentHash());
     $('notes-content').hidden = essayView;
     $('notes-essay-view').hidden = !essayView;
     document.querySelectorAll('[data-notes-view]').forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.notesView === (essayView ? 'essays' : 'notes'))));
+    // Switch the visible panel before running either renderer, so a renderer error
+    // can never leave the selected tab showing the previous panel.
     if (essayView) Essays.enter();
+    else Notes.enter();
   }
+  if (screen === 'setup') Setup.enter();
   if (screen === 'achievements') window.renderAchievements?.();
   if (changed) {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -7836,7 +7838,16 @@ document.addEventListener('click', event => {
   const essayView = tab.dataset.notesView === 'essays';
   const hash = essayView ? '#/notes?view=essays' : '#/notes';
   setHash(hash, false);
-  render('notes');
+
+  // Notes and Essays share one screen. Toggle the panels directly instead of
+  // re-entering Notes (which was preventing the essay panel from appearing).
+  $('notes-content').hidden = essayView;
+  $('notes-essay-view').hidden = !essayView;
+  document.querySelectorAll('[data-notes-view]').forEach(item =>
+    item.setAttribute('aria-selected', String(item.dataset.notesView === (essayView ? 'essays' : 'notes')))
+  );
+  if (essayView) Essays.enter();
+  else Notes.enter();
 });
 
 // Route links (#/notes, #/essays...) navigate directly instead of relying on hashchange.
