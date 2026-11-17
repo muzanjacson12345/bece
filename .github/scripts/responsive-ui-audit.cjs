@@ -56,6 +56,9 @@ async function main() {
     ['owner-only reward controls', 'Global practice economy'],
     ['owner-only shop controls', 'Shop control'],
     ['owner-only exports', 'Owner exports'],
+    ['in-place staff renewal', 'async function renewCurrentSession()'],
+    ['Owner/Admin role-aware navigation', "label.textContent = S.isOwner ? 'Owner' : 'Admin'"],
+    ['Renew button uses the in-place handler', "btn('Renew', 'btn-ghost btn-sm', renewCurrentSession)"],
   ];
   const sourceChecks = ownerFeatures.map(([label, token]) => ({ label, passed: source.includes(token) }));
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
