@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="mobile-subject-picker-polish-2026-11-17-r2">
+<meta name="bece-build" content="profile-account-safety-duel-count-2026-11-17-r1"">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -3077,6 +3077,46 @@ html[data-theme="dark"] #screen-home .career-card .subject-index { color:#e7d08d
   #screen-home .subject-card { min-height:132px; border-radius:16px; }
   #screen-home .subject-card h3 { font-size:16px !important; line-height:1.2; }
   #screen-home .subject-bottom { padding-top:10px; font-size:11px; }
+}
+</style>
+<style id="account-safety-and-duel-count-fix">
+#duels-body .duel-create-pane .duel-subject-count {
+  display:grid !important; grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  gap:6px !important; width:100%;
+}
+#duels-body .duel-create-pane .duel-subject-count > button {
+  display:flex; align-items:center; justify-content:center; min-width:0 !important;
+  min-height:40px; padding:6px 2px !important; white-space:nowrap !important;
+  overflow:hidden; overflow-wrap:normal !important; word-break:keep-all;
+  font-size:clamp(12px,3.4vw,14px); line-height:1;
+}
+#duels-body .duel-create-pane .duel-subject-count > button[aria-pressed="true"] {
+  border-color:var(--accent); color:var(--accent); background:var(--accent-soft);
+  box-shadow:inset 0 0 0 1px var(--accent);
+}
+#screen-home .rme-card .subject-icon {
+  box-sizing:border-box; width:38px !important; height:38px !important;
+  min-width:38px; min-height:38px; aspect-ratio:1 / 1;
+  flex:0 0 38px !important; border-radius:50% !important;
+}
+#screen-home .rme-card .subject-icon svg { width:22px; height:22px; flex:0 0 22px; }
+.account-safety {
+  margin-top:22px; padding:18px; border:1px solid var(--line);
+  border-radius:18px; background:var(--surface-2);
+}
+.account-safety-head h2 { margin:4px 0 8px; font-size:20px; }
+.account-safety-head p:last-child, .account-safety-note {
+  color:var(--muted); font-size:13px; line-height:1.5;
+}
+.account-safety-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-top:14px; }
+.account-safety-actions button { min-width:0; min-height:44px; white-space:normal; }
+.btn-danger { color:#fff !important; background:#a83242 !important; border-color:#a83242 !important; }
+.account-safety-note { margin:12px 0 0; }
+.profile-staff-entry { margin-top:12px; }
+.profile-staff-entry button { width:100%; min-height:46px; }
+@media(max-width:420px) {
+  .account-safety { padding:14px; }
+  .account-safety-actions { grid-template-columns:1fr; }
 }
 </style>
 </head>
@@ -9954,6 +9994,56 @@ function buildProfileCard() {
   const tabs = o('div', 'segmented cz-tabs'), panel = o('div', 'cz-panel');
   tabs.setAttribute('role', 'tablist'); panel.setAttribute('role', 'tabpanel');
   cz.append(hd, tabs, panel); el.append(cz);
+  /* Account actions live in Profile, separate from appearance customisation. */
+  const safety = o('section', 'account-safety');
+  const safetyHead = o('div', 'account-safety-head');
+  safetyHead.append(o('p', 'eyebrow', 'Account & safety'), o('h2', '', 'Manage your profile data'),
+    o('p', 'muted', 'Your app currently uses an anonymous profile on this device. You can reset its progress or remove this profile.'));
+  const safetyActions = o('div', 'account-safety-actions');
+  const resetBtn = o('button', 'btn btn-ghost', '↻ Reset progress');
+  const deleteBtn = o('button', 'btn btn-danger', 'Delete profile');
+  resetBtn.type = deleteBtn.type = 'button';
+  const safetyNote = o('p', 'account-safety-note', 'Reset keeps this profile ID. Delete removes this profile and its anonymous sign-in. Existing shared duel records may remain.');
+  resetBtn.onclick = async () => {
+    if (!S.db || !S.uid) return App.toast('Connect to the internet before resetting your profile.', 'warn');
+    if (!(await confirmDialog('Reset your progress?', 'This clears your cloud progress, EXP, coins, streak, achievements and profile customisation, plus this browser’s quiz history, bookmarks and notes-studied list. This cannot be undone.', 'Reset progress', 'Keep it'))) return;
+    try {
+      clearTimeout(S.saveT); S.saveT = 0; S.pend = null;
+      await S.db.doc('players/' + S.uid).delete();
+      S.doc = {};
+      ['bece_history', 'bece_bookmarks', 'bece_studied'].forEach(k => store.remove(k));
+      bookmarks = []; studied = new Set();
+      S.players = (S.players || []).filter(p => p.id !== S.uid);
+      renderAccount(); Home.render(); renderDaily(); renderAchievements(); renderFriends();
+      App.toast('Your progress has been reset.', 'good');
+    } catch (err) {
+      App.toast('Could not reset your progress. Check your connection and try again.', 'warn');
+    }
+  };
+  deleteBtn.onclick = async () => {
+    if (!S.db || !S.uid || !firebase.auth().currentUser) return App.toast('Your profile service is not ready. Please try again online.', 'warn');
+    if (!(await confirmDialog('Delete your profile?', 'This permanently removes your player profile and anonymous sign-in. You will start with a new profile next time. Shared duel records may remain. This cannot be undone.', 'Continue', 'Cancel'))) return;
+    if (!(await confirmDialog('Final confirmation', 'Are you sure you want to permanently delete this profile? Your current profile and progress will not be recoverable.', 'Delete permanently', 'Keep my profile'))) return;
+    try {
+      const uid = S.uid, user = firebase.auth().currentUser;
+      clearTimeout(S.saveT); S.saveT = 0; S.pend = null;
+      await S.db.doc('players/' + uid).delete();
+      await user.delete();
+      ['bece_history', 'bece_bookmarks', 'bece_studied'].forEach(k => store.remove(k));
+      App.toast('Profile deleted. A fresh profile will be created.', 'good');
+      setTimeout(() => location.reload(), 500);
+    } catch (err) {
+      App.toast('The profile could not be fully deleted. Please check your connection and try again.', 'warn');
+    }
+  };
+  safetyActions.append(resetBtn, deleteBtn);
+  safety.append(safetyHead, safetyActions, safetyNote);
+  const staffRow = o('div', 'profile-staff-entry');
+  const staffBtn = o('button', 'btn btn-ghost', '🛡️ Open Admin / Owner Panel');
+  staffBtn.type = 'button'; staffBtn.onclick = () => { S.ftab = 'admin'; App.navigate('friends'); };
+  staffRow.append(staffBtn); staffRow.hidden = !S.isAdmin;
+  el.append(safety, staffRow);
+
 
   const STATUS = { saved: 'All changes saved', saving: 'Saving\u2026', error: 'Couldn\u2019t save \u00B7 will retry' };
   const setStatus = s => { status.dataset.state = s; status.textContent = STATUS[s]; };
@@ -10156,6 +10246,7 @@ function buildProfileCard() {
       subEl.textContent = `Level ${x.level} \u00B7 ${x.ex} EXP`;
       tiles.replaceChildren(tile(String(x.ex), 'Total EXP'), tile(`Lv ${x.level}`, `${LVL - x.into} EXP to next`), tile(`\u{1F525} ${x.streak}`, `Day streak \u00B7 best ${x.best}`), tile(x.rank ? `#${x.rank}` : '\u2014', `of ${plural(x.count, 'player')}`));
       meter.max = LVL; meter.value = x.into; paint();
+      staffRow.hidden = !S.isAdmin;
       if (st.refresh && !S.pend && !S.saveT) st.refresh();
     },
   };
@@ -10679,7 +10770,10 @@ const Duel = (() => {
       const max = multiple ? subjectKeys.length : Number(D.cfg.subjectCount);
       const selected = D.cfg.subjects.length;
       const valid = multiple ? selected >= 2 : selected === max;
-      countBox.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.count === String(D.cfg.subjectCount))));
+      countBox.querySelectorAll('button').forEach(b => {
+        b.textContent = b.dataset.count === 'multiple' ? 'Multi' : b.dataset.count;
+        b.setAttribute('aria-pressed', String(b.dataset.count === String(D.cfg.subjectCount)));
+      });
       subjectBox.querySelectorAll('button').forEach(b => {
         const on = D.cfg.subjects.includes(b.dataset.subject);
         b.setAttribute('aria-pressed', String(on));
@@ -10695,6 +10789,7 @@ const Duel = (() => {
       b.type = 'button'; b.dataset.count = String(n);
       b.setAttribute('aria-label', n === 'multiple' ? 'Choose multiple subjects' : `Choose ${n} ${n === 1 ? 'subject' : 'subjects'}`);
       b.title = b.getAttribute('aria-label');
+      b.textContent = n === 'multiple' ? 'Multi' : String(n);
       b.onclick = () => {
         D.cfg.subjectCount = n;
         const max = n === 'multiple' ? subjectKeys.length : Number(n);
