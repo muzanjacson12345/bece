@@ -2871,6 +2871,12 @@ input, select, textarea { max-width: 100%; min-width: 0; }
  .account-exp{display:none}
 }
 </style>
+
+<style id="fix-rme-overview-card-width">
+/* RME is a regular subject card: keep it in one grid column like the others. */
+#screen-home .subject-grid > .rme-card { grid-column: auto !important; width: auto; min-width: 0; }
+#screen-home .subject-grid > .rme-card .subject-icon { flex: 0 0 46px; }
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
