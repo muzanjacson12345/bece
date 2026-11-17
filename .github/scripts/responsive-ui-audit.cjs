@@ -58,6 +58,7 @@ async function main() {
     ['owner-only exports', 'Owner exports'],
     ['overview dashboard', "st.sub === 'overview' ? overview()"],
     ['full player profile editor', 'async function editProfile(p)'],
+    ['Owner advanced full player JSON editor', 'async function editFullPlayerJson(p)'],
     ['guided inventory and bag editor', 'async function editBag(p)'],
     ['owner JSON backup export', 'function exportAllJson()'],
     ['owner JSON backup restore', 'async function importAllJson()'],
