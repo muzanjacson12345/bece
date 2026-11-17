@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'duel-count-scope-fix-2026-11-17-r1';
+const EXPECTED_BUILD = 'overview-owner-controls-2026-11-17-r2';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -14,6 +14,10 @@ const ROUTES = [
   { name: 'duels', hash: '#/duels', screen: 'duels' },
   { name: 'notes', hash: '#/notes', screen: 'notes' },
   { name: 'essays', hash: '#/notes?view=essays', screen: 'notes' },
+  { name: 'achievements', hash: '#/achievements', screen: 'achievements' },
+  { name: 'shop', hash: '#/shop', screen: 'shop' },
+  { name: 'profile', hash: '#/me', screen: 'me' },
+  { name: 'admin', hash: '#/admin', screen: 'admin' },
 ];
 const VIEWPORTS = [
   { name: 'phone-320', width: 320, height: 780, mobile: true },
@@ -44,6 +48,21 @@ async function main() {
   fs.mkdirSync('artifacts/ui-audit/screenshots', { recursive: true });
   await waitForLatestDeployment();
 
+  const source = fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8');
+  const ownerFeatures = [
+    ['global practice reward rates', 'async function setRewardRates()'],
+    ['global shop pause', 'async function toggleShop()'],
+    ['owner audit CSV export', 'function downloadAuditCsv()'],
+    ['owner-only reward controls', 'Global practice economy'],
+    ['owner-only shop controls', 'Shop control'],
+    ['owner-only exports', 'Owner exports'],
+    ['in-place staff renewal', 'async function renewCurrentSession()'],
+    ['Owner/Admin role-aware navigation', "label.textContent = S.isOwner ? 'Owner' : 'Admin'"],
+    ['Renew button uses the in-place handler', "btn('Renew', 'btn-ghost btn-sm', renewCurrentSession)"],
+  ];
+  const sourceChecks = ownerFeatures.map(([label, token]) => ({ label, passed: source.includes(token) }));
+  const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
+
   const browser = await chromium.launch({ headless: true });
   const report = {
     site: BASE,
@@ -53,6 +72,7 @@ async function main() {
     screenshots: [],
     checks: [],
     staffPanelChecks: [],
+    sourceChecks,
     pageErrors: [],
     consoleErrors: [],
     httpErrors: [],
@@ -168,6 +188,37 @@ async function main() {
               outOfBounds,
               clipped,
               title: document.title,
+              heroActions: (() => {
+                const host = document.querySelector('#screen-home .hero-actions');
+                if (!host) return null;
+                const hostRect = host.getBoundingClientRect();
+                return {
+                  display: getComputedStyle(host).display,
+                  columns: getComputedStyle(host).gridTemplateColumns,
+                  width: Math.round(hostRect.width),
+                  buttons: [...host.querySelectorAll(':scope > .btn')].map(button => {
+                    const rect = button.getBoundingClientRect();
+                    const range = document.createRange();
+                    range.selectNodeContents(button);
+                    const textRect = range.getBoundingClientRect();
+                    return {
+                      label: button.textContent.trim().replace(/\s+/g, ' '),
+                      width: Math.round(rect.width),
+                      height: Math.round(rect.height),
+                      textLeft: Math.round(textRect.left),
+                      textRight: Math.round(textRect.right),
+                      left: Math.round(rect.left),
+                      right: Math.round(rect.right),
+                    };
+                  }),
+                };
+              })(),
+              flashcard: (() => {
+                const node = document.querySelector('#flashcard-disclosure');
+                if (!node) return { found: false };
+                const rect = node.getBoundingClientRect();
+                return { found: true, width: Math.round(rect.width), right: Math.round(rect.right), open: node.open };
+              })(),
             };
           });
 
@@ -180,6 +231,32 @@ async function main() {
             report.failures.push(`${key}: document has ${diagnostics.horizontalOverflow}px horizontal overflow`);
           }
           if (diagnostics.zoomDisabled) report.failures.push(`${key}: mobile zoom is disabled by the viewport meta tag`);
+          if (route.screen === 'home' && viewport.width <= 760) {
+            const actions = diagnostics.heroActions;
+            if (!actions || actions.display !== 'grid') {
+              report.failures.push(`${key}: Overview action buttons are not using the mobile grid layout`);
+            } else if (actions.buttons.length !== 2 || actions.buttons.some(button => button.width < actions.width - 4)) {
+              report.failures.push(`${key}: Overview action buttons are too narrow; expected two full-width stacked buttons`);
+            }
+            if (actions?.buttons.some(button => button.textLeft < 0 || button.textRight > viewport.width + 2)) {
+              report.failures.push(`${key}: Overview action text is clipped outside the phone viewport`);
+            }
+            if (!diagnostics.flashcard?.found || diagnostics.flashcard.width > viewport.width + 2) {
+              report.failures.push(`${key}: Flashcards section is missing or wider than the phone viewport`);
+            }
+          }
+          if (route.screen === 'admin') {
+            const gate = await page.locator('#admin-body').innerText().catch(() => '');
+            if (!/Admin access required/i.test(gate)) {
+              report.failures.push(`${key}: unauthenticated admin route did not show its access gate`);
+            }
+          }
+          if (route.screen === 'shop' && !(await page.locator('#shop-body').count())) {
+            report.failures.push(`${key}: Shop content host is missing`);
+          }
+          if (route.screen === 'achievements' && !(await page.locator('#achievement-card').count())) {
+            report.failures.push(`${key}: Achievements content host is missing`);
+          }
 
           const screenshot = path.join('artifacts/ui-audit/screenshots', viewport.name, `${route.name}.png`);
           fs.mkdirSync(path.dirname(screenshot), { recursive: true });
@@ -489,6 +566,7 @@ async function main() {
     await browser.close();
   }
 
+  report.failures.push(...sourceFailures);
   for (const error of report.pageErrors) report.failures.push(`${error.viewport}: uncaught browser exception: ${error.message}`);
   fs.writeFileSync('artifacts/ui-audit/report.json', JSON.stringify(report, null, 2));
   console.log(`Saved ${report.screenshots.length} screenshots.`);
