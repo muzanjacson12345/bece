@@ -7812,7 +7812,7 @@ function render(screen) {
   if (screen === 'notes') Notes.enter();
   if (screen === 'setup') Setup.enter();
   if (screen === 'notes') {
-    const essayView = /(?:[?&])view=essays(?:&|$)/.test(currentHash());
+    const essayView = /(?:[?&])view=essays(?:&|$)/.test(currentHash()) || /^#\/essays(?:[?#]|$)/.test(currentHash());
     $('notes-content').hidden = essayView;
     $('notes-essay-view').hidden = !essayView;
     document.querySelectorAll('[data-notes-view]').forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.notesView === (essayView ? 'essays' : 'notes'))));
