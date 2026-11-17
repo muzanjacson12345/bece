@@ -229,7 +229,7 @@ service cloud.firestore {
       allow create, update: if ((isOwner() && (!targetIsOwner(id) || request.auth.uid == id)) || (isAdmin() && (!targetIsStaff(id) || request.auth.uid == id)))
         && request.resource.data.keys().hasOnly(['text', 'at', 'by', 'byName'])
         && request.resource.data.text is string && request.resource.data.text.size() <= 200
-        && request.resource.data.at is number
+        && request.resource.data.at == request.time
         && request.resource.data.by == request.auth.uid
         && request.resource.data.byName is string && request.resource.data.byName.size() <= 40;
       // Players may dismiss their own notice; staff may delete only notices for players they can moderate.
