@@ -2334,6 +2334,26 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 #screen-friends .f-tabs { display: none !important; }
 #screen-admin #admin-body { min-width: 0; }
 #screen-admin .adm { max-width: 100%; margin-inline: auto; }
+/* Dedicated staff destination: visible only during a valid admin/owner session. */
+[data-admin-nav][hidden] { display: none !important; }
+.profile-staff-entry { display: none !important; }
+#screen-admin { min-width: 0; overflow-x: clip; }
+#screen-admin .container { min-width: 0; width: min(100% - 28px, 1120px); }
+#screen-admin .adm, #screen-admin .adm-body, #screen-admin .adm-subs { min-width: 0; max-width: 100%; }
+#screen-admin .adm-subs { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+#screen-admin .adm-body > * { min-width: 0; max-width: 100%; }
+@media (max-width: 760px) {
+  body.admin-enabled .tab-bar { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  body.admin-enabled .tab-bar a { min-width: 0; padding-inline: 1px; font-size: 10px; }
+  body.admin-enabled .tab-bar a span { white-space: nowrap; }
+  #screen-admin .container { width: calc(100% - 20px); padding-inline: 0; }
+  #screen-admin .adm { padding: 14px 10px; }
+  #screen-admin .adm .cz-head { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+  #screen-admin .adm .adm-hact { display: flex; flex-wrap: wrap; gap: 8px; }
+  #screen-admin .adm .adm-subs { display: flex; flex-wrap: nowrap; width: 100%; }
+  #screen-admin .adm .adm-subs > button { flex: 0 0 auto; min-height: 44px; }
+  #screen-admin .adm-body { overflow-wrap: anywhere; }
+}
 </style>
 
 
@@ -3386,6 +3406,7 @@ pre, code { overflow-wrap: anywhere; }
       <a href="#/" data-nav="home">Overview</a>
       <a href="#/practice" data-nav="practice">Quiz</a>
       <a href="#/friends" data-nav="friends">Friends</a>
+      <a href="#/admin" data-nav="admin" data-admin-nav hidden>Admin</a>
       <a href="#/duels" data-nav="duels">Duels</a>
       <a href="#/notes" data-nav="notes">Notes</a>
     </nav>
@@ -3844,6 +3865,7 @@ pre, code { overflow-wrap: anywhere; }
   <a href="#/" data-nav="home"><svg class="icon"><use href="#i-home"/></svg><span>Home</span></a>
   <a href="#/practice" data-nav="practice"><svg class="icon"><use href="#i-cards"/></svg><span>Quiz</span></a>
   <a href="#/friends" data-nav="friends"><svg class="icon"><use href="#i-users"/></svg><span>Friends</span></a>
+  <a href="#/admin" data-nav="admin" data-admin-nav hidden><svg class="icon"><use href="#i-shield"/></svg><span>Admin</span></a>
   <a href="#/duels" data-nav="duels"><span aria-hidden="true">⚔️</span><span>Duels</span></a>
   <a href="#/notes" data-nav="notes"><svg class="icon"><use href="#i-book"/></svg><span>Notes</span></a>
 </nav>
@@ -11203,6 +11225,8 @@ function refreshAdmin(force) {
   const now = Date.now(), wasStaff = S.isAdmin, wasOwner = S.isOwner, oldKey = [...S.admins].sort().join() + '|' + [...S.owners].sort().join();
   const adminLive = !!S.adminAt && now < S.adminAt + ADMIN_MS, ownerLive = !!S.ownerAt && now < S.ownerAt + OWNER_MS;
   S.isOwner = ownerLive; S.isAdmin = adminLive || ownerLive;
+  document.querySelectorAll('[data-admin-nav]').forEach(link => { link.hidden = !S.isAdmin; });
+  document.body.classList.toggle('admin-enabled', S.isAdmin);
   S.admins = new Set(); S.owners = new Set();
   S.badgeMap.forEach((until, id) => { if (until > now) { S.admins.add(id); if (S.badgeRole.get(id) === 'owner') S.owners.add(id); } });
   if (S.isAdmin) S.admins.add(S.uid); if (S.isOwner) S.owners.add(S.uid);
