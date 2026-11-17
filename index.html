@@ -3182,9 +3182,11 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <h1 class="setup-title">Make this session yours</h1>
       <p class="muted">A small, focused session is a great place to start.</p>
 
-      <p class="field-label">1. Subjects (choose any number)</p>
-      <p class="hint-text">Tap subjects to add or remove them. Choose one subject, combine several, or select All subjects mixed.</p>
-      <div class="segmented segmented-full" role="group" aria-label="Subject">
+      <p class="field-label">1. How many subjects?</p>
+      <div class="length-grid subject-count-grid" id="quiz-subject-count" role="group" aria-label="Number of subjects"></div>
+      <p class="hint-text" id="quiz-subject-hint">Choose how many subjects you want, then select that exact number below.</p>
+      <p class="field-label">2. Choose your subjects</p>
+      <div class="segmented segmented-full subject-choice-grid" role="group" aria-label="Choose subjects">
         <button type="button" data-setup-sub="social" aria-pressed="true">Social Studies</button>
         <button type="button" data-setup-sub="arts" aria-pressed="false">Creative Arts</button>
         <button type="button" data-setup-sub="maths" aria-pressed="false">Maths</button>
@@ -3194,14 +3196,14 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-setup-sub="french" aria-pressed="false">French</button><button type="button" data-setup-sub="careerTechnology" aria-pressed="false">Career Technology</button>
       </div>
 
-      <label class="field-label" for="topic-sel">2. Focus</label>
+      <label class="field-label" for="topic-sel" id="topic-label">3. Focus</label>
       <select id="topic-sel" class="select"></select>
       <p class="hint-text" id="setup-pool"></p>
 
-      <p class="field-label">3. Number of questions</p>
+      <p class="field-label">4. Number of questions</p>
       <div class="length-grid" id="length-buttons" role="group" aria-label="Number of questions"></div>
 
-      <p class="field-label">4. Study mode</p>
+      <p class="field-label">5. Study mode</p>
       <div class="mode-grid" role="radiogroup" aria-label="Study mode">
         <button type="button" class="mode-option" data-mode="practice" role="radio" aria-checked="true"><strong>Practice</strong><span>Learn as you go</span></button>
         <button type="button" class="mode-option" data-mode="exam" role="radio" aria-checked="false"><svg class="icon"><use href="#i-clock"/></svg><strong>Timed mock</strong><span>Test yourself</span></button>
@@ -7983,70 +7985,46 @@ $('saved-tool').addEventListener('click', () => {
 
 /* ======================= Quiz setup ======================= */
 const Setup = {
-  subject: 'social',
-  length: 10,
-  mode: 'practice',
-  open(subject) {
-    if (subject) { this.subject = subject; this.topic = 'all'; }
-    navigate('setup');
+  subject:'social', subjects:['social'], subjectCount:1, length:10, mode:'practice',
+  open(subject){if(subject){this.subject=subject;this.subjects=[subject];this.subjectCount=1;this.topic='all';}navigate('setup');},
+  enter(){this.renderSubject();},
+  selectedCount(){return this.subjectCount==='multiple'?document.querySelectorAll('[data-setup-sub]').length:Number(this.subjectCount);},
+  pool(){const selected=this.subjects.length?this.subjects:['social'];const topic=$('topic-sel').value;return selected.flatMap(subject=>(questionsDB[subject]||[]).filter(q=>selected.length>1||topic==='all'||q.topic===topic));},
+  renderSubject(){
+    const countBox=$('quiz-subject-count');
+    if(!countBox.dataset.ready){[1,2,3,4,5,'multiple'].forEach(n=>{const b=el('button','length-option',n==='multiple'?'Multiple':`Choose ${n}`);b.type='button';b.dataset.subjectCount=String(n);b.addEventListener('click',()=>{this.subjectCount=n;const max=n==='multiple'?this.subjects.length:Number(n);if(n!=='multiple'&&this.subjects.length>max)this.subjects=this.subjects.slice(0,max);this.paintSubjects();});countBox.append(b);});countBox.dataset.ready='1';}
+    this.paintSubjects();
   },
-  enter() {
-    this.renderSubject();
+  paintSubjects(){
+    const max=this.selectedCount();
+    document.querySelectorAll('[data-setup-sub]').forEach(b=>{const selected=this.subjects.includes(b.dataset.setupSub);b.setAttribute('aria-pressed',String(selected));b.disabled=!selected&&this.subjects.length>=max;});
+    document.querySelectorAll('[data-subject-count]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.subjectCount===String(this.subjectCount))));
+    const valid=this.subjects.length===max&&(this.subjectCount!=='multiple'||this.subjects.length>=2);
+    $('quiz-subject-hint').textContent=this.subjectCount==='multiple'?`Choose at least two subjects. Selected: ${this.subjects.length}.`:`Select exactly ${max} subject${max===1?'':'s'}. Selected: ${this.subjects.length}/${max}.`;
+    $('setup-start').disabled=!valid;
+    const multi=this.subjects.length>1;$('topic-label').hidden=multi;$('topic-sel').hidden=multi;$('setup-pool').hidden=multi;
+    const select=$('topic-sel'),first=this.subjects[0]||'social',counts={};(questionsDB[first]||[]).forEach(q=>{counts[q.topic]=(counts[q.topic]||0)+1;});
+    select.replaceChildren(new Option(`All topics (${(questionsDB[first]||[]).length})`,'all'),...Object.keys(counts).sort().map(t=>new Option(`${t} (${counts[t]})`,t)));
+    select.value=this.topic&&counts[this.topic]?this.topic:'all';this.update();
   },
-  pool() {
-    const topic = $('topic-sel').value;
-    return questionsDB[this.subject].filter(q => topic === 'all' || q.topic === topic);
+  update(){
+    this.topic=$('topic-sel').value;const count=this.pool().length;$('setup-pool').textContent=`${plural(count,'question')} available in this selection`;
+    const lengths=[5,10,20,40,60,0];if(this.length&&this.length>=count)this.length=0;const box=$('length-buttons');box.replaceChildren();
+    lengths.forEach(length=>{if(length&&length>=count)return;const button=el('button','length-option',length?String(length):`All ${count}`);button.type='button';button.setAttribute('aria-pressed',String(length===this.length));button.addEventListener('click',()=>{this.length=length;this.update();});box.append(button);});
+    document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.mode===this.mode)));
+    const n=Math.min(this.length||count,count),seconds=n*40;
+    $('mode-description').textContent=this.mode==='exam'?`Timed mock: ${Math.floor(seconds/60)} min ${seconds%60?`${seconds%60} sec `:''}for ${plural(n,'question')}. Change answers freely; explanations appear when you finish. Hints are off.`:'Practice: no timer. See an explanation after each answer, use a hint when you’re stuck, and work at your own pace.';
   },
-  renderSubject() {
-    document.querySelectorAll('[data-setup-sub]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.setupSub === this.subject)));
-    const select = $('topic-sel');
-    const counts = {};
-    questionsDB[this.subject].forEach(q => { counts[q.topic] = (counts[q.topic] || 0) + 1; });
-    select.replaceChildren(new Option(`All topics (${questionsDB[this.subject].length})`, 'all'),
-      ...Object.keys(counts).sort().map(t => new Option(`${t} (${counts[t]})`, t)));
-    select.value = this.topic && counts[this.topic] ? this.topic : 'all';
-    this.update();
-  },
-  update() {
-    this.topic = $('topic-sel').value;
-    const count = this.pool().length;
-    $('setup-pool').textContent = `${plural(count, 'question')} available in this selection`;
-    const lengths = [5, 10, 20, 40, 60, 0];
-    if (this.length && this.length >= count) this.length = 0;
-    const box = $('length-buttons');
-    box.replaceChildren();
-    lengths.forEach(length => {
-      if (length && length >= count) return; // "All N" covers it
-      const button = el('button', 'length-option', length ? String(length) : `All ${count}`);
-      button.type = 'button';
-      button.setAttribute('aria-pressed', String(length === this.length));
-      button.addEventListener('click', () => { this.length = length; this.update(); });
-      box.append(button);
-    });
-    document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === this.mode)));
-    const n = Math.min(this.length || count, count);
-    const seconds = n * 40;
-    $('mode-description').textContent = this.mode === 'exam'
-      ? `Timed mock: ${Math.floor(seconds / 60)} min ${seconds % 60 ? `${seconds % 60} sec ` : ''}for ${plural(n, 'question')}. Change answers freely; explanations appear when you finish. Hints are off.`
-      : 'Practice: no timer. See an explanation after each answer, use a hint when you’re stuck, and work at your own pace. Answers lock once chosen.';
-  },
-  start() {
-    const pool = this.pool();
-    const topic = $('topic-sel').value;
-    Quiz.start({ pool, length: this.length, mode: this.mode, subject: this.subject,
-      label: `${SUBJECT_LABEL[this.subject]}${topic === 'all' ? '' : ` · ${topic}`}` });
+  start(){
+    const max=this.selectedCount();if(this.subjects.length!==max||(this.subjectCount==='multiple'&&this.subjects.length<2)){toast(`Please choose exactly ${this.subjectCount==='multiple'?'two or more':max} subjects.`);return;}
+    const pool=this.pool(),topic=$('topic-sel').value,label=this.subjects.map(x=>SUBJECT_LABEL[x]||x).join(' + ');
+    Quiz.start({pool,length:this.length,mode:this.mode,subject:this.subjects.length===1?this.subjects[0]:'mixed',label:`${label}${this.subjects.length===1&&topic!=='all'?` · ${topic}`:''}`});
   },
 };
-document.querySelectorAll('[data-setup-sub]').forEach(b => b.addEventListener('click', () => { Setup.subject = b.dataset.setupSub; Setup.topic = 'all'; Setup.renderSubject(); }));
-$('topic-sel').addEventListener('change', () => Setup.update());
-document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { Setup.mode = b.dataset.mode; Setup.update(); }));
-document.querySelector('.mode-grid').addEventListener('keydown', e => {
-  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
-  e.preventDefault();
-  Setup.mode = Setup.mode === 'practice' ? 'exam' : 'practice';
-  Setup.update();
-  document.querySelector(`[data-mode="${Setup.mode}"]`).focus();
-});
+document.querySelectorAll('[data-setup-sub]').forEach(b=>b.addEventListener('click',()=>{const subject=b.dataset.setupSub,max=Setup.selectedCount(),at=Setup.subjects.indexOf(subject);if(at>=0)Setup.subjects.splice(at,1);else if(Setup.subjects.length<max)Setup.subjects.push(subject);Setup.subject=Setup.subjects[0]||'social';Setup.topic='all';Setup.paintSubjects();}));
+$('topic-sel').addEventListener('change',()=>Setup.update());
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{Setup.mode=b.dataset.mode;Setup.update();}));
+document.querySelector('.mode-grid').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();Setup.mode=Setup.mode==='practice'?'exam':'practice';Setup.update();document.querySelector(`[data-mode="${Setup.mode}"]`).focus();});
 $('setup-start').addEventListener('click', () => Setup.start());
 
 /* ======================= Quiz ======================= */
@@ -10209,7 +10187,7 @@ const Duel = (() => {
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   const SUBS = { mixed: 'Mixed subjects', social: 'Social Studies', arts: 'Creative Arts', maths: 'Mathematics', computing: 'Computing', rme: 'RME', integratedScience: 'Integrated Science', french: 'French', careerTechnology: 'Career Technology' };
   const LENS = [5, 8, 10, 15, 20], TIMES = [10, 15, 20, 30];
-  const D = { open: [], code: null, doc: null, unsub: null, started: false, cd: false, idx: 0, me: null, log: [], timer: null, locked: false, card: null, list: null, err: null, cfg: { subject: 'mixed', len: 8, secs: 15, vis: 'public' } };
+  const D = { open: [], code: null, doc: null, unsub: null, started: false, cd: false, idx: 0, me: null, log: [], timer: null, locked: false, card: null, list: null, err: null, cfg: { subjects: ['social'], subjectCount: 1, len: 8, secs: 15, vis: 'public' } };
   const mix = a => [...a].sort(() => Math.random() - .5);
   const col = () => S.db.collection('duels');
   const myName = () => (S.doc && S.doc.displayName) || 'Player';
@@ -10222,7 +10200,8 @@ const Duel = (() => {
   const who = id => (id === S.uid ? { id, ...(S.doc || {}) } : S.players.find(x => x.id === id) || { id });
   const av = (id, n) => bubble(who(id), n);
   const chips = (...t) => { const c = o('div', 'duel-chips'); t.filter(Boolean).forEach(x => c.append(o('span', '', x))); return c; };
-  const cfgChips = d => chips(SUBS[d.subject] || 'Mixed subjects', `${(d.qids || []).length} questions`, `${d.secs || 15}s each`, d.vis === 'private' ? '\u{1F512} Private' : '\u{1F310} Public');
+  const subjectNames = subjects => (subjects || []).map(k => SUBS[k] || k).join(' + ') || 'Mixed subjects';
+  const cfgChips = d => chips(subjectNames(d.subjects || (d.subject && d.subject !== 'mixed' ? [d.subject] : [])), `${(d.qids || []).length} questions`, `${d.secs || 15}s each`, d.vis === 'private' ? '\u{1F512} Private' : '\u{1F310} Public');
   const buzz = n => { try { navigator.vibrate && navigator.vibrate(n); } catch {} };
   let box = null;
   function put(...n) {
@@ -10444,7 +10423,7 @@ const Duel = (() => {
       if (!l.ok) it.append(o('span', '', l.key ? `Your answer: ${txt(l.key)}` : 'No answer (time ran out)'));
       it.append(o('span', '', `Correct: ${txt(q.correct)}`)); if (q.explanation) it.append(o('span', 'muted', q.explanation)); rev.append(it);
     });
-    const d = D.doc, cfg = { subject: d.subject, len: n, secs: secs(), vis: d.vis || 'public' };
+    const d = D.doc, cfg = { subjects: d.subjects || (d.subject && d.subject !== 'mixed' ? [d.subject] : ['social']), subjectCount: (d.subjects || []).length || 1, len: n, secs: secs(), vis: d.vis || 'public' };
     put(o('p', 'eyebrow', 'Duel result'), o('h2', tie ? '' : win ? 'duel-win' : '', tie ? 'It\u2019s a draw!' : win ? 'You won! \u{1F3C6}' : `${oppName()} wins this one`), sc,
       chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, D.best > 1 ? `\u{1F525} best run ${D.best}` : ''),
       cn ? coinPanel(cn, D.coinParts, D.bal) : o('p', 'muted', D.limit ? '\u{1F4B0} Daily duel coin limit reached (10 duels). Come back tomorrow!' : 'No coins this time.'),
@@ -10457,11 +10436,13 @@ const Duel = (() => {
     if (S.settings && S.settings.duelsPaused && !S.isOwner) return warn('New duels are paused for now. Try again later.');
     if (!S.db) return warn('Duels need an internet connection.');
     if (D.code) close();
-    const c = D.cfg, all = c.subject === 'mixed' ? Object.values(questionsDB).flat() : (questionsDB[c.subject] || []);
+    const c = D.cfg, selected = c.subjects || ['social'];
+    if (selected.length !== (c.subjectCount === 'multiple' ? selected.length : Number(c.subjectCount)) || (c.subjectCount === 'multiple' && selected.length < 2)) return warn('Choose the exact number of subjects first.');
+    const all = selected.flatMap(subject => questionsDB[subject] || []);
     const pool = all.filter(q => !q.diagram && q.options && q.options.length && q.correct);
     if (pool.length < c.len) return warn(`Only ${pool.length} questions available for that subject. Pick fewer.`);
     const code = Array.from({ length: 5 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join('');
-    const doc = { host: S.uid, hostName: myName(), guest: null, guestName: '', subject: c.subject, secs: c.secs, vis: c.vis, qids: mix(pool).slice(0, c.len).map(q => q.id), state: 'waiting', created: Date.now(), hb: Date.now(), res: {} };
+    const doc = { host: S.uid, hostName: myName(), guest: null, guestName: '', subjects: selected, subject: selected.length === 1 ? selected[0] : 'mixed', secs: c.secs, vis: c.vis, qids: mix(pool).slice(0, c.len).map(q => q.id), state: 'waiting', created: Date.now(), hb: Date.now(), res: {} };
     try { await col().doc(code).set(doc); } catch (e) { return warn(`Couldn\u2019t create the duel (${(e && (e.code || e.message)) || 'unknown error'}).`); }
     D.doc = doc; watch(code); lobby();
     clearInterval(D.hbT);
@@ -10501,7 +10482,7 @@ const Duel = (() => {
     D.open.forEach(x => {
       const li = o('li', 'duel-item'), p = who(x.host), t = o('div');
       t.append(o('strong', '', x.hostName || 'Player'), o('span', 'duel-sub', `Level ${lv(p.totalExp || 0).level} \u00B7 ${p.duelW || 0}W-${p.duelL || 0}L \u00B7 ${ago(x.created)}`));
-      li.append(av(x.host, 38), t, btn('Accept', 'btn-primary btn-sm', () => join(x.code)), chips(SUBS[x.subject] || 'Mixed subjects', `${(x.qids || []).length} questions`, `${x.secs || 15}s each`));
+      li.append(av(x.host, 38), t, btn('Accept', 'btn-primary btn-sm', () => join(x.code)), chips(subjectNames(x.subjects || (x.subject && x.subject !== 'mixed' ? [x.subject] : [])), `${(x.qids || []).length} questions`, `${x.secs || 15}s each`));
       D.list.append(li);
     });
   }
@@ -10513,9 +10494,15 @@ const Duel = (() => {
   }
   function card() {
     if (D.card) return D.card;
-    const sel = document.createElement('select'); sel.className = 'duel-sel'; sel.setAttribute('aria-label', 'Duel subject');
-    Object.entries(SUBS).forEach(([k, v]) => sel.append(new Option(v, k))); sel.onchange = () => { D.cfg.subject = sel.value; };
-    const sw = o('div', 'duel-field'); sw.append(o('span', 'duel-lbl', 'Subject'), sel);
+    const subjectBox = o('div', 'duel-subject-picks'), countBox = o('div', 'duel-seg');
+    const subjectKeys = Object.keys(SUBS).filter(k => k !== 'mixed');
+    const syncSubjects = () => {
+      countBox.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.count === String(D.cfg.subjectCount))));
+      subjectBox.querySelectorAll('button').forEach(b => { const on = D.cfg.subjects.includes(b.dataset.subject); b.setAttribute('aria-pressed', String(on)); b.disabled = !on && D.cfg.subjects.length >= (D.cfg.subjectCount === 'multiple' ? subjectKeys.length : Number(D.cfg.subjectCount)); });
+    };
+    [1,2,3,4,5,'multiple'].forEach(n => { const b = o('button', '', n === 'multiple' ? 'Multiple' : `Choose ${n}`); b.type = 'button'; b.dataset.count = String(n); b.onclick = () => { D.cfg.subjectCount = n; const max = n === 'multiple' ? subjectKeys.length : Number(n); if (D.cfg.subjects.length > max) D.cfg.subjects = D.cfg.subjects.slice(0,max); syncSubjects(); }; countBox.append(b); });
+    subjectKeys.forEach(k => { const b = o('button', '', SUBS[k]); b.type = 'button'; b.dataset.subject = k; b.onclick = () => { const at = D.cfg.subjects.indexOf(k), max = D.cfg.subjectCount === 'multiple' ? subjectKeys.length : Number(D.cfg.subjectCount); if (at >= 0) D.cfg.subjects.splice(at,1); else if (D.cfg.subjects.length < max) D.cfg.subjects.push(k); syncSubjects(); }; subjectBox.append(b); });
+    const sw = o('div', 'duel-field'); sw.append(o('span', 'duel-lbl', 'How many subjects?'), countBox, o('span', 'duel-lbl', 'Choose your subjects'), subjectBox); syncSubjects();
     const hint = o('p', 'duel-hint'), sync = () => { hint.textContent = D.cfg.vis === 'public' ? 'Public: shows under Open so anyone on the board can accept.' : 'Private: hidden from the list. Only people with your code can join.'; };
     const vis = seg('Who can join', ['public', 'private'], 'vis', v => (v === 'public' ? '\u{1F310} Public' : '\u{1F512} Private'), sync); sync();
     const inp = document.createElement('input'); inp.className = 'duel-in'; inp.placeholder = 'CODE'; inp.maxLength = 5; inp.autocapitalize = 'characters'; inp.setAttribute('aria-label', 'Duel code');
