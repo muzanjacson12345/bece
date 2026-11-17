@@ -3448,6 +3448,35 @@ pre, code { overflow-wrap: anywhere; }
   #screen-admin .adm-btns > button { flex:1 1 140px; }
 }
 </style>
+<style id="overview-mobile-layout-pass">
+/* Overview: give narrow phones a deliberate single-column reading flow. */
+@media (max-width: 760px) {
+  #screen-home { overflow-x: clip; }
+  #screen-home .container { width: min(100% - 24px, 680px); min-width: 0; }
+  #screen-home .hero { display: flex; align-items: flex-start; min-width: 0; }
+  #screen-home .hero-copy { flex: 1 1 100%; width: 100%; max-width: none; min-width: 0; }
+  #screen-home .hero-art { display: none; }
+  #screen-home .hero h1 { max-width: 14ch; overflow-wrap: anywhere; }
+  #screen-home .snapshot { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  #screen-home .daily-card { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 18px; margin-bottom: 28px; }
+  #screen-home .subject-grid, #screen-home .tool-grid { width: 100%; }
+  #screen-home .subject-card, #screen-home .tool-card { min-width: 0; }
+  #screen-home .subject-card { padding: 13px; }
+  #screen-home .subject-card > *, #screen-home .tool-card > * { min-width: 0; }
+  #screen-home .subject-card strong, #screen-home .subject-card small,
+  #screen-home .tool-card strong, #screen-home .tool-card small { overflow-wrap: anywhere; }
+}
+@media (max-width: 380px) {
+  #screen-home .container { width: calc(100% - 20px); }
+  #screen-home .hero h1 { font-size: clamp(30px, 9vw, 36px); line-height: 1.08; }
+  #screen-home .daily-card { padding: 14px; }
+  #screen-home .subject-grid { gap: 8px; }
+  #screen-home .subject-card { padding: 10px; }
+  #screen-home .subject-card .subject-icon { flex-basis: 36px; width: 36px; height: 36px; }
+  #screen-home .tool-grid { gap: 7px; }
+  #screen-home .tool-card { padding: 10px; }
+}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -8399,7 +8428,7 @@ function render(screen) {
     else Notes.enter();
   }
   if (screen === 'setup') Setup.enter();
-  if (screen === 'admin') { renderFriends(); Adm.sync(); }
+  if (screen === 'admin') { window.renderFriends?.(); window.Adm?.sync?.(); }
   if (screen === 'achievements') window.renderAchievements?.();
   if (changed) {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -12063,6 +12092,9 @@ const Adm = (() => {
   }
   return { sync, paint, tick, go: k => { st.sub = k; } };
 })();
+window.renderFriends = renderFriends;
+window.Adm = Adm;
+
 const fmtLeft = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
 
 async function init() {
