@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'profile-account-safety-duel-count-2026-11-17-r1';
+const EXPECTED_BUILD = 'duel-count-scope-fix-2026-11-17-r1';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -247,6 +247,10 @@ async function main() {
             await countTwo.waitFor({ state: 'visible', timeout: 12000 });
             if (await page.locator('.duel-create-pane .duel-subject-count button').count() !== 6) {
               report.failures.push(`${viewport.name}/duels: expected six compact subject-count choices`);
+            }
+            const duelCountLabels = (await page.locator('.duel-create-pane .duel-subject-count button').allTextContents()).map(label => label.trim());
+            if (duelCountLabels.join('|') !== '1|2|3|4|5|Multi') {
+              report.failures.push(`${viewport.name}/duels: count choices show unexpected labels: ${duelCountLabels.join(', ')}`);
             }
             if (await page.locator('.duel-create-pane #duel-create-button').count()) {
               // Current markup does not require a fixed ID; use the create-pane button below.
