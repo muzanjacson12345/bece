@@ -620,6 +620,11 @@ html[data-theme='dark'] .maths-card .subject-icon { border-color: #46606a; } htm
 .serif-note { font: italic 16px var(--serif); }
 
 /* ---------- Toolbar (notes & essays) ---------- */
+.notes-view-tabs { display: flex; gap: 8px; width: fit-content; max-width: 100%; padding: 5px; margin: 18px 0 22px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+.notes-view-tabs a { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 9px 18px; border-radius: 10px; color: var(--muted); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.notes-view-tabs a[aria-selected="true"] { color: var(--on-primary); background: var(--primary); box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 18%, transparent); }
+.notes-view-tabs .icon { width: 18px; height: 18px; }
+@media (max-width: 520px) { .notes-view-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; margin: 12px 0 18px; } .notes-view-tabs a { padding: 9px 10px; } }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); margin-bottom: 24px; }
 .toolbar-simple { background: transparent; border: 0; padding: 0; }
 .search { position: relative; flex: 1 1 240px; display: flex; align-items: center; }
@@ -1219,7 +1224,7 @@ html { -webkit-tap-highlight-color: transparent; }
   .segmented[aria-label="Subject"] { display: flex !important; grid-template-columns: none !important; flex-wrap: nowrap !important; overflow-x: auto; max-width: 100%; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .segmented[aria-label="Subject"]::-webkit-scrollbar { display: none; }
   .segmented[aria-label="Subject"] button { flex: 0 0 auto !important; width: auto !important; grid-column: auto !important; scroll-snap-align: center; padding-left: 16px; padding-right: 16px; }
-  #screen-notes .page-intro .muted, #screen-essays .page-intro .muted { display: none; }
+  #screen-notes .page-intro .muted, #notes-essay-view .page-intro .muted { display: none; }
   #screen-notes .page-intro, #screen-essays .page-intro { padding: 16px 0 10px; }
   .page-intro h1 { font-size: 28px; }
   .chip-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
@@ -3357,7 +3362,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   <a href="#/" data-nav="home"><svg class="icon"><use href="#i-home"/></svg><span>Home</span></a>
   <a href="#/practice" data-nav="practice"><svg class="icon"><use href="#i-cards"/></svg><span>Quiz</span></a>
   <a href="#/friends" data-nav="friends"><svg class="icon"><use href="#i-users"/></svg><span>Friends</span></a>
-  <a href="#/notes" data-nav="notes" class="tab-extra"><svg class="icon"><use href="#i-book"/></svg><span>Notes</span></a>
+  <a href="#/notes" data-nav="notes"><svg class="icon"><use href="#i-book"/></svg><span>Notes</span></a>
   <a href="#/duels" data-nav="duels"><span aria-hidden="true">⚔️</span><span>Duels</span></a>
 </nav>
 
