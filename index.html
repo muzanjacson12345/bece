@@ -11415,7 +11415,9 @@ async function renewCurrentSession() {
     const patch = owner
       ? { pw1: data.pw1, pw2: data.pw2, at: F.FieldValue.serverTimestamp() }
       : { pin: data.pin, at: F.FieldValue.serverTimestamp() };
-    await ref.set(patch);
+    // Update only the session credentials and timestamp; never replace the session
+    // document or clear any existing session fields during a renewal.
+    await ref.set(patch, { merge: true });
     const renewed = await ref.get({ source: 'server' });
     const stamp = renewed.exists && renewed.data().at;
     if (!stamp || typeof stamp.toMillis !== 'function') throw new Error('The renewed session time was not confirmed by the server.');
