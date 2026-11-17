@@ -11400,6 +11400,38 @@ async function ownerLock(silent) {
   if (!S.isAdmin && S.ftab === 'admin') S.ftab = 'board';
   showFtab(); if (!silent) App.toast('Owner locked.', 'good');
 }
+async function renewCurrentSession() {
+  if (!S.db || !S.uid || (!S.isOwner && !S.isAdmin)) return App.toast('Unlock staff access before renewing.', 'warn');
+  const owner = !!S.isOwner, mode = owner ? 'owner' : 'admin';
+  const ref = S.db.doc((owner ? 'ownerSessions/' : 'adminSessions/') + S.uid);
+  try {
+    const F = fsv();
+    const current = await ref.get({ source: 'server' });
+    const data = current.exists ? current.data() : null;
+    if (!data || (owner ? (!data.pw1 || !data.pw2) : !data.pin)) {
+      openPin(mode, true);
+      return;
+    }
+    const patch = owner
+      ? { pw1: data.pw1, pw2: data.pw2, at: F.FieldValue.serverTimestamp() }
+      : { pin: data.pin, at: F.FieldValue.serverTimestamp() };
+    await ref.set(patch);
+    const renewed = await ref.get({ source: 'server' });
+    const stamp = renewed.exists && renewed.data().at;
+    if (!stamp || typeof stamp.toMillis !== 'function') throw new Error('The renewed session time was not confirmed by the server.');
+    if (owner) S.ownerAt = stamp.toMillis(); else S.adminAt = stamp.toMillis();
+    S.noAuto = false;
+    refreshAdmin(true);
+    await setBadge().catch(() => {});
+    await logAct('renew', '', owner ? 'Owner session renewed' : 'Admin session renewed');
+    if (owner) Adm.go('owner');
+    if (document.body.dataset.screen !== 'admin') App.navigate('admin');
+    else Adm.sync();
+    App.toast(owner ? 'Owner session renewed for 30 minutes.' : 'Admin session renewed for 2 hours.', 'good');
+  } catch (error) {
+    App.toast('Renewal failed. Your current session was not intentionally closed. ' + ((error && error.message) || 'Try unlocking again.'), 'warn');
+  }
+}
 async function lockAll() {
   try { await S.db.doc('ownerSessions/' + S.uid).delete(); } catch {}
   try { await S.db.doc('adminSessions/' + S.uid).delete(); } catch {}
@@ -11987,7 +12019,7 @@ const Adm = (() => {
     if (root) return root;
     root = elx('section', 'card adm'); root.hidden = true;
     timer = elx('span', 'adm-timer'); eyebrow = elx('p', 'eyebrow', 'Overseer'); title = elx('h2', '', 'Admin panel');
-    const hd = elx('div', 'cz-head', elx('div', '', eyebrow, title), elx('div', 'adm-hact', timer, btn('Renew', 'btn-ghost btn-sm', () => openPin(S.isOwner ? 'owner' : 'admin', true)), btn('\u{1F512} Lock', 'btn-ghost btn-sm', () => lockAll())));
+    const hd = elx('div', 'cz-head', elx('div', '', eyebrow, title), elx('div', 'adm-hact', timer, btn('Renew', 'btn-ghost btn-sm', renewCurrentSession), btn('\u{1F512} Lock', 'btn-ghost btn-sm', () => lockAll())));
     tabs = elx('div', 'segmented adm-subs'); tabs.setAttribute('role', 'tablist');
     body = elx('div', 'adm-body'); body.id = 'adm-panel-body'; body.setAttribute('role', 'tabpanel');
     tabs.addEventListener('keydown', e => {
