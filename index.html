@@ -11805,7 +11805,7 @@ const Adm = (() => {
       elx('div', 'adm-inventory-name', elx('strong', '', label), elx('span', 'adm-sub', 'Quantity: ' + qty)),
       elx('div', 'adm-inventory-actions',
         btn('−1', 'btn-ghost btn-sm', () => adjustConsumable(p, field, -1, label), !canAct(p) || qty <= 0),
-        btn('+1', 'btn-primary btn-sm', () => adjustConsumable(p, field, 1, label), !canAct(p)))));
+        btn('+1', 'btn-primary btn-sm', () => adjustConsumable(p, field, 1, label), !canAct(p))))));
     return elx('div', 'adm-card adm-inventory',
       elx('h4', '', '🎒 Player bag and items'),
       elx('p', 'adm-info', 'Add or remove owned shop titles, equip a title, and adjust the player’s consumable items. These changes are saved to their player record.'),
