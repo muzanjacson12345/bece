@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="me-owner-admin-mobile-2026-11-16-r2">
+<meta name="bece-build" content="mobile-subject-picker-polish-2026-11-17-r1">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -2904,6 +2904,181 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 #screen-home .subject-grid > .rme-card { grid-column: auto !important; width: auto; min-width: 0; }
 #screen-home .subject-grid > .rme-card .subject-icon { flex: 0 0 46px; }
 </style>
+
+<style id="compact-subject-pickers-and-distinct-subject-themes">
+/* A smaller selector that reads clearly without turning setup into a long form. */
+#quiz-subject-count.subject-count-grid {
+  display:grid !important; grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:6px; width:100%;
+}
+#quiz-subject-count .length-option {
+  min-width:0; min-height:38px; padding:5px 2px; border-radius:10px;
+  font-size:14px; line-height:1;
+}
+#quiz-subject-count .length-option[aria-pressed="true"] {
+  background:var(--accent-soft); border-color:var(--accent); color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent);
+}
+.subject-choice-grid.segmented-full {
+  display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px; width:100%; padding:0; border:0; background:transparent;
+}
+.subject-choice-grid.segmented-full > button {
+  display:flex; align-items:center; justify-content:center; gap:4px;
+  min-width:0; min-height:38px; padding:6px 4px;
+  border:1px solid var(--line-strong); border-radius:10px;
+  background:var(--surface); color:var(--ink-soft); box-shadow:none;
+  font-size:12px; font-weight:650; line-height:1.15; white-space:normal;
+  overflow-wrap:anywhere;
+}
+.subject-choice-grid.segmented-full > button[aria-pressed="true"] {
+  color:var(--accent); background:var(--accent-soft); border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%,transparent);
+}
+.subject-choice-grid.segmented-full > button[aria-pressed="true"]::before {
+  content:"✓"; display:inline-grid; place-items:center; flex:0 0 14px;
+  width:14px; height:14px; border-radius:50%; background:var(--accent);
+  color:var(--on-primary); font-size:9px; font-weight:900;
+}
+.subject-choice-grid.segmented-full > button:disabled { opacity:.42; cursor:not-allowed; }
+#quiz-subject-hint {
+  min-height:15px; margin:5px 0 0; color:var(--muted);
+  font-size:12px; font-weight:600;
+}
+#screen-setup .setup-card > .field-label:has(+ #quiz-subject-count),
+#screen-setup .setup-card > .field-label:has(+ .subject-choice-grid) {
+  margin-top:15px; margin-bottom:7px;
+}
+#screen-setup .setup-card > .muted { margin-bottom:4px; }
+
+/* Duels: 6 tiny count tabs + 8 short chips in two rows. */
+.duel-create-pane { gap:12px; padding:16px 12px; }
+.duel-create-pane > .duel-field { gap:7px; width:100%; max-width:500px; }
+.duel-create-pane .duel-subject-count {
+  display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; width:100%;
+}
+.duel-create-pane .duel-subject-count > button {
+  min-width:0; min-height:36px; padding:5px 2px; border-radius:9px;
+  font-size:13px; line-height:1;
+}
+.duel-create-pane .duel-subject-count > button[aria-pressed="true"] {
+  color:var(--accent); background:var(--accent-soft); border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent);
+}
+.duel-create-pane .duel-subject-picks {
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; width:100%;
+}
+.duel-create-pane .duel-subject-picks > button {
+  min-width:0; min-height:36px; padding:6px 3px;
+  border:1px solid var(--line-strong); border-radius:9px;
+  background:var(--surface); color:var(--ink-soft);
+  font-size:11.5px; font-weight:650; line-height:1.12; overflow-wrap:anywhere;
+}
+.duel-create-pane .duel-subject-picks > button[aria-pressed="true"] {
+  color:var(--accent); background:var(--accent-soft); border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%,transparent);
+}
+.duel-create-pane .duel-subject-picks > button[aria-pressed="true"]::before {
+  content:"✓ "; font-weight:900;
+}
+.duel-create-pane .duel-subject-picks > button:disabled { opacity:.42; }
+.duel-create-pane .duel-hint {
+  width:100%; margin:0; font-size:11.5px; line-height:1.2; text-align:left;
+}
+.duel-create-pane > .duel-field > .duel-lbl { margin-top:1px; font-size:10.5px; letter-spacing:.07em; }
+.duel-create-pane > .duel-field > .duel-lbl:nth-of-type(2) { margin-top:3px; }
+@media(max-width:380px) {
+  #quiz-subject-count.subject-count-grid, .duel-create-pane .duel-subject-count { gap:4px; }
+  #quiz-subject-count .length-option, .duel-create-pane .duel-subject-count > button { min-height:35px; font-size:12px; }
+  .subject-choice-grid.segmented-full, .duel-create-pane .duel-subject-picks { gap:5px; }
+  .subject-choice-grid.segmented-full > button { min-height:36px; padding:5px 3px; font-size:11px; }
+  .duel-create-pane .duel-subject-picks > button { min-height:35px; font-size:10.5px; }
+}
+@media(min-width:761px) {
+  #screen-setup .setup-card { max-width:760px; margin-inline:auto; }
+  .duel-create-pane .duel-subject-picks > button { font-size:12px; }
+}
+
+/* Every subject has its own colour family; the icon treatment follows it. */
+#screen-home .subject-card { border-width:1px; box-shadow:0 5px 16px rgba(18,32,28,.035); }
+#screen-home .subject-card .subject-index { font-weight:800; letter-spacing:.09em; }
+#screen-home .social-card { background:#e8f3f5; border-color:#c9e1e6; }
+#screen-home .social-card .subject-icon { border-color:#bddbe1; background:#dceef1; }
+#screen-home .social-card .subject-icon svg { stroke:#397d89; }
+#screen-home .social-card .subject-index { color:#397d89; }
+#screen-home .arts-card { background:#f8eee6; border-color:#ead5c5; }
+#screen-home .arts-card .subject-icon { border-color:#e3c7b1; background:#f3e1d2; }
+#screen-home .arts-card .subject-icon svg { stroke:#ad6940; }
+#screen-home .arts-card .subject-index { color:#ad6940; }
+#screen-home .maths-card { background:#eaf0f8; border-color:#d0ddec; }
+#screen-home .maths-card .subject-icon { border-color:#c2d4e8; background:#dce7f3; }
+#screen-home .maths-card .subject-icon svg { stroke:#557da9; }
+#screen-home .maths-card .subject-index { color:#557da9; }
+#screen-home .computing-card { background:#f0ecfa; border-color:#dbd2f0; }
+#screen-home .computing-card .subject-icon { border-color:#d1c6eb; background:#e5def5; }
+#screen-home .computing-card .subject-icon svg { stroke:#7764ad; }
+#screen-home .computing-card .subject-index { color:#7764ad; }
+#screen-home .rme-card { background:#f8ebef; border-color:#ebd0d9; grid-column:auto !important; }
+#screen-home .rme-card .subject-icon { border-color:#e4c0cd; background:#f1dce4; }
+#screen-home .rme-card .subject-icon svg { stroke:#a95e75; }
+#screen-home .rme-card .subject-index { color:#a95e75; }
+#screen-home .science-card { background:#eaf3e9; border-color:#cfe3cb; }
+#screen-home .science-card .subject-icon { border-color:#c1d9bd; background:#dcebd9; }
+#screen-home .science-card .subject-icon svg { stroke:#4c8054; }
+#screen-home .science-card .subject-index { color:#4c8054; }
+#screen-home .french-card { background:#f5eafa; border-color:#e2ccef; }
+#screen-home .french-card .subject-icon { border-color:#dfc6e9; background:#efdef5; }
+#screen-home .french-card .subject-icon svg { stroke:#9562b1; }
+#screen-home .french-card .subject-index { color:#9562b1; }
+#screen-home .career-card { background:#f8f1df; border-color:#eadcb5; }
+#screen-home .career-card .subject-icon { border-color:#e3d29e; background:#f1e6c8; }
+#screen-home .career-card .subject-icon svg { stroke:#9b7a31; }
+#screen-home .career-card .subject-index { color:#9b7a31; }
+
+/* Dark theme palettes remain distinct rather than collapsing into one tint. */
+html[data-theme="dark"] #screen-home .social-card { background:#20343a; border-color:#36545b; }
+html[data-theme="dark"] #screen-home .social-card .subject-icon { background:#29464d; border-color:#456872; }
+html[data-theme="dark"] #screen-home .social-card .subject-icon svg { stroke:#9bd1da; }
+html[data-theme="dark"] #screen-home .social-card .subject-index { color:#9bd1da; }
+html[data-theme="dark"] #screen-home .arts-card { background:#3b2c24; border-color:#5e4332; }
+html[data-theme="dark"] #screen-home .arts-card .subject-icon { background:#503a2d; border-color:#79553d; }
+html[data-theme="dark"] #screen-home .arts-card .subject-icon svg { stroke:#edbd98; }
+html[data-theme="dark"] #screen-home .arts-card .subject-index { color:#edbd98; }
+html[data-theme="dark"] #screen-home .maths-card { background:#222f41; border-color:#3a526d; }
+html[data-theme="dark"] #screen-home .maths-card .subject-icon { background:#2d4157; border-color:#476887; }
+html[data-theme="dark"] #screen-home .maths-card .subject-icon svg { stroke:#a8c8ed; }
+html[data-theme="dark"] #screen-home .maths-card .subject-index { color:#a8c8ed; }
+html[data-theme="dark"] #screen-home .computing-card { background:#2d2740; border-color:#4b4168; }
+html[data-theme="dark"] #screen-home .computing-card .subject-icon { background:#3b3354; border-color:#605582; }
+html[data-theme="dark"] #screen-home .computing-card .subject-icon svg { stroke:#c7b9f1; }
+html[data-theme="dark"] #screen-home .computing-card .subject-index { color:#c7b9f1; }
+html[data-theme="dark"] #screen-home .rme-card { background:#3a2830; border-color:#61414d; }
+html[data-theme="dark"] #screen-home .rme-card .subject-icon { background:#4c3540; border-color:#76505e; }
+html[data-theme="dark"] #screen-home .rme-card .subject-icon svg { stroke:#e5adbf; }
+html[data-theme="dark"] #screen-home .rme-card .subject-index { color:#e5adbf; }
+html[data-theme="dark"] #screen-home .science-card { background:#24372a; border-color:#3b5a42; }
+html[data-theme="dark"] #screen-home .science-card .subject-icon { background:#304a37; border-color:#4d7055; }
+html[data-theme="dark"] #screen-home .science-card .subject-icon svg { stroke:#add9ae; }
+html[data-theme="dark"] #screen-home .science-card .subject-index { color:#add9ae; }
+html[data-theme="dark"] #screen-home .french-card { background:#35243e; border-color:#5a3d68; }
+html[data-theme="dark"] #screen-home .french-card .subject-icon { background:#493255; border-color:#714c83; }
+html[data-theme="dark"] #screen-home .french-card .subject-icon svg { stroke:#e0b9f1; }
+html[data-theme="dark"] #screen-home .french-card .subject-index { color:#e0b9f1; }
+html[data-theme="dark"] #screen-home .career-card { background:#3b3321; border-color:#605331; }
+html[data-theme="dark"] #screen-home .career-card .subject-icon { background:#4e432c; border-color:#79683b; }
+html[data-theme="dark"] #screen-home .career-card .subject-icon svg { stroke:#e7d08d; }
+html[data-theme="dark"] #screen-home .career-card .subject-index { color:#e7d08d; }
+
+@media(max-width:760px) {
+  #screen-home .subject-top { gap:9px; margin-bottom:12px; }
+  #screen-home .subject-icon { width:38px; height:38px; flex:0 0 38px; }
+  #screen-home .subject-icon svg { width:22px; height:22px; }
+  #screen-home .subject-index { font-size:10px; line-height:1.2; letter-spacing:.06em; }
+  #screen-home .subject-card { min-height:132px; border-radius:16px; }
+  #screen-home .subject-card h3 { font-size:16px !important; line-height:1.2; }
+  #screen-home .subject-bottom { padding-top:10px; font-size:11px; }
+}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -3018,9 +3193,9 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <p>Christianity, Islam, African Traditional Religion, values and citizenship.</p>
           <span class="subject-bottom"><span data-count="rme"></span><span>Let’s practise →</span></span>
         </button>
-        <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M12 4h8M14 4v9L7 25a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-7-12V4"/><path d="M10 22h12M13 18h6"/></svg></span><span class="subject-index">06 / Discover</span></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
-        <button class="subject-card french-card" type="button" data-subject="french"><span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M5 7.5A2.5 2.5 0 0 1 7.5 5H24a3 3 0 0 1 3 3v14a2 2 0 0 1-2 2H9a4 4 0 0 0-4 4z"/><path d="M5 8v20M10 11h12M10 16h9M10 21h6"/></svg></span><span class="subject-index">07 / Language</span></span><h3>French</h3><p>Start with greetings, easy words, numbers and short everyday sentences.</p><span class="subject-bottom"><span data-count="french"></span><span>Let’s practise →</span></span></button>
-        <button class="subject-card career-card" type="button" data-subject="careerTechnology"><span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M6 25L20 11l4 4L10 29H6zM18 9l3-3a3 3 0 0 1 4 0l2 2a3 3 0 0 1 0 4l-3 3M7 7l3-3 5 5-3 3zM5 27l4-4"/></svg></span><span class="subject-index">08 / Practical Skills</span></span><h3>Career Technology</h3><p>Learn design, tools, materials, food, textiles, safety and enterprise.</p><span class="subject-bottom"><span data-count="careerTechnology"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M12 4h8M14 4v9L7 25a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-7-12V4"/><path d="M10 22h12M13 18h6"/></svg></span><span class="subject-index">06 / Discover</span><svg class="icon card-arrow"><use href="#i-arrow"/></svg></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card french-card" type="button" data-subject="french"><span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M5 7.5A2.5 2.5 0 0 1 7.5 5H24a3 3 0 0 1 3 3v14a2 2 0 0 1-2 2H9a4 4 0 0 0-4 4z"/><path d="M5 8v20M10 11h12M10 16h9M10 21h6"/></svg></span><span class="subject-index">07 / Speak</span><svg class="icon card-arrow"><use href="#i-arrow"/></svg></span><h3>French</h3><p>Start with greetings, easy words, numbers and short everyday sentences.</p><span class="subject-bottom"><span data-count="french"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card career-card" type="button" data-subject="careerTechnology"><span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M6 25L20 11l4 4L10 29H6zM18 9l3-3a3 3 0 0 1 4 0l2 2a3 3 0 0 1 0 4l-3 3M7 7l3-3 5 5-3 3zM5 27l4-4"/></svg></span><span class="subject-index">08 / Build</span><svg class="icon card-arrow"><use href="#i-arrow"/></svg></span><h3>Career Technology</h3><p>Learn design, tools, materials, food, textiles, safety and enterprise.</p><span class="subject-bottom"><span data-count="careerTechnology"></span><span>Let’s practise →</span></span></button>
       </div>
       <div class="section-heading home-tools-heading"><div><p class="eyebrow">Your study space</p><h2>Quick access</h2></div></div>
       <div class="tool-grid">
@@ -3187,13 +3362,14 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <p class="hint-text" id="quiz-subject-hint">Choose how many subjects you want, then select that exact number below.</p>
       <p class="field-label">2. Choose your subjects</p>
       <div class="segmented segmented-full subject-choice-grid" role="group" aria-label="Choose subjects">
-        <button type="button" data-setup-sub="social" aria-pressed="true">Social Studies</button>
-        <button type="button" data-setup-sub="arts" aria-pressed="false">Creative Arts</button>
-        <button type="button" data-setup-sub="maths" aria-pressed="false">Maths</button>
-        <button type="button" data-setup-sub="computing" aria-pressed="false">Computing</button>
-        <button type="button" data-setup-sub="rme" aria-pressed="false">RME</button>
-        <button type="button" data-setup-sub="integratedScience" aria-pressed="false">Integrated Science</button>
-        <button type="button" data-setup-sub="french" aria-pressed="false">French</button><button type="button" data-setup-sub="careerTechnology" aria-pressed="false">Career Technology</button>
+        <button type="button" data-setup-sub="social" aria-label="Social Studies" title="Social Studies" aria-pressed="true">Social</button>
+        <button type="button" data-setup-sub="arts" aria-label="Creative Arts" title="Creative Arts" aria-pressed="false">Arts</button>
+        <button type="button" data-setup-sub="maths" aria-label="Mathematics" title="Mathematics" aria-pressed="false">Maths</button>
+        <button type="button" data-setup-sub="computing" aria-label="Computing" title="Computing" aria-pressed="false">Computing</button>
+        <button type="button" data-setup-sub="rme" aria-label="Religious and Moral Education" title="Religious and Moral Education" aria-pressed="false">RME</button>
+        <button type="button" data-setup-sub="integratedScience" aria-label="Integrated Science" title="Integrated Science" aria-pressed="false">Science</button>
+        <button type="button" data-setup-sub="french" aria-label="French" title="French" aria-pressed="false">French</button>
+        <button type="button" data-setup-sub="careerTechnology" aria-label="Career Technology" title="Career Technology" aria-pressed="false">Career Tech</button>
       </div>
 
       <label class="field-label" for="topic-sel" id="topic-label">3. Focus</label>
@@ -7992,15 +8168,15 @@ const Setup = {
   pool(){const selected=this.subjects.length?this.subjects:['social'];const topic=$('topic-sel').value;return selected.flatMap(subject=>(questionsDB[subject]||[]).filter(q=>selected.length>1||topic==='all'||q.topic===topic));},
   renderSubject(){
     const countBox=$('quiz-subject-count');
-    if(!countBox.dataset.ready){[1,2,3,4,5,'multiple'].forEach(n=>{const b=el('button','length-option',n==='multiple'?'Multiple':`Choose ${n}`);b.type='button';b.dataset.subjectCount=String(n);b.addEventListener('click',()=>{this.subjectCount=n;const max=n==='multiple'?this.subjects.length:Number(n);if(n!=='multiple'&&this.subjects.length>max)this.subjects=this.subjects.slice(0,max);this.paintSubjects();});countBox.append(b);});countBox.dataset.ready='1';}
+    if(!countBox.dataset.ready){[1,2,3,4,5,'multiple'].forEach(n=>{const b=el('button','length-option',n==='multiple'?'Multi':String(n));b.type='button';b.dataset.subjectCount=String(n);b.setAttribute('aria-label',n==='multiple'?'Choose multiple subjects':`Choose ${n} ${n===1?'subject':'subjects'}`);b.title=b.getAttribute('aria-label');b.addEventListener('click',()=>{this.subjectCount=n;const max=n==='multiple'?this.subjects.length:Number(n);if(n!=='multiple'&&this.subjects.length>max)this.subjects=this.subjects.slice(0,max);this.paintSubjects();});countBox.append(b);});countBox.dataset.ready='1';}
     this.paintSubjects();
   },
   paintSubjects(){
     const max=this.selectedCount();
     document.querySelectorAll('[data-setup-sub]').forEach(b=>{const selected=this.subjects.includes(b.dataset.setupSub);b.setAttribute('aria-pressed',String(selected));b.disabled=!selected&&this.subjects.length>=max;});
     document.querySelectorAll('[data-subject-count]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.subjectCount===String(this.subjectCount))));
-    const valid=this.subjects.length===max&&(this.subjectCount!=='multiple'||this.subjects.length>=2);
-    $('quiz-subject-hint').textContent=this.subjectCount==='multiple'?`Choose at least two subjects. Selected: ${this.subjects.length}.`:`Select exactly ${max} subject${max===1?'':'s'}. Selected: ${this.subjects.length}/${max}.`;
+    const valid=this.subjectCount==='multiple'?this.subjects.length>=2:this.subjects.length===max;
+    $('quiz-subject-hint').textContent=this.subjectCount==='multiple'?`2 or more · ${this.subjects.length} selected`:`${this.subjects.length}/${max} selected`;
     $('setup-start').disabled=!valid;
     const multi=this.subjects.length>1;$('topic-label').hidden=multi;$('topic-sel').hidden=multi;$('setup-pool').hidden=multi;
     const select=$('topic-sel'),first=this.subjects[0]||'social',counts={};(questionsDB[first]||[]).forEach(q=>{counts[q.topic]=(counts[q.topic]||0)+1;});
@@ -8016,12 +8192,12 @@ const Setup = {
     $('mode-description').textContent=this.mode==='exam'?`Timed mock: ${Math.floor(seconds/60)} min ${seconds%60?`${seconds%60} sec `:''}for ${plural(n,'question')}. Change answers freely; explanations appear when you finish. Hints are off.`:'Practice: no timer. See an explanation after each answer, use a hint when you’re stuck, and work at your own pace.';
   },
   start(){
-    const max=this.selectedCount();if(this.subjects.length!==max||(this.subjectCount==='multiple'&&this.subjects.length<2)){toast(`Please choose exactly ${this.subjectCount==='multiple'?'two or more':max} subjects.`);return;}
+    const max=this.selectedCount(),valid=this.subjectCount==='multiple'?this.subjects.length>=2:this.subjects.length===max;if(!valid){toast(this.subjectCount==='multiple'?'Please choose at least two subjects.':`Please choose exactly ${max} subjects.`);return;}
     const pool=this.pool(),topic=$('topic-sel').value,label=this.subjects.map(x=>SUBJECT_LABEL[x]||x).join(' + ');
     Quiz.start({pool,length:this.length,mode:this.mode,subject:this.subjects.length===1?this.subjects[0]:'mixed',label:`${label}${this.subjects.length===1&&topic!=='all'?` · ${topic}`:''}`});
   },
 };
-document.querySelectorAll('[data-setup-sub]').forEach(b=>b.addEventListener('click',()=>{const subject=b.dataset.setupSub,max=Setup.selectedCount(),at=Setup.subjects.indexOf(subject);if(at>=0)Setup.subjects.splice(at,1);else if(Setup.subjects.length<max)Setup.subjects.push(subject);Setup.subject=Setup.subjects[0]||'social';Setup.topic='all';Setup.paintSubjects();}));
+// Quiz subject clicks are handled once by the final setup controller below.
 $('topic-sel').addEventListener('change',()=>Setup.update());
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{Setup.mode=b.dataset.mode;Setup.update();}));
 document.querySelector('.mode-grid').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();Setup.mode=Setup.mode==='practice'?'exam':'practice';Setup.update();document.querySelector(`[data-mode="${Setup.mode}"]`).focus();});
@@ -10494,7 +10670,7 @@ const Duel = (() => {
   }
   function card() {
     if (D.card) return D.card;
-    const subjectBox = o('div', 'duel-subject-picks'), countBox = o('div', 'duel-seg');
+    const subjectBox = o('div', 'duel-subject-picks'), countBox = o('div', 'duel-seg duel-subject-count');
     const subjectKeys = Object.keys(SUBS).filter(k => k !== 'mixed');
     let subjectHint = null, createButton = null;
     const syncSubjects = () => {
@@ -10509,13 +10685,15 @@ const Duel = (() => {
         b.disabled = !on && selected >= max;
       });
       if (subjectHint) subjectHint.textContent = multiple
-        ? `Choose at least two subjects. Selected: ${selected}.`
-        : `Select exactly ${max} subject${max === 1 ? '' : 's'}. Selected: ${selected}/${max}.`;
+        ? `2 or more · ${selected} selected`
+        : `${selected}/${max} selected`;
       if (createButton) createButton.disabled = !valid;
     };
     [1,2,3,4,5,'multiple'].forEach(n => {
-      const b = o('button', '', n === 'multiple' ? 'Multiple' : `Choose ${n}`);
+      const b = o('button', '', n === 'multiple' ? 'Multi' : String(n));
       b.type = 'button'; b.dataset.count = String(n);
+      b.setAttribute('aria-label', n === 'multiple' ? 'Choose multiple subjects' : `Choose ${n} ${n === 1 ? 'subject' : 'subjects'}`);
+      b.title = b.getAttribute('aria-label');
       b.onclick = () => {
         D.cfg.subjectCount = n;
         const max = n === 'multiple' ? subjectKeys.length : Number(n);
@@ -10525,7 +10703,9 @@ const Duel = (() => {
       countBox.append(b);
     });
     subjectKeys.forEach(k => {
-      const b = o('button', '', SUBS[k]); b.type = 'button'; b.dataset.subject = k;
+      const shortNames = { social: 'Social', arts: 'Arts', maths: 'Maths', computing: 'Computing', rme: 'RME', integratedScience: 'Science', french: 'French', careerTechnology: 'Career Tech' };
+      const b = o('button', '', shortNames[k] || SUBS[k]); b.type = 'button'; b.dataset.subject = k;
+      b.setAttribute('aria-label', SUBS[k]); b.title = SUBS[k];
       b.onclick = () => {
         const at = D.cfg.subjects.indexOf(k);
         const max = D.cfg.subjectCount === 'multiple' ? subjectKeys.length : Number(D.cfg.subjectCount);
@@ -11468,17 +11648,108 @@ init();
   );
   const flash=document.getElementById("flash-subject");
   if(flash){if(![...flash.options].some(o=>o.value==="careerTechnology"))flash.add(new Option("Career Technology","careerTechnology"));}
-  const group=document.querySelector("[data-setup-sub='french']")?.parentElement;
-  if(group&&!group.querySelector("[data-setup-all]")){const btn=document.createElement("button");btn.type="button";btn.dataset.setupAll="true";btn.textContent="All subjects mixed";btn.setAttribute("aria-pressed","false");group.append(btn);}
-  Setup.subjects=["social"];Setup.topic="all";
-  const ensureSelection=()=>{if(!Array.isArray(Setup.subjects)||!Setup.subjects.length)Setup.subjects=[Setup.subject||"social"];Setup.subject=Setup.subjects[0];};
-  Setup.open=function(subject){this.subjects=subject&&subjects.includes(subject)?[subject]:[this.subject||"social"];this.subject=this.subjects[0];this.topic="all";navigate("setup");};
+  Setup.subjects=["social"];Setup.subjectCount=1;Setup.topic="all";
+  const ensureSelection=()=>{if(!Array.isArray(Setup.subjects))Setup.subjects=[];Setup.subject=Setup.subjects[0]||"social";};
+  const subjectLimit=()=>Setup.subjectCount==="multiple"?subjects.length:Number(Setup.subjectCount||1);
+  Setup.selectedCount=subjectLimit;
+  const subjectChoiceValid=()=>Setup.subjectCount==="multiple"?Setup.subjects.length>=2:Setup.subjects.length===subjectLimit();
+  Setup.open=function(subject){if(subject&&subjects.includes(subject)){this.subjects=[subject];this.subject=subject;this.subjectCount=1;}else{ensureSelection();}this.topic="all";navigate("setup");};
   Setup.pool=function(){ensureSelection();const topic=document.getElementById("topic-sel").value||"all";return this.subjects.flatMap(sub=>(questionsDB[sub]||[]).filter(q=>topic==="all"||q.topic===topic));};
   Setup.allPool=function(){ensureSelection();return this.subjects.flatMap(sub=>questionsDB[sub]||[]);};
-  Setup.renderSubject=function(){ensureSelection();document.querySelectorAll("[data-setup-sub]").forEach(btn=>btn.setAttribute("aria-pressed",String(this.subjects.includes(btn.dataset.setupSub))));const all=document.querySelector("[data-setup-all]");if(all)all.setAttribute("aria-pressed",String(this.subjects.length===subjects.length));const counts={};this.allPool().forEach(q=>counts[q.topic]=(counts[q.topic]||0)+1);const sel=document.getElementById("topic-sel");sel.replaceChildren(new Option("All topics ("+this.allPool().length+")","all"),...Object.keys(counts).sort().map(t=>new Option(t+" ("+counts[t]+")",t)));sel.value=this.topic&&counts[this.topic]?this.topic:"all";this.update();};
-  Setup.update=function(){this.topic=document.getElementById("topic-sel").value;const count=this.pool().length;document.getElementById("setup-pool").textContent=count+" questions available in this selection";const lengths=[5,10,20,40,60,100,200,0];if(this.length&&this.length>=count)this.length=0;const box=document.getElementById("length-buttons");box.replaceChildren();lengths.forEach(n=>{if(n&&n>=count)return;const btn=document.createElement("button");btn.type="button";btn.className="length-option";btn.textContent=n?String(n):"All "+count;btn.setAttribute("aria-pressed",String(n===this.length));btn.addEventListener("click",()=>{Setup.length=n;Setup.update();});box.append(btn);});document.querySelectorAll("[data-mode]").forEach(btn=>btn.setAttribute("aria-checked",String(btn.dataset.mode===this.mode)));const total=Math.min(this.length||count,count),secs=total*40;document.getElementById("mode-description").textContent=this.mode==="exam"?"Timed mock: "+Math.floor(secs/60)+" min "+(secs%60?secs%60+" sec ":"")+"for "+total+" questions. Explanations appear when you finish.":"Practice: no timer. See explanations after answers and use hints when you need them.";};
-  Setup.start=function(){const pool=this.pool();if(!pool.length){toast("There are no questions in this selection yet.");return;}ensureSelection();const label=this.subjects.length===subjects.length?"All subjects mixed":this.subjects.map(s=>labels[s]).join(" + ");Quiz.start({pool,length:this.length,mode:this.mode,subject:this.subjects.length===1?this.subjects[0]:"mixed",label:label+(this.topic!=="all"?" · "+this.topic:"")});};
-  document.addEventListener("click",event=>{const one=event.target.closest("[data-setup-sub]");const all=event.target.closest("[data-setup-all]");if(one){ensureSelection();const key=one.dataset.setupSub;if(Setup.subjects.includes(key)){if(Setup.subjects.length>1)Setup.subjects=Setup.subjects.filter(x=>x!==key);}else Setup.subjects=[...Setup.subjects,key];Setup.subject=Setup.subjects[0];Setup.topic="all";}else if(all){Setup.subjects=[...subjects];Setup.subject=subjects[0];Setup.topic="all";Setup.renderSubject();}},true);
+  Setup.renderSubject=function(){
+    ensureSelection();
+    const countBox=document.getElementById("quiz-subject-count");
+    if(countBox&&!countBox.dataset.ready){
+      [1,2,3,4,5,"multiple"].forEach(n=>{
+        const btn=document.createElement("button");
+        btn.type="button";btn.className="length-option";
+        btn.textContent=n==="multiple"?"Multi":String(n);
+        btn.dataset.subjectCount=String(n);
+        btn.setAttribute("aria-label",n==="multiple"?"Choose multiple subjects":("Choose "+n+" "+(n===1?"subject":"subjects")));
+        btn.title=btn.getAttribute("aria-label");
+        btn.addEventListener("click",()=>{
+          this.subjectCount=n;
+          const max=n==="multiple"?subjects.length:Number(n);
+          if(this.subjects.length>max)this.subjects=this.subjects.slice(0,max);
+          this.topic="all";
+          this.renderSubject();
+        });
+        countBox.append(btn);
+      });
+      countBox.dataset.ready="1";
+    }
+    const max=subjectLimit(),selected=this.subjects.length,multiple=this.subjectCount==="multiple";
+    document.querySelectorAll("[data-setup-sub]").forEach(btn=>{
+      const active=this.subjects.includes(btn.dataset.setupSub);
+      btn.setAttribute("aria-pressed",String(active));
+      btn.disabled=!active&&selected>=max;
+    });
+    document.querySelectorAll("[data-subject-count]").forEach(btn=>btn.setAttribute("aria-pressed",String(btn.dataset.subjectCount===String(this.subjectCount))));
+    countBox?.querySelectorAll("button").forEach(btn=>btn.setAttribute("aria-pressed",String(btn.dataset.subjectCount===String(this.subjectCount))));
+    const hint=document.getElementById("quiz-subject-hint");
+    if(hint)hint.textContent=multiple?("2 or more · "+selected+" selected"):(selected+"/"+max+" selected");
+    const start=document.getElementById("setup-start");
+    if(start)start.disabled=!subjectChoiceValid();
+    const multi=selected>1;
+    document.getElementById("topic-label").hidden=multi;
+    document.getElementById("topic-sel").hidden=multi;
+    document.getElementById("setup-pool").hidden=multi;
+    this.topic=multi?"all":(this.topic||"all");
+    const counts={};this.allPool().forEach(q=>counts[q.topic]=(counts[q.topic]||0)+1);
+    const sel=document.getElementById("topic-sel");
+    sel.replaceChildren(new Option("All topics ("+this.allPool().length+")","all"),...Object.keys(counts).sort().map(t=>new Option(t+" ("+counts[t]+")",t)));
+    sel.value=!multi&&this.topic&&counts[this.topic]?this.topic:"all";
+    this.update();
+  };
+  Setup.update=function(){
+    const sel=document.getElementById("topic-sel");
+    this.topic=sel.value||"all";
+    const count=this.pool().length;
+    document.getElementById("setup-pool").textContent=count+" questions available in this selection";
+    const lengths=[5,10,20,40,60,100,200,0];
+    if(this.length&&this.length>=count)this.length=0;
+    const box=document.getElementById("length-buttons");
+    box.replaceChildren();
+    lengths.forEach(n=>{
+      if(n&&n>=count)return;
+      const btn=document.createElement("button");
+      btn.type="button";btn.className="length-option";btn.textContent=n?String(n):"All "+count;
+      btn.setAttribute("aria-pressed",String(n===this.length));
+      btn.addEventListener("click",()=>{Setup.length=n;Setup.update();});
+      box.append(btn);
+    });
+    document.querySelectorAll("[data-mode]").forEach(btn=>btn.setAttribute("aria-checked",String(btn.dataset.mode===this.mode)));
+    const total=Math.min(this.length||count,count),secs=total*40;
+    document.getElementById("mode-description").textContent=this.mode==="exam"
+      ?"Timed mock: "+Math.floor(secs/60)+" min "+(secs%60?secs%60+" sec ":"")+"for "+total+" questions. Explanations appear when you finish."
+      :"Practice: no timer. See explanations after answers and use hints when you need them.";
+  };
+  Setup.start=function(){
+    ensureSelection();
+    if(!subjectChoiceValid()){
+      toast(this.subjectCount==="multiple"?"Choose at least two subjects.":"Choose exactly "+subjectLimit()+" subjects.");
+      return;
+    }
+    const pool=this.pool();
+    if(!pool.length){toast("There are no questions in this selection yet.");return;}
+    const label=this.subjects.map(s=>labels[s]).join(" + ");
+    Quiz.start({pool,length:this.length,mode:this.mode,subject:this.subjects.length===1?this.subjects[0]:"mixed",label:label+(this.topic!=="all"?" · "+this.topic:"")});
+  };
+  document.addEventListener("click",event=>{
+    const one=event.target.closest("[data-setup-sub]");
+    if(!one||one.disabled)return;
+    ensureSelection();
+    const key=one.dataset.setupSub;
+    const max=subjectLimit();
+    if(Setup.subjects.includes(key)){
+      Setup.subjects=Setup.subjects.filter(x=>x!==key);
+    }else if(Setup.subjects.length<max){
+      Setup.subjects.push(key);
+    }
+    Setup.subject=Setup.subjects[0]||"social";
+    Setup.topic="all";
+    Setup.renderSubject();
+  });
   document.querySelectorAll("[data-notes-sub='careerTechnology']").forEach(btn=>btn.addEventListener("click",()=>{Notes.sub=btn.dataset.notesSub;Notes.activeId=null;Notes.refresh({keepScroll:false});}));
   Home.render();
 })();
