@@ -7988,7 +7988,7 @@ const Setup = {
   subject:'social', subjects:['social'], subjectCount:1, length:10, mode:'practice',
   open(subject){if(subject){this.subject=subject;this.subjects=[subject];this.subjectCount=1;this.topic='all';}navigate('setup');},
   enter(){this.renderSubject();},
-  selectedCount(){return this.subjectCount==='multiple'?this.subjects.length:Number(this.subjectCount);},
+  selectedCount(){return this.subjectCount==='multiple'?document.querySelectorAll('[data-setup-sub]').length:Number(this.subjectCount);},
   pool(){const selected=this.subjects.length?this.subjects:['social'];const topic=$('topic-sel').value;return selected.flatMap(subject=>(questionsDB[subject]||[]).filter(q=>selected.length>1||topic==='all'||q.topic===topic));},
   renderSubject(){
     const countBox=$('quiz-subject-count');
