@@ -13,7 +13,7 @@ const ROUTES = [
   { name: 'friends', hash: '#/friends', screen: 'friends' },
   { name: 'duels', hash: '#/duels', screen: 'duels' },
   { name: 'notes', hash: '#/notes', screen: 'notes' },
-  { name: 'essays', hash: '#/essays', screen: 'notes' },
+  { name: 'essays', hash: '#/notes?view=essays', screen: 'notes' },
 ];
 const VIEWPORTS = [
   { name: 'phone-320', width: 320, height: 780, mobile: true },
