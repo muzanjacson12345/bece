@@ -226,7 +226,7 @@ service cloud.firestore {
     // Private message from staff to one player. The player can read it and dismiss (delete) it.
     match /notices/{id} {
       allow read: if signedIn() && (request.auth.uid == id || isStaff());
-      allow create, update: if (isOwner() && !targetIsOwner(id)) || (isAdmin() && !targetIsStaff(id))
+      allow create, update: if ((isOwner() && (!targetIsOwner(id) || request.auth.uid == id)) || (isAdmin() && (!targetIsStaff(id) || request.auth.uid == id)))
         && request.resource.data.keys().hasOnly(['text', 'at', 'by', 'byName'])
         && request.resource.data.text is string && request.resource.data.text.size() <= 200
         && request.resource.data.at is number
@@ -240,12 +240,12 @@ service cloud.firestore {
     // Private staff notes about a player. Players can never read these.
     match /adminNotes/{id} {
       allow read: if isStaff();
-      allow create, update: if (isOwner() && !targetIsOwner(id)) || (isAdmin() && !targetIsStaff(id))
+      allow create, update: if ((isOwner() && (!targetIsOwner(id) || request.auth.uid == id)) || (isAdmin() && (!targetIsStaff(id) || request.auth.uid == id)))
         && request.resource.data.keys().hasOnly(['text', 'by', 'at'])
         && request.resource.data.text is string && request.resource.data.text.size() <= 500
         && request.resource.data.by is string && request.resource.data.by.size() <= 40
         && request.resource.data.at is number;
-      allow delete: if (isOwner() && !targetIsOwner(id)) || (isAdmin() && !targetIsStaff(id));
+      allow delete: if (isOwner() && (!targetIsOwner(id) || request.auth.uid == id)) || (isAdmin() && (!targetIsStaff(id) || request.auth.uid == id));
     }
     // Everything staff do. Staff can only add lines about themselves; only the owner can read or wipe it.
     match /auditLogs/{id} {
