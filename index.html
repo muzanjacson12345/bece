@@ -11794,6 +11794,34 @@ const Adm = (() => {
     saveJson('bece-player-'+p.id+'-'+today()+'.json',{format:'bece-player-record',version:1,exportedAt:new Date().toISOString(),player:{id:q.id,data:Object.fromEntries(Object.entries(q).filter(([k])=>k!=='id'))}});
     ok('Player JSON exported.');logAct('player-export',p.id,'single player JSON backup');
   }
+
+  function bagPayload(p){
+    const d=p||{};
+    return {owned:record(d.owned)?d.owned:{},eq:record(d.eq)?d.eq:{},p50:Number.isSafeInteger(+d.p50)&&+d.p50>=0?+d.p50:0,sfreezes:Number.isSafeInteger(+d.sfreezes)&&+d.sfreezes>=0?+d.sfreezes:0,xpBoost:Number.isSafeInteger(+d.xpBoost)&&+d.xpBoost>=0?+d.xpBoost:0};
+  }
+  function exportOneBagJson(p){
+    if(!S.isOwner||!canAct(p))return App.toast('Owner access is required to export this bag.','warn');
+    const q=S.players.find(x=>x.id===p.id);if(!q)return App.toast('Player data is not loaded.','warn');
+    saveJson('bece-player-bag.json',{format:'bece-bag-backup',version:1,exportedAt:new Date().toISOString(),players:[{id:q.id,data:bagPayload(q)}]});
+    ok('Player bag-only export downloaded.');logAct('bag-export',p.id,'inventory-only JSON backup');
+  }
+  function exportBagsJson(){
+    if(!S.isOwner)return App.toast('Owner access required.','warn');
+    const players=S.players.filter(p=>p.id===S.uid||roleOf(p.id)!=='owner').map(p=>({id:p.id,data:bagPayload(p)}));
+    saveJson('bece-bags-only-backup-'+today()+'.json',{format:'bece-bag-backup',version:1,exportedAt:new Date().toISOString(),players});
+    ok('Bag-only backup downloaded. It contains account IDs, so keep it private.');
+    logAct('bags-export','',players.length+' bag records exported; other Owner accounts excluded');
+  }
+  function bagBackupPatch(d){
+    if(!record(d))throw Error('Bag data must be an object.');
+    const p={};
+    if(Object.prototype.hasOwnProperty.call(d,'owned')){if(!record(d.owned)||JSON.stringify(d.owned).length>12000)throw Error('Invalid owned inventory map.');p.owned=d.owned;}
+    if(Object.prototype.hasOwnProperty.call(d,'eq')){if(!record(d.eq)||JSON.stringify(d.eq).length>12000)throw Error('Invalid equipped-items map.');p.eq=d.eq;}
+    for(const k of ['p50','sfreezes','xpBoost'])if(Object.prototype.hasOwnProperty.call(d,k)){if(typeof d[k]!=='number'||!Number.isSafeInteger(d[k])||d[k]<0||d[k]>1000000)throw Error('Invalid '+k+' count.');p[k]=d[k];}
+    if(!Object.keys(p).length)throw Error('No supported bag fields found.');
+    return p;
+  }
+
   function exportAllJson(){
     if(!S.isOwner)return App.toast('Owner access required.','warn');
     saveJson('bece-player-backup-'+today()+'.json',{format:'bece-player-backup',version:1,exportedAt:new Date().toISOString(),fields:ALL_PROFILE,players:S.players.map(p=>({id:p.id,data:Object.fromEntries(Object.entries(p).filter(([k])=>k!=='id'))}))});
@@ -11818,19 +11846,23 @@ const Adm = (() => {
       App.toast('Checking backup…');
       try{
         const data=JSON.parse(await file.text());
-        const records=data&&data.format==='bece-player-record'&&data.version===1&&data.player&&data.player.id?[data.player]:data&&data.format==='bece-player-backup'&&data.version===1&&Array.isArray(data.players)?data.players:null;
+        const bagOnly=!!(data&&data.format==='bece-bag-backup'&&data.version===1&&Array.isArray(data.players));
+        const records=data&&data.format==='bece-player-record'&&data.version===1&&data.player&&data.player.id?[data.player]:data&&data.format==='bece-player-backup'&&data.version===1&&Array.isArray(data.players)?data.players:bagOnly?data.players:null;
         if(!records)throw Error('Unsupported BECE backup. Choose a full backup or a single-player JSON export from this panel.');
         if(records.length>5000)throw Error('Maximum 5,000 player records per restore.');
         const current=new Map(S.players.map(p=>[p.id,p])),staged=new Map();let missing=0,protectedN=0,invalid=0;
         for(const row of records){
           if(!row||typeof row.id!=='string'||!row.id.trim()){invalid++;continue;}
           const id=row.id.trim();if(!current.has(id)){missing++;continue;}if(id!==S.uid&&roleOf(id)==='owner'){protectedN++;continue;}
-          try{staged.set(id,backupPatch(record(row.data)?row.data:row));}catch{invalid++;}
+          try{const raw=record(row.data)?row.data:row;staged.set(id,bagOnly?bagBackupPatch(raw):backupPatch(raw));}catch{invalid++;}
         }
         const entries=[...staged.entries()];if(!entries.length)throw Error('No matching editable player records were found.');
-        const v=await ask({title:'Review JSON restore',intro:'Ready to update '+entries.length+' existing player record(s). Skipping '+missing+' unknown IDs, '+protectedN+' other Owner records and '+invalid+' invalid records. Only supported fields are changed. No accounts are created or deleted. Progress and bags may be replaced.',fields:[{key:'confirm',label:'Type RESTORE to continue',max:20}],ok:'Restore records',danger:true,validate:x=>x.confirm.trim()==='RESTORE'?'':'Type RESTORE exactly.'});
+        const restoreIntro=bagOnly
+          ? 'Ready to update '+entries.length+' existing player bag(s). Skipping '+missing+' unknown IDs, '+protectedN+' other Owner records and '+invalid+' invalid records. Only inventory, equipped-item and power-up fields are changed. Coins, EXP, profile information and accounts remain untouched.'
+          : 'Ready to update '+entries.length+' existing player record(s). Skipping '+missing+' unknown IDs, '+protectedN+' other Owner records and '+invalid+' invalid records. Only supported fields are changed. No accounts are created or deleted. Progress and bags may be replaced.';
+        const v=await ask({title:bagOnly?'Review bag-only restore':'Review JSON restore',intro:restoreIntro,fields:[{key:'confirm',label:'Type RESTORE to continue',max:20}],ok:bagOnly?'Restore bags':'Restore records',danger:true,validate:x=>x.confirm.trim()==='RESTORE'?'':'Type RESTORE exactly.'});
         if(!v)return;
-        if(await run(()=>chunked(entries.map(([id,p])=>b=>b.update(pdoc(id),p))),'Restored '+entries.length+' player record(s).'))logAct('player-import','',entries.length+' records; skipped '+(missing+protectedN+invalid));
+        if(await run(()=>chunked(entries.map(([id,p])=>b=>b.update(pdoc(id),p))),bagOnly?'Restored '+entries.length+' player bag(s).':'Restored '+entries.length+' player record(s).'))logAct(bagOnly?'bag-import':'player-import','',entries.length+(bagOnly?' bags':' records')+'; skipped '+(missing+protectedN+invalid));
       }catch(e){App.toast('Backup not imported: '+((e&&e.message)||'invalid file'),'warn');}
       finally{input.value='';}
     };
@@ -11850,7 +11882,7 @@ const Adm = (() => {
     const g3 = elx('div', 'adm-btns3', btn('\u270F\uFE0F Rename', 'btn-ghost btn-sm', () => rename(p), !can), btn('Remove photo', 'btn-ghost btn-sm', () => clearField(p, 'photo', 'photo'), !can || !p.photo), btn('Remove bio', 'btn-ghost btn-sm', () => clearField(p, 'bio', 'bio'), !can || !p.bio));
     const g4 = elx('div', 'adm-btns3', btn('Reset progress', 'btn-ghost btn-sm adm-danger', () => reset(p), !kill), banned ? btn('Unban', 'btn-primary btn-sm', () => unban(p.id), !can) : btn('\u{1F6AB} Ban', 'btn-ghost btn-sm adm-danger', () => ban(p), !kill), btn('\u{1F5D1}\uFE0F Delete', 'btn-ghost btn-sm adm-danger', () => remove(p), !kill));
     const g5 = S.isOwner && p.id !== S.uid && roleOf(p.id) !== 'owner' ? elx('div', 'adm-btns', isAppointed(p.id) ? btn('\u{1F6E1}\uFE0F Remove admin role', 'btn-ghost btn-sm adm-danger', () => removeStaff(p.id, 'admin')) : btn(roleOf(p.id) ? '\u{1F6E1}\uFE0F Make permanent admin' : '\u{1F6E1}\uFE0F Make admin', 'btn-primary btn-sm', () => appoint(p))) : elx('div');
-    const gx = elx('div', 'adm-btns', btn('🧰 Edit bag & items', 'btn-ghost btn-sm', () => editBag(p), !can), btn('📝 Full profile editor', 'btn-primary btn-sm', () => editProfile(p), !can), ...(S.isOwner ? [btn('🛠️ Advanced JSON editor', 'btn-ghost btn-sm', () => editFullPlayerJson(p), !can), btn('⬇ Export player JSON', 'btn-ghost btn-sm', () => exportPlayerJson(p))] : []));
+    const gx = elx('div', 'adm-btns', btn('🧰 Edit bag & items', 'btn-ghost btn-sm', () => editBag(p), !can), btn('📝 Full profile editor', 'btn-primary btn-sm', () => editProfile(p), !can), ...(S.isOwner ? [btn('🛠️ Advanced JSON editor', 'btn-ghost btn-sm', () => editFullPlayerJson(p), !can), btn('⬇ Export player JSON', 'btn-ghost btn-sm', () => exportPlayerJson(p)), btn('🎒 Export bag only', 'btn-ghost btn-sm', () => exportOneBagJson(p), !can)] : []));
     const note = document.createElement('textarea'); note.className = 'adm-ta'; note.rows = 2; note.maxLength = 500; note.placeholder = 'Private note about this player (only admins and the owner can see it)'; note.value = (S.notes.get(p.id) || {}).text || ''; note.setAttribute('aria-label', 'Private note');
     const nb = btn('Save note', 'btn-ghost btn-sm', () => saveNote(p, note.value));
     const nmeta = S.notes.get(p.id); const nm = nmeta ? elx('p', 'adm-info', `Last edited by ${nmeta.by || 'staff'} \u00B7 ${fmtTime(nmeta.at)}`) : null;
@@ -12175,6 +12207,7 @@ const Adm = (() => {
       card('\u{1F4C8} Global practice economy', 'Set the EXP and coin multipliers earned by every player in new practice quizzes.', elx('p', 'adm-info', 'Current rates: ' + (Number(S.settings.expMultiplier) || 1) + '× EXP · ' + (Number(S.settings.coinMultiplier) || 1) + '× coins'), btn('Change reward rates…', 'btn-primary btn-sm', setRewardRates)),
       card('\u{1F6D2} Shop control', S.settings.shopPaused ? 'Purchases are currently paused for every player. Owned items can still be equipped.' : 'Purchases are open for everyone. You can temporarily pause new purchases without removing anyone’s items.', btn(S.settings.shopPaused ? 'Reopen shop purchases' : 'Pause shop purchases', S.settings.shopPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleShop)),
       card('🗄️ Full player data backup', 'Export all loaded player documents as JSON to inspect and correct profiles or item bags. Restore only updates existing players and supported fields; other Owner accounts are protected.', btn('Download full JSON backup', 'btn-primary btn-sm', exportAllJson), btn('Import / restore JSON backup…', 'btn-ghost btn-sm', importAllJson)),
+      card('🎒 Bag-only backup', 'Export only owned items, equipped items and power-up counts. Useful for reviewing inventory without sharing photos, bios or other profile fields. Account IDs are still included, so keep the file private.', btn('Download all bags only', 'btn-ghost btn-sm', exportBagsJson), btn('Import / restore bags only…', 'btn-ghost btn-sm', importAllJson)),
       card('\u{1F4C1} Owner exports', 'Download a copy of the moderation audit history for your own records.', btn('Export audit log CSV', 'btn-ghost btn-sm', downloadAuditCsv)),
       card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins…', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false))));
   }
