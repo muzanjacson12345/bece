@@ -3499,6 +3499,19 @@ pre, code { overflow-wrap: anywhere; }
   .adm-overview .adm-btns { grid-template-columns:1fr; }
 }
 </style>
+<style id="staff-inventory-controls">
+.adm-inventory { gap:10px; }
+.adm-inventory-list { display:grid; gap:7px; }
+.adm-inventory-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:var(--surface-2); min-width:0; }
+.adm-inventory-name { display:grid; gap:2px; min-width:0; }
+.adm-inventory-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.adm-inventory-actions .btn { min-height:38px; }
+@media(max-width:520px) {
+ .adm-inventory-row { align-items:flex-start; }
+ .adm-inventory-actions { width:100%; }
+ .adm-inventory-actions .btn { flex:1 1 90px; }
+}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -11742,6 +11755,63 @@ const Adm = (() => {
     }
   }
 
+  async function setBagItem(p, itemId, ownedNow) {
+    if (!canAct(p)) return App.toast('You cannot edit this player inventory.', 'warn');
+    const owned = { ...(p.owned || {}) }, eq = { ...(p.eq || {}) };
+    if (ownedNow) owned[itemId] = true;
+    else { delete owned[itemId]; if (eq.title === itemId) eq.title = ''; }
+    if (await run(() => pdoc(p.id).update({ owned, eq }), (ownedNow ? 'Added ' : 'Removed ') + (SHOP.titles.find(x => x.id === itemId)?.name || itemId) + (ownedNow ? ' to ' : ' from ') + nameOf(p.id) + '\'s bag.')) {
+      p.owned = owned; p.eq = eq;
+      logAct(ownedNow ? 'bag-add' : 'bag-remove', p.id, itemId);
+      paint(true);
+    }
+  }
+  async function equipBagTitle(p, itemId) {
+    if (!canAct(p)) return App.toast('You cannot edit this player inventory.', 'warn');
+    if (!(p.owned || {})[itemId]) return App.toast('Add this title to the player bag first.', 'warn');
+    const eq = { ...(p.eq || {}), title: itemId };
+    if (await run(() => pdoc(p.id).update({ eq }), nameOf(p.id) + ' now wears ' + (SHOP.titles.find(x => x.id === itemId)?.name || itemId) + '.')) {
+      p.eq = eq; logAct('bag-equip', p.id, itemId); paint(true);
+    }
+  }
+  async function adjustConsumable(p, field, delta, label) {
+    if (!canAct(p)) return App.toast('You cannot edit this player inventory.', 'warn');
+    const current = Math.max(0, Math.floor(Number(p[field]) || 0)), next = Math.max(0, current + delta);
+    if (next === current) return App.toast(label + ' is already at zero.', 'warn');
+    if (await run(() => pdoc(p.id).update({ [field]: next }), label + ': ' + current + ' → ' + next + ' for ' + nameOf(p.id) + '.')) {
+      p[field] = next; logAct('bag-consumable', p.id, field + ' ' + current + ' → ' + next); paint(true);
+    }
+  }
+  function inventoryTools(p) {
+    const owned = p.owned || {}, eq = p.eq || {};
+    const items = elx('div', 'adm-inventory-list');
+    SHOP.titles.forEach(item => {
+      const has = !!owned[item.id], equipped = eq.title === item.id;
+      items.append(elx('div', 'adm-inventory-row',
+        elx('div', 'adm-inventory-name',
+          elx('strong', '', item.icon + ' ' + item.name),
+          elx('span', 'adm-sub', has ? (equipped ? 'In bag · equipped' : 'In bag · not equipped') : 'Not owned')),
+        elx('div', 'adm-inventory-actions',
+          btn(has ? 'Remove' : 'Add to bag', has ? 'btn-ghost btn-sm adm-danger' : 'btn-primary btn-sm', () => setBagItem(p, item.id, !has), !canAct(p)),
+          has ? btn(equipped ? 'Equipped ✓' : 'Equip', equipped ? 'btn-ghost btn-sm' : 'btn-primary btn-sm', () => equipBagTitle(p, item.id), !canAct(p) || equipped) : null)));
+    });
+    const supplies = [
+      ['p50', 'Second Chances', Number(p.p50) || 0],
+      ['sfreezes', 'Streak Freezes', Number(p.sfreezes) || 0],
+      ['xpBoost', 'XP Boosts', Number(p.xpBoost) || 0]
+    ];
+    const supplyRows = elx('div', 'adm-inventory-list');
+    supplies.forEach(([field, label, qty]) => supplyRows.append(elx('div', 'adm-inventory-row',
+      elx('div', 'adm-inventory-name', elx('strong', '', label), elx('span', 'adm-sub', 'Quantity: ' + qty)),
+      elx('div', 'adm-inventory-actions',
+        btn('−1', 'btn-ghost btn-sm', () => adjustConsumable(p, field, -1, label), !canAct(p) || qty <= 0),
+        btn('+1', 'btn-primary btn-sm', () => adjustConsumable(p, field, 1, label), !canAct(p)))));
+    return elx('div', 'adm-card adm-inventory',
+      elx('h4', '', '🎒 Player bag and items'),
+      elx('p', 'adm-info', 'Add or remove owned shop titles, equip a title, and adjust the player’s consumable items. These changes are saved to their player record.'),
+      items, elx('h4', '', 'Consumables'), supplyRows);
+  }
+
   function controls(p) {
     const w = elx('div', 'adm-ctl'), can = canAct(p), kill = canKill(p), banned = S.bans.has(p.id), rt = roleOf(p.id);
     const inp = document.createElement('input'); inp.type = 'number'; inp.min = '1'; inp.value = st.amt; inp.inputMode = 'numeric'; inp.className = 'adm-amt'; inp.setAttribute('aria-label', 'Amount');
@@ -11761,7 +11831,7 @@ const Adm = (() => {
     const nmeta = S.notes.get(p.id); const nm = nmeta ? elx('p', 'adm-info', `Last edited by ${nmeta.by || 'staff'} \u00B7 ${fmtTime(nmeta.at)}`) : null;
     const live = p.lastDay === today() || p.lastDay === yesterday(), b = S.bans.get(p.id);
     const info = elx('p', 'adm-info', `ID ${p.id} \u00B7 last active ${p.lastDay || 'never'} \u00B7 \u{1F525} ${live ? p.streak || 0 : 0} (best ${p.bestStreak || 0}) \u00B7 duels ${p.duelW || 0}W-${p.duelL || 0}L-${p.duelD || 0}D \u00B7 Second Chances ${p.p50 || 0}${b ? ` \u00B7 ${banActive(b) ? 'BANNED' : 'ban expired'}${b.reason ? ' (' + b.reason + ')' : ''}` : ''}`);
-    w.append(elx('label', 'adm-lbl', 'Amount'), inp, chips, g1, g2, elx('label', 'adm-lbl', 'Moderation'), g2b, g3, g4, g5, elx('label', 'adm-lbl', 'Private note'), note, nb, nm, info);
+    w.append(elx('label', 'adm-lbl', 'Amount'), inp, chips, g1, g2, g2b, inventoryTools(p), elx('label', 'adm-lbl', 'Moderation'), g3, g4, g5, elx('label', 'adm-lbl', 'Private note'), note, nb, nm, info);
     if (!can) w.append(elx('p', 'adm-info adm-prot', rt === 'owner' ? '\u{1F451} The owner is protected from every action here.' : '\u{1F6E1}\uFE0F Admins are protected from other admins. Only the owner can act on them.'));
     else if (p.id === S.uid) w.append(elx('p', 'adm-info adm-prot', 'This is you. You can\u2019t ban, reset or delete yourself.'));
     return w;
