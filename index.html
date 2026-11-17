@@ -11819,6 +11819,7 @@ const Adm = (() => {
     if (await run(() => chunked(ps.map(p => b => b.update(pdoc(p.id), { coins: fsv().FieldValue.increment(n) }))), `Gave ${n} coins to ${ps.length} players.`)) logAct('gift-all', '', `${n} coins each to ${ps.length} players (${v.who})`);
   }
   async function setRewardRates() {
+    if (!S.isOwner) return App.toast('Owner access required.', 'warn');
     const v = await ask({
       title: 'Set practice reward rates',
       intro: 'These rates apply to new quiz rewards for every player. Existing EXP and coins are not changed.',
@@ -11837,6 +11838,7 @@ const Adm = (() => {
     }
   }
   async function toggleShop() {
+    if (!S.isOwner) return App.toast('Owner access required.', 'warn');
     const paused = !!S.settings.shopPaused;
     const next = !paused;
     if (await run(() => S.db.doc('settings/app').set({ shopPaused: next, shopUpdatedAt: Date.now(), shopUpdatedBy: S.uid }, { merge: true }), next ? 'Shop purchases paused for everyone.' : 'Shop purchases are open again.')) {
@@ -11845,6 +11847,7 @@ const Adm = (() => {
     }
   }
   function downloadAuditCsv() {
+    if (!S.isOwner) return App.toast('Owner access required.', 'warn');
     const esc = value => '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"';
     const rows = [['Time','Role','Staff member','Action','Target','Details'], ...S.audit.map(e => [fmtTime(e.at), e.role, e.byName, e.action, e.targetName, e.detail])];
     const csv = '\uFEFF' + rows.map(row => row.map(esc).join(',')).join('\r\n');
@@ -11932,7 +11935,7 @@ const Adm = (() => {
       card('\u{1F4C1} Owner exports', 'Download a copy of the moderation audit history for your own records.', btn('Export audit log CSV', 'btn-ghost btn-sm', downloadAuditCsv)),
       card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins…', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false))));
   }
-  const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F', 'bug-open': '\u{1F41E}', 'bug-fixing': '\u{1F6E0}\uFE0F', 'bug-done': '\u2705', 'bug-wontfix': '\u{1F4D5}', 'bug-reply': '\u{1F4AC}', 'bug-delete': '\u{1F5D1}\uFE0F', 'roster-remove': '\u{1F6AA}', 'duels-on': '\u25B6\uFE0F', 'duels-off': '\u23F8\uFE0F', appoint: '\u{1F6E1}\uFE0F' };
+  const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F', 'bug-open': '\u{1F41E}', 'bug-fixing': '\u{1F6E0}\uFE0F', 'bug-done': '\u2705', 'bug-wontfix': '\u{1F4D5}', 'bug-reply': '\u{1F4AC}', 'bug-delete': '\u{1F5D1}\uFE0F', 'roster-remove': '\u{1F6AA}', 'duels-on': '\u25B6\uFE0F', 'duels-off': '\u23F8\uFE0F', 'reward-rates': '\u{1F4C8}', 'shop-paused': '\u{1F6D2}', 'shop-resumed': '\u{1F6D2}', 'audit-export': '\u{1F4C1}', appoint: '\u{1F6E1}\uFE0F' };
   function auditTab() {
     const w = elx('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search the log\u2026'; q.value = st.alq; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search audit log');
     const rs = document.createElement('select'); rs.className = 'adm-sel'; [['all', 'Everyone'], ['owner', 'Owner only'], ['admin', 'Admins only']].forEach(([v, t]) => rs.append(new Option(t, v))); rs.value = st.alr; rs.setAttribute('aria-label', 'Filter by role');
