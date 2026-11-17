@@ -13,7 +13,6 @@ const ROUTES = [
   { name: 'friends', hash: '#/friends', screen: 'friends' },
   { name: 'duels', hash: '#/duels', screen: 'duels' },
   { name: 'notes', hash: '#/notes', screen: 'notes' },
-  { name: 'essays', hash: '#/notes?view=essays', screen: 'notes' },
 ];
 const VIEWPORTS = [
   { name: 'phone-320', width: 320, height: 780, mobile: true },
@@ -296,15 +295,21 @@ async function main() {
             }
           }
 
-          if (route.name === 'essays') {
+          if (route.name === 'notes') {
+            // Essays are an in-page tab, not a separate router destination.
+            const essayTab = page.locator('[data-notes-view="essays"]');
+            await essayTab.click();
             const essayPanel = page.locator('#notes-essay-view');
             const essayQuestion = page.locator('#sb-q');
-            if (!(await essayPanel.isVisible()) || !(await essayQuestion.isVisible()) || !(await essayQuestion.textContent())?.trim()) {
-              report.failures.push(`${viewport.name}/essays: the essay question content did not appear`);
+            await essayPanel.waitFor({ state: 'visible', timeout: 10000 });
+            await essayQuestion.waitFor({ state: 'visible', timeout: 10000 });
+            if (!(await essayQuestion.textContent())?.trim()) {
+              report.failures.push(`${viewport.name}/notes: the essay question content did not appear`);
             }
             await page.locator('[data-sb-sub="careerTechnology"]').click();
+            await page.waitForTimeout(150);
             if (!/workshop/i.test((await essayQuestion.textContent()) || '')) {
-              report.failures.push(`${viewport.name}/essays: Career Technology essay questions did not load`);
+              report.failures.push(`${viewport.name}/notes: Career Technology essay questions did not load`);
             }
           }
 
