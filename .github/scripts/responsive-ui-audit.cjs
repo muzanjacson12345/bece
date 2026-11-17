@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'overview-owner-controls-2026-11-17-r2';
+const EXPECTED_BUILD = 'owner-admin-control-centre-2026-11-17-r1';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -56,6 +56,11 @@ async function main() {
     ['owner-only reward controls', 'Global practice economy'],
     ['owner-only shop controls', 'Shop control'],
     ['owner-only exports', 'Owner exports'],
+    ['overview dashboard', "st.sub === 'overview' ? overview()"],
+    ['full player profile editor', 'async function editProfile(p)'],
+    ['guided inventory and bag editor', 'async function editBag(p)'],
+    ['owner JSON backup export', 'function exportAllJson()'],
+    ['owner JSON backup restore', 'async function importAllJson()'],
     ['in-place staff renewal', 'async function renewCurrentSession()'],
     ['Owner/Admin role-aware navigation', "label.textContent = S.isOwner ? 'Owner' : 'Admin'"],
     ['Renew button uses the in-place handler', "btn('Renew', 'btn-ghost btn-sm', renewCurrentSession)"],
