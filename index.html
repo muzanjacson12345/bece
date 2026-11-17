@@ -3373,6 +3373,38 @@ pre, code { overflow-wrap: anywhere; }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 </style>
+
+<style id="overview-owner-responsive-final">
+@media (max-width: 760px) {
+  #screen-home .hero, #screen-home .hero-copy { width:100% !important; min-width:0 !important; max-width:100% !important; }
+  #screen-home .hero-actions { display:grid !important; grid-template-columns:minmax(0,1fr) !important; align-items:stretch !important; width:100% !important; min-width:0 !important; max-width:100% !important; gap:10px !important; }
+  #screen-home .hero-actions > * { display:flex !important; align-items:center !important; justify-content:center !important; box-sizing:border-box !important; width:100% !important; min-width:0 !important; max-width:100% !important; min-height:54px !important; margin:0 !important; padding:14px 16px !important; white-space:normal !important; overflow-wrap:normal !important; word-break:normal !important; text-align:center !important; }
+  #screen-home .hero-actions > * .icon { flex:0 0 auto; margin-left:10px; }
+  #screen-home .snapshot { grid-template-columns:repeat(2,minmax(0,1fr)) !important; width:100%; }
+  #screen-home .snap-tile { min-width:0; overflow-wrap:anywhere; }
+  #screen-home .challenge-heading { min-width:0; flex-wrap:wrap; }
+  #screen-home .challenge-heading .daily-info { flex:1 1 180px; min-width:0; }
+  #screen-home .challenge-summary { flex:0 0 auto; }
+  #screen-home .daily-card { min-width:0; width:100%; box-sizing:border-box; }
+}
+@media (min-width:761px) and (max-width:1100px) {
+  #screen-home .hero { grid-template-columns:minmax(0,1fr) minmax(220px,.75fr); gap:24px; }
+  #screen-home .hero-copy { min-width:0; }
+  #screen-home .hero-actions { flex-wrap:wrap; }
+  #screen-home .hero-actions > * { flex:1 1 220px; min-width:0; }
+  #screen-home .snapshot { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:380px) {
+  #screen-home .hero h1 { font-size:clamp(38px,11vw,48px) !important; }
+  #screen-home .hero-actions > * { font-size:15px; }
+}
+[data-admin-nav][hidden] { display:none !important; }
+@media (max-width:760px) {
+  body.admin-enabled .tab-bar { grid-template-columns:repeat(6,minmax(0,1fr)) !important; }
+  body.admin-enabled .tab-bar a { min-width:0; padding-inline:1px; font-size:clamp(9px,2.7vw,11px); }
+  body.admin-enabled .tab-bar a span:last-child { white-space:nowrap; }
+}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -11225,7 +11257,7 @@ function refreshAdmin(force) {
   const now = Date.now(), wasStaff = S.isAdmin, wasOwner = S.isOwner, oldKey = [...S.admins].sort().join() + '|' + [...S.owners].sort().join();
   const adminLive = !!S.adminAt && now < S.adminAt + ADMIN_MS, ownerLive = !!S.ownerAt && now < S.ownerAt + OWNER_MS;
   S.isOwner = ownerLive; S.isAdmin = adminLive || ownerLive;
-  document.querySelectorAll('[data-admin-nav]').forEach(link => { link.hidden = !S.isAdmin; });
+  document.querySelectorAll('[data-admin-nav]').forEach(link => { link.hidden = !S.isAdmin; const label = link.querySelector('span:last-child') || link; label.textContent = S.isOwner ? 'Owner' : 'Admin'; link.setAttribute('aria-label', S.isOwner ? 'Owner panel' : 'Admin panel'); link.title = S.isOwner ? 'Owner panel' : 'Admin panel'; });
   document.body.classList.toggle('admin-enabled', S.isAdmin);
   S.admins = new Set(); S.owners = new Set();
   S.badgeMap.forEach((until, id) => { if (until > now) { S.admins.add(id); if (S.badgeRole.get(id) === 'owner') S.owners.add(id); } });
@@ -11317,7 +11349,7 @@ document.addEventListener('visibilitychange', () => {
 function openPin(mode, renew) {
   if (!S.db || !S.uid) return App.toast('You need to be online to unlock.', 'warn');
   mode = mode === 'owner' ? 'owner' : 'admin';
-  if (!renew && ((mode === 'owner' && S.isOwner) || (mode === 'admin' && S.isAdmin))) { S.ftab = 'admin'; App.navigate('friends'); showFtab(); return; }
+  if (!renew && ((mode === 'owner' && S.isOwner) || (mode === 'admin' && S.isAdmin))) { App.navigate('admin'); Adm.sync(); return; }
   const old = $('pin-ov'); if (old) old.remove();
   const owner = mode === 'owner';
   const ov = elx('div', 'pin-ov'); ov.id = 'pin-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', owner ? 'Owner access' : 'Admin access');
@@ -11344,13 +11376,13 @@ function openPin(mode, renew) {
         await ref.set({ pw1: secret[0], pw2: secret[1], at: F.FieldValue.serverTimestamp() });   // the server rules compare both passwords; they are never stored in this page
         const snap = await ref.get({ source: 'server' }); S.ownerAt = snap.data().at.toMillis(); S.ownFails = 0; lsSet('own-lock', '0');
         refreshAdmin(true); await setBadge().catch(() => {}); logAct('unlock', '', 'Owner session started'); await setRoster('owner'); liftOwnBan();
-        close(); S.ftab = 'admin'; Adm.go('owner'); App.navigate('friends'); showFtab(); App.toast('Owner unlocked for 30 minutes.', 'good');
+        close(); Adm.go('owner'); App.navigate('admin'); Adm.sync(); App.toast(renew ? 'Owner session renewed for 30 minutes.' : 'Owner unlocked for 30 minutes.', 'good');
       } else {
         const ref = S.db.doc('adminSessions/' + S.uid);
         await ref.set({ pin: secret[0], at: F.FieldValue.serverTimestamp() });
         const snap = await ref.get({ source: 'server' }); S.adminAt = snap.data().at.toMillis(); S.pinFails = 0;
         refreshAdmin(true); await setBadge().catch(() => {}); logAct('unlock', '', 'Admin session started'); setRoster('admin');
-        close(); S.ftab = 'admin'; App.navigate('friends'); showFtab(); App.toast('Admin unlocked for 2 hours.', 'good');
+        close(); App.navigate('admin'); Adm.sync(); App.toast(renew ? 'Admin session renewed for 2 hours.' : 'Admin unlocked for 2 hours.', 'good');
       }
     } catch (er) {
       go.disabled = false;
@@ -11717,6 +11749,25 @@ const Adm = (() => {
     if (!ps.length) return App.toast('Nobody matches that group.', 'warn');
     if (await run(() => chunked(ps.map(p => b => b.update(pdoc(p.id), { coins: fsv().FieldValue.increment(n) }))), `Gave ${n} coins to ${ps.length} players.`)) logAct('gift-all', '', `${n} coins each to ${ps.length} players (${v.who})`);
   }
+  async function giftExpAll() {
+    const v = await ask({ title: 'Award EXP to many players', fields: [{ key: 'who', label: 'Who receives EXP', options: [['today', 'Players active today'], ['week', 'Players active this week'], ['all', 'Everyone']] }, { key: 'n', label: 'EXP each', type: 'number', value: '100' }], ok: 'Award EXP', validate: x => (!(+x.n >= 1) || +x.n > 50000) ? 'Enter 1 to 50,000 EXP.' : '' });
+    if (!v) return;
+    const n = Math.floor(+v.n), wk = weekStart(), td = today();
+    const ps = S.players.filter(p => !S.bans.has(p.id) && (v.who === 'all' || (v.who === 'today' ? p.lastDay === td : (p.weekKey === wk && (p.weekExp || 0) > 0))));
+    if (!ps.length) return App.toast('Nobody matches that group.', 'warn');
+    if (await run(() => chunked(ps.map(p => b => b.update(pdoc(p.id), { totalExp: fsv().FieldValue.increment(n), weekExp: fsv().FieldValue.increment(n) }))), 'Awarded ' + n + ' EXP to ' + ps.length + ' players.')) logAct('gift-exp-all', '', n + ' EXP each to ' + ps.length + ' players (' + v.who + ')');
+  }
+  async function signOutAllAdmins() {
+    const ids = [...S.badgeMap.keys()].filter(id => id !== S.uid && S.badgeRole.get(id) !== 'owner');
+    if (!ids.length) return App.toast('No other active admins to sign out.', 'warn');
+    const v = await ask({ title: 'Sign out every active admin?', intro: ids.length + ' active admin session(s) will end. Your owner session stays active.', fields: [{ key: 'w', label: 'Type SIGN OUT' }], ok: 'Sign out admins', danger: true, validate: x => x.w.trim() !== 'SIGN OUT' ? 'Type SIGN OUT exactly.' : '' });
+    if (!v) return;
+    if (await run(() => chunked(ids.flatMap(id => [b => b.delete(S.db.doc('adminSessions/' + id)), b => b.delete(S.db.doc('adminBadges/' + id))])), 'Signed out ' + ids.length + ' admin(s).')) {
+      ids.forEach(id => S.badgeMap.delete(id));
+      logAct('signout-all-admins', '', ids.length + ' admin sessions ended');
+      Adm.paint(true);
+    }
+  }
   async function weeklyReset() {
     const v = await ask({ title: 'Reset the weekly board', intro: 'Sets everyone\u2019s EXP for this week to 0. Total EXP, coins and streaks are not touched. Type RESET to confirm.', fields: [{ key: 'w', label: 'Type RESET' }], ok: 'Reset weekly board', danger: true, validate: x => x.w.trim() !== 'RESET' ? 'Type RESET exactly.' : '' });
     if (!v) return; const ps = S.players.filter(p => (p.weekExp || 0) > 0);
@@ -11770,7 +11821,8 @@ const Adm = (() => {
       rosterCard(),
       card('\u23F8\uFE0F Duels switch', S.settings.duelsPaused ? 'New duels are paused for everyone. Duels already running can finish.' : 'Duels are open. Pause new duels if something is broken or being abused.', btn(S.settings.duelsPaused ? 'Resume duels' : 'Pause new duels', S.settings.duelsPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleDuels)),
       card('\u{1F510} Security', 'The admin PIN opens admin sessions. The 2 owner passwords open this console. Changing either one signs people out.', btn('Change admin PIN', 'btn-ghost btn-sm', changeAdminPin), btn('Change owner passwords', 'btn-ghost btn-sm', changeOwnerPw)),
-      card('\u{1F381} Bulk tools', 'Act on many players at once. Each one is written to the audit log.', btn('Gift coins\u2026', 'btn-primary btn-sm', giftAll), btn('Reset weekly board\u2026', 'btn-ghost btn-sm adm-danger', weeklyReset), btn('Clear expired bans', 'btn-ghost btn-sm', clearExpired), btn('\u{1F512} Lock everything', 'btn-ghost btn-sm', lockAll)));
+      card('\u{1F381} Bulk tools', 'Owner-only rewards and maintenance commands. Every action is recorded in the audit log.', btn('Gift coins\u2026', 'btn-primary btn-sm', giftAll), btn('Award EXP\u2026', 'btn-primary btn-sm', giftExpAll), btn('Reset weekly board\u2026', 'btn-ghost btn-sm adm-danger', weeklyReset), btn('Clear expired bans', 'btn-ghost btn-sm', clearExpired)),
+      card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins\u2026', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false))));
   }
   const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F', 'bug-open': '\u{1F41E}', 'bug-fixing': '\u{1F6E0}\uFE0F', 'bug-done': '\u2705', 'bug-wontfix': '\u{1F4D5}', 'bug-reply': '\u{1F4AC}', 'bug-delete': '\u{1F5D1}\uFE0F', 'roster-remove': '\u{1F6AA}', 'duels-on': '\u25B6\uFE0F', 'duels-off': '\u23F8\uFE0F', appoint: '\u{1F6E1}\uFE0F' };
   function auditTab() {
@@ -11787,7 +11839,7 @@ const Adm = (() => {
   }
 
   /* ---------- shell ---------- */
-  const tabList = () => [['players', '\u{1F465} Players'], ['stats', '\u{1F4CA} Stats'], ['bans', `\u{1F6AB} Bans${S.bans.size ? ' ' + S.bans.size : ''}`], ['announce', '\u{1F4E3} Announce'], ['bugs', `\u{1F41E} Bugs${S.bugs.filter(b => (b.status || 'open') === 'open').length ? ' ' + S.bugs.filter(b => (b.status || 'open') === 'open').length : ''}`], ['tools', '\u{1F9F0} Tools'], ...(S.isOwner ? [['owner', '\u{1F451} Owner'], ['audit', '\u{1F4DC} Audit']] : [])];
+  const tabList = () => [['players', '\u{1F465} Players'], ['stats', '\u{1F4CA} Stats'], ['bans', `\u{1F6AB} Bans${S.bans.size ? ' ' + S.bans.size : ''}`], ['announce', '\u{1F4E3} Announce'], ['bugs', `\u{1F41E} Bugs${S.bugs.filter(b => (b.status || 'open') === 'open').length ? ' ' + S.bugs.filter(b => (b.status || 'open') === 'open').length : ''}`], ['tools', '\u{1F9F0} Tools'], ...(S.isOwner ? [['owner', '\u{1F451} Owner commands'], ['audit', '\u{1F4DC} Audit']] : [])];
   const view = () => st.sub === 'players' ? players() : st.sub === 'stats' ? stats() : st.sub === 'bans' ? bansTab() : st.sub === 'announce' ? announce() : st.sub === 'tools' ? tools() : st.sub === 'bugs' ? bugsTab() : st.sub === 'owner' ? ownerTab() : auditTab();
   function paint(force) {
     if (!root || root.hidden && !force) return;
