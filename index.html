@@ -2910,8 +2910,8 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <a href="#/" data-nav="home">Overview</a>
       <a href="#/practice" data-nav="practice">Quiz</a>
       <a href="#/friends" data-nav="friends">Friends</a>
-      <a href="#/notes" data-nav="notes">Notes <small>(extra)</small></a>
-      <a href="#/essays" data-nav="essays">Essays <small>(extra)</small></a>
+      <a href="#/duels" data-nav="duels">Duels</a>
+      <a href="#/notes" data-nav="notes">Notes</a>
     </nav>
     <div class="nav-tools">
       <button id="theme-toggle" class="icon-button" type="button" aria-label="Toggle dark mode" aria-pressed="false">
@@ -3003,7 +3003,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button class="tool-card" type="button" data-action="practise-saved" id="saved-tool"><svg class="icon tool-icon"><use href="#i-bookmark"/></svg><span><strong>Saved questions</strong><small id="saved-count">Bookmark tricky questions to revisit</small></span></button>
         <a class="tool-card" href="#flashcard-studio"><svg class="icon tool-icon"><use href="#i-cards"/></svg><span><strong>Flashcards</strong><small>Quick recall, one card at a time</small></span></a>
         <a class="tool-card tool-extra" href="#/notes"><svg class="icon tool-icon"><use href="#i-book"/></svg><span><strong>Revision library</strong><small>Extra: notes, key ideas &amp; quick checks</small></span></a>
-        <a class="tool-card tool-extra" href="#/essays"><svg class="icon tool-icon"><use href="#i-pen"/></svg><span><strong>Essay workshop</strong><small>Extra: plan, write &amp; compare with a guide</small></span></a>
+        <a class="tool-card tool-extra" href="#/notes?view=essays"><svg class="icon tool-icon"><use href="#i-pen"/></svg><span><strong>Essay workshop</strong><small>Extra: plan, write &amp; compare with a guide</small></span></a>
       </div>
     </section>
 
@@ -3087,6 +3087,12 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <h1>A little space to understand.</h1>
       <p class="muted">Choose a topic. Follow the key ideas. Check what you remember.</p>
     </div>
+    <div class="notes-view-tabs" role="tablist" aria-label="Notes sections">
+      <a href="#/notes" role="tab" data-notes-view="notes" aria-selected="true"><svg class="icon"><use href="#i-book"/></svg> Notes</a>
+      <a href="#/notes?view=essays" role="tab" data-notes-view="essays" aria-selected="false"><svg class="icon"><use href="#i-pen"/></svg> Essays</a>
+    </div>
+    <div id="notes-content">
+
     <div class="toolbar">
       <div class="segmented" role="group" aria-label="Subject">
         <button type="button" data-notes-sub="social" aria-pressed="true">Social Studies</button>
@@ -3260,12 +3266,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <a class="btn btn-ghost" href="#/">Home</a>
       </div>
     </section>
-  </div>
-</section>
-
-<!-- ================= ESSAYS ================= -->
-<section id="screen-essays" class="screen" data-screen="essays" hidden>
-  <div class="container container-mid">
+  
+    </div>
+<div id="notes-essay-view" hidden>
+<div class="container container-mid">
     <div class="page-intro">
       <p class="eyebrow">Think it through. Write it clearly.</p>
       <h1>Good answers start with a plan.</h1>
@@ -3312,8 +3316,11 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <div id="sb-scheme-content" class="guide-content"></div>
     </section>
   </div>
+</div>
+  </div>
 </section>
 
+<!-- ================= ESSAYS ================= -->
 <!-- ================= FRIENDS ================= -->
 <section id="screen-friends" class="screen" data-screen="friends" hidden>
   <div class="container">
@@ -3351,7 +3358,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   <a href="#/practice" data-nav="practice"><svg class="icon"><use href="#i-cards"/></svg><span>Quiz</span></a>
   <a href="#/friends" data-nav="friends"><svg class="icon"><use href="#i-users"/></svg><span>Friends</span></a>
   <a href="#/notes" data-nav="notes" class="tab-extra"><svg class="icon"><use href="#i-book"/></svg><span>Notes</span></a>
-  <a href="#/essays" data-nav="essays" class="tab-extra"><svg class="icon"><use href="#i-pen"/></svg><span>Essays</span></a>
+  <a href="#/duels" data-nav="duels"><span aria-hidden="true">⚔️</span><span>Duels</span></a>
 </nav>
 
 <dialog id="auth-dialog" class="dialog" aria-labelledby="auth-title">
@@ -7745,8 +7752,8 @@ function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
 }
 
 /* ======================= Router ======================= */
-const SCREENS = ['home', 'notes', 'setup', 'quiz', 'essays', 'friends', 'achievements', 'duels', 'shop', 'me'];
-const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'essays', friends: 'friends', achievements: 'achievements', duels: 'duels', shop: 'shop', me: 'me' };
+const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'achievements', 'duels', 'shop', 'me'];
+const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', achievements: 'achievements', duels: 'duels', shop: 'shop', me: 'me' };
 const PATH_FOR = { home: '', setup: 'practice' };
 let currentScreen = null;
 
@@ -7799,7 +7806,13 @@ function render(screen) {
   if (screen === 'home') Home.render();
   if (screen === 'notes') Notes.enter();
   if (screen === 'setup') Setup.enter();
-  if (screen === 'essays') Essays.enter();
+  if (screen === 'notes') {
+    const essayView = /(?:[?&])view=essays(?:&|$)/.test(currentHash());
+    $('notes-content').hidden = essayView;
+    $('notes-essay-view').hidden = !essayView;
+    document.querySelectorAll('[data-notes-view]').forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.notesView === (essayView ? 'essays' : 'notes'))));
+    if (essayView) Essays.enter();
+  }
   if (screen === 'achievements') window.renderAchievements?.();
   if (changed) {
     window.scrollTo({ top: 0, behavior: 'instant' });
