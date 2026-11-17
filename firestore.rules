@@ -1,0 +1,292 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ================================================================
+    // TWO ROLES
+    //   ADMIN = typed the admin PIN in the last 2 hours.
+    //           PIN lives in config/admin       (field: pin)
+    //   OWNER = typed BOTH owner passwords in the last 30 minutes.
+    //           Passwords live in config/owner  (fields: pw1, pw2)
+    // Create config/admin and config/owner BY HAND in the Firebase console (see SETUP at the bottom).
+    // The owner is above the admin: an owner can do everything an admin can,
+    // and an admin can never touch the owner or another admin.
+    //
+    // PERMANENT PROTECTION (new): the first time someone unlocks as admin/owner, a record is written to
+    // staffRoster/<uid>. That record never expires, so an owner is protected even while locked out
+    // (before, the protection vanished 30 minutes after the owner session ended, which is how an
+    // admin could ban the owner).
+    // ================================================================
+
+    function signedIn() { return request.auth != null; }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/adminSessions/$(request.auth.uid))
+        && get(/databases/$(database)/documents/adminSessions/$(request.auth.uid)).data.at + duration.value(2, 'h') > request.time
+        && (isAppointed(request.auth.uid)
+            || get(/databases/$(database)/documents/adminSessions/$(request.auth.uid)).data.get('pin', '') == get(/databases/$(database)/documents/config/admin).data.pin);
+    }
+    // An admin the OWNER appointed from inside the app (no PIN needed, removed instantly by the owner).
+    function isAppointed(id) {
+      return exists(/databases/$(database)/documents/staffRoster/$(id))
+        && get(/databases/$(database)/documents/staffRoster/$(id)).data.get('appointed', false) == true;
+    }
+    function isOwner() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/ownerSessions/$(request.auth.uid))
+        && get(/databases/$(database)/documents/ownerSessions/$(request.auth.uid)).data.at + duration.value(30, 'm') > request.time
+        && get(/databases/$(database)/documents/ownerSessions/$(request.auth.uid)).data.pw1 == get(/databases/$(database)/documents/config/owner).data.pw1
+        && get(/databases/$(database)/documents/ownerSessions/$(request.auth.uid)).data.pw2 == get(/databases/$(database)/documents/config/owner).data.pw2;
+    }
+    // owner is checked first so owner batch writes stay under Firestore's lookup limit
+    function isStaff() { return isOwner() || isAdmin(); }
+
+    // Permanent staff record (never expires). Only a live owner can create an owner entry.
+    function onRoster(id) { return exists(/databases/$(database)/documents/staffRoster/$(id)); }
+    function rosterIsOwner(id) { return onRoster(id) && get(/databases/$(database)/documents/staffRoster/$(id)).data.role == 'owner'; }
+    function badgeIsLive(id) {
+      return exists(/databases/$(database)/documents/adminBadges/$(id))
+        && get(/databases/$(database)/documents/adminBadges/$(id)).data.until > request.time;
+    }
+    // Someone who is staff: on the permanent roster OR currently wearing the badge (admins can't act on them).
+    function targetIsStaff(id) { return onRoster(id) || badgeIsLive(id); }
+    // The owner: permanent roster entry OR a live owner badge. Nobody can ban, reset, delete or message them (except the owner themself).
+    function targetIsOwner(id) {
+      return rosterIsOwner(id)
+        || (badgeIsLive(id) && get(/databases/$(database)/documents/adminBadges/$(id)).data.get('role', 'admin') == 'owner');
+    }
+    function isBanned() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/bans/$(request.auth.uid))
+        && (get(/databases/$(database)/documents/bans/$(request.auth.uid)).data.get('until', 0) == 0
+            || get(/databases/$(database)/documents/bans/$(request.auth.uid)).data.until > request.time.toMillis());
+    }
+
+    // ---------- Secrets: nobody can READ them. Only the owner can CHANGE them. ----------
+    match /config/admin {
+      allow read: if false;
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['pin'])
+        && request.resource.data.pin is string
+        && request.resource.data.pin.size() >= 4 && request.resource.data.pin.size() <= 64;
+      allow delete: if false;
+    }
+    match /config/owner {
+      allow read: if false;
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['pw1', 'pw2'])
+        && request.resource.data.pw1 is string && request.resource.data.pw2 is string
+        && request.resource.data.pw1.size() >= 8 && request.resource.data.pw1.size() <= 128
+        && request.resource.data.pw2.size() >= 8 && request.resource.data.pw2.size() <= 128
+        && request.resource.data.pw1 != request.resource.data.pw2;
+      allow delete: if false;
+    }
+    match /config/{other} { allow read, write: if false; }
+
+    // ---------- Sessions: typing the right secret is what creates a session. The server stamps the time. ----------
+    match /adminSessions/{id} {
+      allow read: if signedIn() && request.auth.uid == id;
+      allow create, update: if signedIn() && request.auth.uid == id
+        && request.resource.data.at == request.time
+        && ((request.resource.data.keys().hasOnly(['pin', 'at'])
+             && request.resource.data.pin == get(/databases/$(database)/documents/config/admin).data.pin)
+            || (request.resource.data.keys().hasOnly(['at']) && isAppointed(id)));
+      // you can end your own session; the owner can end anyone's ("sign out" button)
+      allow delete: if signedIn() && (request.auth.uid == id || isOwner());
+    }
+    match /ownerSessions/{id} {
+      allow read: if signedIn() && request.auth.uid == id;
+      allow create, update: if signedIn() && request.auth.uid == id
+        && request.resource.data.keys().hasOnly(['pw1', 'pw2', 'at'])
+        && request.resource.data.at == request.time
+        && request.resource.data.pw1 == get(/databases/$(database)/documents/config/owner).data.pw1
+        && request.resource.data.pw2 == get(/databases/$(database)/documents/config/owner).data.pw2;
+      allow delete: if signedIn() && request.auth.uid == id;
+    }
+
+    // ---------- The Admin / Owner tag everyone sees ----------
+    match /adminBadges/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == id
+        && request.resource.data.keys().hasOnly(['until', 'role'])
+        && isStaff()
+        && (request.resource.data.get('role', 'admin') != 'owner' || isOwner());   // only a live owner can wear the owner tag
+      allow delete: if signedIn() && (request.auth.uid == id || isOwner());
+    }
+
+    // ---------- Permanent staff roster (the owner's shield) ----------
+    match /staffRoster/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == id
+        && request.resource.data.keys().hasOnly(['role', 'at'])
+        && request.resource.data.role in ['owner', 'admin']
+        && request.resource.data.at == request.time
+        && (request.resource.data.role == 'owner' ? isOwner() : isStaff());
+      // the owner appoints an admin (no PIN). Can't be used on an owner entry.
+      allow create, update: if isOwner() && !rosterIsOwner(id)
+        && request.resource.data.keys().hasOnly(['role', 'at', 'appointed', 'by'])
+        && request.resource.data.role == 'admin' && request.resource.data.appointed == true
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.at == request.time;
+      // an admin can never overwrite an owner entry or an appointment
+      allow update: if signedIn() && request.auth.uid == id && resource.data.get('appointed', false) != true
+        && request.resource.data.keys().hasOnly(['role', 'at'])
+        && request.resource.data.role in ['owner', 'admin']
+        && request.resource.data.at == request.time
+        && (request.resource.data.role == 'owner' ? isOwner() : (isStaff() && resource.data.role != 'owner'));
+      // only the owner can remove entries (old devices, former admins), never their own
+      allow delete: if isOwner() && request.auth.uid != id;
+    }
+
+    // ---------- App switches (owner only) ----------
+    match /settings/{id} {
+      allow read: if signedIn();
+      // The Owner console writes these fields with merge:true. Validate every field that is present,
+      // while allowing settings to be introduced gradually on an existing document.
+      allow create, update: if isOwner() && id == 'app'
+        && request.resource.data.keys().hasOnly([
+          'duelsPaused', 'shopPaused', 'expMultiplier', 'coinMultiplier',
+          'at', 'by', 'shopUpdatedAt', 'shopUpdatedBy',
+          'ratesUpdatedAt', 'ratesUpdatedBy'
+        ])
+        && request.resource.data.get('duelsPaused', false) is bool
+        && request.resource.data.get('shopPaused', false) is bool
+        && request.resource.data.get('expMultiplier', 1) is number
+        && request.resource.data.get('expMultiplier', 1) >= 0.5
+        && request.resource.data.get('expMultiplier', 1) <= 3
+        && request.resource.data.get('coinMultiplier', 1) is number
+        && request.resource.data.get('coinMultiplier', 1) >= 0.5
+        && request.resource.data.get('coinMultiplier', 1) <= 3
+        && request.resource.data.get('at', 0) is number
+        && request.resource.data.get('by', '') is string
+        && request.resource.data.get('by', '').size() <= 128
+        && request.resource.data.get('shopUpdatedAt', 0) is number
+        && request.resource.data.get('shopUpdatedBy', '') is string
+        && request.resource.data.get('shopUpdatedBy', '').size() <= 128
+        && request.resource.data.get('ratesUpdatedAt', 0) is number
+        && request.resource.data.get('ratesUpdatedBy', '') is string
+        && request.resource.data.get('ratesUpdatedBy', '').size() <= 128;
+      allow delete: if isOwner();
+    }
+    function duelsPaused() {
+      return exists(/databases/$(database)/documents/settings/app)
+        && get(/databases/$(database)/documents/settings/app).data.get('duelsPaused', false) == true;
+    }
+
+    // ---------- Moderation ----------
+    // The owner can ban anyone except an owner. An admin can't ban staff of any kind.
+    match /bans/{id} {
+      allow read: if signedIn();
+      allow create, update: if ((isOwner() && !targetIsOwner(id)) || (isAdmin() && !targetIsStaff(id)))
+        && request.resource.data.keys().hasOnly(['at', 'by', 'name', 'reason', 'until'])
+        && request.resource.data.at is number
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && request.resource.data.reason is string && request.resource.data.reason.size() <= 200
+        && request.resource.data.until is number;
+      // Admins can clear only ordinary-player bans. Owner can also clear an admin's ban,
+      // but neither role can remove a ban record belonging to another Owner.
+      allow delete: if (isOwner() && !targetIsOwner(id)) || (isAdmin() && !targetIsStaff(id));
+    }
+    // Announcements. Only the owner can post an 'urgent' (critical) one or pin one.
+    // A pinned announcement can't be edited or cleared by an admin.
+    match /announcements/{id} {
+      allow read: if signedIn();
+      allow create: if isOwner()
+        || (isAdmin() && request.resource.data.get('pinned', false) != true && request.resource.data.get('kind', 'info') != 'critical');
+      allow update: if isOwner()
+        || (isAdmin() && resource.data.get('pinned', false) != true
+            && request.resource.data.get('pinned', false) != true && request.resource.data.get('kind', 'info') != 'critical');
+      allow delete: if isOwner() || (isAdmin() && resource.data.get('pinned', false) != true);
+    }
+
+    // ---------- Bug reports ----------
+    // Any signed-in, non-banned player can send one. They can read only their own. Staff read all and triage.
+    // Only the owner can delete.
+    match /bugReports/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isStaff());
+      allow create: if signedIn() && !isBanned()
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'cat', 'text', 'screen', 'device', 'at', 'status'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.cat in ['bug', 'display', 'content', 'idea', 'other']
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 10 && request.resource.data.text.size() <= 600
+        && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && request.resource.data.screen is string && request.resource.data.screen.size() <= 30
+        && request.resource.data.device is string && request.resource.data.device.size() <= 160
+        && request.resource.data.status == 'open'
+        && request.resource.data.at == request.time;
+      allow update: if isStaff()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reply', 'replyBy', 'doneAt'])
+        && request.resource.data.status in ['open', 'fixing', 'done', 'wontfix']
+        && request.resource.data.get('reply', '').size() <= 300;
+      allow delete: if isOwner();
+    }
+    // Private message from staff to one player. The player can read it and dismiss (delete) it.
+    match /notices/{id} {
+      allow read: if signedIn() && (request.auth.uid == id || isStaff());
+      allow create, update: if (isOwner() && !targetIsOwner(id)) || (isAdmin() && !targetIsStaff(id))
+        && request.resource.data.keys().hasOnly(['text', 'at', 'by', 'byName'])
+        && request.resource.data.text is string && request.resource.data.text.size() <= 200
+        && request.resource.data.at is number
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.byName is string && request.resource.data.byName.size() <= 40;
+      // Players may dismiss their own notice; staff may delete only notices for players they can moderate.
+      allow delete: if (signedIn() && request.auth.uid == id)
+        || (isOwner() && !targetIsOwner(id))
+        || (isAdmin() && !targetIsStaff(id));
+    }
+    // Private staff notes about a player. Players can never read these.
+    match /adminNotes/{id} {
+      allow read: if isStaff();
+      allow create, update: if (isOwner() && !targetIsOwner(id)) || (isAdmin() && !targetIsStaff(id))
+        && request.resource.data.keys().hasOnly(['text', 'by', 'at'])
+        && request.resource.data.text is string && request.resource.data.text.size() <= 500
+        && request.resource.data.by is string && request.resource.data.by.size() <= 40
+        && request.resource.data.at is number;
+      allow delete: if (isOwner() && !targetIsOwner(id)) || (isAdmin() && !targetIsStaff(id));
+    }
+    // Everything staff do. Staff can only add lines about themselves; only the owner can read or wipe it.
+    match /auditLogs/{id} {
+      allow read: if isOwner();
+      allow create: if isStaff()
+        && request.resource.data.keys().hasOnly(['at', 'by', 'byName', 'role', 'action', 'target', 'targetName', 'detail'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.at == request.time
+        && (request.resource.data.role != 'owner' || isOwner());
+      allow update: if false;
+      allow delete: if isOwner();
+    }
+
+    // ---------- Players ----------
+    // You can write your own profile unless banned. An admin can write anyone who is not staff.
+    // The owner can write anyone (needed for bulk gifts and the weekly reset).
+    match /players/{id} {
+      allow read: if signedIn();
+      // Full-profile and inventory editors update the existing player document. Owner may edit
+      // their own record and anyone who is not another Owner; admins may edit ordinary players only.
+      allow create, update: if (isOwner() && (!targetIsOwner(id) || request.auth.uid == id))
+        || (signedIn() && request.auth.uid == id && !isBanned())
+        || (isAdmin() && !targetIsStaff(id));
+      allow delete: if (isOwner() && !targetIsOwner(id)) || (isAdmin() && !targetIsStaff(id));
+    }
+    match /duels/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && !isBanned() && (!duelsPaused() || isOwner());
+      allow update: if signedIn() && !isBanned();
+      allow delete: if signedIn();
+    }
+
+    // ================================================================
+    // SETUP (once, in Firebase console -> Firestore -> Data):
+    //   1. Collection  config   Document ID  admin   Field  pin  (string)  = your admin PIN
+    //   2. Collection  config   Document ID  owner   Fields pw1 (string) and pw2 (string) = your 2 owner passwords
+    //      Use two DIFFERENT passwords, 8+ characters each. Never reuse them anywhere else.
+    //   3. Paste this file into Firestore -> Rules and press Publish.
+    //   4. After publishing, the owner unlocks ONCE in the app. That writes the permanent roster entry
+    //      (staffRoster/<your uid>) which shields you from admins even when you are locked.
+    // After that the owner can change both secrets from inside the app.
+    // ================================================================
+  }
+}
