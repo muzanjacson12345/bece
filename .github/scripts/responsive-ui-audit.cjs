@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'mobile-subject-picker-polish-2026-11-17-r1';
+const EXPECTED_BUILD = 'mobile-subject-picker-polish-2026-11-17-r2';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -297,9 +297,14 @@ async function main() {
           }
 
           if (route.name === 'essays') {
+            const essayPanel = page.locator('#notes-essay-view');
             const essayQuestion = page.locator('#sb-q');
-            if (!(await essayQuestion.isVisible()) || !(await essayQuestion.textContent())?.trim()) {
+            if (!(await essayPanel.isVisible()) || !(await essayQuestion.isVisible()) || !(await essayQuestion.textContent())?.trim()) {
               report.failures.push(`${viewport.name}/essays: the essay question content did not appear`);
+            }
+            await page.locator('[data-sb-sub="careerTechnology"]').click();
+            if (!/workshop/i.test((await essayQuestion.textContent()) || '')) {
+              report.failures.push(`${viewport.name}/essays: Career Technology essay questions did not load`);
             }
           }
 
