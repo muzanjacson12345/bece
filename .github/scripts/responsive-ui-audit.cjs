@@ -199,7 +199,7 @@ async function main() {
                     range.selectNodeContents(button);
                     const textRect = range.getBoundingClientRect();
                     return {
-                      label: button.textContent.trim().replace(/\\s+/g, ' '),
+                      label: button.textContent.trim().replace(/\s+/g, ' '),
                       width: Math.round(rect.width),
                       height: Math.round(rect.height),
                       textLeft: Math.round(textRect.left),
