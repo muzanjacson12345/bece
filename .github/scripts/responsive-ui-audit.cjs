@@ -32,6 +32,12 @@ const VIEWPORTS = [
 
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function waitForLatestDeployment() {
+  // PR audits already run against a local preview of the checked-out branch.
+  // Do not wait for GitHub Pages to deploy that branch before testing it.
+  if (/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(BASE)) {
+    console.log('Using the local PR preview; skipping the public deployment wait.');
+    return;
+  }
   for (let attempt = 1; attempt <= 24; attempt++) {
     try {
       const response = await fetch(`${BASE}/?ui-audit=${Date.now()}`, { cache: 'no-store' });

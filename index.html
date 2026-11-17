@@ -3477,6 +3477,41 @@ pre, code { overflow-wrap: anywhere; }
   #screen-home .tool-card { padding: 10px; }
 }
 </style>
+<style id="staff-control-center-pass">
+.adm-overview { display:grid; gap:10px; min-width:0; }
+.adm-overview-card { margin:0; min-width:0; }
+.adm-overview-kicker { color:var(--muted); font-size:12px; font-weight:700; }
+.adm-overview-value { font-size:clamp(22px,4vw,30px); line-height:1.1; overflow-wrap:anywhere; }
+.adm-overview-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; min-width:0; }
+.adm-overview-wide { grid-column:1/-1; }
+.adm-overview-alert { margin:0; border-left:3px solid var(--accent); }
+.adm-overview .adm-btns { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.adm-overview .btn { min-height:42px; white-space:normal; }
+@media (max-width:760px) {
+  .adm-overview-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .adm-overview .adm-btns { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .adm-overview .adm-card { padding:12px; }
+  .adm-overview .adm-btns .btn { min-height:44px; padding:9px 8px; }
+}
+@media (max-width:360px) {
+  .adm-overview-grid { gap:6px; }
+  .adm-overview .adm-card { padding:10px; }
+  .adm-overview .adm-btns { grid-template-columns:1fr; }
+}
+</style>
+<style id="staff-inventory-controls">
+.adm-inventory { gap:10px; }
+.adm-inventory-list { display:grid; gap:7px; }
+.adm-inventory-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:var(--surface-2); min-width:0; }
+.adm-inventory-name { display:grid; gap:2px; min-width:0; }
+.adm-inventory-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.adm-inventory-actions .btn { min-height:38px; }
+@media(max-width:520px) {
+ .adm-inventory-row { align-items:flex-start; }
+ .adm-inventory-actions { width:100%; }
+ .adm-inventory-actions .btn { flex:1 1 90px; }
+}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -11609,7 +11644,7 @@ const Bugs = (() => {
 })();
 
 const Adm = (() => {
-  const st = { sub: 'players', q: '', f: 'all', sort: 'exp', open: null, amt: 10, kind: 'info', ttl: 86400000, limit: 40, alq: '', alr: 'all', bf: 'open', bq: '' };
+  const st = { sub: 'overview', q: '', f: 'all', sort: 'exp', open: null, amt: 10, kind: 'info', ttl: 86400000, limit: 40, alq: '', alr: 'all', bf: 'open', bq: '' };
   let root = null, body = null, tabs = null, timer = null, eyebrow = null, title = null, tabsKey = '';
   const btn = (t, c, f, dis) => { const b = elx('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; if (dis) b.disabled = true; return b; };
   const ok = m => App.toast(m, 'good');
@@ -11671,6 +11706,112 @@ const Adm = (() => {
     if (await run(() => t ? S.db.doc('adminNotes/' + p.id).set({ text: t, by: String(nameOf(S.uid)).slice(0, 40), at: Date.now() }) : S.db.doc('adminNotes/' + p.id).delete(), t ? 'Note saved.' : 'Note removed.')) logAct('note', p.id, t ? 'private note updated' : 'private note removed');
   }
 
+  async function editRecord(p) {
+    if (!canAct(p)) return App.toast('You cannot edit this staff record.', 'warn');
+    const current = { ...p };
+    delete current.id;
+    const v = await ask({
+      title: 'Advanced player record · ' + nameOf(p.id),
+      intro: 'Edit every saved player field here, including owned shop items (owned), equipped items (eq), profile fields, progress, consumables and duel stats. Keep values you do not want to change. To remove a top-level field, set it to "__DELETE_FIELD__". Do not edit id or uid.',
+      fields: [{ key: 'json', label: 'Player data (JSON)', multiline: true, max: 30000, value: JSON.stringify(current, null, 2) }],
+      ok: 'Save player record',
+      validate: x => {
+        try {
+          const value = JSON.parse(x.json);
+          if (!value || typeof value !== 'object' || Array.isArray(value)) return 'The record must be a JSON object.';
+          if (Object.prototype.hasOwnProperty.call(value, 'id')) return 'Do not add or change the player ID.';
+          if (Object.prototype.hasOwnProperty.call(value, 'uid') && value.uid !== p.id) return 'The player UID cannot be changed.';
+          const keys = Object.keys(value);
+          if (keys.length > 80) return 'This record has too many top-level fields.';
+          const protectedKeys = ['__proto__', 'prototype', 'constructor', 'role', 'isAdmin', 'isOwner', 'staffRole'];
+          if (keys.some(k => protectedKeys.includes(k))) return 'That field is protected. Staff roles are managed separately.';
+          if (x.json.length > 30000) return 'The JSON is too large. Edit a smaller section.';
+          return '';
+        } catch (e) { return 'JSON is not valid. Check commas, quotes and brackets.'; }
+      }
+    });
+    if (!v) return;
+    const next = JSON.parse(v.json), patch = {};
+    const removed = [];
+    for (const [key, value] of Object.entries(next)) {
+      if (key === 'id' || key === 'uid' || ['__proto__', 'prototype', 'constructor', 'role', 'isAdmin', 'isOwner', 'staffRole'].includes(key)) continue;
+      if (value === '__DELETE_FIELD__') { patch[key] = del(); removed.push(key); }
+      else if (JSON.stringify(value) !== JSON.stringify(current[key])) patch[key] = value;
+    }
+    const changed = Object.keys(patch);
+    if (!changed.length) return App.toast('No changes to save.', 'warn');
+    if (removed.length && !await ask({
+      title: 'Confirm field removal',
+      intro: 'This will permanently remove: ' + removed.join(', '),
+      fields: [{ key: 'confirm', label: 'Type REMOVE to confirm' }],
+      ok: 'Remove fields',
+      danger: true,
+      validate: x => x.confirm.trim() !== 'REMOVE' ? 'Type REMOVE exactly.' : ''
+    })) return;
+    if (await run(() => pdoc(p.id).update(patch), 'Saved ' + changed.length + ' field(s) for ' + nameOf(p.id) + '.')) {
+      logAct('record-edit', p.id, 'Updated fields: ' + changed.join(', ').slice(0, 180));
+      st.open = p.id;
+      paint(true);
+    }
+  }
+
+  async function setBagItem(p, itemId, ownedNow) {
+    if (!canAct(p)) return App.toast('You cannot edit this player inventory.', 'warn');
+    const owned = { ...(p.owned || {}) }, eq = { ...(p.eq || {}) };
+    if (ownedNow) owned[itemId] = true;
+    else { delete owned[itemId]; if (eq.title === itemId) eq.title = ''; }
+    if (await run(() => pdoc(p.id).update({ owned, eq }), (ownedNow ? 'Added ' : 'Removed ') + (SHOP.titles.find(x => x.id === itemId)?.name || itemId) + (ownedNow ? ' to ' : ' from ') + nameOf(p.id) + '\'s bag.')) {
+      p.owned = owned; p.eq = eq;
+      logAct(ownedNow ? 'bag-add' : 'bag-remove', p.id, itemId);
+      paint(true);
+    }
+  }
+  async function equipBagTitle(p, itemId) {
+    if (!canAct(p)) return App.toast('You cannot edit this player inventory.', 'warn');
+    if (!(p.owned || {})[itemId]) return App.toast('Add this title to the player bag first.', 'warn');
+    const eq = { ...(p.eq || {}), title: itemId };
+    if (await run(() => pdoc(p.id).update({ eq }), nameOf(p.id) + ' now wears ' + (SHOP.titles.find(x => x.id === itemId)?.name || itemId) + '.')) {
+      p.eq = eq; logAct('bag-equip', p.id, itemId); paint(true);
+    }
+  }
+  async function adjustConsumable(p, field, delta, label) {
+    if (!canAct(p)) return App.toast('You cannot edit this player inventory.', 'warn');
+    const current = Math.max(0, Math.floor(Number(p[field]) || 0)), next = Math.max(0, current + delta);
+    if (next === current) return App.toast(label + ' is already at zero.', 'warn');
+    if (await run(() => pdoc(p.id).update({ [field]: next }), label + ': ' + current + ' → ' + next + ' for ' + nameOf(p.id) + '.')) {
+      p[field] = next; logAct('bag-consumable', p.id, field + ' ' + current + ' → ' + next); paint(true);
+    }
+  }
+  function inventoryTools(p) {
+    const owned = p.owned || {}, eq = p.eq || {};
+    const items = elx('div', 'adm-inventory-list');
+    SHOP.titles.forEach(item => {
+      const has = !!owned[item.id], equipped = eq.title === item.id;
+      items.append(elx('div', 'adm-inventory-row',
+        elx('div', 'adm-inventory-name',
+          elx('strong', '', item.icon + ' ' + item.name),
+          elx('span', 'adm-sub', has ? (equipped ? 'In bag · equipped' : 'In bag · not equipped') : 'Not owned')),
+        elx('div', 'adm-inventory-actions',
+          btn(has ? 'Remove' : 'Add to bag', has ? 'btn-ghost btn-sm adm-danger' : 'btn-primary btn-sm', () => setBagItem(p, item.id, !has), !canAct(p)),
+          has ? btn(equipped ? 'Equipped ✓' : 'Equip', equipped ? 'btn-ghost btn-sm' : 'btn-primary btn-sm', () => equipBagTitle(p, item.id), !canAct(p) || equipped) : null)));
+    });
+    const supplies = [
+      ['p50', 'Second Chances', Number(p.p50) || 0],
+      ['sfreezes', 'Streak Freezes', Number(p.sfreezes) || 0],
+      ['xpBoost', 'XP Boosts', Number(p.xpBoost) || 0]
+    ];
+    const supplyRows = elx('div', 'adm-inventory-list');
+    supplies.forEach(([field, label, qty]) => supplyRows.append(elx('div', 'adm-inventory-row',
+      elx('div', 'adm-inventory-name', elx('strong', '', label), elx('span', 'adm-sub', 'Quantity: ' + qty)),
+      elx('div', 'adm-inventory-actions',
+        btn('−1', 'btn-ghost btn-sm', () => adjustConsumable(p, field, -1, label), !canAct(p) || qty <= 0),
+        btn('+1', 'btn-primary btn-sm', () => adjustConsumable(p, field, 1, label), !canAct(p))))));
+    return elx('div', 'adm-card adm-inventory',
+      elx('h4', '', '🎒 Player bag and items'),
+      elx('p', 'adm-info', 'Add or remove owned shop titles, equip a title, and adjust the player’s consumable items. These changes are saved to their player record.'),
+      items, elx('h4', '', 'Consumables'), supplyRows);
+  }
+
   function controls(p) {
     const w = elx('div', 'adm-ctl'), can = canAct(p), kill = canKill(p), banned = S.bans.has(p.id), rt = roleOf(p.id);
     const inp = document.createElement('input'); inp.type = 'number'; inp.min = '1'; inp.value = st.amt; inp.inputMode = 'numeric'; inp.className = 'adm-amt'; inp.setAttribute('aria-label', 'Amount');
@@ -11681,6 +11822,7 @@ const Adm = (() => {
       btn('+ \u{1F4B0} coins', 'btn-primary btn-sm', () => adjust(p, 'coins', n(), 'coins'), !can), btn('\u2212 \u{1F4B0} coins', 'btn-ghost btn-sm', () => adjust(p, 'coins', -n(), 'coins'), !can),
       btn('+ EXP', 'btn-primary btn-sm', () => adjust(p, 'totalExp', n(), 'EXP'), !can), btn('\u2212 EXP', 'btn-ghost btn-sm', () => adjust(p, 'totalExp', -n(), 'EXP'), !can));
     const g2 = elx('div', 'adm-btns', btn('\u{1F4DD} Set exact value\u2026', 'btn-ghost btn-sm', () => setExact(p), !can), btn('\u{1F4E9} Send message\u2026', 'btn-ghost btn-sm', () => message(p)));
+    const g2b = elx('div', 'adm-btns', btn('\u{1F9F0} Edit full player record\u2026', 'btn-primary btn-sm', () => editRecord(p), !can));
     const g3 = elx('div', 'adm-btns3', btn('\u270F\uFE0F Rename', 'btn-ghost btn-sm', () => rename(p), !can), btn('Remove photo', 'btn-ghost btn-sm', () => clearField(p, 'photo', 'photo'), !can || !p.photo), btn('Remove bio', 'btn-ghost btn-sm', () => clearField(p, 'bio', 'bio'), !can || !p.bio));
     const g4 = elx('div', 'adm-btns3', btn('Reset progress', 'btn-ghost btn-sm adm-danger', () => reset(p), !kill), banned ? btn('Unban', 'btn-primary btn-sm', () => unban(p.id), !can) : btn('\u{1F6AB} Ban', 'btn-ghost btn-sm adm-danger', () => ban(p), !kill), btn('\u{1F5D1}\uFE0F Delete', 'btn-ghost btn-sm adm-danger', () => remove(p), !kill));
     const g5 = S.isOwner && p.id !== S.uid && roleOf(p.id) !== 'owner' ? elx('div', 'adm-btns', isAppointed(p.id) ? btn('\u{1F6E1}\uFE0F Remove admin role', 'btn-ghost btn-sm adm-danger', () => removeStaff(p.id, 'admin')) : btn(roleOf(p.id) ? '\u{1F6E1}\uFE0F Make permanent admin' : '\u{1F6E1}\uFE0F Make admin', 'btn-primary btn-sm', () => appoint(p))) : elx('div');
@@ -11689,7 +11831,7 @@ const Adm = (() => {
     const nmeta = S.notes.get(p.id); const nm = nmeta ? elx('p', 'adm-info', `Last edited by ${nmeta.by || 'staff'} \u00B7 ${fmtTime(nmeta.at)}`) : null;
     const live = p.lastDay === today() || p.lastDay === yesterday(), b = S.bans.get(p.id);
     const info = elx('p', 'adm-info', `ID ${p.id} \u00B7 last active ${p.lastDay || 'never'} \u00B7 \u{1F525} ${live ? p.streak || 0 : 0} (best ${p.bestStreak || 0}) \u00B7 duels ${p.duelW || 0}W-${p.duelL || 0}L-${p.duelD || 0}D \u00B7 Second Chances ${p.p50 || 0}${b ? ` \u00B7 ${banActive(b) ? 'BANNED' : 'ban expired'}${b.reason ? ' (' + b.reason + ')' : ''}` : ''}`);
-    w.append(elx('label', 'adm-lbl', 'Amount'), inp, chips, g1, g2, elx('label', 'adm-lbl', 'Moderation'), g3, g4, g5, elx('label', 'adm-lbl', 'Private note'), note, nb, nm, info);
+    w.append(elx('label', 'adm-lbl', 'Amount'), inp, chips, g1, g2, g2b, inventoryTools(p), elx('label', 'adm-lbl', 'Moderation'), g3, g4, g5, elx('label', 'adm-lbl', 'Private note'), note, nb, nm, info);
     if (!can) w.append(elx('p', 'adm-info adm-prot', rt === 'owner' ? '\u{1F451} The owner is protected from every action here.' : '\u{1F6E1}\uFE0F Admins are protected from other admins. Only the owner can act on them.'));
     else if (p.id === S.uid) w.append(elx('p', 'adm-info adm-prot', 'This is you. You can\u2019t ban, reset or delete yourself.'));
     return w;
@@ -11736,6 +11878,45 @@ const Adm = (() => {
     const lvls = [['Level 1\u20132', 1, 2], ['Level 3\u20135', 3, 5], ['Level 6\u201310', 6, 10], ['Level 11+', 11, 999]].map(([l, a, b]) => [l, ps.filter(p => { const x = lv(p.totalExp || 0).level; return x >= a && x <= b; }).length]);
     const top = (title, k, fmt) => { const c = elx('div', 'adm-top'); c.append(elx('h4', '', title)); const ol = elx('ol'); [...ps].sort((a, b) => k(b) - k(a)).filter(p => k(p) > 0).slice(0, 5).forEach(p => ol.append(elx('li', '', elx('span', '', nameOf(p.id)), elx('strong', '', fmt(k(p)))))); if (!ol.children.length) ol.append(elx('li', 'muted', 'Nobody yet')); c.append(ol); return c; };
     return elx('div', '', tiles, bar('\u{1F4C5} When players were last active', buckets), bar('\u{1F4C8} Players by level', lvls), top('\u{1F3C6} Top EXP', p => p.totalExp || 0, v => v + ' EXP'), top('\u{1F4B0} Richest', p => p.coins || 0, v => '\u{1F4B0} ' + v), top('\u{1F525} Best streaks', p => p.bestStreak || 0, v => v + ' days'), top('\u2694\uFE0F Most duel wins', p => p.duelW || 0, v => v + ' wins'));
+  }
+
+  function overview() {
+    const openBugs = S.bugs.filter(b => (b.status || 'open') === 'open').length;
+    const fixingBugs = S.bugs.filter(b => (b.status || 'open') === 'fixing').length;
+    const activeBans = S.bans.size;
+    const activeAdmins = [...S.badgeMap].filter(([id, until]) => until > Date.now() && S.badgeRole.get(id) !== 'owner').length;
+    const activeToday = S.players.filter(p => p.lastDay === today()).length;
+    const card = (heading, value, note) => elx('div', 'adm-card adm-overview-card',
+      elx('span', 'adm-overview-kicker', heading),
+      elx('strong', 'adm-overview-value', String(value)),
+      elx('span', 'adm-info', note));
+    const go = (key, label) => btn(label, 'btn-ghost btn-sm', () => { st.sub = key; paint(true); });
+    const notice = openBugs
+      ? elx('div', 'adm-card adm-overview-alert', elx('strong', '', '\u{1F41E} ' + openBugs + ' bug report(s) need attention'), elx('p', 'adm-info', 'Review reports, reply to players and update their status.'), go('bugs', 'Review bug reports'))
+      : elx('div', 'adm-card adm-overview-alert', elx('strong', '', '\u2705 No new bug reports waiting'), elx('p', 'adm-info', fixingBugs + ' report(s) are marked as being fixed.'));
+    const shortcuts = elx('div', 'adm-overview-grid',
+      card('Players', S.players.length, activeToday + ' active today'),
+      card('Active bans', activeBans, 'Review or remove restrictions'),
+      card('Open reports', openBugs, fixingBugs + ' being fixed'),
+      card('Admins online', activeAdmins, 'Live staff sessions'),
+      elx('div', 'adm-card adm-overview-card adm-overview-wide',
+        elx('h4', '', '\u26A1 Quick actions'),
+        elx('p', 'adm-info', 'Jump straight to the tasks staff use most often.'),
+        elx('div', 'adm-btns', go('players', '\u{1F465} Manage players'), go('bugs', '\u{1F41E} Review reports'),
+          go('bans', '\u{1F6AB} Manage bans'), go('announce', '\u{1F4E3} Send announcement'),
+          go('stats', '\u{1F4CA} Activity stats'), go('tools', '\u{1F4E4} Exports and tools'))),
+      ...(S.isOwner ? [
+        elx('div', 'adm-card adm-overview-card adm-overview-wide',
+          elx('h4', '', '\u{1F451} Owner controls'),
+          elx('p', 'adm-info', 'Manage staff access, security, global settings, rewards, exports and maintenance.'),
+          elx('div', 'adm-btns', go('owner', 'Open Owner controls'), go('audit', 'Review staff activity')))
+      ] : []));
+    const header = elx('div', 'adm-card adm-overview-alert',
+      elx('strong', '', S.isOwner ? '\u{1F451} Owner workspace' : '\u{1F6E1}\uFE0F Admin workspace'),
+      elx('p', 'adm-info', S.isOwner
+        ? 'You have full moderation and management access. Admins remain restricted from Owner accounts and Owner-only settings.'
+        : 'Manage regular player accounts, reports, bans and announcements. Staff appointments, security settings and audit history remain Owner-only.'));
+    return elx('div', 'adm-overview', header, notice, shortcuts);
   }
 
   function bansTab() {
@@ -11846,6 +12027,34 @@ const Adm = (() => {
     const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'], text = `\u{1F3C6} BECE Hub weekly top ${top.length || 10} (week of ${wk})\n` + (top.length ? top.map((p, i) => `${medals[i] || i + 1 + '.'} ${nameOf(p.id)} \u2013 ${p.weekExp} EXP`).join('\n') : 'Nobody has earned EXP this week yet.') + '\nKeep revising!';
     try { await navigator.clipboard.writeText(text); ok('Copied. Paste it into your class group.'); } catch { await ask({ title: 'Copy this text', fields: [{ key: 't', label: 'Weekly top 10', multiline: true, value: text }], ok: 'Done' }); }
   }
+  function exportPlayersJson() {
+    if (!S.isOwner) return App.toast('Owner access required.', 'warn');
+    const records = S.players.map(p => {
+      const record = { ...p };
+      delete record.id;
+      for (const key of Object.keys(record)) if (/password|secret|token|email/i.test(key)) delete record[key];
+      return { id: p.id, ...record };
+    });
+    const blob = new Blob(['\uFEFF' + JSON.stringify(records, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = 'bece-full-player-records-' + today() + '.json';
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1500);
+    logAct('players-json-export', '', records.length + ' full player records exported');
+    App.toast('Full player records exported, including owned and equipped item data.', 'good');
+  }
+  function exportRosterCsv() {
+    if (!S.isOwner) return App.toast('Owner access required.', 'warn');
+    const rows = [['playerId', 'name', 'role', 'appointed', 'device']];
+    for (const [id, data] of (S.rosterData || new Map())) rows.push([id, nameOf(id), data.role || 'admin', data.appointed ? 'yes' : 'no', id === S.uid ? 'current device' : '']);
+    const esc = value => '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"';
+    const csv = '\uFEFF' + rows.map(row => row.map(esc).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'bece-staff-roster-' + today() + '.csv';
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1500);
+    logAct('roster-export', '', Math.max(0, rows.length - 1) + ' staff roster rows exported');
+    App.toast('Staff roster exported.', 'good');
+  }
+
   function tools() {
     const card = (h, p, ...b) => elx('div', 'adm-card', elx('h4', '', h), elx('p', 'adm-info', p), elx('div', 'adm-btns', ...b));
     return elx('div', '',
@@ -11995,7 +12204,7 @@ const Adm = (() => {
       card('\u{1F381} Bulk tools', 'Owner-only rewards and maintenance commands. Every action is recorded in the audit log.', btn('Gift coins\u2026', 'btn-primary btn-sm', giftAll), btn('Award EXP\u2026', 'btn-primary btn-sm', giftExpAll), btn('Reset weekly board\u2026', 'btn-ghost btn-sm adm-danger', weeklyReset), btn('Clear expired bans', 'btn-ghost btn-sm', clearExpired)),
       card('\u{1F4C8} Global practice economy', 'Set the EXP and coin multipliers earned by every player in new practice quizzes.', elx('p', 'adm-info', 'Current rates: ' + (Number(S.settings.expMultiplier) || 1) + '× EXP · ' + (Number(S.settings.coinMultiplier) || 1) + '× coins'), btn('Change reward rates…', 'btn-primary btn-sm', setRewardRates)),
       card('\u{1F6D2} Shop control', S.settings.shopPaused ? 'Purchases are currently paused for every player. Owned items can still be equipped.' : 'Purchases are open for everyone. You can temporarily pause new purchases without removing anyone’s items.', btn(S.settings.shopPaused ? 'Reopen shop purchases' : 'Pause shop purchases', S.settings.shopPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleShop)),
-      card('\u{1F4C1} Owner exports', 'Download a copy of the moderation audit history for your own records.', btn('Export audit log CSV', 'btn-ghost btn-sm', downloadAuditCsv)),
+      card('\u{1F4C1} Owner exports', 'Download full player records, owned and equipped items, bug reports, staff roster and audit history for private backup or repair.', btn('Export full player records (JSON)', 'btn-primary btn-sm', exportPlayersJson), btn('Export bug reports (CSV)', 'btn-ghost btn-sm', bugCsv), btn('Export staff roster (CSV)', 'btn-ghost btn-sm', exportRosterCsv), btn('Export audit log (CSV)', 'btn-ghost btn-sm', downloadAuditCsv)),
       card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins…', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false))));
   }
   const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F', 'bug-open': '\u{1F41E}', 'bug-fixing': '\u{1F6E0}\uFE0F', 'bug-done': '\u2705', 'bug-wontfix': '\u{1F4D5}', 'bug-reply': '\u{1F4AC}', 'bug-delete': '\u{1F5D1}\uFE0F', 'roster-remove': '\u{1F6AA}', 'duels-on': '\u25B6\uFE0F', 'duels-off': '\u23F8\uFE0F', 'reward-rates': '\u{1F4C8}', 'shop-paused': '\u{1F6D2}', 'shop-resumed': '\u{1F6D2}', 'audit-export': '\u{1F4C1}', appoint: '\u{1F6E1}\uFE0F' };
@@ -12013,8 +12222,8 @@ const Adm = (() => {
   }
 
   /* ---------- shell ---------- */
-  const tabList = () => [['players', '\u{1F465} Players'], ['stats', '\u{1F4CA} Stats'], ['bans', `\u{1F6AB} Bans${S.bans.size ? ' ' + S.bans.size : ''}`], ['announce', '\u{1F4E3} Announce'], ['bugs', `\u{1F41E} Bugs${S.bugs.filter(b => (b.status || 'open') === 'open').length ? ' ' + S.bugs.filter(b => (b.status || 'open') === 'open').length : ''}`], ['tools', '\u{1F9F0} Tools'], ...(S.isOwner ? [['owner', '\u{1F451} Owner commands'], ['audit', '\u{1F4DC} Audit']] : [])];
-  const view = () => st.sub === 'players' ? players() : st.sub === 'stats' ? stats() : st.sub === 'bans' ? bansTab() : st.sub === 'announce' ? announce() : st.sub === 'tools' ? tools() : st.sub === 'bugs' ? bugsTab() : st.sub === 'owner' ? ownerTab() : auditTab();
+  const tabList = () => [['overview', '\u{1F3E0} Overview'], ['players', '\u{1F465} Players'], ['stats', '\u{1F4CA} Stats'], ['bans', `\u{1F6AB} Bans${S.bans.size ? ' ' + S.bans.size : ''}`], ['announce', '\u{1F4E3} Announce'], ['bugs', `\u{1F41E} Bugs${S.bugs.filter(b => (b.status || 'open') === 'open').length ? ' ' + S.bugs.filter(b => (b.status || 'open') === 'open').length : ''}`], ['tools', '\u{1F9F0} Tools'], ...(S.isOwner ? [['owner', '\u{1F451} Owner commands'], ['audit', '\u{1F4DC} Audit']] : [])];
+  const view = () => st.sub === 'overview' ? overview() : st.sub === 'players' ? players() : st.sub === 'stats' ? stats() : st.sub === 'bans' ? bansTab() : st.sub === 'announce' ? announce() : st.sub === 'tools' ? tools() : st.sub === 'bugs' ? bugsTab() : st.sub === 'owner' ? ownerTab() : auditTab();
   function paint(force) {
     if (!root || root.hidden && !force) return;
     if (!force && body && body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;   // don't wipe what you're typing
