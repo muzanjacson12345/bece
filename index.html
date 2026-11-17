@@ -3362,8 +3362,8 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   <a href="#/" data-nav="home"><svg class="icon"><use href="#i-home"/></svg><span>Home</span></a>
   <a href="#/practice" data-nav="practice"><svg class="icon"><use href="#i-cards"/></svg><span>Quiz</span></a>
   <a href="#/friends" data-nav="friends"><svg class="icon"><use href="#i-users"/></svg><span>Friends</span></a>
-  <a href="#/notes" data-nav="notes"><svg class="icon"><use href="#i-book"/></svg><span>Notes</span></a>
   <a href="#/duels" data-nav="duels"><span aria-hidden="true">⚔️</span><span>Duels</span></a>
+  <a href="#/notes" data-nav="notes"><svg class="icon"><use href="#i-book"/></svg><span>Notes</span></a>
 </nav>
 
 <dialog id="auth-dialog" class="dialog" aria-labelledby="auth-title">
@@ -7827,6 +7827,17 @@ function render(screen) {
   emit('screen', screen);
 }
 window.addEventListener('hashchange', () => { if (forcedHash === location.hash) return; forcedHash = null; onRouteChange(); });
+
+// Notes / Essays are an in-page switch. Handle them before the general route-link handler.
+document.addEventListener('click', event => {
+  const tab = event.target.closest('[data-notes-view]');
+  if (!tab) return;
+  event.preventDefault();
+  const essayView = tab.dataset.notesView === 'essays';
+  const hash = essayView ? '#/notes?view=essays' : '#/notes';
+  setHash(hash, false);
+  render('notes');
+});
 
 // Route links (#/notes, #/essays...) navigate directly instead of relying on hashchange.
 document.addEventListener('click', event => {
