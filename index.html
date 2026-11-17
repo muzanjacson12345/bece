@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="me-owner-admin-mobile-2026-11-16-r2">
+<meta name="bece-build" content="mobile-subject-picker-polish-2026-11-17-r1">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -11651,6 +11651,7 @@ init();
   Setup.subjects=["social"];Setup.subjectCount=1;Setup.topic="all";
   const ensureSelection=()=>{if(!Array.isArray(Setup.subjects)||!Setup.subjects.length)Setup.subjects=[Setup.subject||"social"];Setup.subject=Setup.subjects[0];};
   const subjectLimit=()=>Setup.subjectCount==="multiple"?subjects.length:Number(Setup.subjectCount||1);
+  Setup.selectedCount=subjectLimit;
   const subjectChoiceValid=()=>Setup.subjectCount==="multiple"?Setup.subjects.length>=2:Setup.subjects.length===subjectLimit();
   Setup.open=function(subject){if(subject&&subjects.includes(subject)){this.subjects=[subject];this.subject=subject;this.subjectCount=1;}else{ensureSelection();}this.topic="all";navigate("setup");};
   Setup.pool=function(){ensureSelection();const topic=document.getElementById("topic-sel").value||"all";return this.subjects.flatMap(sub=>(questionsDB[sub]||[]).filter(q=>topic==="all"||q.topic===topic));};
