@@ -1264,6 +1264,28 @@ html[data-theme='dark'] .computing-card { background: #25222f; border-color: #3d
 html[data-theme='dark'] .computing-card .subject-icon { border-color: #4d4768; } html[data-theme='dark'] .computing-card .subject-icon svg { stroke: #c3b9ec; }
 @media (max-width: 520px) { .segmented:not(.segmented-sm) button { white-space: normal; font-size: 13px; line-height: 1.2; padding: 6px 4px; } }
 
+/* Subject artwork: complete the same individual colour treatment for every subject. */
+.science-card { background: #eaf2ed; border-color: #d2e2d7; }
+.science-card .subject-icon { border-color: #bfd5c6; }
+.science-card .subject-icon svg { stroke: #477c5a; }
+html[data-theme='dark'] .science-card { background: #202d27; border-color: #394d40; }
+html[data-theme='dark'] .science-card .subject-icon { border-color: #496653; }
+html[data-theme='dark'] .science-card .subject-icon svg { stroke: #a8d4b4; }
+
+.french-card { background: #f4edf2; border-color: #e6d7e1; }
+.french-card .subject-icon { border-color: #dfc8d7; }
+.french-card .subject-icon svg { stroke: #98617f; }
+html[data-theme='dark'] .french-card { background: #30242d; border-color: #503b4b; }
+html[data-theme='dark'] .french-card .subject-icon { border-color: #684c60; }
+html[data-theme='dark'] .french-card .subject-icon svg { stroke: #e0b3ce; }
+
+.career-card { background: #f3eee5; border-color: #e5d9c7; }
+.career-card .subject-icon { border-color: #dfcfb4; }
+.career-card .subject-icon svg { stroke: #98764a; }
+html[data-theme='dark'] .career-card { background: #302a20; border-color: #514633; }
+html[data-theme='dark'] .career-card .subject-icon { border-color: #67583d; }
+html[data-theme='dark'] .career-card .subject-icon svg { stroke: #dfc18d; }
+
 /* --- Mobile polish --- */
 .flash-options { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
 .flash-options li { padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); font: 500 15px/1.35 var(--sans); }
@@ -2996,9 +3018,9 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <p>Christianity, Islam, African Traditional Religion, values and citizenship.</p>
           <span class="subject-bottom"><span data-count="rme"></span><span>Let’s practise →</span></span>
         </button>
-        <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🔬</span><span class="subject-index">06 / Discover</span></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
-        <button class="subject-card french-card" type="button" data-subject="french"><span class="subject-top"><span class="subject-icon" aria-hidden="true">🇫🇷</span><span class="subject-index">07 / Language</span></span><h3>French</h3><p>Start with greetings, easy words, numbers and short everyday sentences.</p><span class="subject-bottom"><span data-count="french"></span><span>Let’s practise →</span></span></button>
-        <button class="subject-card" type="button" data-subject="careerTechnology"><span class="subject-top"><span class="subject-icon">🛠️</span><span class="subject-index">08 / Practical Skills</span></span><h3>Career Technology</h3><p>Learn design, tools, materials, food, textiles, safety and enterprise.</p><span class="subject-bottom"><span data-count="careerTechnology"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card science-card" type="button" data-subject="integratedScience"><span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M12 4h8M14 4v9L7 25a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-7-12V4"/><path d="M10 22h12M13 18h6"/></svg></span><span class="subject-index">06 / Discover</span></span><h3>Integrated Science</h3><p>Living things, matter, energy, forces, health and the environment.</p><span class="subject-bottom"><span data-count="integratedScience"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card french-card" type="button" data-subject="french"><span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M5 7.5A2.5 2.5 0 0 1 7.5 5H24a3 3 0 0 1 3 3v14a2 2 0 0 1-2 2H9a4 4 0 0 0-4 4z"/><path d="M5 8v20M10 11h12M10 16h9M10 21h6"/></svg></span><span class="subject-index">07 / Language</span></span><h3>French</h3><p>Start with greetings, easy words, numbers and short everyday sentences.</p><span class="subject-bottom"><span data-count="french"></span><span>Let’s practise →</span></span></button>
+        <button class="subject-card career-card" type="button" data-subject="careerTechnology"><span class="subject-top"><span class="subject-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M6 25L20 11l4 4L10 29H6zM18 9l3-3a3 3 0 0 1 4 0l2 2a3 3 0 0 1 0 4l-3 3M7 7l3-3 5 5-3 3zM5 27l4-4"/></svg></span><span class="subject-index">08 / Practical Skills</span></span><h3>Career Technology</h3><p>Learn design, tools, materials, food, textiles, safety and enterprise.</p><span class="subject-bottom"><span data-count="careerTechnology"></span><span>Let’s practise →</span></span></button>
       </div>
       <div class="section-heading home-tools-heading"><div><p class="eyebrow">Your study space</p><h2>Quick access</h2></div></div>
       <div class="tool-grid">
@@ -3289,6 +3311,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <button type="button" data-sb-sub="rme" aria-pressed="false">RME</button>
         <button type="button" data-sb-sub="integratedScience" aria-pressed="false">Integrated Science</button>
         <button type="button" data-sb-sub="french" aria-pressed="false">French</button>
+        <button type="button" data-sb-sub="careerTechnology" aria-pressed="false">Career Technology</button>
       </div>
       <div class="chip-row" id="sb-picker" role="group" aria-label="Choose a question"></div>
     </div>
@@ -9032,16 +9055,45 @@ window.addEventListener('scroll', () => {
   });
 }, { passive: true });
 
+// Career Technology essay practice — includes clear BECE-style questions and self-check points.
+sectionBDB.careerTechnology = [
+  { id:'sb-car-1', topic:'Workshop Safety', marks:10,
+    question:'State five safety rules that should be followed in a school workshop and explain why each rule is important.',
+    scheme:['Any five suitable rules with a reason for each (2 marks each):','• Wear suitable protective clothing and footwear to protect the body.','• Keep tools in their correct places to prevent accidents.','• Do not run or play in the workshop to avoid collisions and falls.','• Follow the teacher’s instructions before using equipment.','• Keep the floor clean and dry to prevent slipping.','• Report damaged tools and equipment so they are not used accidentally.','• Switch off equipment after use, with the teacher’s permission.','Total: 10 marks']
+  },
+  { id:'sb-car-2', topic:'Design Process', marks:10,
+    question:'Explain five stages a learner can follow when designing and making a useful product to solve a simple everyday problem.',
+    scheme:['Award marks for five clearly explained stages:','• Identify the problem or need.','• Research the problem and gather useful information.','• Generate and sketch possible ideas.','• Select the best idea and prepare a plan or working drawing.','• Choose suitable materials, tools and equipment.','• Make the product by following the plan.','• Test the product and evaluate how well it solves the problem.','• Suggest improvements where necessary.','Total: 10 marks']
+  },
+  { id:'sb-car-3', topic:'Food and Nutrition', marks:10,
+    question:'(a) What is a balanced diet? (b) Name four classes of food and give one function of each. (c) State two ways of keeping food safe.',
+    scheme:['(a) Balanced diet — 2 marks:','A diet containing the different nutrients in the right amounts for the body’s needs.','(b) Any four classes and functions — 6 marks:','• Carbohydrates — provide energy.','• Proteins — support growth and repair of body tissues.','• Fats and oils — provide stored energy and help keep the body warm.','• Vitamins — help protect the body and keep it healthy.','• Minerals — support healthy bones, teeth and body functions.','• Water — helps transport substances and regulate body temperature.','(c) Food safety — any two — 2 marks:','• Wash hands and utensils before preparing food.','• Cook food thoroughly and store it covered at safe temperatures.','• Wash fruits and vegetables with safe water.','Total: 10 marks']
+  }
+];
+
 /* ======================= Essay workshop ======================= */
 const Essays = {
   sub: 'social',
   idx: 0,
   saveTimer: null,
   enter() { this.render(); },
-  list() { return sectionBDB[this.sub]; },
+  list() { return Array.isArray(sectionBDB[this.sub]) ? sectionBDB[this.sub] : []; },
   key(q) { return `bece_essay_${q.id}`; },
   render() {
     const list = this.list();
+    if (!list.length) {
+      $('sb-picker').replaceChildren();
+      $('sb-topic').textContent = 'Questions coming soon';
+      $('sb-q').textContent = 'Essay practice for this subject is being prepared.';
+      $('sb-marks').textContent = '';
+      $('essay-plan').replaceChildren(el('p', '', 'Choose another subject while this set is being added.'));
+      $('sb-ans').value = '';
+      $('sb-scheme').hidden = true;
+      $('sb-prev').disabled = true;
+      $('sb-next').disabled = true;
+      return;
+    }
+    this.idx = Math.max(0, Math.min(this.idx, list.length - 1));
     const q = list[this.idx];
     document.querySelectorAll('[data-sb-sub]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sbSub === this.sub)));
     const picker = $('sb-picker');
@@ -9102,7 +9154,7 @@ const Essays = {
       const content = $('sb-scheme-content');
       content.replaceChildren();
       let listNode = null;
-      q.scheme.forEach(line => {
+      (q.scheme || ['A practice answer guide has not been added for this question yet.']).forEach(line => {
         if (!line.trim()) { listNode = null; return; }
         if (line.trim().startsWith('•')) {
           if (!listNode) { listNode = el('ul'); content.append(listNode); }
