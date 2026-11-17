@@ -3026,10 +3026,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 #screen-home .science-card .subject-icon { border-color:#c1d9bd; background:#dcebd9; }
 #screen-home .science-card .subject-icon svg { stroke:#4c8054; }
 #screen-home .science-card .subject-index { color:#4c8054; }
-#screen-home .french-card { background:#eaf1fb; border-color:#d0dff3; }
-#screen-home .french-card .subject-icon { border-color:#bfd2ed; background:#dce7f7; }
-#screen-home .french-card .subject-icon svg { stroke:#4c70a9; }
-#screen-home .french-card .subject-index { color:#4c70a9; }
+#screen-home .french-card { background:#f5eafa; border-color:#e2ccef; }
+#screen-home .french-card .subject-icon { border-color:#dfc6e9; background:#efdef5; }
+#screen-home .french-card .subject-icon svg { stroke:#9562b1; }
+#screen-home .french-card .subject-index { color:#9562b1; }
 #screen-home .career-card { background:#f8f1df; border-color:#eadcb5; }
 #screen-home .career-card .subject-icon { border-color:#e3d29e; background:#f1e6c8; }
 #screen-home .career-card .subject-icon svg { stroke:#9b7a31; }
@@ -3060,10 +3060,10 @@ html[data-theme="dark"] #screen-home .science-card { background:#24372a; border-
 html[data-theme="dark"] #screen-home .science-card .subject-icon { background:#304a37; border-color:#4d7055; }
 html[data-theme="dark"] #screen-home .science-card .subject-icon svg { stroke:#add9ae; }
 html[data-theme="dark"] #screen-home .science-card .subject-index { color:#add9ae; }
-html[data-theme="dark"] #screen-home .french-card { background:#233149; border-color:#3c5879; }
-html[data-theme="dark"] #screen-home .french-card .subject-icon { background:#304563; border-color:#496b92; }
-html[data-theme="dark"] #screen-home .french-card .subject-icon svg { stroke:#b1cff6; }
-html[data-theme="dark"] #screen-home .french-card .subject-index { color:#b1cff6; }
+html[data-theme="dark"] #screen-home .french-card { background:#35243e; border-color:#5a3d68; }
+html[data-theme="dark"] #screen-home .french-card .subject-icon { background:#493255; border-color:#714c83; }
+html[data-theme="dark"] #screen-home .french-card .subject-icon svg { stroke:#e0b9f1; }
+html[data-theme="dark"] #screen-home .french-card .subject-index { color:#e0b9f1; }
 html[data-theme="dark"] #screen-home .career-card { background:#3b3321; border-color:#605331; }
 html[data-theme="dark"] #screen-home .career-card .subject-icon { background:#4e432c; border-color:#79683b; }
 html[data-theme="dark"] #screen-home .career-card .subject-icon svg { stroke:#e7d08d; }
@@ -11649,7 +11649,7 @@ init();
   const flash=document.getElementById("flash-subject");
   if(flash){if(![...flash.options].some(o=>o.value==="careerTechnology"))flash.add(new Option("Career Technology","careerTechnology"));}
   Setup.subjects=["social"];Setup.subjectCount=1;Setup.topic="all";
-  const ensureSelection=()=>{if(!Array.isArray(Setup.subjects)||!Setup.subjects.length)Setup.subjects=[Setup.subject||"social"];Setup.subject=Setup.subjects[0];};
+  const ensureSelection=()=>{if(!Array.isArray(Setup.subjects))Setup.subjects=[];Setup.subject=Setup.subjects[0]||"social";};
   const subjectLimit=()=>Setup.subjectCount==="multiple"?subjects.length:Number(Setup.subjectCount||1);
   Setup.selectedCount=subjectLimit;
   const subjectChoiceValid=()=>Setup.subjectCount==="multiple"?Setup.subjects.length>=2:Setup.subjects.length===subjectLimit();
@@ -11742,8 +11742,10 @@ init();
     const key=one.dataset.setupSub;
     const max=subjectLimit();
     if(Setup.subjects.includes(key)){
-      if(Setup.subjects.length>1)Setup.subjects=Setup.subjects.filter(x=>x!==key);
-    }else if(Setup.subjects.length<max)Setup.subjects.push(key);
+      Setup.subjects=Setup.subjects.filter(x=>x!==key);
+    }else if(Setup.subjects.length<max){
+      Setup.subjects.push(key);
+    }
     Setup.subject=Setup.subjects[0]||"social";
     Setup.topic="all";
     Setup.renderSubject();
