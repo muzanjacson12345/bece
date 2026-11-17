@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="profile-account-safety-duel-count-2026-11-17-r1">
+<meta name="bece-build" content="duel-count-scope-fix-2026-11-17-r1">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -8147,7 +8147,7 @@ function formatWhen(value) {
 const Home = {
   render() {
     $('bank-meta').textContent = `${Object.keys(questionsDB).length} subjects · ${questionIndex.size} questions`;
-    document.querySelectorAll('[data-count]').forEach(node => {
+    document.querySelectorAll('#screen-home [data-count]').forEach(node => {
       const subject = node.dataset.count;
       const bank = questionsDB[subject] || [];
       const topics = new Set(bank.map(q => q.topic)).size;
