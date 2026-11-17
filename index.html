@@ -3482,10 +3482,10 @@ pre, code { overflow-wrap: anywhere; }
 .adm .adm-btns{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
 .adm .adm-btns>.btn{min-width:0;max-width:100%;flex:1 1 150px;white-space:normal;overflow-wrap:anywhere}
 .adm .adm-card .adm-btns{margin-top:8px}
-.adm .adm-modal{width:min(100%,680px);max-height:min(88dvh,900px);overflow:auto}
+.pin-ov .adm-modal{width:min(100%,680px);max-height:min(88dvh,900px);overflow:auto}
 .adm .adm-modal input[type="checkbox"]{width:20px;height:20px;accent-color:var(--accent)}
 .adm .adm-modal label.adm-lbl{display:block;margin-top:5px}
-@media(max-width:760px){#screen-admin .adm .adm-btns>.btn{flex:1 1 100%;min-height:44px}#screen-admin .adm .adm-modal{width:calc(100vw - 20px);max-height:84dvh;padding:16px 12px}#screen-admin .adm .adm-card{border-radius:16px}}
+@media(max-width:760px){#screen-admin .adm .adm-btns>.btn{flex:1 1 100%;min-height:44px}.pin-ov .adm-modal{width:calc(100vw - 20px);max-height:84dvh;padding:16px 12px}.pin-ov .adm-modal input,.pin-ov .adm-modal textarea,.pin-ov .adm-modal select{width:100%;box-sizing:border-box}.pin-ov .adm-modal label.adm-lbl{display:block;margin-top:8px}.pin-ov .adm-modal input[type=checkbox]{width:22px;height:22px}.#screen-admin .adm .adm-card{border-radius:16px}}
 </style>
 </head>
 <body>
@@ -11771,10 +11771,11 @@ const Adm = (() => {
       App.toast('Checking backup…');
       try{
         const data=JSON.parse(await file.text());
-        if(!data||data.format!=='bece-player-backup'||data.version!==1||!Array.isArray(data.players))throw Error('Unsupported BECE backup. Use a full JSON backup from this panel.');
-        if(data.players.length>5000)throw Error('Maximum 5,000 player records per restore.');
+        const records=data&&data.format==='bece-player-record'&&data.version===1&&data.player&&data.player.id?[data.player]:data&&data.format==='bece-player-backup'&&data.version===1&&Array.isArray(data.players)?data.players:null;
+        if(!records)throw Error('Unsupported BECE backup. Choose a full backup or a single-player JSON export from this panel.');
+        if(records.length>5000)throw Error('Maximum 5,000 player records per restore.');
         const current=new Map(S.players.map(p=>[p.id,p])),staged=new Map();let missing=0,protectedN=0,invalid=0;
-        for(const row of data.players){
+        for(const row of records){
           if(!row||typeof row.id!=='string'||!row.id.trim()){invalid++;continue;}
           const id=row.id.trim();if(!current.has(id)){missing++;continue;}if(id!==S.uid&&roleOf(id)==='owner'){protectedN++;continue;}
           try{staged.set(id,backupPatch(record(row.data)?row.data:row));}catch{invalid++;}
