@@ -2306,6 +2306,34 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   }
 }
 
+
+/* Mobile polish: keep Overview actions readable and the flashcard studio compact. */
+@media (max-width: 760px) {
+  #screen-home .hero-actions { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; width: 100%; gap: 10px; }
+  #screen-home .hero-actions .btn { grid-column: auto !important; width: 100%; min-width: 0; max-width: 100%; min-height: 54px; padding: 13px 16px; white-space: normal; overflow-wrap: break-word; word-break: normal; text-align: center; }
+  #flashcard-disclosure { margin-inline: 0; width: 100%; }
+  #flashcard-studio { box-sizing: border-box; width: 100%; padding: 16px 14px 18px; }
+  #flashcard-studio > .muted { margin: 0 0 18px; line-height: 1.55; }
+  #flashcard-studio .flash-filters { grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
+  #flashcard-studio .flash-filters .field { min-width: 0; width: 100%; }
+  #flashcard-studio .flash-filters select, #flashcard-studio #flash-start { width: 100%; min-width: 0; min-height: 52px; }
+  #flashcard-studio .flash-idle { min-height: 190px; padding: 28px 10px 18px; flex-direction: column; gap: 12px; text-align: center; }
+  #flashcard-studio .flash-idle > span { font-size: 38px; line-height: 1; }
+  #flashcard-studio .flash-idle p { max-width: 28ch; margin: 0 auto; font-size: 18px; line-height: 1.5; }
+  #flashcard-studio .flash-card { min-height: 240px; }
+  #flashcard-studio .flash-face { padding: 22px 18px; }
+  #flashcard-studio .flash-actions, #flashcard-studio .flash-rating { width: 100%; }
+  #flashcard-studio .flash-actions > button, #flashcard-studio .flash-rating > button { flex: 1 1 100%; min-width: 0; }
+}
+@media (max-width: 380px) {
+  #screen-home .hero h1 { font-size: clamp(38px, 11vw, 48px); }
+  #screen-home .snapshot { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #screen-home .snap-tile { min-width: 0; }
+}
+/* The Friends screen is for classmates; staff tools live on their own route. */
+#screen-friends .f-tabs { display: none !important; }
+#screen-admin #admin-body { min-width: 0; }
+#screen-admin .adm { max-width: 100%; margin-inline: auto; }
 </style>
 
 
@@ -3782,6 +3810,13 @@ pre, code { overflow-wrap: anywhere; }
       <p class="muted">Earn 10 EXP for every correct answer, complete daily challenges for bonus EXP, and keep your streak alive by finishing a quiz every day.</p>
     </div>
     <div id="friends-body"></div>
+  </div>
+</section>
+
+<section id="screen-admin" class="screen" data-screen="admin" hidden>
+  <div class="container container-wide"><a class="back-link" href="#/friends">← Back to Friends</a>
+    <div class="page-intro"><p class="eyebrow">Restricted workspace</p><h1>Admin panel</h1><p class="muted">Staff tools are kept separate from the study circle.</p></div>
+    <div id="admin-body"></div>
   </div>
 </section>
 
@@ -8204,8 +8239,8 @@ function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
 }
 
 /* ======================= Router ======================= */
-const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'achievements', 'duels', 'shop', 'me'];
-const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', achievements: 'achievements', duels: 'duels', shop: 'shop', me: 'me' };
+const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'shop', 'me'];
+const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', shop: 'shop', me: 'me' };
 const PATH_FOR = { home: '', setup: 'practice' };
 let currentScreen = null;
 
@@ -8267,6 +8302,7 @@ function render(screen) {
     else Notes.enter();
   }
   if (screen === 'setup') Setup.enter();
+  if (screen === 'admin') { renderFriends(); Adm.sync(); }
   if (screen === 'achievements') window.renderAchievements?.();
   if (changed) {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -10250,7 +10286,7 @@ function buildProfileCard() {
   safety.append(safetyHead, safetyActions, safetyNote);
   const staffRow = o('div', 'profile-staff-entry');
   const staffBtn = o('button', 'btn btn-ghost', '🛡️ Open Admin / Owner Panel');
-  staffBtn.type = 'button'; staffBtn.onclick = () => { S.ftab = 'admin'; App.navigate('friends'); };
+  staffBtn.type = 'button'; staffBtn.onclick = () => App.navigate('admin');
   staffRow.append(staffBtn); staffRow.hidden = !S.isAdmin;
   el.append(safety, staffRow);
 
@@ -10464,10 +10500,10 @@ function buildProfileCard() {
 
 function showFtab() {
   if (!S.frWrap || !S.ftabs) return;
-  S.boardHost.hidden = S.ftab === 'admin';
-  S.ftabs.hidden = !S.isAdmin;
+  S.boardHost.hidden = false;
+  S.ftabs.hidden = true;
+  S.ftabs.replaceChildren();
   Adm.sync();
-  S.ftabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.k === S.ftab)));
 }
 function renderFriends() {
   const body = $('friends-body'); if (!body) return;
@@ -11782,14 +11818,19 @@ const Adm = (() => {
     root.append(hd, tabs, body); return root;
   }
   function sync() {
-    if (!S.frWrap || !S.ftabs) return;
-    let b = S.ftabs.querySelector('[data-k="admin"]');
-    if (S.isAdmin && !b) { b = elx('button'); b.type = 'button'; b.dataset.k = 'admin'; b.setAttribute('role', 'tab'); b.onclick = () => { S.ftab = 'admin'; showFtab(); }; S.ftabs.append(b); }
-    if (!S.isAdmin && b) { b.remove(); if (S.ftab === 'admin') S.ftab = 'board'; if (root) root.hidden = true; }
-    if (!S.isAdmin) return;
-    b.textContent = S.isOwner ? '\u{1F451} Owner' : '\u{1F6E1}\uFE0F Admin';
-    if (!el().parentNode) S.frWrap.append(root);
-    root.hidden = S.ftab !== 'admin'; if (!root.hidden) { paint(true); tick(); }
+    const host = document.getElementById('admin-body');
+    if (!host) return;
+    if (!S.isAdmin) {
+      if (root) root.hidden = true;
+      host.replaceChildren(elx('section', 'card friends-gate', elx('h2', '', 'Admin access required'), elx('p', 'muted', 'This area is only available to authorised staff.')));
+      return;
+    }
+    if (!root) el();
+    if (root.parentNode !== host) host.replaceChildren(root);
+    root.hidden = false;
+    eyebrow.textContent = S.isOwner ? 'Owner console' : 'Admin workspace';
+    title.textContent = S.isOwner ? '👑 Owner panel' : 'Admin panel';
+    paint(true); tick();
   }
   function tick() {
     if (!timer) return;
@@ -11806,7 +11847,7 @@ const fmtLeft = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >
 async function init() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   renderAccount(); renderDaily(); renderAchievements();
-  App.on('screen', s => { if (['friends', 'duels', 'shop', 'me'].includes(s)) renderFriends(); });
+  App.on('screen', s => { if (['friends', 'admin', 'duels', 'shop', 'me'].includes(s)) renderFriends(); });
   try {
     const fb = await connectFirebase();
     S.db = fb.db; S.uid = fb.uid; Duel.start();
