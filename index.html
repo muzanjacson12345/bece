@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="mobile-subject-picker-polish-2026-11-17-r1">
+<meta name="bece-build" content="mobile-subject-picker-polish-2026-11-17-r2">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -3346,7 +3346,57 @@ html[data-theme="dark"] #screen-home .career-card .subject-index { color:#e7d08d
       </article>
     </div>
   </div>
-</section>
+<div id="notes-essay-view" hidden>
+<div class="container container-mid">
+    <div class="page-intro">
+      <p class="eyebrow">Think it through. Write it clearly.</p>
+      <h1>Good answers start with a plan.</h1>
+      <p class="muted">Read the command words, organise your ideas, then write in your own words. Compare your response with the practice guide when you’re ready.</p>
+    </div>
+    <div class="toolbar toolbar-simple">
+      <div class="segmented" role="group" aria-label="Subject">
+        <button type="button" data-sb-sub="social" aria-pressed="true">Social Studies</button>
+        <button type="button" data-sb-sub="arts" aria-pressed="false">Creative Arts</button>
+        <button type="button" data-sb-sub="maths" aria-pressed="false">Maths</button>
+        <button type="button" data-sb-sub="computing" aria-pressed="false">Computing</button>
+        <button type="button" data-sb-sub="rme" aria-pressed="false">RME</button>
+        <button type="button" data-sb-sub="integratedScience" aria-pressed="false">Integrated Science</button>
+        <button type="button" data-sb-sub="french" aria-pressed="false">French</button>
+        <button type="button" data-sb-sub="careerTechnology" aria-pressed="false">Career Technology</button>
+      </div>
+      <div class="chip-row" id="sb-picker" role="group" aria-label="Choose a question"></div>
+    </div>
+
+    <article class="card essay-card">
+      <div class="note-meta"><span id="sb-topic" class="badge badge-accent"></span><span id="sb-marks" class="badge"></span></div>
+      <h2 id="sb-q" class="essay-question" tabindex="-1"></h2>
+      <section id="essay-plan" class="essay-plan"></section>
+      <div class="essay-label"><label for="sb-ans">Your response</label><span><span id="word-count">0 words</span> · <span id="essay-save-note">Draft saves automatically</span></span></div>
+      <textarea id="sb-ans" rows="9" placeholder="Make a point. Explain why it matters. Add an example where it helps…"></textarea>
+      <div class="essay-tools">
+        <button class="btn btn-ghost btn-sm" type="button" data-action="copy-essay">Copy text</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-action="clear-essay">Clear draft</button>
+      </div>
+      <div class="essay-nav">
+        <button id="sb-prev" class="btn btn-ghost" type="button"><svg class="icon"><use href="#i-back"/></svg><span class="hide-xs">Previous</span></button>
+        <button id="sb-guide-btn" class="btn btn-ghost" type="button" aria-expanded="false" aria-controls="sb-scheme">Answer guide</button>
+        <button id="sb-next" class="btn btn-primary" type="button"><span class="hide-xs">Next</span> <svg class="icon"><use href="#i-arrow"/></svg></button>
+      </div>
+    </article>
+
+    <section id="sb-scheme" class="card guide" hidden>
+      <p class="eyebrow">Practice answer guide</p>
+      <p class="muted">Use these suggested points to check your response. This guide is not an official marking scheme and does not grade your writing.</p>
+      <fieldset class="self-check"><legend>Check your work</legend>
+        <label><input type="checkbox"> I answered every part of the question.</label>
+        <label><input type="checkbox"> I explained my points instead of only listing them.</label>
+        <label><input type="checkbox"> I used relevant examples and checked my facts.</label>
+      </fieldset>
+      <div id="sb-scheme-content" class="guide-content"></div>
+    </section>
+  </div>
+</div>
+  </section>
 
 <!-- ================= QUIZ SETUP ================= -->
 <section id="screen-setup" class="screen" data-screen="setup" hidden>
@@ -3473,56 +3523,7 @@ html[data-theme="dark"] #screen-home .career-card .subject-index { color:#e7d08d
     </section>
   
     </div>
-<div id="notes-essay-view" hidden>
-<div class="container container-mid">
-    <div class="page-intro">
-      <p class="eyebrow">Think it through. Write it clearly.</p>
-      <h1>Good answers start with a plan.</h1>
-      <p class="muted">Read the command words, organise your ideas, then write in your own words. Compare your response with the practice guide when you’re ready.</p>
-    </div>
-    <div class="toolbar toolbar-simple">
-      <div class="segmented" role="group" aria-label="Subject">
-        <button type="button" data-sb-sub="social" aria-pressed="true">Social Studies</button>
-        <button type="button" data-sb-sub="arts" aria-pressed="false">Creative Arts</button>
-        <button type="button" data-sb-sub="maths" aria-pressed="false">Maths</button>
-        <button type="button" data-sb-sub="computing" aria-pressed="false">Computing</button>
-        <button type="button" data-sb-sub="rme" aria-pressed="false">RME</button>
-        <button type="button" data-sb-sub="integratedScience" aria-pressed="false">Integrated Science</button>
-        <button type="button" data-sb-sub="french" aria-pressed="false">French</button>
-        <button type="button" data-sb-sub="careerTechnology" aria-pressed="false">Career Technology</button>
-      </div>
-      <div class="chip-row" id="sb-picker" role="group" aria-label="Choose a question"></div>
-    </div>
 
-    <article class="card essay-card">
-      <div class="note-meta"><span id="sb-topic" class="badge badge-accent"></span><span id="sb-marks" class="badge"></span></div>
-      <h2 id="sb-q" class="essay-question" tabindex="-1"></h2>
-      <section id="essay-plan" class="essay-plan"></section>
-      <div class="essay-label"><label for="sb-ans">Your response</label><span><span id="word-count">0 words</span> · <span id="essay-save-note">Draft saves automatically</span></span></div>
-      <textarea id="sb-ans" rows="9" placeholder="Make a point. Explain why it matters. Add an example where it helps…"></textarea>
-      <div class="essay-tools">
-        <button class="btn btn-ghost btn-sm" type="button" data-action="copy-essay">Copy text</button>
-        <button class="btn btn-ghost btn-sm" type="button" data-action="clear-essay">Clear draft</button>
-      </div>
-      <div class="essay-nav">
-        <button id="sb-prev" class="btn btn-ghost" type="button"><svg class="icon"><use href="#i-back"/></svg><span class="hide-xs">Previous</span></button>
-        <button id="sb-guide-btn" class="btn btn-ghost" type="button" aria-expanded="false" aria-controls="sb-scheme">Answer guide</button>
-        <button id="sb-next" class="btn btn-primary" type="button"><span class="hide-xs">Next</span> <svg class="icon"><use href="#i-arrow"/></svg></button>
-      </div>
-    </article>
-
-    <section id="sb-scheme" class="card guide" hidden>
-      <p class="eyebrow">Practice answer guide</p>
-      <p class="muted">Use these suggested points to check your response. This guide is not an official marking scheme and does not grade your writing.</p>
-      <fieldset class="self-check"><legend>Check your work</legend>
-        <label><input type="checkbox"> I answered every part of the question.</label>
-        <label><input type="checkbox"> I explained my points instead of only listing them.</label>
-        <label><input type="checkbox"> I used relevant examples and checked my facts.</label>
-      </fieldset>
-      <div id="sb-scheme-content" class="guide-content"></div>
-    </section>
-  </div>
-</div>
   </div>
 </section>
 
