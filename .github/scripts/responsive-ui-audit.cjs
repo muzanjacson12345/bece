@@ -6,13 +6,14 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'me-owner-admin-mobile-2026-11-16-r2';
+const EXPECTED_BUILD = 'mobile-subject-picker-polish-2026-11-17-r1';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
   { name: 'friends', hash: '#/friends', screen: 'friends' },
+  { name: 'duels', hash: '#/duels', screen: 'duels' },
   { name: 'notes', hash: '#/notes', screen: 'notes' },
-  { name: 'essays', hash: '#/essays', screen: 'essays' },
+  { name: 'essays', hash: '#/essays', screen: 'notes' },
 ];
 const VIEWPORTS = [
   { name: 'phone-320', width: 320, height: 780, mobile: true },
@@ -195,42 +196,90 @@ async function main() {
 
           // Check and capture the last Practice subject at every responsive width.
           if (route.screen === 'setup') {
-            const lastSubject = page.locator('[data-setup-sub="rme"]');
-            await lastSubject.click();
-            const selected = await lastSubject.getAttribute('aria-pressed');
-            if (selected !== 'true') {
-              report.failures.push(`${viewport.name}/practice: RME subject did not become selected`);
+            const countOne = page.locator('#quiz-subject-count button[data-subject-count="1"]');
+            const countTwo = page.locator('#quiz-subject-count button[data-subject-count="2"]');
+            const countMultiple = page.locator('#quiz-subject-count button[data-subject-count="multiple"]');
+            if (await page.locator('#quiz-subject-count button').count() !== 6) {
+              report.failures.push(`${viewport.name}/practice: expected six compact subject-count choices`);
             }
-            const gaSubject = page.locator('[data-setup-sub="ga"]');
-            const careerSubject = page.locator('[data-setup-sub="careerTechnology"]');
-            await gaSubject.click();
-            await careerSubject.click();
-            if (await gaSubject.getAttribute('aria-pressed') !== 'true' || await careerSubject.getAttribute('aria-pressed') !== 'true') {
-              report.failures.push(`${viewport.name}/practice: multi-subject selection did not keep both Ga and Career Technology selected`);
+            // Prove that a learner can replace the default subject with a different single subject.
+            await countOne.click();
+            const social = page.locator('[data-setup-sub="social"]');
+            const maths = page.locator('[data-setup-sub="maths"]');
+            await social.click();
+            if (await page.locator('[data-setup-sub][aria-pressed="true"]').count() !== 0 ||
+                !(await page.locator('#setup-start').isDisabled())) {
+              report.failures.push(`${viewport.name}/practice: a one-subject choice must allow an empty intermediate selection`);
             }
-            const selectedPool = await page.locator('#setup-pool').textContent();
-            if (!/questions available/.test(selectedPool || '')) {
-              report.failures.push(`${viewport.name}/practice: multi-subject question pool count was not displayed`);
+            await maths.click();
+            if (await maths.getAttribute('aria-pressed') !== 'true' ||
+                await page.locator('[data-setup-sub][aria-pressed="true"]').count() !== 1 ||
+                await page.locator('#setup-start').isDisabled()) {
+              report.failures.push(`${viewport.name}/practice: choose-one subject selection did not enforce exactly one`);
             }
-            const allSubjects = page.locator('[data-setup-all]');
-            await allSubjects.click();
-            const allSelected = await page.locator('[data-setup-sub][aria-pressed="true"]').count();
-            if (allSelected !== 9) {
-              report.failures.push(`${viewport.name}/practice: All subjects mixed did not select all nine subjects`);
+            // Two subjects: the Start button must remain disabled until the second is selected.
+            await countTwo.click();
+            if (!(await page.locator('#setup-start').isDisabled())) {
+              report.failures.push(`${viewport.name}/practice: choose-two should wait for the second subject`);
+            }
+            await page.locator('[data-setup-sub="arts"]').click();
+            if (await page.locator('[data-setup-sub][aria-pressed="true"]').count() !== 2 ||
+                await page.locator('#setup-start').isDisabled()) {
+              report.failures.push(`${viewport.name}/practice: choose-two did not enable Start at exactly two subjects`);
+            }
+            // Multiple means any two or more subjects, not only all subjects.
+            await countMultiple.click();
+            await page.locator('[data-setup-sub="integratedScience"]').click();
+            if (await page.locator('[data-setup-sub][aria-pressed="true"]').count() !== 3 ||
+                await page.locator('#setup-start').isDisabled()) {
+              report.failures.push(`${viewport.name}/practice: Multiple must allow any selection of at least two subjects`);
             }
             const subjectShot = path.join('artifacts/ui-audit/screenshots', viewport.name, 'practice-multi-subject.png');
             await page.screenshot({ path: subjectShot, fullPage: true, animations: 'disabled' });
             report.screenshots.push(subjectShot);
           }
 
+          if (route.screen === 'duels') {
+            const duelCreate = page.locator('.duel-modes button').filter({ hasText: 'Create' });
+            await duelCreate.click({ timeout: 12000 });
+            const countTwo = page.locator('.duel-create-pane .duel-subject-count button[data-count="2"]');
+            const countMultiple = page.locator('.duel-create-pane .duel-subject-count button[data-count="multiple"]');
+            await countTwo.waitFor({ state: 'visible', timeout: 12000 });
+            if (await page.locator('.duel-create-pane .duel-subject-count button').count() !== 6) {
+              report.failures.push(`${viewport.name}/duels: expected six compact subject-count choices`);
+            }
+            if (await page.locator('.duel-create-pane #duel-create-button').count()) {
+              // Current markup does not require a fixed ID; use the create-pane button below.
+            }
+            const createDuel = page.locator('.duel-create-pane > button.btn-primary');
+            await countTwo.click();
+            if (!(await createDuel.isDisabled())) {
+              report.failures.push(`${viewport.name}/duels: choose-two should wait for the second subject`);
+            }
+            await page.locator('.duel-subject-picks button[data-subject="arts"]').click();
+            if (await page.locator('.duel-subject-picks button[aria-pressed="true"]').count() !== 2 ||
+                await createDuel.isDisabled()) {
+              report.failures.push(`${viewport.name}/duels: choose-two did not enable creation at exactly two subjects`);
+            }
+            await countMultiple.click();
+            await page.locator('.duel-subject-picks button[data-subject="integratedScience"]').click();
+            if (await page.locator('.duel-subject-picks button[aria-pressed="true"]').count() !== 3 ||
+                await createDuel.isDisabled()) {
+              report.failures.push(`${viewport.name}/duels: Multiple must allow any two or more subjects`);
+            }
+            const duelShot = path.join('artifacts/ui-audit/screenshots', viewport.name, 'duels-subject-picker.png');
+            await page.screenshot({ path: duelShot, fullPage: true, animations: 'disabled' });
+            report.screenshots.push(duelShot);
+          }
+
           if (route.screen === 'home') {
-            for (const key of ['ga', 'careerTechnology']) {
+            for (const key of ['social', 'arts', 'maths', 'computing', 'rme', 'integratedScience', 'french', 'careerTechnology']) {
               const countText = await page.locator(`[data-count="${key}"]`).textContent();
               if (!/200 questions/.test(countText || '')) {
                 report.failures.push(`${viewport.name}/home: ${key} does not show its 200-question bank`);
               }
             }
-            for (const key of ['ga', 'careerTechnology']) {
+            for (const key of ['social', 'arts', 'maths', 'computing', 'rme', 'integratedScience', 'french', 'careerTechnology']) {
               if (await page.locator(`#flash-subject option[value="${key}"]`).count() !== 1) {
                 report.failures.push(`${viewport.name}/home: ${key} is missing from the flashcard subject selector`);
               }
@@ -238,7 +287,7 @@ async function main() {
           }
 
           if (route.screen === 'notes') {
-            for (const key of ['ga', 'careerTechnology']) {
+            for (const key of ['social', 'arts', 'maths', 'computing', 'rme', 'integratedScience', 'french', 'careerTechnology']) {
               await page.locator(`[data-notes-sub="${key}"]`).click();
               const noteCount = await page.locator('#notes-sidebar .topic-item').count();
               if (noteCount < 1) {
