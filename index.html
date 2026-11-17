@@ -3126,6 +3126,205 @@ html[data-theme="dark"] #screen-home .career-card .subject-index { color:#e7d08d
   .account-safety-actions { grid-template-columns:1fr; }
 }
 </style>
+<style id="app-ui-polish-2026">
+/* A calmer, consistent layer across the whole app. */
+:root { --ui-radius: 18px; }
+html { scroll-behavior: smooth; }
+body { overflow-x: hidden; }
+#main, .screen, .container, .page-intro, .toolbar, .friends-grid, .notes-layout,
+#duels-body, #shop-body, #me-body { min-width: 0; }
+.container { padding-inline: clamp(14px, 3vw, 32px); }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 3px;
+}
+.btn { min-width: 0; max-width: 100%; white-space: normal; }
+input, select, textarea { min-width: 0; max-width: 100%; }
+.page-intro { padding: clamp(22px, 3.4vw, 38px) 0 18px; }
+.page-intro .muted { max-width: 66ch; line-height: 1.65; }
+.section-heading { min-width: 0; }
+.section-heading > * { min-width: 0; }
+.card, .subject-card, .tool-card, .achievement-launch, .daily-card,
+.profile-card, .duel-card, .shop { border-radius: var(--ui-radius); }
+table { max-width: 100%; }
+pre, code { overflow-wrap: anywhere; }
+
+/* Overview: clear hierarchy, less duplication, and better use of space. */
+#screen-home .hero {
+  grid-template-columns: minmax(0, 1.15fr) minmax(210px, .85fr);
+  gap: clamp(20px, 4vw, 48px);
+  padding: clamp(28px, 4vw, 48px) 0 28px;
+}
+#screen-home .hero-copy { min-width: 0; max-width: 650px; }
+#screen-home .hero h1 { max-width: 12ch; }
+#screen-home .hero-actions { gap: 10px; }
+#screen-home .daily-card { padding: clamp(18px, 2.8vw, 26px); margin-bottom: 22px; }
+#screen-home .achievement-launch {
+  margin: 0 0 34px;
+  padding: 15px 18px;
+  border-radius: 16px;
+}
+#screen-home .block { margin-bottom: 38px; }
+#screen-home .section-heading { margin-bottom: 15px; }
+#screen-home .subject-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+#screen-home .subject-card {
+  min-width: 0;
+  min-height: 184px;
+  padding: 19px;
+  gap: 9px;
+}
+#screen-home .subject-top { margin-bottom: 10px; gap: 9px; }
+#screen-home .subject-card h3 { line-height: 1.22; overflow-wrap: anywhere; }
+#screen-home .subject-card p { max-width: 36ch; line-height: 1.5; }
+#screen-home .subject-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 5px 10px;
+  margin-top: auto;
+}
+#screen-home .tool-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 11px;
+}
+#screen-home .tool-card {
+  min-width: 0;
+  min-height: 78px;
+  padding: 14px;
+  gap: 11px;
+  border-radius: 15px;
+}
+#screen-home .tool-card span { min-width: 0; }
+#screen-home .tool-card small { overflow-wrap: anywhere; line-height: 1.4; }
+#screen-home .learning-path { display: none !important; }
+
+/* Flashcards remain available, but no longer take over the Overview page. */
+#flashcard-disclosure {
+  margin: 0 0 34px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: clip;
+}
+#flashcard-disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 70px;
+  padding: 13px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+#flashcard-disclosure > summary::-webkit-details-marker { display: none; }
+#flashcard-disclosure > summary:hover { background: var(--surface-2); }
+.home-feature-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 23px;
+}
+.home-feature-copy { display: grid; gap: 3px; min-width: 0; }
+.home-feature-copy strong { font-size: 15px; }
+.home-feature-copy small { color: var(--muted); font-size: 13px; line-height: 1.4; }
+.home-feature-chevron { margin-left: auto; color: var(--muted); font-size: 22px; transition: transform .2s ease; }
+#flashcard-disclosure[open] .home-feature-chevron { transform: rotate(180deg); }
+#flashcard-studio { margin: 0; padding: 4px 18px 20px; }
+#flashcard-studio > .section-heading { display: none; }
+#screen-home .faq { max-width: 920px; margin-inline: auto; }
+#screen-home .faq details {
+  margin-top: 9px;
+  padding: 0 15px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+}
+#screen-home .faq summary { padding: 14px 0; font-weight: 650; line-height: 1.4; }
+#screen-home .faq details p { padding: 0 0 14px; line-height: 1.65; color: var(--muted); }
+
+/* Give the newer dedicated pages the same comfortable reading width. */
+#screen-duels .page-intro, #screen-shop .page-intro, #screen-me .page-intro,
+#screen-achievements .page-intro { max-width: 900px; }
+#screen-duels #duels-body, #screen-shop #shop-body, #screen-me #me-body,
+#screen-achievements #achievement-card { min-width: 0; }
+#screen-duels .duel-card, #screen-shop .shop, #screen-me .profile-card,
+#screen-achievements .achievement-page-card {
+  max-width: 940px;
+  margin-inline: auto;
+}
+#screen-friends .friends-grid, #screen-friends .leaderboard,
+#screen-friends .duel-card, #screen-notes .toolbar { min-width: 0; }
+
+/* Medium screens: retain a balanced two-column rhythm. */
+@media (max-width: 1024px) {
+  #screen-home .subject-grid, #screen-home .tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Phones: preserve the original compact layout, improve wrapping and tap targets. */
+@media (max-width: 760px) {
+  .container { padding-inline: 16px; }
+  .page-intro { padding: 23px 0 15px; }
+  .page-intro h1 { overflow-wrap: anywhere; }
+  .block { margin-bottom: 30px; }
+  #screen-home .hero { padding: 16px 0 18px; gap: 10px; }
+  #screen-home .hero h1 { font-size: clamp(34px, 9vw, 46px); line-height: 1.05; }
+  #screen-home .hero-art { width: 31%; max-width: 126px; opacity: .42; }
+  #screen-home .daily-card { padding: 16px; margin-bottom: 17px; }
+  #screen-home .achievement-launch { margin-bottom: 26px; padding: 12px 13px; }
+  #screen-home .subject-grid, #screen-home .tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+  #screen-home .subject-card { min-height: 142px; padding: 13px !important; }
+  #screen-home .subject-card p { display: none; }
+  #screen-home .subject-card h3 { font-size: clamp(14px, 3.8vw, 17px) !important; }
+  #screen-home .subject-top { margin-bottom: 7px; gap: 7px; }
+  #screen-home .subject-bottom { font-size: 11px; line-height: 1.35; }
+  #screen-home .subject-index { font-size: 10px; }
+  #screen-home .tool-card {
+    min-height: 100px;
+    padding: 11px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  #screen-home .tool-card .tool-icon { width: 30px; height: 30px; padding: 6px; }
+  #screen-home .tool-card strong { font-size: 13px; line-height: 1.3; }
+  #screen-home .tool-card small { font-size: 11px; line-height: 1.35; }
+  #flashcard-disclosure { margin-bottom: 25px; }
+  #flashcard-disclosure > summary { min-height: 64px; padding: 10px 12px; }
+  #flashcard-studio { padding: 0 12px 14px; }
+  #screen-home .faq details { padding-inline: 12px; }
+  .toolbar { flex-wrap: wrap; }
+  .segmented { min-width: 0; max-width: 100%; }
+  .notes-layout, .friends-grid { min-width: 0; }
+  #screen-duels .page-intro, #screen-shop .page-intro, #screen-me .page-intro,
+  #screen-achievements .page-intro { padding-top: 20px; }
+  .btn { min-height: 44px; }
+}
+@media (max-width: 380px) {
+  #screen-home .hero h1 { font-size: 34px; }
+  #screen-home .subject-grid, #screen-home .tool-grid { gap: 7px; }
+  #screen-home .subject-card { padding: 11px !important; }
+  #screen-home .tool-card { min-height: 94px; padding: 9px; }
+  #screen-home .tool-card small { font-size: 10.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -3184,7 +3383,6 @@ html[data-theme="dark"] #screen-home .career-card .subject-index { color:#e7d08d
         <div class="hero-actions">
           <button class="btn btn-primary btn-lg" type="button" data-action="quick-practice">Start a quick practice <svg class="icon"><use href="#i-arrow"/></svg></button>
           <a class="btn btn-ghost btn-lg" href="#daily-card">Today’s challenges</a>
-          <a class="btn btn-ghost btn-lg" href="#/duels">⚔️ Duel a friend</a>
         </div>
         <p class="caption">5 mixed questions · instant explanations</p>
       </div>
@@ -3261,7 +3459,7 @@ html[data-theme="dark"] #screen-home .career-card .subject-index { color:#e7d08d
       <ul id="history-list" class="history-list"></ul>
     </section>
 
-    <section id="flashcard-studio" class="block flashcard-studio" aria-labelledby="flashcard-title">
+    <details class="home-feature-disclosure" id="flashcard-disclosure"><summary><span class="home-feature-icon" aria-hidden="true">▤</span><span class="home-feature-copy"><strong>Flashcards</strong><small>Quick recall practice, one card at a time</small></span><span class="home-feature-chevron" aria-hidden="true">⌄</span></summary><section id="flashcard-studio" class="block flashcard-studio" aria-labelledby="flashcard-title">
       <div class="section-heading"><div><p class="eyebrow">Less looking. More remembering.</p><h2 id="flashcard-title">Give your memory a turn.</h2></div><span class="section-meta">Up to 10 cards a round</span></div>
       <p class="muted">Read the question, say your answer aloud, then flip the card. Be honest about what needs another look.</p>
       <div class="flash-filters">
@@ -3291,7 +3489,7 @@ html[data-theme="dark"] #screen-home .career-card .subject-index { color:#e7d08d
         <p class="eyebrow">Round complete</p><h3 id="flash-summary-title"></h3><p id="flash-summary-copy" class="muted"></p>
         <div class="button-row"><button id="flash-retry" class="btn btn-primary" type="button">Revisit these cards</button><button id="flash-new" class="btn btn-ghost" type="button">Try a fresh round</button></div>
       </div>
-    </section>
+    </section></details>
 
     <section class="block learning-path" aria-labelledby="path-title">
       <div><p class="eyebrow">Your study rhythm</p><h2 id="path-title">Understand. Try. Reflect.</h2><p class="muted">A score tells you where you are. An explanation helps you move forward.</p></div>
@@ -11861,6 +12059,15 @@ init();
   document.querySelectorAll("[data-notes-sub='careerTechnology']").forEach(btn=>btn.addEventListener("click",()=>{Notes.sub=btn.dataset.notesSub;Notes.activeId=null;Notes.refresh({keepScroll:false});}));
   Home.render();
 })();
+</script>
+<script id="overview-ui-interactions">
+/* Open the compact flashcard panel when its Quick Access link is used. */
+document.addEventListener("click", event => {
+  const link = event.target.closest('a[href="#flashcard-studio"]');
+  if (!link) return;
+  const panel = document.getElementById("flashcard-disclosure");
+  if (panel) panel.open = true;
+}, true);
 </script>
 </body>
 </html>
