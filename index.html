@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="duel-count-scope-fix-2026-11-17-r1">
+<meta name="bece-build" content="overview-owner-controls-2026-11-17-r2">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -2929,8 +2929,9 @@ input, select, textarea { max-width: 100%; min-width: 0; }
  #screen-home .hero-copy{min-width:0}
  #screen-home .hero h1{font-size:clamp(32px,8.8vw,42px);line-height:1.04}
  #screen-home .hero-art{width:30%;max-width:112px;opacity:.45}
- #screen-home .hero-actions{grid-template-columns:1fr 1fr;gap:8px}
- #screen-home .hero-actions .btn-primary{grid-column:1/-1}
+ #screen-home .hero-actions{display:grid !important;grid-template-columns:minmax(0,1fr) !important;align-items:stretch;gap:10px;width:100%;min-width:0}
+ #screen-home .hero-actions > .btn{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:56px;margin:0;padding:14px 18px;white-space:normal;overflow-wrap:normal;word-break:normal;text-align:center}
+ #screen-home .hero-actions > .btn-primary{grid-column:auto}
  #screen-home .snapshot{margin-bottom:16px}
  #screen-home .subject-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
  #screen-home .tool-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
@@ -2940,6 +2941,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
  .account-coins{font-size:12px;padding:3px 5px}
 }
 @media(max-width:380px){
+ #screen-home .hero-actions > .btn{min-height:54px;padding-inline:12px;font-size:15px}
  #screen-home .tool-grid{gap:7px}
  #screen-home .tool-card{padding:10px}
  #screen-home .tool-card .tool-icon{width:20px;height:20px}
@@ -3403,6 +3405,47 @@ pre, code { overflow-wrap: anywhere; }
   body.admin-enabled .tab-bar { grid-template-columns:repeat(6,minmax(0,1fr)) !important; }
   body.admin-enabled .tab-bar a { min-width:0; padding-inline:1px; font-size:clamp(9px,2.7vw,11px); }
   body.admin-enabled .tab-bar a span:last-child { white-space:nowrap; }
+}
+</style>
+<style id="overview-owner-layout-audit-fixes">
+/* The mobile hero actions were inheriting a two-column rule while the base layout
+   remained flex. Force a real one-column grid so labels never collapse into a strip. */
+@media (max-width: 760px) {
+  #screen-home .hero { grid-template-columns:minmax(0,1fr); width:100%; min-width:0; }
+  #screen-home .hero-copy { width:100%; min-width:0; max-width:100%; }
+  #screen-home .hero-actions { display:grid !important; grid-template-columns:minmax(0,1fr) !important; width:100%; min-width:0; max-width:100%; gap:10px; }
+  #screen-home .hero-actions > .btn { width:100% !important; min-width:0 !important; max-width:100% !important; min-height:56px; padding:14px 18px; white-space:normal; overflow-wrap:normal; word-break:normal; line-height:1.25; }
+  #screen-home .hero-actions > .btn svg { flex:0 0 auto; }
+  #screen-home .challenge-heading { align-items:flex-start; flex-wrap:wrap; }
+  #screen-home .challenge-heading .daily-info { flex:1 1 180px; min-width:0; }
+  #screen-home .challenge-summary { flex:0 0 auto; }
+  #screen-home .snapshot { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #screen-home .snap-tile { min-width:0; }
+}
+@media (min-width:761px) and (max-width:1100px) {
+  #screen-home .hero { grid-template-columns:minmax(0,1fr) minmax(190px,.55fr); gap:22px; }
+  #screen-home .hero-copy { min-width:0; }
+  #screen-home .hero-actions { display:flex; flex-wrap:wrap; gap:10px; }
+  #screen-home .hero-actions > .btn { flex:1 1 220px; min-width:0; max-width:100%; }
+  #screen-home .snapshot { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:380px) {
+  #screen-home .hero h1 { font-size:clamp(36px,11vw,46px); }
+  #screen-home .hero-actions > .btn { font-size:15px; padding-inline:12px; }
+}
+/* A paused shop remains readable and keeps already-owned equipment usable. */
+.shop-paused-notice { margin:0 0 14px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:var(--surface-2); }
+.shop-paused-notice p { margin:5px 0 0; color:var(--muted); }
+#screen-admin .adm-card, #screen-admin .adm-row, #screen-admin .adm-body { min-width:0; max-width:100%; }
+#screen-admin .adm-btns { display:flex; flex-wrap:wrap; gap:8px; }
+#screen-admin .adm-btns > button { max-width:100%; min-width:0; white-space:normal; }
+@media (max-width:760px) {
+  #screen-admin .adm-subs { display:flex; flex-wrap:nowrap; overflow-x:auto; scroll-snap-type:x proximity; }
+  #screen-admin .adm-subs > button { flex:0 0 auto; scroll-snap-align:center; }
+  #screen-admin .adm-hact { width:100%; align-items:center; }
+  #screen-admin .adm-hact > button { min-height:42px; }
+  #screen-admin .adm-card { padding:14px 12px; }
+  #screen-admin .adm-btns > button { flex:1 1 140px; }
 }
 </style>
 </head>
@@ -10058,16 +10101,27 @@ App.on('quiz:finished', async ev => {
     if (Math.floor(bonusExp / 4)) coinParts.push({ label: 'Daily challenge bonus', n: Math.floor(bonusExp / 4) });
     const streakCoins = fresh > 0 ? Math.min(5, Math.floor(streak / 3)) : 0;
     if (streakCoins) coinParts.push({ label: `\u{1F525} ${streak}-day streak bonus`, n: streakCoins });
-    const coinsEarned = coinParts.reduce((a, c) => a + c.n, 0);
+    const baseCoinsEarned = coinParts.reduce((a, c) => a + c.n, 0);
+    const expRate = Math.min(3, Math.max(0.5, Number(S.settings.expMultiplier) || 1));
+    const coinRate = Math.min(3, Math.max(0.5, Number(S.settings.coinMultiplier) || 1));
+    const awardedExp = Math.floor((earned + bonusExp) * expRate);
+    const awardedEarned = Math.floor(earned * expRate);
+    const awardedBonusExp = awardedExp - awardedEarned;
+    const coinsEarned = Math.floor(baseCoinsEarned * coinRate);
+    const scaledCoinParts = coinParts.map(part => ({ ...part, n: Math.floor(part.n * coinRate) }));
+    if (scaledCoinParts.length) {
+      const shown = scaledCoinParts.reduce((sum, part) => sum + part.n, 0);
+      scaledCoinParts[scaledCoinParts.length - 1].n += coinsEarned - shown;
+    }
     const subs = [...new Set(ev.questionIds.map(i => i.slice(0, 3)))];
     const subject = subs.length === 1 ? SUBJ[subs[0]] || 'mixed subjects' : 'mixed subjects';
-    const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: earned + bonusExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
+    const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: awardedExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
     const sfreezes = usedFreeze ? Math.max(0, (d.sfreezes || 0) - 1) : (d.sfreezes || 0);
     const xpBoost = xpMult > 1 ? Math.max(0, (d.xpBoost || 0) - 1) : (d.xpBoost || 0);
-    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + earned + bonusExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + earned + bonusExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + earned + bonusExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, challengeState, achievements, recent };
+    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + awardedExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + awardedExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + awardedExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, challengeState, achievements, recent };
     await S.db.doc('players/' + S.uid).set(next); S.doc = next;
     renderAccount(); renderDaily(); renderAchievements();
-    showResult({ coins: coinsEarned, coinParts, balance: (next.coins || 0), earned, bonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended, usedFreeze, xpMult });
+    showResult({ coins: coinsEarned, coinParts: scaledCoinParts, balance: (next.coins || 0), earned: awardedEarned, bonusExp: awardedBonusExp, correct: ev.correct, already, parts, total: next.totalExp, streak, extended, usedFreeze, xpMult, expRate, coinRate });
   } catch (err) { box.replaceChildren(o('p', 'exp-status', 'Couldn\u2019t save your EXP. ' + (err && err.message || ''))); }
 });
 // A "coins earned" card: animated total, a line for every reason, and your new balance
@@ -10683,6 +10737,7 @@ const Shop = (() => {
   }
   async function buy(it, slot) {
     const d = S.doc || {};
+    if (S.settings.shopPaused && !S.isOwner) return warn('Shop purchases are temporarily paused.');
     if ((d.coins || 0) < it.price) return warn('Not enough coins yet. Keep practising!');
     if (!S.db) return warn('You need to be online to buy.');
     const F = firebase.firestore.FieldValue;
@@ -10739,7 +10794,16 @@ const Shop = (() => {
       const badge = o('span', 'board-title', it.icon + ' ' + it.name); s.append(badge); return s;
     }, 'title');
 
-    body.replaceChildren(cons, titlesGroup);
+    const paused = !!S.settings.shopPaused && !S.isOwner;
+    if (paused) {
+      [...cons.querySelectorAll('button'), ...titlesGroup.querySelectorAll('button')].forEach(button => {
+        if (button.textContent.trim().startsWith('Buy')) { button.disabled = true; button.textContent = 'Shop paused'; }
+      });
+    }
+    const content = [];
+    if (paused) content.push(o('div', 'shop-paused-notice', o('strong', '', '🛍️ Shop purchases paused'), o('p', '', 'The owner has temporarily paused new purchases. Your owned items are still available.')));
+    content.push(cons, titlesGroup);
+    body.replaceChildren(...content);
   }
   function build() {
     el = o('section', 'card shop'); bal = o('strong', 'shop-bal'); body = o('div', 'shop-body');
@@ -11749,6 +11813,42 @@ const Adm = (() => {
     if (!ps.length) return App.toast('Nobody matches that group.', 'warn');
     if (await run(() => chunked(ps.map(p => b => b.update(pdoc(p.id), { coins: fsv().FieldValue.increment(n) }))), `Gave ${n} coins to ${ps.length} players.`)) logAct('gift-all', '', `${n} coins each to ${ps.length} players (${v.who})`);
   }
+  async function setRewardRates() {
+    const v = await ask({
+      title: 'Set practice reward rates',
+      intro: 'These rates apply to new quiz rewards for every player. Existing EXP and coins are not changed.',
+      fields: [
+        { key: 'exp', label: 'EXP multiplier', options: [['0.5', '0.5× EXP'], ['1', '1× EXP (normal)'], ['1.5', '1.5× EXP'], ['2', '2× EXP'], ['3', '3× EXP']] },
+        { key: 'coins', label: 'Coin multiplier', options: [['0.5', '0.5× coins'], ['1', '1× coins (normal)'], ['1.5', '1.5× coins'], ['2', '2× coins'], ['3', '3× coins']] }
+      ],
+      ok: 'Save reward rates',
+      validate: x => !['0.5','1','1.5','2','3'].includes(x.exp) || !['0.5','1','1.5','2','3'].includes(x.coins) ? 'Choose a valid reward rate.' : ''
+    });
+    if (!v) return;
+    const expMultiplier = Number(v.exp), coinMultiplier = Number(v.coins);
+    if (await run(() => S.db.doc('settings/app').set({ expMultiplier, coinMultiplier, ratesUpdatedAt: Date.now(), ratesUpdatedBy: S.uid }, { merge: true }), 'Practice reward rates updated for everyone.')) {
+      logAct('reward-rates', '', expMultiplier + 'x EXP, ' + coinMultiplier + 'x coins');
+      Adm.paint(true);
+    }
+  }
+  async function toggleShop() {
+    const paused = !!S.settings.shopPaused;
+    const next = !paused;
+    if (await run(() => S.db.doc('settings/app').set({ shopPaused: next, shopUpdatedAt: Date.now(), shopUpdatedBy: S.uid }, { merge: true }), next ? 'Shop purchases paused for everyone.' : 'Shop purchases are open again.')) {
+      logAct(next ? 'shop-paused' : 'shop-resumed', '', next ? 'new purchases paused' : 'purchases resumed');
+      Adm.paint(true);
+    }
+  }
+  function downloadAuditCsv() {
+    const esc = value => '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"';
+    const rows = [['Time','Role','Staff member','Action','Target','Details'], ...S.audit.map(e => [fmtTime(e.at), e.role, e.byName, e.action, e.targetName, e.detail])];
+    const csv = '\uFEFF' + rows.map(row => row.map(esc).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'bece-owner-audit-log.csv'; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    logAct('audit-export', '', S.audit.length + ' audit entries exported');
+    App.toast('Audit log exported.', 'good');
+  }
   async function giftExpAll() {
     const v = await ask({ title: 'Award EXP to many players', fields: [{ key: 'who', label: 'Who receives EXP', options: [['today', 'Players active today'], ['week', 'Players active this week'], ['all', 'Everyone']] }, { key: 'n', label: 'EXP each', type: 'number', value: '100' }], ok: 'Award EXP', validate: x => (!(+x.n >= 1) || +x.n > 50000) ? 'Enter 1 to 50,000 EXP.' : '' });
     if (!v) return;
@@ -11795,7 +11895,7 @@ const Adm = (() => {
   }
   async function toggleDuels() {
     const paused = !!S.settings.duelsPaused;
-    if (await run(() => S.db.doc('settings/app').set({ duelsPaused: !paused, at: Date.now(), by: String(nameOf(S.uid)).slice(0, 40) }), paused ? 'Duels are open again.' : 'New duels are paused.')) logAct(paused ? 'duels-on' : 'duels-off', '', paused ? 'duels resumed' : 'new duels paused');
+    if (await run(() => S.db.doc('settings/app').set({ duelsPaused: !paused, at: Date.now(), by: String(nameOf(S.uid)).slice(0, 40) }, { merge: true }), paused ? 'Duels are open again.' : 'New duels are paused.')) logAct(paused ? 'duels-on' : 'duels-off', '', paused ? 'duels resumed' : 'new duels paused');
   }
   function protectCard() {
     const safe = S.roster.get(S.uid) === 'owner';
@@ -11822,7 +11922,10 @@ const Adm = (() => {
       card('\u23F8\uFE0F Duels switch', S.settings.duelsPaused ? 'New duels are paused for everyone. Duels already running can finish.' : 'Duels are open. Pause new duels if something is broken or being abused.', btn(S.settings.duelsPaused ? 'Resume duels' : 'Pause new duels', S.settings.duelsPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleDuels)),
       card('\u{1F510} Security', 'The admin PIN opens admin sessions. The 2 owner passwords open this console. Changing either one signs people out.', btn('Change admin PIN', 'btn-ghost btn-sm', changeAdminPin), btn('Change owner passwords', 'btn-ghost btn-sm', changeOwnerPw)),
       card('\u{1F381} Bulk tools', 'Owner-only rewards and maintenance commands. Every action is recorded in the audit log.', btn('Gift coins\u2026', 'btn-primary btn-sm', giftAll), btn('Award EXP\u2026', 'btn-primary btn-sm', giftExpAll), btn('Reset weekly board\u2026', 'btn-ghost btn-sm adm-danger', weeklyReset), btn('Clear expired bans', 'btn-ghost btn-sm', clearExpired)),
-      card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins\u2026', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false))));
+      card('\u{1F4C8} Global practice economy', 'Set the EXP and coin multipliers earned by every player in new practice quizzes.', elx('p', 'adm-info', 'Current rates: ' + (Number(S.settings.expMultiplier) || 1) + '× EXP · ' + (Number(S.settings.coinMultiplier) || 1) + '× coins'), btn('Change reward rates…', 'btn-primary btn-sm', setRewardRates)),
+      card('\u{1F6D2} Shop control', S.settings.shopPaused ? 'Purchases are currently paused for every player. Owned items can still be equipped.' : 'Purchases are open for everyone. You can temporarily pause new purchases without removing anyone’s items.', btn(S.settings.shopPaused ? 'Reopen shop purchases' : 'Pause shop purchases', S.settings.shopPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleShop)),
+      card('\u{1F4C1} Owner exports', 'Download a copy of the moderation audit history for your own records.', btn('Export audit log CSV', 'btn-ghost btn-sm', downloadAuditCsv)),
+      card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins…', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false))));
   }
   const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F', 'bug-open': '\u{1F41E}', 'bug-fixing': '\u{1F6E0}\uFE0F', 'bug-done': '\u2705', 'bug-wontfix': '\u{1F4D5}', 'bug-reply': '\u{1F4AC}', 'bug-delete': '\u{1F5D1}\uFE0F', 'roster-remove': '\u{1F6AA}', 'duels-on': '\u25B6\uFE0F', 'duels-off': '\u23F8\uFE0F', appoint: '\u{1F6E1}\uFE0F' };
   function auditTab() {
@@ -11835,7 +11938,7 @@ const Adm = (() => {
       list.replaceChildren(...(es.length ? es.slice(0, 120).map(e => elx('div', 'adm-log', elx('span', 'adm-log-ic', ACT_ICON[e.action] || '\u2022'), elx('div', 'adm-log-t', elx('strong', '', e.byName || 'Someone', ' ', elx('em', e.role === 'owner' ? 'adm-role-o' : 'adm-role-a', e.role === 'owner' ? 'owner' : 'admin')), elx('span', '', `${e.action}${e.targetName ? ' \u2192 ' + e.targetName : ''}${e.detail ? ' \u00B7 ' + e.detail : ''}`), elx('small', '', fmtTime(e.at))))) : [elx('p', 'muted', 'Nothing logged yet.')]));
     }
     q.oninput = () => { st.alq = q.value.trim().toLowerCase(); fill(); }; rs.onchange = () => { st.alr = rs.value; fill(); };
-    fill(); w.append(q, elx('div', 'adm-two', rs, info), list, S.audit.length ? btn('Wipe audit log\u2026', 'btn-ghost btn-sm adm-danger', wipeAudit) : null); return w;
+    fill(); w.append(q, elx('div', 'adm-two', rs, info), list, S.isOwner && S.audit.length ? btn('Export audit log CSV', 'btn-ghost btn-sm', downloadAuditCsv) : null, S.audit.length ? btn('Wipe audit log\u2026', 'btn-ghost btn-sm adm-danger', wipeAudit) : null); return w;
   }
 
   /* ---------- shell ---------- */
@@ -11937,7 +12040,7 @@ async function init() {
     S.db.collection('bans').onSnapshot(sn => { S.bansAll = new Map(sn.docs.map(d => [d.id, d.data()])); refreshBans(); }, () => {});
     S.db.doc('announcements/current').onSnapshot(sn => { S.ann = sn.exists ? sn.data() : null; showAnn(); }, () => {});
     S.db.collection('staffRoster').onSnapshot(sn => { S.roster = new Map(sn.docs.map(d => [d.id, d.data().role === 'owner' ? 'owner' : 'admin'])); S.rosterData = new Map(sn.docs.map(d => [d.id, d.data()])); refreshBans(); refreshAdmin(true); Adm.paint(); }, () => {});
-    S.db.doc('settings/app').onSnapshot(sn => { S.settings = sn.exists ? sn.data() : {}; Adm.paint(); }, () => {});
+    S.db.doc('settings/app').onSnapshot(sn => { S.settings = sn.exists ? sn.data() : {}; Adm.paint(); Shop.render(); }, () => {});
     Bugs.start();
     S.db.collection('players').onSnapshot(async snap => {
       S.players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
