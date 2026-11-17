@@ -10496,13 +10496,49 @@ const Duel = (() => {
     if (D.card) return D.card;
     const subjectBox = o('div', 'duel-subject-picks'), countBox = o('div', 'duel-seg');
     const subjectKeys = Object.keys(SUBS).filter(k => k !== 'mixed');
+    let subjectHint = null, createButton = null;
     const syncSubjects = () => {
+      const multiple = D.cfg.subjectCount === 'multiple';
+      const max = multiple ? subjectKeys.length : Number(D.cfg.subjectCount);
+      const selected = D.cfg.subjects.length;
+      const valid = multiple ? selected >= 2 : selected === max;
       countBox.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.count === String(D.cfg.subjectCount))));
-      subjectBox.querySelectorAll('button').forEach(b => { const on = D.cfg.subjects.includes(b.dataset.subject); b.setAttribute('aria-pressed', String(on)); b.disabled = !on && D.cfg.subjects.length >= (D.cfg.subjectCount === 'multiple' ? subjectKeys.length : Number(D.cfg.subjectCount)); });
+      subjectBox.querySelectorAll('button').forEach(b => {
+        const on = D.cfg.subjects.includes(b.dataset.subject);
+        b.setAttribute('aria-pressed', String(on));
+        b.disabled = !on && selected >= max;
+      });
+      if (subjectHint) subjectHint.textContent = multiple
+        ? `Choose at least two subjects. Selected: ${selected}.`
+        : `Select exactly ${max} subject${max === 1 ? '' : 's'}. Selected: ${selected}/${max}.`;
+      if (createButton) createButton.disabled = !valid;
     };
-    [1,2,3,4,5,'multiple'].forEach(n => { const b = o('button', '', n === 'multiple' ? 'Multiple' : `Choose ${n}`); b.type = 'button'; b.dataset.count = String(n); b.onclick = () => { D.cfg.subjectCount = n; const max = n === 'multiple' ? subjectKeys.length : Number(n); if (D.cfg.subjects.length > max) D.cfg.subjects = D.cfg.subjects.slice(0,max); syncSubjects(); }; countBox.append(b); });
-    subjectKeys.forEach(k => { const b = o('button', '', SUBS[k]); b.type = 'button'; b.dataset.subject = k; b.onclick = () => { const at = D.cfg.subjects.indexOf(k), max = D.cfg.subjectCount === 'multiple' ? subjectKeys.length : Number(D.cfg.subjectCount); if (at >= 0) D.cfg.subjects.splice(at,1); else if (D.cfg.subjects.length < max) D.cfg.subjects.push(k); syncSubjects(); }; subjectBox.append(b); });
-    const sw = o('div', 'duel-field'); sw.append(o('span', 'duel-lbl', 'How many subjects?'), countBox, o('span', 'duel-lbl', 'Choose your subjects'), subjectBox); syncSubjects();
+    [1,2,3,4,5,'multiple'].forEach(n => {
+      const b = o('button', '', n === 'multiple' ? 'Multiple' : `Choose ${n}`);
+      b.type = 'button'; b.dataset.count = String(n);
+      b.onclick = () => {
+        D.cfg.subjectCount = n;
+        const max = n === 'multiple' ? subjectKeys.length : Number(n);
+        if (D.cfg.subjects.length > max) D.cfg.subjects = D.cfg.subjects.slice(0,max);
+        syncSubjects();
+      };
+      countBox.append(b);
+    });
+    subjectKeys.forEach(k => {
+      const b = o('button', '', SUBS[k]); b.type = 'button'; b.dataset.subject = k;
+      b.onclick = () => {
+        const at = D.cfg.subjects.indexOf(k);
+        const max = D.cfg.subjectCount === 'multiple' ? subjectKeys.length : Number(D.cfg.subjectCount);
+        if (at >= 0) D.cfg.subjects.splice(at,1);
+        else if (D.cfg.subjects.length < max) D.cfg.subjects.push(k);
+        syncSubjects();
+      };
+      subjectBox.append(b);
+    });
+    subjectHint = o('p', 'duel-hint');
+    const sw = o('div', 'duel-field');
+    sw.append(o('span', 'duel-lbl', 'How many subjects?'), countBox, o('span', 'duel-lbl', 'Choose your subjects'), subjectBox, subjectHint);
+    syncSubjects();
     const hint = o('p', 'duel-hint'), sync = () => { hint.textContent = D.cfg.vis === 'public' ? 'Public: shows under Open so anyone on the board can accept.' : 'Private: hidden from the list. Only people with your code can join.'; };
     const vis = seg('Who can join', ['public', 'private'], 'vis', v => (v === 'public' ? '\u{1F310} Public' : '\u{1F512} Private'), sync); sync();
     const inp = document.createElement('input'); inp.className = 'duel-in'; inp.placeholder = 'CODE'; inp.maxLength = 5; inp.autocapitalize = 'characters'; inp.setAttribute('aria-label', 'Duel code');
@@ -10514,7 +10550,10 @@ const Duel = (() => {
     D.mb = { open: mk('open', 'Open'), create: mk('create', 'Create'), join: mk('join', 'Join code') };
     const modes = o('div', 'duel-modes'); modes.append(D.mb.open, D.mb.create, D.mb.join);
     D.pOpen = o('div', 'duel-pane'); D.pOpen.append(D.list);
-    D.pCreate = o('div', 'duel-pane duel-create-pane'); D.pCreate.append(sw, seg('Questions', LENS, 'len', v => String(v)), seg('Time per question', TIMES, 'secs', v => v + 's'), vis, hint, btn('Create duel', 'btn-primary btn-block', create));
+    D.pCreate = o('div', 'duel-pane duel-create-pane');
+    createButton = btn('Create duel', 'btn-primary btn-block', create);
+    D.pCreate.append(sw, seg('Questions', LENS, 'len', v => String(v)), seg('Time per question', TIMES, 'secs', v => v + 's'), vis, hint, createButton);
+    syncSubjects();
     D.pJoin = o('div', 'duel-pane duel-join-pane'); D.pJoin.append(o('p', 'muted', 'Got a code from a friend? Enter it to jump straight in.'), row(inp, btn('Join', 'btn-primary btn-sm', () => join(inp.value))));
     const c = o('section', 'card duel-card'); c.append(tiles, modes, D.pOpen, D.pCreate, D.pJoin);
     D.card = c; mode(); paint(); return c;
