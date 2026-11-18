@@ -106,6 +106,21 @@ async function verifyFirebaseUser(idToken, env, fetchFn) {
   return { uid: user.localId };
 }
 
+async function verifyCurrentOwnerRules(uid, idToken, env, fetchFn) {
+  const project = encodeURIComponent(env.FIREBASE_PROJECT_ID);
+  // The audit log collection is readable only when Firestore's current isOwner()
+  // rule succeeds. Ask for at most one record and discard the response. This
+  // re-checks current passwords/role, not merely the timestamp on an old session.
+  const url = `${FIRESTORE_ROOT}/${project}/databases/(default)/documents/auditLogs?pageSize=1`;
+  const response = await fetchFn(url, {
+    method: "GET",
+    headers: { "Authorization": `Bearer ${idToken}`, "Accept": "application/json" }
+  });
+  if (response.status === 403 || response.status === 401) return false;
+  if (!response.ok) throw new Error("owner_rule_check_failed");
+  return true;
+}
+
 async function verifyOwnerSession(uid, idToken, env, fetchFn, nowMs) {
   const project = encodeURIComponent(env.FIREBASE_PROJECT_ID);
   const user = encodeURIComponent(uid);
@@ -123,15 +138,16 @@ async function verifyOwnerSession(uid, idToken, env, fetchFn, nowMs) {
 
   const fields = data && data.fields;
   const at = fields && fields.at && fields.at.timestampValue;
-  // The Firestore rules only allow this document to be created/updated with both
-  // correct Owner secrets and a server timestamp. The Worker never reads or returns
-  // the secret values; it only checks the timestamp on the caller's own document.
   if (!fields || !fields.pw1 || !fields.pw1.stringValue ||
       !fields.pw2 || !fields.pw2.stringValue || typeof at !== "string") return false;
 
   const timestamp = Date.parse(at);
-  if (!Number.isFinite(timestamp)) return false;
-  return timestamp <= nowMs + 60000 && nowMs - timestamp < OWNER_SESSION_MS;
+  if (!Number.isFinite(timestamp) || timestamp > nowMs + 60000 ||
+      nowMs - timestamp >= OWNER_SESSION_MS) return false;
+
+  // A second, rules-protected read confirms the Owner session is still valid
+  // under the latest config/owner passwords and Firestore rules.
+  return verifyCurrentOwnerRules(uid, idToken, env, fetchFn);
 }
 
 function sumRows(rows, firstKey, secondKey) {
