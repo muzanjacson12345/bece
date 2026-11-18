@@ -106,7 +106,7 @@ async function verifyFirebaseUser(idToken, env, fetchFn) {
   return { uid: user.localId };
 }
 
-async function verifyCurrentOwnerRules(uid, idToken, env, fetchFn) {
+async function verifyCurrentOwnerRules(idToken, env, fetchFn) {
   const project = encodeURIComponent(env.FIREBASE_PROJECT_ID);
   // The audit log collection is readable only when Firestore's current isOwner()
   // rule succeeds. Ask for at most one record and discard the response. This
@@ -147,7 +147,7 @@ async function verifyOwnerSession(uid, idToken, env, fetchFn, nowMs) {
 
   // A second, rules-protected read confirms the Owner session is still valid
   // under the latest config/owner passwords and Firestore rules.
-  return verifyCurrentOwnerRules(uid, idToken, env, fetchFn);
+  return verifyCurrentOwnerRules(idToken, env, fetchFn);
 }
 
 function sumRows(rows, firstKey, secondKey) {
