@@ -32,8 +32,6 @@ function parseTimestamp(value) {
 }
 
 function safeCount(value) {
-  if (value === null || value === undefined) return null;
-  if (typeof value !== "number" && typeof value !== "string") return null;
   if (value === null || value === undefined || typeof value === "boolean") return null;
   if (typeof value === "string" && value.trim() === "") return null;
   if (typeof value !== "number" && typeof value !== "string") return null;
@@ -129,14 +127,20 @@ export function parseD1StorageUsage(response) {
   if (latestByDatabase.size === 0) return { bytes: null, asOf: null };
 
   let totalBytes = 0;
+  let largestDatabaseBytes = 0;
   let oldestLatestSample = Infinity;
   for (const sample of latestByDatabase.values()) {
     totalBytes += sample.bytes;
+    largestDatabaseBytes = Math.max(largestDatabaseBytes, sample.bytes);
     oldestLatestSample = Math.min(oldestLatestSample, sample.timestamp);
-    if (!Number.isSafeInteger(totalBytes)) return { bytes: null, asOf: null };
+    if (!Number.isSafeInteger(totalBytes)) return { bytes: null, largestDatabaseBytes: null, asOf: null };
   }
 
-  return { bytes: totalBytes, asOf: new Date(oldestLatestSample).toISOString() };
+  return {
+    bytes: totalBytes,
+    largestDatabaseBytes,
+    asOf: new Date(oldestLatestSample).toISOString(),
+  };
 }
 
 /** Parse all supported Cloudflare analytics responses into normalized counts. */
