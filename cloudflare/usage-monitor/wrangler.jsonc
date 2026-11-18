@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "bece-hub-usage-monitor",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-18",
+  "workers_dev": true,
+  "vars": {
+    "FIREBASE_PROJECT_ID": "bece-hub-d9ad5"
+  },
+  "secrets": {
+    "required": [
+      "APP_ORIGIN",
+      "FIREBASE_API_KEY",
+      "CF_ACCOUNT_ID",
+      "CF_API_TOKEN"
+    ]
+  }
+}
