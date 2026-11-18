@@ -177,24 +177,19 @@ function readWorkersMetrics(account) {
   if (!Array.isArray(rows) || rows.length === 0 || rows.length >= GRAPHQL_ROW_LIMIT) {
     return { complete: false, requests: null, subrequests: null, latestEventAt: null, records: Array.isArray(rows) ? rows.length : 0 };
   }
-  let requests = 0;
-  let subrequests = 0;
+  const parsed = parseWorkersUsage({ data: { viewer: { accounts: [account] } } });
+  if (parsed.requests === null || parsed.subrequests === null) {
+    return { complete: false, requests: null, subrequests: null, latestEventAt: null, records: rows.length };
+  }
   let latest = 0;
   for (const row of rows) {
-    const requestCount = numberOrNull(row && row.sum && row.sum.requests);
-    const subrequestCount = numberOrNull(row && row.sum && row.sum.subrequests);
-    if (requestCount === null || subrequestCount === null) {
-      return { complete: false, requests: null, subrequests: null, latestEventAt: null, records: rows.length };
-    }
-    requests += requestCount;
-    subrequests += subrequestCount;
     const at = Date.parse(row && row.dimensions && row.dimensions.datetime || "");
     if (Number.isFinite(at) && at > latest) latest = at;
   }
   return {
     complete: true,
-    requests,
-    subrequests,
+    requests: parsed.requests,
+    subrequests: parsed.subrequests,
     latestEventAt: latest ? new Date(latest).toISOString() : null,
     records: rows.length
   };
@@ -205,18 +200,11 @@ function readD1Rows(account) {
   if (!Array.isArray(rows) || rows.length === 0 || rows.length >= GRAPHQL_ROW_LIMIT) {
     return { complete: false, rowsRead: null, rowsWritten: null, records: Array.isArray(rows) ? rows.length : 0 };
   }
-  let rowsRead = 0;
-  let rowsWritten = 0;
-  for (const row of rows) {
-    const read = numberOrNull(row && row.sum && row.sum.rowsRead);
-    const written = numberOrNull(row && row.sum && row.sum.rowsWritten);
-    if (read === null || written === null) {
-      return { complete: false, rowsRead: null, rowsWritten: null, records: rows.length };
-    }
-    rowsRead += read;
-    rowsWritten += written;
+  const parsed = parseD1RowUsage({ data: { viewer: { accounts: [account] } } });
+  if (parsed.rowsRead === null || parsed.rowsWritten === null) {
+    return { complete: false, rowsRead: null, rowsWritten: null, records: rows.length };
   }
-  return { complete: true, rowsRead, rowsWritten, records: rows.length };
+  return { complete: true, ...parsed, records: rows.length };
 }
 
 function readD1Storage(account) {
@@ -224,21 +212,14 @@ function readD1Storage(account) {
   if (!Array.isArray(rows) || rows.length === 0 || rows.length >= GRAPHQL_ROW_LIMIT) {
     return { complete: false, totalBytes: null, largestDatabaseBytes: null, records: Array.isArray(rows) ? rows.length : 0 };
   }
-  const latestByDatabase = new Map();
-  for (const row of rows) {
-    const databaseId = row && row.dimensions && row.dimensions.databaseId;
-    const bytes = numberOrNull(row && row.max && row.max.databaseSizeBytes);
-    if (!databaseId || bytes === null) {
-      return { complete: false, totalBytes: null, largestDatabaseBytes: null, records: rows.length };
-    }
-    const prior = latestByDatabase.get(databaseId);
-    if (!prior || bytes > prior) latestByDatabase.set(databaseId, bytes);
+  const parsed = parseD1StorageUsage({ data: { viewer: { accounts: [account] } } });
+  if (parsed.bytes === null) {
+    return { complete: false, totalBytes: null, largestDatabaseBytes: null, records: rows.length };
   }
-  const sizes = [...latestByDatabase.values()];
   return {
-    complete: sizes.length > 0,
-    totalBytes: sizes.reduce((sum, value) => sum + value, 0),
-    largestDatabaseBytes: sizes.length ? Math.max(...sizes) : null,
+    complete: true,
+    totalBytes: parsed.bytes,
+    largestDatabaseBytes: parsed.largestDatabaseBytes,
     records: rows.length
   };
 }
@@ -325,7 +306,7 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
   const d1ReadQuota = quotaMetric(d1.complete ? d1.rowsRead : null, D1_ROWS_READ_LIMIT);
   const d1WriteQuota = quotaMetric(d1.complete ? d1.rowsWritten : null, D1_ROWS_WRITE_LIMIT);
   const d1StorageQuota = quotaMetric(storage.complete ? storage.totalBytes : null, D1_STORAGE_LIMIT);
-  const freshnessMs = worker.latestEventAt ? nowMs - Date.parse(worker.latestEventAt) : null;
+  const freshness = getDataFreshness(worker.latestEventAt, nowMs, 10 * 60 * 1000);
 
   return {
     status: "ok",
@@ -340,7 +321,7 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
       records: worker.records,
       complete: worker.complete,
       latestEventAt: worker.latestEventAt,
-      freshness: freshnessMs === null ? "unknown" : freshnessMs > 10 * 60 * 1000 ? "delayed" : "recent"
+      freshness: freshness.status === "unavailable" ? "unknown" : freshness.status === "stale" ? "delayed" : "recent"
     },
     d1: {
       detected: d1.complete || storage.complete,
