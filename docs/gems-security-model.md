@@ -36,7 +36,7 @@ A paid retry must not increase a ranked user's ranked-attempt allowance. Ranked 
 Reward grants must be issued by trusted functions after verifying a unique achievement, qualifying activity or event result. Use a unique reward reference to prevent duplicate credits.
 
 ## Marketplace
-Marketplace items are direct-purchase cosmetics only. The server verifies the current price, item status, item type and Gem balance in one transaction. Permanent ownership and consumable inventory are recorded separately. Do not create paid random-reward purchases.
+Marketplace items are direct purchases from the agreed mixed, non-academic catalogue. The permitted non-academic categories must be defined before expanding validation or purchase logic. Gems must not buy academic advantages or essential study access. The server verifies the current price, item status, permitted item category, item type and Gem balance in one transaction. Permanent ownership and consumable inventory are recorded separately. Do not create paid random-reward purchases.
 
 ## Migration and release gates
 - Keep the current Coin system working during development.
