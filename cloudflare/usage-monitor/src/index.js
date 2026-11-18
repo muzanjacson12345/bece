@@ -47,14 +47,6 @@ function configuredOrigin(env) {
   }
 }
 
-function numberOrNull(value) {
-  if (value === null || value === undefined || typeof value === "boolean") return null;
-  if (typeof value === "string" && value.trim() === "") return null;
-  if (typeof value !== "number" && typeof value !== "string") return null;
-  const n = typeof value === "number" ? value : Number(value);
-  return Number.isSafeInteger(n) && n >= 0 ? n : null;
-}
-
 function levelForThreshold(threshold) {
   return threshold === null ? "normal"
     : threshold >= 95 ? "critical"
@@ -158,18 +150,6 @@ async function verifyOwnerSession(uid, idToken, env, fetchFn, nowMs) {
   // A second, rules-protected read confirms the Owner session is still valid
   // under the latest config/owner passwords and Firestore rules.
   return verifyCurrentOwnerRules(idToken, env, fetchFn);
-}
-
-function sumRows(rows, firstKey, secondKey) {
-  if (!Array.isArray(rows) || rows.length === 0 || rows.length >= GRAPHQL_ROW_LIMIT) return null;
-  let total = 0;
-  for (const row of rows) {
-    const value = numberOrNull(row && row.sum && row.sum[firstKey]);
-    const extra = secondKey ? numberOrNull(row && row.sum && row.sum[secondKey]) : 0;
-    if (value === null || (secondKey && extra === null)) return null;
-    total += value + (secondKey ? extra : 0);
-  }
-  return total;
 }
 
 function readWorkersMetrics(account) {
