@@ -45,6 +45,7 @@ The existing Gems security document currently describes Firebase Cloud Functions
 
 - Workers plan limits and daily reset/error behavior: https://developers.cloudflare.com/workers/platform/limits/
 - Worker metrics, incoming request totals, subrequests, and analytics delay: https://developers.cloudflare.com/workers/observability/metrics-and-analytics/
+- D1 Free pricing, daily row allowances, resets and over-limit behavior: https://developers.cloudflare.com/d1/platform/pricing/
 - D1 account/database storage limits: https://developers.cloudflare.com/d1/platform/limits/
 - D1 rows-read/rows-written and storage analytics, including GraphQL dataset names: https://developers.cloudflare.com/d1/observability/metrics-analytics/
 - Cloudflare API token permissions (Account Analytics Read): https://developers.cloudflare.com/fundamentals/api/reference/permissions/
