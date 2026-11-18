@@ -12326,6 +12326,7 @@ const Adm = (() => {
       updated,
       detail,
       elx('p', 'adm-info', 'Opening a screen uses no Worker request unless the app actually calls the Worker. Firebase-only reads do not use the Cloudflare Worker request allowance.'),
+      elx('p', 'adm-info', 'Scope: these readings are account-wide. Daily/monthly history and a Bece Hub feature-by-feature breakdown are not connected yet; they will be added only when the analytics can identify each source accurately.'),
       elx('p', 'adm-info', 'Warnings: 50% notice · 70% medium · 85% high · 95% critical. Provider analytics can lag; this is not a real-time billing meter.')
     );
   }
