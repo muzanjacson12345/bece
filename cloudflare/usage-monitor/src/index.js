@@ -286,10 +286,10 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
         d1StorageAdaptiveGroups(
           limit: ${GRAPHQL_ROW_LIMIT}
           filter: { date_geq: $dateStart, date_leq: $dateEnd }
+          orderBy: [datetime_DESC]
         ) {
           max { databaseSizeBytes }
           dimensions { datetime databaseId }
-          orderBy: [datetime_DESC]
         }
       }
     }
