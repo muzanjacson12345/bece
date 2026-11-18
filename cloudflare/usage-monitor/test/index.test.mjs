@@ -201,10 +201,16 @@ test("a verified Owner receives quota values while secrets stay out of the respo
         }
         if (body.query.includes("D1StorageUsage")) {
           return responseJson({ data: { viewer: { accounts: [{
-            d1StorageAdaptiveGroups: [{
-              max: { databaseSizeBytes: 1024 * 1024 * 10 },
-              dimensions: { datetime: "2026-11-18T11:55:00Z", databaseId: "db-1" }
-            }]
+            d1StorageAdaptiveGroups: [
+              {
+                max: { databaseSizeBytes: 1024 * 1024 * 12 },
+                dimensions: { datetime: "2026-11-18T08:00:00Z", databaseId: "db-1" }
+              },
+              {
+                max: { databaseSizeBytes: 1024 * 1024 * 10 },
+                dimensions: { datetime: "2026-11-18T11:55:00Z", databaseId: "db-1" }
+              }
+            ]
           }] } } });
         }
       }
