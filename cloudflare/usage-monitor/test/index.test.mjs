@@ -51,6 +51,15 @@ test("requests from an unapproved origin are rejected before any upstream call",
   assert.equal(calls, 0);
 });
 
+test("the Worker exposes only the usage endpoint", async () => {
+  let calls = 0;
+  const response = await handleRequest(makeRequest("/other"), envFor("route"), {
+    now: NOW, fetch: async () => { calls++; throw new Error("must not be called"); }
+  });
+  assert.equal(response.status, 404);
+  assert.equal(calls, 0);
+});
+
 test("preflight requests return an empty 204 response with exact origin", async () => {
   const response = await handleRequest(makeRequest("/usage", null, ORIGIN, "OPTIONS"), envFor("preflight"), {
     now: NOW, fetch: async () => { throw new Error("must not be called"); }
