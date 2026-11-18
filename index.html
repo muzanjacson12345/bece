@@ -12188,6 +12188,37 @@ const Adm = (() => {
     if (!rows.length) list.append(elx('p', 'muted', 'Nobody is on the roster yet.'));
     return elx('div', 'adm-card', elx('h4', '', '\u{1F4CB} Permanent staff roster'), elx('p', 'adm-info', 'Everyone who has ever unlocked as staff. Roster members are shielded from admins even when signed out. Only you can remove them.'), list);
   }
+  function cloudflareUsageCard() {
+    const metric = (amount, title, detail) => elx('div', 'adm-prot',
+      elx('strong', '', amount),
+      elx('p', 'adm-info', title),
+      elx('span', 'adm-sub', detail)
+    );
+    return elx('section', 'adm-card',
+      elx('div', '',
+        elx('h4', '', '☁️ Infrastructure & Usage'),
+        elx('p', 'adm-info', 'Cloudflare Free plan · usage monitor')
+      ),
+      elx('div', 'adm-prev',
+        elx('strong', '', 'Not connected'),
+        ' No Cloudflare account or Worker has been connected to Bece Hub yet.'
+      ),
+      elx('div', 'adm-two',
+        metric('— / 100,000', 'Worker requests today', 'Incoming requests per account per day'),
+        metric('— / 5,000,000', 'D1 rows read today', 'Only applies if we select D1 for Gems'),
+        metric('— / 100,000', 'D1 rows written today', 'Only applies if we select D1 for Gems'),
+        metric('— / 5 GB', 'D1 account storage', 'Across the account; each database max 500 MB')
+      ),
+      elx('div', 'adm-prot',
+        elx('strong', '', 'Separate limit: 50 subrequests per Worker invocation'),
+        elx('p', 'adm-info', 'These are calls the Worker makes to services such as D1. They are not the same as incoming Worker requests.')
+      ),
+      elx('p', 'adm-info', 'Used and remaining amounts are deliberately shown as unavailable, not zero. The figures above are published free-plan allowances, not actual usage.'),
+      elx('p', 'adm-info', 'Opening a screen uses no Worker request unless the app sends a request to the Worker. A Firebase-only read does not use the Cloudflare Worker request allowance.'),
+      elx('p', 'adm-info', 'When connected, this panel will show reported usage, remaining allowance, last update time and warnings at 50%, 70%, 85% and 95%. Cloudflare analytics can be delayed.')
+    );
+  }
+
   function ownerTab() {
     const now = Date.now(), staff = [...S.badgeMap].filter(([, u]) => u > now).map(([id, u]) => ({ id, left: u - now, role: S.badgeRole.get(id) === 'owner' ? 'owner' : 'admin' }));
     if (S.isOwner && !staff.some(s => s.id === S.uid)) staff.push({ id: S.uid, left: S.ownerAt + OWNER_MS - now, role: 'owner' });
@@ -12197,6 +12228,7 @@ const Adm = (() => {
     const card = (h, p, ...b) => elx('div', 'adm-card', elx('h4', '', h), elx('p', 'adm-info', p), elx('div', 'adm-btns', ...b));
     return elx('div', '',
       protectCard(),
+      cloudflareUsageCard(),
       elx('div', 'adm-card', elx('h4', '', '\u{1F465} Staff signed in now'), list),
       rosterCard(),
       card('\u23F8\uFE0F Duels switch', S.settings.duelsPaused ? 'New duels are paused for everyone. Duels already running can finish.' : 'Duels are open. Pause new duels if something is broken or being abused.', btn(S.settings.duelsPaused ? 'Resume duels' : 'Pause new duels', S.settings.duelsPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleDuels)),
