@@ -39,7 +39,9 @@ The existing Gems security document currently describes Firebase Cloud Functions
 
 - Keep this work on the feature branch.
 - Test the Owner panel at phone, tablet and desktop sizes.
-- Add unit tests for metrics parsing, threshold warnings, missing values, stale timestamps, and reset boundaries.
+- Pure parsing and calculation helpers are covered by unit tests for Workers requests/subrequests, D1 rows read/written, latest-per-database D1 storage, warning thresholds, missing/malformed data, stale timestamps, and UTC reset boundaries.
+- The helper does not call Cloudflare or hold credentials. It is not yet connected to the Owner UI or a protected backend endpoint.
+- D1 storage is summed from the latest available sample per database; the age of the oldest of those latest samples is used as the combined snapshot timestamp so an old database sample is not hidden.
 - Do not merge, publish, deploy, or change Firestore rules as part of this display-only change.
 ## Official Cloudflare references
 
