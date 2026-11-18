@@ -1,11 +1,21 @@
+import {
+  CLOUDFLARE_FREE_LIMITS,
+  calculateQuotaUsage,
+  getDataFreshness,
+  getUtcDayWindow,
+  parseD1RowUsage,
+  parseD1StorageUsage,
+  parseWorkersUsage,
+} from "../../../js/infra/cloudflare-usage.mjs";
+
 const FIREBASE_LOOKUP = "https://identitytoolkit.googleapis.com/v1/accounts:lookup";
 const FIRESTORE_ROOT = "https://firestore.googleapis.com/v1/projects";
 const CLOUDFLARE_GRAPHQL = "https://api.cloudflare.com/client/v4/graphql";
-const WORKER_REQUEST_LIMIT = 100000;
-const D1_ROWS_READ_LIMIT = 5000000;
-const D1_ROWS_WRITE_LIMIT = 100000;
-const D1_STORAGE_LIMIT = 5 * 1024 * 1024 * 1024;
-const D1_DATABASE_LIMIT = 500 * 1024 * 1024;
+const WORKER_REQUEST_LIMIT = CLOUDFLARE_FREE_LIMITS.workerRequestsDaily;
+const D1_ROWS_READ_LIMIT = CLOUDFLARE_FREE_LIMITS.d1RowsReadDaily;
+const D1_ROWS_WRITE_LIMIT = CLOUDFLARE_FREE_LIMITS.d1RowsWrittenDaily;
+const D1_STORAGE_LIMIT = CLOUDFLARE_FREE_LIMITS.d1StorageAccountBytes;
+const D1_DATABASE_LIMIT = CLOUDFLARE_FREE_LIMITS.d1StorageDatabaseBytes;
 const GRAPHQL_ROW_LIMIT = 10000;
 const OWNER_SESSION_MS = 30 * 60 * 1000;
 
@@ -38,49 +48,49 @@ function configuredOrigin(env) {
 }
 
 function numberOrNull(value) {
-  if (value === null || value === undefined || value === "") return null;
-  const n = Number(value);
-  return Number.isFinite(n) && n >= 0 ? n : null;
+  if (value === null || value === undefined || typeof value === "boolean") return null;
+  if (typeof value === "string" && value.trim() === "") return null;
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isSafeInteger(n) && n >= 0 ? n : null;
+}
+
+function levelForThreshold(threshold) {
+  return threshold === null ? "normal"
+    : threshold >= 95 ? "critical"
+    : threshold >= 85 ? "high"
+    : threshold >= 70 ? "medium"
+    : threshold >= 50 ? "notice"
+    : "normal";
 }
 
 export function getThreshold(used, limit) {
-  const amount = numberOrNull(used);
-  const maximum = numberOrNull(limit);
-  if (amount === null || maximum === null || maximum <= 0) {
-    return { percent: null, level: "unavailable" };
-  }
-  const percent = Math.min(100, (amount / maximum) * 100);
-  const level = percent >= 95 ? "critical"
-    : percent >= 85 ? "high"
-    : percent >= 70 ? "medium"
-    : percent >= 50 ? "notice"
-    : "normal";
-  return { percent: Math.round(percent * 10) / 10, level };
+  const metric = calculateQuotaUsage(used, limit);
+  if (metric.status === "unavailable") return { percent: null, level: "unavailable" };
+  return {
+    percent: Math.min(100, metric.percent),
+    level: levelForThreshold(metric.warningThresholdPercent)
+  };
 }
 
 export function quotaMetric(used, limit) {
-  const amount = numberOrNull(used);
-  const maximum = numberOrNull(limit);
-  if (amount === null || maximum === null) {
-    return { used: null, limit: maximum, remaining: null, percent: null, level: "unavailable" };
-  }
-  const threshold = getThreshold(amount, maximum);
+  const metric = calculateQuotaUsage(used, limit);
   return {
-    used: amount,
-    limit: maximum,
-    remaining: Math.max(0, maximum - amount),
-    percent: threshold.percent,
-    level: threshold.level
+    used: metric.used,
+    limit: metric.limit,
+    remaining: metric.remaining,
+    percent: metric.percent === null ? null : Math.min(100, metric.percent),
+    level: metric.status === "unavailable" ? "unavailable" : levelForThreshold(metric.warningThresholdPercent),
+    exceeded: metric.status === "exceeded"
   };
 }
 
 function dateParts(now) {
-  const end = new Date(now);
-  const start = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
+  const day = getUtcDayWindow(now);
   return {
-    startIso: start.toISOString(),
-    endIso: end.toISOString(),
-    date: start.toISOString().slice(0, 10)
+    startIso: day.start,
+    endIso: new Date(now).toISOString(),
+    date: day.start.slice(0, 10)
   };
 }
 
