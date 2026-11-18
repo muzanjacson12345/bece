@@ -35,6 +35,7 @@ test("quota metrics calculate remaining without going below zero", () => {
     used: 250, limit: 1000, remaining: 750, percent: 25, level: "normal", exceeded: false
   });
   assert.equal(quotaMetric(1100, 1000).remaining, 0);
+  assert.equal(quotaMetric(1100, 1000).percent, 110);
   assert.equal(quotaMetric(1100, 1000).exceeded, true);
   assert.equal(quotaMetric(null, 1000).remaining, null);
   assert.equal(quotaMetric(true, 1000).used, null);
