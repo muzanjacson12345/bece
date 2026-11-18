@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Browser ES modules and domain tests for the BECE Gems system."
+}
