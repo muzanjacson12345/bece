@@ -1,0 +1,30 @@
+name: Gems domain tests
+
+on:
+  push:
+    branches:
+      - feature/gems-system-modules
+    paths:
+      - "js/gems/**"
+      - ".github/workflows/gems-domain-tests.yml"
+  pull_request:
+    paths:
+      - "js/gems/**"
+      - ".github/workflows/gems-domain-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gems-domain-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run Gems domain tests
+        run: node --test js/gems/domain.test.mjs
