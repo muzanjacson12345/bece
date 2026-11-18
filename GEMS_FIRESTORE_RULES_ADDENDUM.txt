@@ -1,0 +1,43 @@
+// Add these matches inside match /databases/{database}/documents,
+// before the closing brace of that match block. Keep the existing project rules.
+match /gemWallets/{id} {
+  allow read: if signedIn() && (request.auth.uid == id || isStaff());
+  allow write: if false;
+}
+match /gemTransactions/{id} {
+  allow read: if signedIn() && (resource.data.uid == request.auth.uid || isOwner());
+  allow write: if false;
+}
+match /coinTransactions/{id} {
+  allow read: if signedIn() && (resource.data.uid == request.auth.uid || isStaff());
+  allow write: if false;
+}
+match /gemEvents/{eventId} {
+  allow read: if signedIn() && (resource.data.status == 'active' || isStaff());
+  allow write: if false;
+  match /questions/{questionId} { allow read, write: if false; }
+  match /participants/{uid} {
+    allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+    allow write: if false;
+    match /attempts/{attemptId} { allow read, write: if false; }
+  }
+  match /leaderboard/{uid} { allow read: if signedIn(); allow write: if false; }
+}
+match /gemEventAnswerKeys/{eventId} { allow read, write: if false; }
+match /gemMarketplace/{itemId} {
+  allow read: if signedIn() && resource.data.active == true;
+  allow write: if false;
+}
+match /gemInventories/{uid} {
+  allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+  allow write: if false;
+  match /items/{itemId} { allow read, write: if false; }
+}
+match /gemCommunityGoals/{goalId} {
+  allow read: if signedIn();
+  allow write: if false;
+  match /contributions/{uid} {
+    allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+    allow write: if false;
+  }
+}
