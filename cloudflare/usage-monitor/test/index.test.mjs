@@ -101,6 +101,36 @@ test("a caller without a readable live Owner session is denied before Cloudflare
   assert.ok(!urls.some(url => url.includes("api.cloudflare.com")));
 });
 
+test("a recently opened session is denied when current Firestore Owner rules reject it", async () => {
+  const urls = [];
+  const response = await handleRequest(makeRequest(), envFor("changed-owner-passwords"), {
+    now: NOW,
+    fetch: async (url) => {
+      const target = String(url);
+      urls.push(target);
+      if (target.includes("identitytoolkit.googleapis.com")) {
+        return responseJson({ users: [{ localId: "owner-password-changed" }] });
+      }
+      if (target.includes("/ownerSessions/")) {
+        return responseJson({
+          fields: {
+            pw1: { stringValue: "old-secret-one" },
+            pw2: { stringValue: "old-secret-two" },
+            at: { timestampValue: new Date(NOW - 2 * 60 * 1000).toISOString() }
+          }
+        });
+      }
+      if (target.includes("/auditLogs")) {
+        return responseJson({ error: { status: "PERMISSION_DENIED" } }, 403);
+      }
+      throw new Error("Cloudflare must not be queried for an invalid Owner session.");
+    }
+  });
+  assert.equal(response.status, 403);
+  assert.ok(urls.some(url => url.includes("/auditLogs?pageSize=1")));
+  assert.ok(!urls.some(url => url.includes("api.cloudflare.com")));
+});
+
 test("a stale Owner session is denied", async () => {
   const urls = [];
   const response = await handleRequest(makeRequest(), envFor("stale-owner"), {
@@ -194,7 +224,8 @@ test("a verified Owner receives quota values while secrets stay out of the respo
   assert.ok(!serialized.includes("never-return-this-secret"));
   assert.ok(!serialized.includes("also-private"));
   assert.ok(!serialized.includes("cf-secret-token"));
-  assert.ok(calls.some(call => call.target.includes("firestore.googleapis.com")));
+  assert.ok(calls.some(call => call.target.includes("/ownerSessions/verified-owner")));
+  assert.ok(calls.some(call => call.target.includes("/auditLogs?pageSize=1")));
   assert.equal(body.timezone, "UTC");
 });
 
