@@ -12204,9 +12204,9 @@ const Adm = (() => {
         ' No Cloudflare account or Worker has been connected to Bece Hub yet.'
       ),
       elx('div', 'adm-two',
-        metric('— / 100,000', 'Worker requests today', 'Incoming requests per account per day'),
-        metric('— / 5,000,000', 'D1 rows read today', 'Only applies if we select D1 for Gems'),
-        metric('— / 100,000', 'D1 rows written today', 'Only applies if we select D1 for Gems'),
+        metric('— / 100,000', 'Worker requests today', 'Incoming requests per account per day · resets 00:00 UTC'),
+        metric('— / 5,000,000', 'D1 rows read today', 'Daily row-read limit · resets 00:00 UTC · only if D1 is selected'),
+        metric('— / 100,000', 'D1 rows written today', 'Daily row-write limit · resets 00:00 UTC · only if D1 is selected'),
         metric('— / 5 GB', 'D1 account storage', 'Across the account; each database max 500 MB')
       ),
       elx('div', 'adm-prot',
