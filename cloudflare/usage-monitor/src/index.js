@@ -210,20 +210,35 @@ function readD1Rows(account) {
 function readD1Storage(account) {
   const rows = account && account.d1StorageAdaptiveGroups;
   if (!Array.isArray(rows) || rows.length === 0 || rows.length >= GRAPHQL_ROW_LIMIT) {
-    return { complete: false, totalBytes: null, largestDatabaseBytes: null, records: Array.isArray(rows) ? rows.length : 0 };
+    return { complete: false, totalBytes: null, largestDatabaseBytes: null, asOf: null, records: Array.isArray(rows) ? rows.length : 0 };
   }
-  const parsed = parseD1StorageUsage({ data: { viewer: { accounts: [account] } } });
-  if (parsed.bytes === null) {
-    return { complete: false, totalBytes: null, largestDatabaseBytes: null, records: rows.length };
+  const latestByDatabase = new Map();
+  for (const row of rows) {
+    const databaseId = row && row.dimensions && row.dimensions.databaseId;
+    const sampleValue = row && row.dimensions && (row.dimensions.datetime || row.dimensions.date);
+    const sampleAt = Date.parse(sampleValue || "");
+    const bytes = numberOrNull(row && row.max && row.max.databaseSizeBytes);
+    if (!databaseId || !Number.isFinite(sampleAt) || bytes === null) {
+      return { complete: false, totalBytes: null, largestDatabaseBytes: null, asOf: null, records: rows.length };
+    }
+    const prior = latestByDatabase.get(databaseId);
+    if (!prior || sampleAt > prior.sampleAt) latestByDatabase.set(databaseId, { sampleAt, bytes });
   }
+  const sizes = [...latestByDatabase.values()];
+  if (!sizes.length) return { complete: false, totalBytes: null, largestDatabaseBytes: null, asOf: null, records: rows.length };
+  const totalBytes = sizes.reduce((sum, value) => sum + value.bytes, 0);
+  if (!Number.isSafeInteger(totalBytes)) {
+    return { complete: false, totalBytes: null, largestDatabaseBytes: null, asOf: null, records: rows.length };
+  }
+  const oldestLatestSample = Math.min(...sizes.map(value => value.sampleAt));
   return {
     complete: true,
-    totalBytes: parsed.bytes,
-    largestDatabaseBytes: parsed.largestDatabaseBytes,
+    totalBytes,
+    largestDatabaseBytes: Math.max(...sizes.map(value => value.bytes)),
+    asOf: new Date(oldestLatestSample).toISOString(),
     records: rows.length
   };
 }
-
 async function cloudflareGraphql(query, variables, env, fetchFn) {
   const { response, data } = await postJson(fetchFn, CLOUDFLARE_GRAPHQL, {
     "Authorization": `Bearer ${env.CF_API_TOKEN}`,
@@ -273,7 +288,8 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
           filter: { date_geq: $dateStart, date_leq: $dateEnd }
         ) {
           max { databaseSizeBytes }
-          dimensions { date databaseId }
+          dimensions { datetime databaseId }
+          orderBy: [datetime_DESC]
         }
       }
     }
@@ -294,7 +310,7 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
     // D1 may not be enabled in this Cloudflare account. Keep Worker metrics usable.
   }
 
-  let storage = { complete: false, totalBytes: null, largestDatabaseBytes: null, records: 0 };
+  let storage = { complete: false, totalBytes: null, largestDatabaseBytes: null, asOf: null, records: 0 };
   try {
     const storageAccount = await cloudflareGraphql(d1StorageQuery, dateVariables, env, fetchFn);
     storage = readD1Storage(storageAccount);
@@ -331,6 +347,7 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
         ...d1StorageQuota,
         complete: storage.complete,
         largestDatabaseBytes: storage.largestDatabaseBytes,
+        asOf: storage.asOf,
         records: storage.records,
         databaseLimitBytes: D1_DATABASE_LIMIT
       }
