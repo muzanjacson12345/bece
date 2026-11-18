@@ -30,10 +30,11 @@ For ranked competitions, paid retries must not increase a user's ranked attempt 
 - Event rewards are granted once per qualifying user and event, based on verified participation, completion, and results.
 
 ## Gem Marketplace
-- Items are direct purchases with clearly displayed prices and descriptions.
-- Both permanent and consumable cosmetic items are supported.
+- The marketplace is mixed rather than cosmetic-only, with direct purchases, clearly displayed prices and descriptions.
+- Permanent and consumable items are supported.
 - Permanent items remain owned; consumables are used when activated or redeemed.
-- No paid mystery boxes, random rewards, academic advantages, or essential learning content.
+- Allowed non-academic item categories still need to be defined before marketplace validation or purchase logic is expanded. Gems must not buy academic advantages or essential study access.
+- No paid mystery boxes or random-reward purchases.
 
 ## Community
 - Both individual community participation rewards and shared community goals are supported.
