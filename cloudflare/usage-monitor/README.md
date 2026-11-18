@@ -14,11 +14,11 @@ This directory contains a **read-only metrics Worker** for the Bece Hub Owner pa
 
 1. The browser sends its Firebase Authentication ID token in the Authorization Bearer header.
 2. The Worker validates the token with Firebase Authentication's accounts:lookup endpoint and obtains the UID from that verified response. It does not trust a UID supplied by the browser.
-3. The Worker reads only ownerSessions/{verified UID} from Firestore REST using that same Firebase ID token. Firestore Security Rules authorize the read as the signed-in user.
-4. The Worker checks that the Owner session document contains its expected attestation fields and a timestamp younger than the app's 30-minute Owner session. It does not return or log the two password fields. It then confirms the current Firestore isOwner() rule through a page-size-one audit-log list request, so a session with old passwords is not accepted after the Owner changes them.
-5. The Worker also makes a one-document-bounded list request to the Owner-only auditLogs collection. The current Firestore Security Rules must authorize this request using their live isOwner() function, which re-checks the configured Owner passwords. The returned audit entry, if any, is discarded immediately; none of its data is included in the metrics response.
-6. Only after these checks does the Worker request account-wide Cloudflare analytics.
-6. The Cloudflare API token remains in the Worker secret store and is sent only to Cloudflare's GraphQL API.
+3. The Worker reads only ownerSessions/{verified UID} from Firestore REST using that same Firebase ID token. The existing rules permit a signed-in user to read only their own session record.
+4. The Worker checks that the session record has the expected attestation fields and a timestamp within the app's 30-minute Owner session. It never returns or logs either password field.
+5. The Worker performs a page-size-one read against the Owner-only auditLogs collection. The existing auditLogs rule calls isOwner(), which re-checks the current Owner passwords and session. This rejects an old session after either Owner password is changed.
+6. Only after both checks succeed does the Worker request account-wide Cloudflare analytics.
+7. The Cloudflare API token stays in the Worker secret store and is sent only to Cloudflare's GraphQL API.
 
 Firebase documents that Firestore REST accepts Firebase Authentication ID tokens and applies Firestore Security Rules to those requests:
 https://firebase.google.com/docs/firestore/use-rest-api
@@ -32,10 +32,10 @@ This depends on the existing Firestore rules continuing to allow a signed-in use
 
 - Workers: account-wide requests and subrequests from workersInvocationsAdaptive.
 - D1: rows read and written from d1AnalyticsAdaptiveGroups, when D1 is enabled.
-- D1 storage: queried separately from d1StorageAdaptiveGroups, ordered by datetime descending. The Worker sums the latest available sample per database, not the largest sample across the day. It also returns the oldest timestamp among those latest per-database samples so the Owner panel can show when the aggregate was measured. If the account's current schema or permissions do not support this dataset/aggregate, the Worker leaves storage unavailable; it does not substitute zero.
-- Quota percentages map to the Owner warnings: 50%, 70%, 85%, 95%.
+- D1 storage: queried separately from d1StorageAdaptiveGroups, ordered by datetime descending. The shared parser selects the latest available sample per database and sums those samples once; it does not add historical samples together or select the largest historical size. The response includes the oldest timestamp among those latest per-database samples so the aggregate's age is visible.
+- Quota percentages map to Owner warnings at 50%, 70%, 85%, and 95%. Values over the quota are marked exceeded; remaining use never goes negative.
 - Cloudflare analytics are delayed and must be displayed with their source and latest update time. They are not a live billing meter.
-- If results are incomplete, empty, or at the 10,000-row cap, the affected metric is unavailable instead of presenting a partial total as complete.
+- If results are incomplete, empty, malformed, or at the 10,000-row cap, the affected metric is unavailable instead of presenting a partial total as complete.
 
 ## Local tests
 
