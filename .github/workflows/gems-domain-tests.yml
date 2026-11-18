@@ -8,6 +8,7 @@ on:
       - "js/gems/**"
       - "js/infra/cloudflare-usage.*"
       - "index.html"
+      - "scripts/check-inline-scripts.mjs"
       - "cloudflare/usage-monitor/**"
       - ".github/workflows/gems-domain-tests.yml"
   pull_request:
@@ -15,6 +16,7 @@ on:
       - "js/gems/**"
       - "js/infra/cloudflare-usage.*"
       - "index.html"
+      - "scripts/check-inline-scripts.mjs"
       - "cloudflare/usage-monitor/**"
       - ".github/workflows/gems-domain-tests.yml"
   workflow_dispatch:
@@ -32,5 +34,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Check embedded app JavaScript syntax
+        run: node scripts/check-inline-scripts.mjs
       - name: Run Gems domain and Cloudflare usage tests
         run: node --test js/gems/domain.test.mjs js/infra/cloudflare-usage.test.mjs cloudflare/usage-monitor/test/index.test.mjs
