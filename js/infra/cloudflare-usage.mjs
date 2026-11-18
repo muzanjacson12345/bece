@@ -32,6 +32,8 @@ function parseTimestamp(value) {
 }
 
 function safeCount(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "number" && typeof value !== "string") return null;
   if (typeof value === "string" && value.trim() === "") return null;
   const number = typeof value === "number" ? value : Number(value);
   return Number.isSafeInteger(number) && number >= 0 ? number : null;
