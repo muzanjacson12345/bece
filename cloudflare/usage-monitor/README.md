@@ -32,7 +32,7 @@ This depends on the existing Firestore rules continuing to allow a signed-in use
 
 - Workers: account-wide requests and subrequests from workersInvocationsAdaptive.
 - D1: rows read and written from d1AnalyticsAdaptiveGroups, when D1 is enabled.
-- D1 storage: queried separately from d1StorageAdaptiveGroups. If the account's current schema or permissions do not support this dataset/aggregate, the Worker leaves storage unavailable; it does not substitute zero.
+- D1 storage: queried separately from d1StorageAdaptiveGroups, ordered by datetime descending. The Worker sums the latest available sample per database, not the largest sample across the day. It also returns the oldest timestamp among those latest per-database samples so the Owner panel can show when the aggregate was measured. If the account's current schema or permissions do not support this dataset/aggregate, the Worker leaves storage unavailable; it does not substitute zero.
 - Quota percentages map to the Owner warnings: 50%, 70%, 85%, 95%.
 - Cloudflare analytics are delayed and must be displayed with their source and latest update time. They are not a live billing meter.
 - If results are incomplete, empty, or at the 10,000-row cap, the affected metric is unavailable instead of presenting a partial total as complete.
@@ -81,5 +81,5 @@ This will publish a Worker. It is deliberately not run by this development work.
 - A Firestore REST check proves the current caller can read their own valid Owner-session document under Firestore Security Rules. It is not a replacement for reviewing those rules.
 - The metrics endpoint is read-only. It does not modify Coins, Gems, player balances, or event entries.
 - D1 is optional: failure to retrieve D1 analytics does not suppress valid Worker request data.
-- The D1 storage GraphQL aggregate should be confirmed against the actual account schema after an account holder connects it. Storage remains unavailable until confirmed.
+- The D1 storage GraphQL query uses Cloudflare's documented d1StorageAdaptiveGroups dataset and databaseSizeBytes maximum. Its exact account schema and permissions still need a live-account check. Storage remains unavailable if the query is rejected.
 - Worker account-wide groups are capped at 10,000 returned records. At the cap, the response marks the metric incomplete rather than reporting a false remaining quota.
