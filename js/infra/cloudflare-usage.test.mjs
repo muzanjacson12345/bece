@@ -56,10 +56,19 @@ test("D1 storage uses latest sample per database, not every historical sample", 
   };
   assert.deepEqual(parseD1StorageUsage(response), {
     bytes: 200,
+    largestDatabaseBytes: 150,
     asOf: "2026-11-18T11:00:00.000Z",
   });
 });
 
+test("malformed numeric values never become valid zero readings", () => {
+  const invalid = { data: { viewer: { accounts: [{
+    workersInvocationsAdaptive: [{ sum: { requests: null, subrequests: true } }],
+  }] } } };
+  assert.deepEqual(parseWorkersUsage(invalid), { requests: null, subrequests: null });
+  assert.equal(calculateQuotaUsage(true, 100).status, "unavailable");
+  assert.equal(calculateQuotaUsage({}, 100).status, "unavailable");
+});
 test("missing datasets stay unavailable instead of becoming zero", () => {
   assert.deepEqual(parseWorkersUsage({ data: { viewer: { accounts: [{}] } } }), {
     requests: null, subrequests: null,
