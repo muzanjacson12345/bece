@@ -7,11 +7,13 @@ on:
     paths:
       - "js/gems/**"
       - "index.html"
+      - "cloudflare/usage-monitor/**"
       - ".github/workflows/gems-domain-tests.yml"
   pull_request:
     paths:
       - "js/gems/**"
       - "index.html"
+      - "cloudflare/usage-monitor/**"
       - ".github/workflows/gems-domain-tests.yml"
   workflow_dispatch:
 
@@ -29,4 +31,4 @@ jobs:
         with:
           node-version: "22"
       - name: Run Gems domain tests
-        run: node --test js/gems/domain.test.mjs
+        run: node --test js/gems/domain.test.mjs cloudflare/usage-monitor/test/index.test.mjs
