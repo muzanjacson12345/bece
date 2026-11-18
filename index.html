@@ -12192,8 +12192,9 @@ const Adm = (() => {
   function cloudflareUsageCard() {
     const endpointMeta = document.querySelector('meta[name="bece-usage-api"]');
     const endpoint = endpointMeta && endpointMeta.content ? endpointMeta.content.trim() : '';
-    const number = value => Number.isFinite(Number(value)) ? new Intl.NumberFormat().format(Number(value)) : '—';
+    const number = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? new Intl.NumberFormat().format(Number(value)) : '—';
     const bytes = value => {
+      if (value === null || value === undefined || value === '') return '—';
       const n = Number(value);
       if (!Number.isFinite(n) || n < 0) return '—';
       const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -12211,7 +12212,8 @@ const Adm = (() => {
     const setQuota = (key, data, format = number) => {
       const target = values[key];
       if (!target) return;
-      if (!data || data.used === null || data.used === undefined || data.limit === null || data.limit === undefined) {
+      if (!data || data.used === null || data.used === undefined || data.limit === null || data.limit === undefined ||
+          data.remaining === null || data.remaining === undefined || data.percent === null || data.percent === undefined) {
         target.value.textContent = '—';
         target.description.textContent = 'Unavailable · no complete analytics reading';
         return;
@@ -12265,6 +12267,12 @@ const Adm = (() => {
         setQuota('d1read', data.d1 && data.d1.rowsRead);
         setQuota('d1write', data.d1 && data.d1.rowsWritten);
         setQuota('d1storage', data.d1 && data.d1.storage, bytes);
+        if (data.d1 && data.d1.storage && data.d1.storage.asOf) {
+          const storageSample = new Date(data.d1.storage.asOf);
+          if (Number.isFinite(storageSample.getTime())) {
+            values.d1storage.description.textContent += ' · latest per-database sample ' + storageSample.toLocaleString();
+          }
+        }
 
         const freshness = data.worker.freshness === 'delayed'
           ? 'The latest Worker analytics record is more than 10 minutes old.'
