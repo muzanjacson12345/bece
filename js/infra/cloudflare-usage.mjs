@@ -34,7 +34,9 @@ function parseTimestamp(value) {
 function safeCount(value) {
   if (value === null || value === undefined) return null;
   if (typeof value !== "number" && typeof value !== "string") return null;
+  if (value === null || value === undefined || typeof value === "boolean") return null;
   if (typeof value === "string" && value.trim() === "") return null;
+  if (typeof value !== "number" && typeof value !== "string") return null;
   const number = typeof value === "number" ? value : Number(value);
   return Number.isSafeInteger(number) && number >= 0 ? number : null;
 }
@@ -118,7 +120,8 @@ export function parseD1StorageUsage(response) {
     }
 
     const current = latestByDatabase.get(databaseId);
-    if (!current || timestamp > current.timestamp) {
+    if (!current || timestamp > current.timestamp ||
+        (timestamp === current.timestamp && bytes > current.bytes)) {
       latestByDatabase.set(databaseId, { timestamp, bytes });
     }
   }
