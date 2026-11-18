@@ -10,6 +10,10 @@
 - D1 Free storage: 5 GB total per account, with a 500 MB maximum for an individual database.
 - Since 1 September 2026, D1 free-tier queries fail after the daily row-read or row-write quota is exceeded; stored data is not deleted. The limit resets at midnight UTC.
 
+## Current implementation scope
+
+The current Owner panel is an account-wide current-day summary with a manual refresh action. It does **not** yet provide daily/monthly history or a Bece Hub feature-by-feature breakdown. Those require verified historical queries and explicit feature identifiers on the Worker events; until those are in place, the dashboard labels the data as account-wide and does not fabricate a breakdown.
+
 ## What the Owner panel may report
 
 1. Workers incoming requests from Cloudflare Workers Analytics (workersInvocationsAdaptive, sum.requests).
