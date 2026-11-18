@@ -32,10 +32,13 @@ test("quota warning thresholds are applied at the agreed boundaries", () => {
 
 test("quota metrics calculate remaining without going below zero", () => {
   assert.deepEqual(quotaMetric(250, 1000), {
-    used: 250, limit: 1000, remaining: 750, percent: 25, level: "normal"
+    used: 250, limit: 1000, remaining: 750, percent: 25, level: "normal", exceeded: false
   });
   assert.equal(quotaMetric(1100, 1000).remaining, 0);
+  assert.equal(quotaMetric(1100, 1000).exceeded, true);
   assert.equal(quotaMetric(null, 1000).remaining, null);
+  assert.equal(quotaMetric(true, 1000).used, null);
+  assert.equal(quotaMetric(1.5, 1000).used, null);
 });
 
 test("requests from an unapproved origin are rejected before any upstream call", async () => {
