@@ -1,0 +1,6 @@
+# Local Cloudflare credentials and secret values
+.dev.vars*
+.env
+.env.*
+!.env.example
+!.env.production.example
