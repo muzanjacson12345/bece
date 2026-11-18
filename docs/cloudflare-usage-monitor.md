@@ -1,0 +1,43 @@
+# Cloudflare usage monitor — design and safety notes
+
+**Status: Owner-panel display added; Cloudflare is not connected.** This change does not create a Cloudflare account, Worker, D1 database, API token, billing relationship, or deployment. Usage values in the Owner panel are intentionally unavailable until a secure metrics connection exists.
+
+## Free-plan limits checked 18 November 2026
+
+- Workers Free: 100,000 incoming Worker requests per account per day; resets at midnight UTC. Exceeding the allowance produces error 1027. A security-critical Worker should fail closed rather than bypass its checks.
+- Workers Free: 50 subrequests per invocation. A subrequest is made by the Worker to another service, for example with Fetch or a Cloudflare binding. This is separate from the incoming request count.
+- D1 Free (only if D1 is selected): 5 million rows read per day and 100,000 rows written per day.
+- D1 Free storage: 5 GB total per account, with a 500 MB maximum for an individual database.
+- Since 1 September 2026, D1 free-tier queries fail after the daily row-read or row-write quota is exceeded; stored data is not deleted. The limit resets at midnight UTC.
+
+## What the Owner panel may report
+
+1. Workers incoming requests from Cloudflare Workers Analytics (workersInvocationsAdaptive, sum.requests).
+2. Workers subrequests as a separate diagnostic measure (sum.subrequests).
+3. D1 rows read and written from D1 Analytics (d1AnalyticsAdaptiveGroups, sum.rowsRead, sum.rowsWritten).
+4. D1 storage from D1 storage analytics (d1StorageAdaptiveGroups, databaseSizeBytes).
+5. Last successful retrieval time and data freshness warning.
+
+D1 query count (readQueries / writeQueries) is useful diagnostic information but is not the same as billable row-read / row-write counts. Show row counts for quota tracking.
+
+Cloudflare analytics have reporting delays and coverage limitations. The dashboard must label the source and timestamp, handle missing or delayed metrics, and never substitute zero for missing data. Keep an explicit 'not connected' state until the endpoint returns valid data.
+
+## Security design before live connection
+
+- The Cloudflare API token must never be sent to the browser or stored in public source control.
+- Query the GraphQL Analytics API from a server-side Worker using a least-privilege token with Account Analytics Read access, scoped to the intended Cloudflare account.
+- The Owner panel must call a protected endpoint. It must not be sufficient to hide a UI tab; the endpoint must independently validate the Firebase identity and authoritative owner permission/session.
+- Do not create a public metrics endpoint. Do not log or return the Cloudflare token.
+- Avoid storing Cloudflare usage data in Firestore unless there is a clear need; short-lived cache or server-side response is preferable.
+- If connection credentials are not available, keep the panel in 'not connected' mode.
+
+## Gems backend decision
+
+The existing Gems security document currently describes Firebase Cloud Functions + Firestore Admin SDK. That architecture should not be silently replaced by Cloudflare Workers + D1. First compare actual costs, free allowances, Firebase authentication validation, staff authorization, transactional currency/event requirements, and the existing Coin data path. Do not implement cross-database Coin deductions and Gem awards as if they were one atomic transaction.
+
+## Release gates
+
+- Keep this work on the feature branch.
+- Test the Owner panel at phone, tablet and desktop sizes.
+- Add unit tests for metrics parsing, threshold warnings, missing values, stale timestamps, and reset boundaries.
+- Do not merge, publish, deploy, or change Firestore rules as part of this display-only change.
