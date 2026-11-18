@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BECE Hub">
 <meta name="description" content="Practise for BECE with Social Studies, Creative Arts, Mathematics, Computing, RME, Integrated Science and beginner-friendly French quizzes, flashcards, revision notes and essay guides for JHS 1–3.">
+<meta name="bece-usage-api" content="">
 <meta name="theme-color" content="#f7f8f3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121a15" media="(prefers-color-scheme: dark)">
 <meta property="og:site_name" content="BECE Mock Master">
@@ -12189,33 +12190,128 @@ const Adm = (() => {
     return elx('div', 'adm-card', elx('h4', '', '\u{1F4CB} Permanent staff roster'), elx('p', 'adm-info', 'Everyone who has ever unlocked as staff. Roster members are shielded from admins even when signed out. Only you can remove them.'), list);
   }
   function cloudflareUsageCard() {
-    const metric = (amount, title, detail) => elx('div', 'adm-prot',
-      elx('strong', '', amount),
-      elx('p', 'adm-info', title),
-      elx('span', 'adm-sub', detail)
-    );
+    const endpointMeta = document.querySelector('meta[name="bece-usage-api"]');
+    const endpoint = endpointMeta && endpointMeta.content ? endpointMeta.content.trim() : '';
+    const number = value => Number.isFinite(Number(value)) ? new Intl.NumberFormat().format(Number(value)) : '—';
+    const bytes = value => {
+      const n = Number(value);
+      if (!Number.isFinite(n) || n < 0) return '—';
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let amount = n, unit = 0;
+      while (amount >= 1024 && unit < units.length - 1) { amount /= 1024; unit++; }
+      return amount.toFixed(unit ? 2 : 0) + ' ' + units[unit];
+    };
+    const values = {};
+    const metric = (key, amount, title, descriptionText) => {
+      const value = elx('strong', '', amount);
+      const description = elx('span', 'adm-sub', descriptionText);
+      values[key] = { value, description };
+      return elx('div', 'adm-prot', value, elx('p', 'adm-info', title), description);
+    };
+    const setQuota = (key, data, format = number) => {
+      const target = values[key];
+      if (!target) return;
+      if (!data || data.used === null || data.used === undefined || data.limit === null || data.limit === undefined) {
+        target.value.textContent = '—';
+        target.description.textContent = 'Unavailable · no complete analytics reading';
+        return;
+      }
+      target.value.textContent = format(data.used) + ' / ' + format(data.limit);
+      target.description.textContent = format(data.remaining) + ' remaining · ' + number(data.percent) + '% used · ' + String(data.level || 'unknown') + ' status';
+    };
+    const statusTitle = elx('strong', '', endpoint ? 'Ready to refresh' : 'Not connected');
+    const statusText = elx('span', '', endpoint
+      ? 'Select Refresh usage to request account metrics.'
+      : 'The Worker URL has not been configured. No Cloudflare account is connected yet.');
+    const statusBox = elx('div', 'adm-prev', statusTitle, statusText);
+    const updated = elx('p', 'adm-info', 'Actual usage: not yet retrieved.');
+    const detail = elx('p', 'adm-info', 'Usage readings will be loaded only when you press Refresh. Missing readings remain unavailable, never zero.');
+    const refresh = btn('Refresh usage', 'btn-primary btn-sm', loadUsage, !endpoint);
+
+    async function loadUsage() {
+      if (!endpoint) return App.toast('The Cloudflare Worker URL has not been configured yet.', 'warn');
+      if (!S.isOwner) return App.toast('Unlock the Owner session before requesting infrastructure statistics.', 'warn');
+      const user = firebase.auth().currentUser;
+      if (!user) return App.toast('Your Firebase sign-in is not ready. Please reconnect and try again.', 'warn');
+      refresh.disabled = true;
+      refresh.textContent = 'Refreshing…';
+      statusTitle.textContent = 'Checking access…';
+      statusText.textContent = 'Verifying the Firebase account and active Owner session.';
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers: { Authorization: 'Bearer ' + token },
+          credentials: 'omit',
+          cache: 'no-store'
+        });
+        let data;
+        try { data = await response.json(); } catch { throw new Error('invalid_response'); }
+        if (!response.ok) {
+          if (response.status === 401) throw new Error('sign_in_required');
+          if (response.status === 403) throw new Error('owner_required');
+          throw new Error('service_unavailable');
+        }
+        if (!data || data.status !== 'ok' || !data.worker) throw new Error('invalid_response');
+
+        setQuota('worker', data.worker);
+        if (data.worker.subrequests === null || data.worker.subrequests === undefined) {
+          values.subrequests.value.textContent = '—';
+          values.subrequests.description.textContent = 'Unavailable · no complete analytics reading';
+        } else {
+          values.subrequests.value.textContent = number(data.worker.subrequests);
+          values.subrequests.description.textContent = 'Total subrequests reported today · 50 per invocation on Free';
+        }
+        setQuota('d1read', data.d1 && data.d1.rowsRead);
+        setQuota('d1write', data.d1 && data.d1.rowsWritten);
+        setQuota('d1storage', data.d1 && data.d1.storage, bytes);
+
+        const freshness = data.worker.freshness === 'delayed'
+          ? 'The latest Worker analytics record is more than 10 minutes old.'
+          : data.worker.freshness === 'recent'
+            ? 'The latest Worker analytics record is recent.'
+            : 'Cloudflare did not provide a latest-event timestamp.';
+        statusTitle.textContent = data.worker.complete ? 'Usage retrieved' : 'Partly unavailable';
+        statusText.textContent = freshness + (data.d1 && !data.d1.detected ? ' D1 analytics are not available for this account yet.' : '');
+        const stamp = data.generatedAt ? new Date(data.generatedAt) : null;
+        updated.textContent = 'Retrieved: ' + (stamp && Number.isFinite(stamp.getTime()) ? stamp.toLocaleString() : 'timestamp unavailable') +
+          ' · Data day: ' + String(data.day || 'unknown') + ' UTC';
+        detail.textContent = String(data.analyticsNote || 'Cloudflare analytics can be delayed.') +
+          ' Source: ' + String(data.source || 'Cloudflare analytics');
+        App.toast(data.worker.complete ? 'Infrastructure usage refreshed.' : 'Some usage readings are unavailable.', data.worker.complete ? 'good' : 'warn');
+      } catch (error) {
+        const reason = error && error.message;
+        statusTitle.textContent = reason === 'owner_required' ? 'Owner session expired' : 'Could not retrieve usage';
+        statusText.textContent = reason === 'owner_required'
+          ? 'Unlock Owner access again, then refresh.'
+          : reason === 'sign_in_required'
+            ? 'Your Firebase sign-in has expired. Reconnect before refreshing.'
+            : 'The metrics service is unavailable or not configured correctly. No usage values were changed.';
+        App.toast(statusText.textContent, 'warn');
+      } finally {
+        refresh.disabled = !endpoint;
+        refresh.textContent = 'Refresh usage';
+      }
+    }
+
     return elx('section', 'adm-card',
       elx('div', '',
         elx('h4', '', '☁️ Infrastructure & Usage'),
-        elx('p', 'adm-info', 'Cloudflare Free plan · usage monitor')
+        elx('p', 'adm-info', 'Cloudflare account-wide limits and reported usage')
       ),
-      elx('div', 'adm-prev',
-        elx('strong', '', 'Not connected'),
-        ' No Cloudflare account or Worker has been connected to Bece Hub yet.'
-      ),
+      statusBox,
       elx('div', 'adm-two',
-        metric('— / 100,000', 'Worker requests today', 'Incoming requests per account per day · resets 00:00 UTC'),
-        metric('— / 5,000,000', 'D1 rows read today', 'Daily row-read limit · resets 00:00 UTC · only if D1 is selected'),
-        metric('— / 100,000', 'D1 rows written today', 'Daily row-write limit · resets 00:00 UTC · only if D1 is selected'),
-        metric('— / 5 GB', 'D1 account storage', 'Across the account; each database max 500 MB')
+        metric('worker', '— / 100,000', 'Worker requests today', 'Daily incoming requests · resets 00:00 UTC'),
+        metric('subrequests', '—', 'Worker subrequests', '50 per invocation on the Free plan'),
+        metric('d1read', '— / 5,000,000', 'D1 rows read today', 'Daily row-read limit · resets 00:00 UTC · only if D1 is selected'),
+        metric('d1write', '— / 100,000', 'D1 rows written today', 'Daily row-write limit · resets 00:00 UTC · only if D1 is selected'),
+        metric('d1storage', '— / 5 GB', 'D1 account storage', 'Across the account · 500 MB maximum per database')
       ),
-      elx('div', 'adm-prot',
-        elx('strong', '', 'Separate limit: 50 subrequests per Worker invocation'),
-        elx('p', 'adm-info', 'These are calls the Worker makes to services such as D1. They are not the same as incoming Worker requests.')
-      ),
-      elx('p', 'adm-info', 'Used and remaining amounts are deliberately shown as unavailable, not zero. The figures above are published free-plan allowances, not actual usage.'),
-      elx('p', 'adm-info', 'Opening a screen uses no Worker request unless the app sends a request to the Worker. A Firebase-only read does not use the Cloudflare Worker request allowance.'),
-      elx('p', 'adm-info', 'When connected, this panel will show reported usage, remaining allowance, last update time and warnings at 50%, 70%, 85% and 95%. Cloudflare analytics can be delayed.')
+      elx('div', 'adm-btns', refresh),
+      updated,
+      detail,
+      elx('p', 'adm-info', 'Opening a screen uses no Worker request unless the app actually calls the Worker. Firebase-only reads do not use the Cloudflare Worker request allowance.'),
+      elx('p', 'adm-info', 'Warnings: 50% notice · 70% medium · 85% high · 95% critical. Provider analytics can lag; this is not a real-time billing meter.')
     );
   }
 
