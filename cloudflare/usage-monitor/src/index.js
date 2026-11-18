@@ -60,7 +60,7 @@ export function getThreshold(used, limit) {
   const metric = calculateQuotaUsage(used, limit);
   if (metric.status === "unavailable") return { percent: null, level: "unavailable" };
   return {
-    percent: Math.min(100, metric.percent),
+    percent: metric.percent,
     level: levelForThreshold(metric.warningThresholdPercent)
   };
 }
@@ -71,7 +71,7 @@ export function quotaMetric(used, limit) {
     used: metric.used,
     limit: metric.limit,
     remaining: metric.remaining,
-    percent: metric.percent === null ? null : Math.min(100, metric.percent),
+    percent: metric.percent,
     level: metric.status === "unavailable" ? "unavailable" : levelForThreshold(metric.warningThresholdPercent),
     exceeded: metric.status === "exceeded"
   };
