@@ -23,7 +23,7 @@ function json(body, status, origin) {
     headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
     headers.set("Access-Control-Max-Age", "600");
   }
-  return new Response(JSON.stringify(body), { status, headers });
+  return new Response(status === 204 ? null : JSON.stringify(body), { status, headers });
 }
 
 function configuredOrigin(env) {
@@ -232,12 +232,6 @@ async function cloudflareGraphql(query, variables, env, fetchFn) {
 
 async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
   const periods = dateParts(nowMs);
-  const baseVariables = {
-    accountTag: env.CF_ACCOUNT_ID,
-    dateStart: periods.date,
-    dateEnd: periods.date
-  };
-
   const workerQuery = `query WorkerUsage($accountTag: string!, $start: string!, $end: string!) {
     viewer {
       accounts(filter: { accountTag: $accountTag }) {
@@ -251,7 +245,7 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
       }
     }
   }`;
-  const d1Query = `query D1Usage($accountTag: string!, $dateStart: Date!, $dateEnd: Date!) {
+  const d1RowsQuery = `query D1RowUsage($accountTag: string!, $dateStart: Date!, $dateEnd: Date!) {
     viewer {
       accounts(filter: { accountTag: $accountTag }) {
         d1AnalyticsAdaptiveGroups(
@@ -261,6 +255,12 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
           sum { rowsRead rowsWritten }
           dimensions { date databaseId }
         }
+      }
+    }
+  }`;
+  const d1StorageQuery = `query D1StorageUsage($accountTag: string!, $dateStart: Date!, $dateEnd: Date!) {
+    viewer {
+      accounts(filter: { accountTag: $accountTag }) {
         d1StorageAdaptiveGroups(
           limit: ${GRAPHQL_ROW_LIMIT}
           filter: { date_geq: $dateStart, date_leq: $dateEnd }
@@ -271,19 +271,30 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
       }
     }
   }`;
+  const accountVariables = { accountTag: env.CF_ACCOUNT_ID };
+  const dateVariables = { ...accountVariables, dateStart: periods.date, dateEnd: periods.date };
 
-  const [workerAccount, d1Account] = await Promise.all([
-    cloudflareGraphql(workerQuery, {
-      accountTag: env.CF_ACCOUNT_ID,
-      start: periods.startIso,
-      end: periods.endIso
-    }, env, fetchFn),
-    cloudflareGraphql(d1Query, baseVariables, env, fetchFn)
-  ]);
-
+  const workerAccount = await cloudflareGraphql(workerQuery, {
+    ...accountVariables, start: periods.startIso, end: periods.endIso
+  }, env, fetchFn);
   const worker = readWorkersMetrics(workerAccount);
-  const d1 = readD1Rows(d1Account);
-  const storage = readD1Storage(d1Account);
+
+  let d1 = { complete: false, rowsRead: null, rowsWritten: null, records: 0 };
+  try {
+    const d1Account = await cloudflareGraphql(d1RowsQuery, dateVariables, env, fetchFn);
+    d1 = readD1Rows(d1Account);
+  } catch {
+    // D1 may not be enabled in this Cloudflare account. Keep Worker metrics usable.
+  }
+
+  let storage = { complete: false, totalBytes: null, largestDatabaseBytes: null, records: 0 };
+  try {
+    const storageAccount = await cloudflareGraphql(d1StorageQuery, dateVariables, env, fetchFn);
+    storage = readD1Storage(storageAccount);
+  } catch {
+    // Storage remains unavailable until Cloudflare returns a supported storage aggregate.
+  }
+
   const workerQuota = quotaMetric(worker.complete ? worker.requests : null, WORKER_REQUEST_LIMIT);
   const d1ReadQuota = quotaMetric(d1.complete ? d1.rowsRead : null, D1_ROWS_READ_LIMIT);
   const d1WriteQuota = quotaMetric(d1.complete ? d1.rowsWritten : null, D1_ROWS_WRITE_LIMIT);
@@ -306,7 +317,7 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
       freshness: freshnessMs === null ? "unknown" : freshnessMs > 10 * 60 * 1000 ? "delayed" : "recent"
     },
     d1: {
-      configured: true,
+      detected: d1.complete || storage.complete,
       rowsRead: { ...d1ReadQuota, complete: d1.complete, records: d1.records },
       rowsWritten: { ...d1WriteQuota, complete: d1.complete, records: d1.records },
       storage: {
