@@ -167,8 +167,11 @@ test("a verified Owner receives quota values while secrets stay out of the respo
         return responseJson({ users: [{ localId: "verified-owner" }] });
       }
       if (target.includes("firestore.googleapis.com")) {
-        assert.ok(target.endsWith("/ownerSessions/verified-owner"));
         assert.equal(options.headers.Authorization, "Bearer firebase-id-token");
+        if (target.includes("/auditLogs?pageSize=1")) {
+          return responseJson({ documents: [] });
+        }
+        assert.ok(target.endsWith("/ownerSessions/verified-owner"));
         return responseJson({
           fields: {
             pw1: { stringValue: "never-return-this-secret" },
