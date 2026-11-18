@@ -15,8 +15,9 @@ This directory contains a **read-only metrics Worker** for the Bece Hub Owner pa
 1. The browser sends its Firebase Authentication ID token in the Authorization Bearer header.
 2. The Worker validates the token with Firebase Authentication's accounts:lookup endpoint and obtains the UID from that verified response. It does not trust a UID supplied by the browser.
 3. The Worker reads only ownerSessions/{verified UID} from Firestore REST using that same Firebase ID token. Firestore Security Rules authorize the read as the signed-in user.
-4. The Worker checks that the Owner session document contains its expected attestation fields and a timestamp younger than the app's 30-minute Owner session. It does not return or log the two password fields.
-5. Only after these checks does the Worker request account-wide Cloudflare analytics.
+4. The Worker checks that the Owner session document contains its expected attestation fields and a timestamp younger than the app's 30-minute Owner session. It does not return or log the two password fields. It then confirms the current Firestore isOwner() rule through a page-size-one audit-log list request, so a session with old passwords is not accepted after the Owner changes them.
+5. The Worker also makes a one-document-bounded list request to the Owner-only auditLogs collection. The current Firestore Security Rules must authorize this request using their live isOwner() function, which re-checks the configured Owner passwords. The returned audit entry, if any, is discarded immediately; none of its data is included in the metrics response.
+6. Only after these checks does the Worker request account-wide Cloudflare analytics.
 6. The Cloudflare API token remains in the Worker secret store and is sent only to Cloudflare's GraphQL API.
 
 Firebase documents that Firestore REST accepts Firebase Authentication ID tokens and applies Firestore Security Rules to those requests:
