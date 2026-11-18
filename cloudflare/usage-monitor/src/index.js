@@ -328,6 +328,9 @@ export async function handleRequest(request, env, dependencies = {}) {
   if (!allowedOrigin || !origin || origin !== allowedOrigin) {
     return json({ error: "origin_not_allowed" }, 403);
   }
+  if (new URL(request.url).pathname !== "/usage") {
+    return json({ error: "not_found" }, 404, origin);
+  }
   if (request.method === "OPTIONS") return json({}, 204, origin);
   if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405, origin);
 
