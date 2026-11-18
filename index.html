@@ -12219,7 +12219,9 @@ const Adm = (() => {
         return;
       }
       target.value.textContent = format(data.used) + ' / ' + format(data.limit);
-      target.description.textContent = format(data.remaining) + ' remaining · ' + number(data.percent) + '% used · ' + String(data.level || 'unknown') + ' status';
+      target.description.textContent = data.exceeded
+        ? 'Limit exceeded by ' + format(Number(data.used) - Number(data.limit)) + ' · ' + number(data.percent) + '% used · critical'
+        : format(data.remaining) + ' remaining · ' + number(data.percent) + '% used · ' + String(data.level || 'unknown') + ' status';
     };
     const statusTitle = elx('strong', '', endpoint ? 'Ready to refresh' : 'Not connected');
     const statusText = elx('span', '', endpoint
@@ -12271,6 +12273,11 @@ const Adm = (() => {
           const storageSample = new Date(data.d1.storage.asOf);
           if (Number.isFinite(storageSample.getTime())) {
             values.d1storage.description.textContent += ' · latest per-database sample ' + storageSample.toLocaleString();
+            const largest = data.d1.storage.largestDatabaseBytes;
+            const individualLimit = data.d1.storage.databaseLimitBytes;
+            if (largest !== null && largest !== undefined && individualLimit !== null && individualLimit !== undefined) {
+              values.d1storage.description.textContent += ' · largest database ' + bytes(largest) + ' / ' + bytes(individualLimit);
+            }
           }
         }
 
