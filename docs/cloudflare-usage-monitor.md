@@ -41,3 +41,11 @@ The existing Gems security document currently describes Firebase Cloud Functions
 - Test the Owner panel at phone, tablet and desktop sizes.
 - Add unit tests for metrics parsing, threshold warnings, missing values, stale timestamps, and reset boundaries.
 - Do not merge, publish, deploy, or change Firestore rules as part of this display-only change.
+## Official Cloudflare references
+
+- Workers plan limits and daily reset/error behavior: https://developers.cloudflare.com/workers/platform/limits/
+- Worker metrics, incoming request totals, subrequests, and analytics delay: https://developers.cloudflare.com/workers/observability/metrics-and-analytics/
+- D1 account/database storage limits: https://developers.cloudflare.com/d1/platform/limits/
+- D1 rows-read/rows-written and storage analytics, including GraphQL dataset names: https://developers.cloudflare.com/d1/observability/metrics-analytics/
+- Cloudflare API token permissions (Account Analytics Read): https://developers.cloudflare.com/fundamentals/api/reference/permissions/
+- D1 Free-tier daily limit enforcement (effective 1 September 2026): https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/
