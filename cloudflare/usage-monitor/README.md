@@ -52,30 +52,37 @@ The tests use mocked Firebase, Firestore, and Cloudflare responses. They do not 
 
 Do not deploy until the metrics tests pass, the actual website origin is confirmed, and a Cloudflare account holder is ready to configure the account.
 
-Set the required values as Worker secrets (not source-code variables):
+Use a **local secrets file** for the first deployment. Cloudflare supports uploading required secrets together with the Worker deployment, which avoids trying to add secrets to a Worker that does not exist yet.
 
-```sh
-npx wrangler secret put APP_ORIGIN
-npx wrangler secret put FIREBASE_API_KEY
-npx wrangler secret put CF_ACCOUNT_ID
-npx wrangler secret put CF_API_TOKEN
+1. In this folder, create a local file named `.env.production`. The folder's `.gitignore` excludes it from Git.
+2. Put the following names in that file, replacing each placeholder locally. Do not paste real values into GitHub, chat, or source files.
+
+```dotenv
+APP_ORIGIN="https://your-real-app-origin.example"
+FIREBASE_API_KEY="your-firebase-web-api-key"
+CF_ACCOUNT_ID="your-cloudflare-account-id"
+CF_API_TOKEN="your-account-analytics-read-token"
 ```
 
-- APP_ORIGIN must be the exact app origin including protocol but no path, for example https://your-site.example. Do not guess it.
+3. From this folder, deploy the Worker and upload the secrets in the same operation:
+
+```sh
+npx wrangler deploy --secrets-file .env.production
+```
+
+Cloudflare documents this deployment method and preserves existing secrets on later deployments:
+https://developers.cloudflare.com/workers/configuration/secrets/
+
+After deployment, copy the Worker URL shown by Wrangler. The app's `bece-usage-api` meta value must then be set to that exact HTTPS URL with `/usage` at the end. Do not guess the address.
+
+- APP_ORIGIN must be the exact app origin including protocol but no path, for example `https://your-site.example`.
 - FIREBASE_API_KEY is the public Firebase web API key for Bece Hub.
-- CF_ACCOUNT_ID is the Cloudflare account containing the Worker(s) whose request totals you want to monitor.
+- CF_ACCOUNT_ID is the Cloudflare account containing the Workers whose request totals you want to monitor.
 - CF_API_TOKEN should be scoped to that account with only Account Analytics Read permission.
 
-The Firebase project ID is the non-secret value already set in wrangler.jsonc.
+The Firebase project ID is the non-secret value already set in `wrangler.jsonc`.
 
-Then deploy from this directory:
-
-```sh
-npx wrangler deploy
-```
-
-This will publish a Worker. It is deliberately not run by this development work.
-
+This deploy publishes a Worker. It is deliberately not run by this development work. Use a Cloudflare account holder with appropriate adult guidance to complete the account and token setup.
 ## Important limitations
 
 - A Firestore REST check proves the current caller can read their own valid Owner-session document under Firestore Security Rules. It is not a replacement for reviewing those rules.
