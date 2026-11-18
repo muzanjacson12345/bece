@@ -203,7 +203,7 @@ test("a verified Owner receives quota values while secrets stay out of the respo
           return responseJson({ data: { viewer: { accounts: [{
             d1StorageAdaptiveGroups: [{
               max: { databaseSizeBytes: 1024 * 1024 * 10 },
-              dimensions: { date: "2026-11-18", databaseId: "db-1" }
+              dimensions: { datetime: "2026-11-18T11:55:00Z", databaseId: "db-1" }
             }]
           }] } } });
         }
@@ -223,6 +223,7 @@ test("a verified Owner receives quota values while secrets stay out of the respo
   assert.equal(body.d1.rowsWritten.remaining, 50000);
   assert.equal(body.d1.storage.complete, true);
   assert.equal(body.d1.storage.used, 10 * 1024 * 1024);
+  assert.equal(body.d1.storage.asOf, "2026-11-18T11:55:00.000Z");
   const serialized = JSON.stringify(body);
   assert.ok(!serialized.includes("never-return-this-secret"));
   assert.ok(!serialized.includes("also-private"));
