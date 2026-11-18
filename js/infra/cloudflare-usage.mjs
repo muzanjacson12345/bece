@@ -45,16 +45,20 @@ function getSingleAccount(response) {
   return Array.isArray(accounts) && accounts.length === 1 ? accounts[0] : null;
 }
 
-function sumGroupMetric(groups, field) {
+function sumD1RowMetrics(groups) {
   if (!Array.isArray(groups) || groups.length === 0) return null;
-  let total = 0;
+  let rowsRead = 0;
+  let rowsWritten = 0;
   for (const group of groups) {
-    const value = safeCount(group?.sum?.[field]);
-    if (value === null) return null;
-    total += value;
-    if (!Number.isSafeInteger(total)) return null;
+    const read = safeCount(group?.sum?.rowsRead);
+    const written = safeCount(group?.sum?.rowsWritten);
+    // A partial row-count group makes both daily totals incomplete.
+    if (read === null || written === null) return null;
+    rowsRead += read;
+    rowsWritten += written;
+    if (!Number.isSafeInteger(rowsRead) || !Number.isSafeInteger(rowsWritten)) return null;
   }
-  return total;
+  return { rowsRead, rowsWritten };
 }
 
 /** Parse Workers Analytics response data for one Cloudflare account. */
@@ -86,11 +90,8 @@ export function parseWorkersUsage(response) {
 export function parseD1RowUsage(response) {
   const account = getSingleAccount(response);
   if (!account) return { rowsRead: null, rowsWritten: null };
-  const groups = account.d1AnalyticsAdaptiveGroups;
-  return {
-    rowsRead: sumGroupMetric(groups, "rowsRead"),
-    rowsWritten: sumGroupMetric(groups, "rowsWritten"),
-  };
+  const totals = sumD1RowMetrics(account.d1AnalyticsAdaptiveGroups);
+  return totals || { rowsRead: null, rowsWritten: null };
 }
 
 /**
