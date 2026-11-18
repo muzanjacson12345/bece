@@ -6,12 +6,14 @@ on:
       - feature/gems-system-modules
     paths:
       - "js/gems/**"
+      - "js/infra/cloudflare-usage.*"
       - "index.html"
       - "cloudflare/usage-monitor/**"
       - ".github/workflows/gems-domain-tests.yml"
   pull_request:
     paths:
       - "js/gems/**"
+      - "js/infra/cloudflare-usage.*"
       - "index.html"
       - "cloudflare/usage-monitor/**"
       - ".github/workflows/gems-domain-tests.yml"
