@@ -12448,7 +12448,16 @@ const Adm = (() => {
       tabs.replaceChildren(...t.map(([k, l]) => {
         const b = elx('button', '', l); b.type = 'button'; b.dataset.k = k;
         b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', 'adm-panel-body');
-        b.onclick = () => { st.sub = k; paint(true); };
+        b.onclick = () => {
+        st.sub = k;
+        paint(true);
+        // On narrow screens keep the newly selected section's content in view.
+        if (k === 'owner') {
+          requestAnimationFrame(() => {
+            if (body) body.scrollIntoView({ block: 'start', behavior: 'smooth' });
+          });
+        }
+      };
         return b;
       }));
     }
@@ -12466,7 +12475,20 @@ const Adm = (() => {
       const tr = tabs.getBoundingClientRect(), ar = activeTab.getBoundingClientRect();
       tabs.scrollLeft = Math.max(0, tabs.scrollLeft + ar.left - tr.left - (tabs.clientWidth - ar.width) / 2);
     }
-    body.replaceChildren(view());
+    try {
+      const content = view();
+      body.replaceChildren(content);
+      body.removeAttribute('data-render-error');
+    } catch (error) {
+      console.error('Admin section failed to render:', st.sub, error);
+      body.dataset.renderError = st.sub;
+      body.replaceChildren(
+        elx('div', 'adm-card',
+          elx('h4', '', 'This section could not be displayed'),
+          elx('p', 'adm-info', 'The section encountered a display error. Your data and settings have not been changed. Please switch to another section and try again.')
+        )
+      );
+    }
   }
   function el() {
     if (root) return root;
