@@ -68,7 +68,7 @@ async function main() {
   ];
   const gemFeatures = [
     ['Gems balance appears in account', '💎 ${Math.max(0, Number(S.doc.gems) || 0)}'],
-    ['Gems survive quiz saves', 'gems: Number.isSafeInteger(d.gems) && d.gems >= 0 ? d.gems : 0'],
+    ['Gems survive quiz saves without racing live transactions', 'latestGemBalance = currentData.gems == null ? 0 : currentData.gems'],
     ['Gems use an atomic Firestore transaction', 'S.db.runTransaction(async transaction =>'],
     ['Gems reject an insufficient balance', "error.code = 'INSUFFICIENT_GEMS'"],
     ['Gems prevent repeated recent operation IDs', 'const MAX_RECENT_OPS = 100;'],
