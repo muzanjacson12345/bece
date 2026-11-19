@@ -12286,6 +12286,13 @@ const Adm = (() => {
       if (localSaved && localSaved.data && localSaved.data.status === 'ok' && localSaved.data.worker &&
           Number.isFinite(Number(localSaved.savedAt))) savedUsage = localSaved;
     } catch (_) {}
+    if (!savedUsage) {
+      try {
+        const sessionSaved = JSON.parse(sessionStorage.getItem(usageCacheKey) || 'null');
+        if (sessionSaved && sessionSaved.data && sessionSaved.data.status === 'ok' && sessionSaved.data.worker &&
+            Number.isFinite(Number(sessionSaved.savedAt))) savedUsage = sessionSaved;
+      } catch (_) {}
+    }
     if (savedUsage && savedUsage.data && savedUsage.data.status === 'ok' && savedUsage.data.worker &&
         Number.isFinite(Number(savedUsage.savedAt))) {
       window.__beceHubLastUsageReading = savedUsage;
