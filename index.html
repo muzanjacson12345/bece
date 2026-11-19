@@ -12309,7 +12309,8 @@ const Adm = (() => {
     if (savedUsage && savedUsage.data && savedUsage.data.status === 'ok' && savedUsage.data.worker &&
         Number.isFinite(Number(savedUsage.savedAt))) {
       window.__beceHubLastUsageReading = savedUsage;
-      applyUsageData(savedUsage.data, savedUsage.savedAt, true);
+      // Restore only after the metric elements have been created by the return markup below.
+      queueMicrotask(() => applyUsageData(savedUsage.data, savedUsage.savedAt, true));
     }
 
     const refresh = btn('Refresh usage', 'btn-primary btn-sm', loadUsage, !endpoint);
