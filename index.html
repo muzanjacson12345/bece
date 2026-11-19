@@ -12401,24 +12401,37 @@ const Adm = (() => {
   }
 
   function ownerTab() {
-    const now = Date.now(), staff = [...S.badgeMap].filter(([, u]) => u > now).map(([id, u]) => ({ id, left: u - now, role: S.badgeRole.get(id) === 'owner' ? 'owner' : 'admin' }));
-    if (S.isOwner && !staff.some(s => s.id === S.uid)) staff.push({ id: S.uid, left: S.ownerAt + OWNER_MS - now, role: 'owner' });
+    // Keep the Owner console usable while Firestore snapshot data is warming up.
+    if (!(S.badgeMap instanceof Map)) S.badgeMap = new Map();
+    if (!(S.badgeRole instanceof Map)) S.badgeRole = new Map();
+    if (!(S.roster instanceof Map)) S.roster = new Map();
+    if (!S.settings || typeof S.settings !== 'object') S.settings = {};
+    const now = Date.now(), staff = [...S.badgeMap].filter(([, u]) => Number(u) > now).map(([id, u]) => ({ id, left: Number(u) - now, role: S.badgeRole.get(id) === 'owner' ? 'owner' : 'admin' }));
+    if (S.isOwner && !staff.some(s => s.id === S.uid)) staff.push({ id: S.uid, left: Math.max(0, Number(S.ownerAt) + OWNER_MS - now), role: 'owner' });
     const list = elx('div', 'adm-list');
     staff.sort((a, b) => (a.role === 'owner' ? 0 : 1) - (b.role === 'owner' ? 0 : 1)).forEach(s => list.append(elx('div', 'adm-row adm-ban', elx('div', 'adm-who adm-pad', elx('strong', '', nameOf(s.id), s.id === S.uid ? ' (you)' : '', ' ', adminBadge(s.id)), elx('span', 'adm-sub', `${fmtLeft(s.left)} left on this session`)), elx('div', 'adm-pad', s.role === 'owner' ? null : btn('Sign out', 'btn-ghost btn-sm adm-danger', () => kick(s.id))))));
     if (!staff.length) list.append(elx('p', 'muted', 'Nobody is signed in as staff.'));
     const card = (h, p, ...b) => elx('div', 'adm-card', elx('h4', '', h), elx('p', 'adm-info', p), elx('div', 'adm-btns', ...b));
+    const part = (name, make) => {
+      try { return make(); }
+      catch (error) {
+        console.error('Owner panel component failed:', name, error);
+        return elx('div', 'adm-card', elx('h4', '', name + ' is temporarily unavailable'),
+          elx('p', 'adm-info', 'Loading detail: ' + String(error && error.message || error).slice(0, 180)));
+      }
+    };
     return elx('div', '',
-      protectCard(),
-      cloudflareUsageCard(),
-      elx('div', 'adm-card', elx('h4', '', '\u{1F465} Staff signed in now'), list),
-      rosterCard(),
-      card('\u23F8\uFE0F Duels switch', S.settings.duelsPaused ? 'New duels are paused for everyone. Duels already running can finish.' : 'Duels are open. Pause new duels if something is broken or being abused.', btn(S.settings.duelsPaused ? 'Resume duels' : 'Pause new duels', S.settings.duelsPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleDuels)),
-      card('\u{1F510} Security', 'The admin PIN opens admin sessions. The 2 owner passwords open this console. Changing either one signs people out.', btn('Change admin PIN', 'btn-ghost btn-sm', changeAdminPin), btn('Change owner passwords', 'btn-ghost btn-sm', changeOwnerPw)),
-      card('\u{1F381} Bulk tools', 'Owner-only rewards and maintenance commands. Every action is recorded in the audit log.', btn('Gift coins\u2026', 'btn-primary btn-sm', giftAll), btn('Award EXP\u2026', 'btn-primary btn-sm', giftExpAll), btn('Reset weekly board\u2026', 'btn-ghost btn-sm adm-danger', weeklyReset), btn('Clear expired bans', 'btn-ghost btn-sm', clearExpired)),
-      card('\u{1F4C8} Global practice economy', 'Set the EXP and coin multipliers earned by every player in new practice quizzes.', elx('p', 'adm-info', 'Current rates: ' + (Number(S.settings.expMultiplier) || 1) + '× EXP · ' + (Number(S.settings.coinMultiplier) || 1) + '× coins'), btn('Change reward rates…', 'btn-primary btn-sm', setRewardRates)),
-      card('\u{1F6D2} Shop control', S.settings.shopPaused ? 'Purchases are currently paused for every player. Owned items can still be equipped.' : 'Purchases are open for everyone. You can temporarily pause new purchases without removing anyone’s items.', btn(S.settings.shopPaused ? 'Reopen shop purchases' : 'Pause shop purchases', S.settings.shopPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleShop)),
-      card('\u{1F4C1} Owner exports', 'Download full player records, owned and equipped items, bug reports, staff roster and audit history for private backup or repair.', btn('Export full player records (JSON)', 'btn-primary btn-sm', exportPlayersJson), btn('Export bug reports (CSV)', 'btn-ghost btn-sm', bugCsv), btn('Export staff roster (CSV)', 'btn-ghost btn-sm', exportRosterCsv), btn('Export audit log (CSV)', 'btn-ghost btn-sm', downloadAuditCsv)),
-      card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins…', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false))));
+      part('Owner protection', protectCard),
+      part('Cloudflare usage', cloudflareUsageCard),
+      part('Active staff', () => elx('div', 'adm-card', elx('h4', '', '\u{1F465} Staff signed in now'), list)),
+      part('Permanent staff roster', rosterCard),
+      part('Duels switch', () => card('\u23F8\uFE0F Duels switch', S.settings.duelsPaused ? 'New duels are paused for everyone. Duels already running can finish.' : 'Duels are open. Pause new duels if something is broken or being abused.', btn(S.settings.duelsPaused ? 'Resume duels' : 'Pause new duels', S.settings.duelsPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleDuels))),
+      part('Security', () => card('\u{1F510} Security', 'The admin PIN opens admin sessions. The 2 owner passwords open this console. Changing either one signs people out.', btn('Change admin PIN', 'btn-ghost btn-sm', changeAdminPin), btn('Change owner passwords', 'btn-ghost btn-sm', changeOwnerPw))),
+      part('Bulk tools', () => card('\u{1F381} Bulk tools', 'Owner-only rewards and maintenance commands. Every action is recorded in the audit log.', btn('Gift coins\u2026', 'btn-primary btn-sm', giftAll), btn('Award EXP\u2026', 'btn-primary btn-sm', giftExpAll), btn('Reset weekly board\u2026', 'btn-ghost btn-sm adm-danger', weeklyReset), btn('Clear expired bans', 'btn-ghost btn-sm adm-danger', clearExpired))),
+      part('Global practice economy', () => card('\u{1F4C8} Global practice economy', 'Set the EXP and coin multipliers earned by every player in new practice quizzes.', elx('p', 'adm-info', 'Current rates: ' + (Number(S.settings.expMultiplier) || 1) + '× EXP · ' + (Number(S.settings.coinMultiplier) || 1) + '× coins'), btn('Change reward rates…', 'btn-primary btn-sm', setRewardRates))),
+      part('Shop control', () => card('\u{1F6D2} Shop control', S.settings.shopPaused ? 'Purchases are currently paused for every player. Owned items can still be equipped.' : 'Purchases are open for everyone. You can temporarily pause new purchases without removing anyone’s items.', btn(S.settings.shopPaused ? 'Reopen shop purchases' : 'Pause shop purchases', S.settings.shopPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleShop))),
+      part('Owner exports', () => card('\u{1F4C1} Owner exports', 'Download full player records, owned and equipped items, bug reports, staff roster and audit history for private backup or repair.', btn('Export full player records (JSON)', 'btn-primary btn-sm', exportPlayersJson), btn('Export bug reports (CSV)', 'btn-ghost btn-sm', bugCsv), btn('Export staff roster (CSV)', 'btn-ghost btn-sm', exportRosterCsv), btn('Export audit log (CSV)', 'btn-ghost btn-sm', downloadAuditCsv))),
+      part('Staff control', () => card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins…', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false)))));
   }
   const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F', 'bug-open': '\u{1F41E}', 'bug-fixing': '\u{1F6E0}\uFE0F', 'bug-done': '\u2705', 'bug-wontfix': '\u{1F4D5}', 'bug-reply': '\u{1F4AC}', 'bug-delete': '\u{1F5D1}\uFE0F', 'roster-remove': '\u{1F6AA}', 'duels-on': '\u25B6\uFE0F', 'duels-off': '\u23F8\uFE0F', 'reward-rates': '\u{1F4C8}', 'shop-paused': '\u{1F6D2}', 'shop-resumed': '\u{1F6D2}', 'audit-export': '\u{1F4C1}', appoint: '\u{1F6E1}\uFE0F' };
   function auditTab() {
