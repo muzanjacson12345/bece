@@ -8495,6 +8495,19 @@ document.addEventListener('click', event => {
   else Notes.enter();
 });
 
+// Give the protected staff destination its own capture-phase route handler.
+// This runs before other click handlers can swallow the Owner/Admin navigation.
+document.addEventListener('click', event => {
+  const target = event.target;
+  const link = target && typeof target.closest === 'function'
+    ? target.closest('a[data-admin-nav][href="#/admin"]')
+    : null;
+  if (!link || link.hidden) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  navigate('admin');
+}, true);
+
 // Route links (#/notes, #/essays...) navigate directly instead of relying on hashchange.
 document.addEventListener('click', event => {
   const link = event.target.closest('a[href^="#/"]');
