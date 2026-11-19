@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'gems-core-2026-11-19-r1';
+const EXPECTED_BUILD = 'gems-worker-2026-11-19-r2';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -68,13 +68,23 @@ async function main() {
   ];
   const gemFeatures = [
     ['Gems balance appears in account', '💎 ${Math.max(0, Number(S.doc.gems) || 0)}'],
-    ['Gems survive quiz saves without racing live transactions', 'latestGemBalance = currentData.gems == null ? 0 : currentData.gems'],
-    ['Gems use an atomic Firestore transaction', 'S.db.runTransaction(async transaction =>'],
-    ['Gems reject an insufficient balance', "error.code = 'INSUFFICIENT_GEMS'"],
-    ['Gems prevent repeated recent operation IDs', 'const MAX_RECENT_OPS = 100;'],
-    ['Gems API is exposed for reward and event flows', 'window.Gems = Gems;'],
+    ['Quiz saves preserve existing Gems fields without creating missing ones', "preserveGemFields.gems = currentData.gems"],
+    ['Client Gems API calls the trusted Worker', 'fetch(GEMS_API_URL, {'],
+    ['Gems API remains available to app features', 'window.Gems = Gems;'],
   ];
-  const sourceChecks = [...ownerFeatures, ...gemFeatures].map(([label, token]) => ({ label, passed: source.includes(token) }));
+  const gemsWorkerSource = fs.readFileSync(path.join(process.cwd(), 'workers/gems-api/src/index.js'), 'utf8');
+  const gemWorkerFeatures = [
+    ['Worker verifies Firebase ID tokens', 'securetoken@system.gserviceaccount.com'],
+    ['Worker rejects spending without enough Gems', "error.code = 'INSUFFICIENT_GEMS'"],
+    ['Worker deduplicates recent operation IDs', 'const MAX_RECENT_OPS = 100;'],
+    ['Only the Owner role can mint Gems', "role !== 'owner'"],
+    ['Worker uses a Firestore transaction commit', 'documents:commit'],
+  ];
+  const sourceChecks = [
+    ...ownerFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
+    ...gemFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
+    ...gemWorkerFeatures.map(([label, token]) => ({ label, passed: gemsWorkerSource.includes(token) })),
+  ];
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
 
   const browser = await chromium.launch({ headless: true });
