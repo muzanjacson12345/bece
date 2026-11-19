@@ -12448,16 +12448,6 @@ const Adm = (() => {
       tabs.replaceChildren(...t.map(([k, l]) => {
         const b = elx('button', '', l); b.type = 'button'; b.dataset.k = k;
         b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', 'adm-panel-body');
-        b.onclick = () => {
-        st.sub = k;
-        paint(true);
-        // On narrow screens keep the newly selected section's content in view.
-        if (k === 'owner') {
-          requestAnimationFrame(() => {
-            if (body) body.scrollIntoView({ block: 'start', behavior: 'smooth' });
-          });
-        }
-      };
         return b;
       }));
     }
@@ -12496,6 +12486,29 @@ const Adm = (() => {
     timer = elx('span', 'adm-timer'); eyebrow = elx('p', 'eyebrow', 'Overseer'); title = elx('h2', '', 'Admin panel');
     const hd = elx('div', 'cz-head', elx('div', '', eyebrow, title), elx('div', 'adm-hact', timer, btn('Renew', 'btn-ghost btn-sm', renewCurrentSession), btn('\u{1F512} Lock', 'btn-ghost btn-sm', () => lockAll())));
     tabs = elx('div', 'segmented adm-subs'); tabs.setAttribute('role', 'tablist');
+    // Handle section changes at the tablist itself in capture phase. This keeps
+    // the Owner commands panel switch reliable even if another delegated click
+    // handler on the page interferes with normal button bubbling.
+    tabs.addEventListener('click', event => {
+      const target = event.target;
+      const tab = target && typeof target.closest === 'function'
+        ? target.closest('button[role="tab"][data-k]')
+        : null;
+      if (!tab || !tabs.contains(tab)) return;
+      const key = tab.dataset.k;
+      if (key === 'owner' || key === 'audit') {
+        if (!S.isOwner) return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      st.sub = key;
+      paint(true);
+      if (key === 'owner') {
+        requestAnimationFrame(() => {
+          if (body) body.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        });
+      }
+    }, true);
     body = elx('div', 'adm-body'); body.id = 'adm-panel-body'; body.setAttribute('role', 'tabpanel');
     tabs.addEventListener('keydown', e => {
       if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
