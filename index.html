@@ -12278,15 +12278,18 @@ const Adm = (() => {
         (fromCache ? ' · Press Refresh usage to get a newer reading.' : '');
     }
 
-    // Restore the previous reading immediately when the Owner panel is opened.
+    // Keep a page-lifetime copy as well as browser storage. This protects
+    // the visible reading if the Owner panel is rebuilt while this page stays open.
+    let savedUsage = window.__beceHubLastUsageReading || null;
     try {
-      const saved = JSON.parse(localStorage.getItem(usageCacheKey) || 'null');
-      if (saved && saved.data && saved.data.status === 'ok' && saved.data.worker &&
-          Number.isFinite(Number(saved.savedAt))) {
-        applyUsageData(saved.data, saved.savedAt, true);
-      }
-    } catch (_) {
-      // Storage may be disabled or unavailable; live refresh still works.
+      const localSaved = JSON.parse(localStorage.getItem(usageCacheKey) || 'null');
+      if (localSaved && localSaved.data && localSaved.data.status === 'ok' && localSaved.data.worker &&
+          Number.isFinite(Number(localSaved.savedAt))) savedUsage = localSaved;
+    } catch (_) {}
+    if (savedUsage && savedUsage.data && savedUsage.data.status === 'ok' && savedUsage.data.worker &&
+        Number.isFinite(Number(savedUsage.savedAt))) {
+      window.__beceHubLastUsageReading = savedUsage;
+      applyUsageData(savedUsage.data, savedUsage.savedAt, true);
     }
 
     const refresh = btn('Refresh usage', 'btn-primary btn-sm', loadUsage, !endpoint);
@@ -12318,12 +12321,27 @@ const Adm = (() => {
         if (!data || data.status !== 'ok' || !data.worker) throw new Error('invalid_response');
 
         const savedAt = Date.now();
+        const savedReading = { savedAt, data };
+        // Update the in-page copy first, so a panel re-render cannot blank the
+        // figures even if the browser blocks persistent storage.
+        window.__beceHubLastUsageReading = savedReading;
+        let persisted = false;
         try {
-          localStorage.setItem(usageCacheKey, JSON.stringify({ savedAt, data }));
-        } catch (_) {
-          // A full/disabled browser store must not make a successful refresh fail.
+          const serialized = JSON.stringify(savedReading);
+          localStorage.setItem(usageCacheKey, serialized);
+          persisted = localStorage.getItem(usageCacheKey) === serialized;
+        } catch (_) {}
+        if (!persisted) {
+          try {
+            const serialized = JSON.stringify(savedReading);
+            sessionStorage.setItem(usageCacheKey, serialized);
+            persisted = sessionStorage.getItem(usageCacheKey) === serialized;
+          } catch (_) {}
         }
         applyUsageData(data, savedAt, false);
+        if (!persisted) {
+          statusText.textContent += ' The reading is kept while this page remains open, but this browser blocked persistent saving.';
+        }
         App.toast(data.worker.complete ? 'Infrastructure usage refreshed.' : 'Some usage readings are unavailable.', data.worker.complete ? 'good' : 'warn');
       } catch (error) {
         const reason = error && error.message;
