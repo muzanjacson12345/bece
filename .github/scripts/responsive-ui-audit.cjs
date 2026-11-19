@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'overview-owner-controls-2026-11-17-r2';
+const EXPECTED_BUILD = 'gems-core-2026-11-19-r1';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -66,7 +66,15 @@ async function main() {
     ['Owner/Admin role-aware navigation', "label.textContent = S.isOwner ? 'Owner' : 'Admin'"],
     ['Renew button uses the in-place handler', "btn('Renew', 'btn-ghost btn-sm', renewCurrentSession)"],
   ];
-  const sourceChecks = ownerFeatures.map(([label, token]) => ({ label, passed: source.includes(token) }));
+  const gemFeatures = [
+    ['Gems balance appears in account', '💎 ${Math.max(0, Number(S.doc.gems) || 0)}'],
+    ['Gems survive quiz saves', 'gems: Number.isSafeInteger(d.gems) && d.gems >= 0 ? d.gems : 0'],
+    ['Gems use an atomic Firestore transaction', 'S.db.runTransaction(async transaction =>'],
+    ['Gems reject an insufficient balance', "error.code = 'INSUFFICIENT_GEMS'"],
+    ['Gems prevent repeated recent operation IDs', 'const MAX_RECENT_OPS = 100;'],
+    ['Gems API is exposed for reward and event flows', 'window.Gems = Gems;'],
+  ];
+  const sourceChecks = [...ownerFeatures, ...gemFeatures].map(([label, token]) => ({ label, passed: source.includes(token) }));
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
 
   const browser = await chromium.launch({ headless: true });
