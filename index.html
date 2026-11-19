@@ -10202,7 +10202,17 @@ App.on('quiz:finished', async ev => {
     const sfreezes = usedFreeze ? Math.max(0, (d.sfreezes || 0) - 1) : (d.sfreezes || 0);
     const xpBoost = xpMult > 1 ? Math.max(0, (d.xpBoost || 0) - 1) : (d.xpBoost || 0);
     const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + awardedExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + awardedExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + awardedExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, gems: Number.isSafeInteger(d.gems) && d.gems >= 0 ? d.gems : 0, gemOps: Array.isArray(d.gemOps) ? d.gemOps.slice(-100) : [], owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, challengeState, achievements, recent };
-    await S.db.doc('players/' + S.uid).set(next); S.doc = next;
+    const playerRef = S.db.doc('players/' + S.uid);
+    let latestGemBalance = 0, latestGemOps = [];
+    await S.db.runTransaction(async transaction => {
+      const currentSnapshot = await transaction.get(playerRef);
+      const currentData = currentSnapshot.exists ? (currentSnapshot.data() || {}) : {};
+      latestGemBalance = currentData.gems == null ? 0 : currentData.gems;
+      if (!Number.isSafeInteger(latestGemBalance) || latestGemBalance < 0) throw new Error('Your Gems balance could not be validated. Please retry.');
+      latestGemOps = Array.isArray(currentData.gemOps) ? currentData.gemOps.filter(value => typeof value === 'string').slice(-100) : [];
+      transaction.set(playerRef, { ...next, gems: latestGemBalance, gemOps: latestGemOps });
+    });
+    S.doc = { ...next, gems: latestGemBalance, gemOps: latestGemOps };
     renderAccount(); renderDaily(); renderAchievements();
     showResult({ coins: coinsEarned, coinParts: scaledCoinParts, balance: (next.coins || 0), earned: awardedEarned, bonusExp: awardedBonusExp, correct: ev.correct, already, parts: scaledParts, total: next.totalExp, streak, extended, usedFreeze, xpMult, expRate, coinRate });
   } catch (err) { box.replaceChildren(o('p', 'exp-status', 'Couldn\u2019t save your EXP. ' + (err && err.message || ''))); }
