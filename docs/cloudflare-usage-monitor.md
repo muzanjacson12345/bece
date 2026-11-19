@@ -1,6 +1,6 @@
 # Cloudflare usage monitor — design and safety notes
 
-**Status: Owner-panel display added; Cloudflare is not connected.** This change does not create a Cloudflare account, Worker, D1 database, API token, billing relationship, or deployment. Usage values in the Owner panel are intentionally unavailable until a secure metrics connection exists.
+**Status updated 19 November 2026:** The read-only usage Worker is deployed and serving 100% of its traffic. The Owner panel and its `/usage` URL are published on GitHub Pages from `main` (PR #26). The preflight and responsive UI checks passed. The full Owner-authenticated request still needs verification in an active Owner session; secret values are not readable back from Cloudflare. No D1 database was created by this release.
 
 ## Free-plan limits checked 18 November 2026
 
@@ -41,12 +41,12 @@ The existing Gems security document currently describes Firebase Cloud Functions
 
 ## Release gates
 
-- Keep this work on the feature branch.
+- Keep the Gems domain modules and Worker source on `feature/gems-system-modules`; the Owner UI was released separately to `main` so the full development branch was not merged.
 - Test the Owner panel at phone, tablet and desktop sizes.
 - Pure parsing and calculation helpers are covered by unit tests for Workers requests/subrequests, D1 rows read/written, latest-per-database D1 storage, warning thresholds, missing/malformed data, stale timestamps, and UTC reset boundaries.
-- The helper does not call Cloudflare or hold credentials. It is not yet connected to the Owner UI or a protected backend endpoint.
+- The pure helper does not call Cloudflare or hold credentials. It is imported by the server-side Worker; the Owner UI calls the protected `/usage` endpoint.
 - D1 storage is summed from the latest available sample per database; the age of the oldest of those latest samples is used as the combined snapshot timestamp so an old database sample is not hidden.
-- Do not merge, publish, deploy, or change Firestore rules as part of this display-only change.
+- Do not deploy the unfinished Gems wallet/event backend or change Firestore rules as part of this usage display. The read-only usage Worker is deployed; its authenticated live request still needs verification from an active Owner session.
 ## Official Cloudflare references
 
 - Workers plan limits and daily reset/error behavior: https://developers.cloudflare.com/workers/platform/limits/
