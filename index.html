@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="overview-owner-controls-2026-11-17-r2">
+<meta name="bece-build" content="gems-core-2026-11-19-r1">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -9938,9 +9938,9 @@ function renderAccount() {
     if (S.doc.avatar) w.append(o('span', 'account-badge', BeceProfile.safeAv(S.doc.avatar)));
     e.append(w);
   } else if (S.doc && S.doc.avatar) e.append(o('span', 'account-avatar', BeceProfile.safeAv(S.doc.avatar)));
-  e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), o('span', 'account-coins', `💰 ${S.doc.coins || 0}`), o('span', 'account-exp', `${m.totalExp} EXP`));
+  e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), o('span', 'account-coins', `💰 ${S.doc.coins || 0}`), o('span', 'account-coins', `💎 ${Math.max(0, Number(S.doc.gems) || 0)}`), o('span', 'account-exp', `${m.totalExp} EXP`));
   if (m.streak) e.append(o('span', 'account-streak', `\u{1F525} ${m.streak}`));
-  e.setAttribute('aria-label', `${m.displayName}, level ${lv(m.totalExp).level}, ${m.totalExp} EXP, ${S.doc.coins || 0} coins. Open your profile`);
+  e.setAttribute('aria-label', `${m.displayName}, level ${lv(m.totalExp).level}, ${m.totalExp} EXP, ${S.doc.coins || 0} coins, ${Math.max(0, Number(S.doc.gems) || 0)} Gems. Open your profile`);
   e.onclick = () => App.navigate('me');
 }
 const CHALLENGE_POOL = (() => {
@@ -10201,7 +10201,7 @@ App.on('quiz:finished', async ev => {
     const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: awardedExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
     const sfreezes = usedFreeze ? Math.max(0, (d.sfreezes || 0) - 1) : (d.sfreezes || 0);
     const xpBoost = xpMult > 1 ? Math.max(0, (d.xpBoost || 0) - 1) : (d.xpBoost || 0);
-    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + awardedExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + awardedExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + awardedExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, challengeState, achievements, recent };
+    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + awardedExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + awardedExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + awardedExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, gems: Number.isSafeInteger(d.gems) && d.gems >= 0 ? d.gems : 0, gemOps: Array.isArray(d.gemOps) ? d.gemOps.slice(-100) : [], owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, challengeState, achievements, recent };
     await S.db.doc('players/' + S.uid).set(next); S.doc = next;
     renderAccount(); renderDaily(); renderAchievements();
     showResult({ coins: coinsEarned, coinParts: scaledCoinParts, balance: (next.coins || 0), earned: awardedEarned, bonusExp: awardedBonusExp, correct: ev.correct, already, parts: scaledParts, total: next.totalExp, streak, extended, usedFreeze, xpMult, expRate, coinRate });
@@ -12567,6 +12567,68 @@ window.renderFriends = renderFriends;
 window.Adm = Adm;
 
 const fmtLeft = ms => { const m = Math.max(1, Math.ceil(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`; };
+
+/* ---------- Gems: atomic balance changes ---------- */
+/* This protects normal app flows from stale-balance races and repeat operation IDs.
+   Firestore security rules must still prevent clients from editing gems/gemOps directly. */
+const Gems = (() => {
+  const MAX_BALANCE = 1000000000;
+  const MAX_RECENT_OPS = 100;
+  const currentBalance = () => {
+    const value = S.doc && S.doc.gems;
+    return Number.isSafeInteger(value) && value >= 0 ? value : 0;
+  };
+  async function applyGemChange(delta, operationId) {
+    if (!S.db || !S.uid) throw new Error('SIGN_IN_REQUIRED');
+    if (!Number.isSafeInteger(delta) || delta === 0 || Math.abs(delta) > 1000000) throw new Error('INVALID_GEM_AMOUNT');
+    const opId = String(operationId || '').trim();
+    if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(opId)) throw new Error('INVALID_GEM_OPERATION_ID');
+    const playerRef = S.db.doc('players/' + S.uid);
+    let outcome = null;
+    await S.db.runTransaction(async transaction => {
+      const snapshot = await transaction.get(playerRef);
+      const data = snapshot.exists ? (snapshot.data() || {}) : {};
+      const before = data.gems == null ? 0 : data.gems;
+      if (!Number.isSafeInteger(before) || before < 0) throw new Error('INVALID_GEM_BALANCE');
+      const recentOps = Array.isArray(data.gemOps)
+        ? data.gemOps.filter(value => typeof value === 'string').slice(-MAX_RECENT_OPS)
+        : [];
+      if (recentOps.includes(opId)) {
+        outcome = { previous: before, balance: before, change: 0, duplicate: true, operations: recentOps };
+        return;
+      }
+      if (delta < 0 && before < -delta) {
+        const error = new Error('INSUFFICIENT_GEMS');
+        error.code = 'INSUFFICIENT_GEMS';
+        throw error;
+      }
+      const after = before + delta;
+      if (!Number.isSafeInteger(after) || after > MAX_BALANCE) throw new Error('GEM_BALANCE_LIMIT');
+      const operations = [...recentOps, opId].slice(-MAX_RECENT_OPS);
+      transaction.set(playerRef, { gems: after, gemOps: operations }, { merge: true });
+      outcome = { previous: before, balance: after, change: delta, duplicate: false, operations };
+    });
+    if (!outcome) throw new Error('GEM_TRANSACTION_NOT_CONFIRMED');
+    S.doc = { ...(S.doc || {}), gems: outcome.balance, gemOps: outcome.operations };
+    const mine = (S.players || []).find(player => player.id === S.uid);
+    if (mine) { mine.gems = outcome.balance; mine.gemOps = outcome.operations; }
+    renderAccount();
+    renderFriends();
+    return { previous: outcome.previous, balance: outcome.balance, change: outcome.change, duplicate: outcome.duplicate };
+  }
+  return Object.freeze({
+    getBalance: currentBalance,
+    earn: (amount, operationId) => {
+      if (!Number.isSafeInteger(amount) || amount <= 0) return Promise.reject(new Error('INVALID_GEM_AMOUNT'));
+      return applyGemChange(amount, operationId);
+    },
+    spend: (amount, operationId) => {
+      if (!Number.isSafeInteger(amount) || amount <= 0) return Promise.reject(new Error('INVALID_GEM_AMOUNT'));
+      return applyGemChange(-amount, operationId);
+    }
+  });
+})();
+window.Gems = Gems;
 
 async function init() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
