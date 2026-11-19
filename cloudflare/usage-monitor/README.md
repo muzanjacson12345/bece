@@ -2,13 +2,15 @@
 
 This directory contains a **read-only metrics Worker** for the Bece Hub Owner panel.
 
-## Current status
+## Current deployment status — updated 19 November 2026
 
-- The code is on the development branch only.
-- It has not been deployed to a Cloudflare account.
-- No Cloudflare account, API token, account ID, or production origin has been connected.
-- The Owner panel therefore remains in its explicit **Not connected** state.
-- Do not paste API tokens or Owner passwords into GitHub source, issues, chat, or this repository.
+- The Worker is deployed as `bece-hub-usage-monitor` at `https://bece-hub-usage-monitor.abeikcrentsil.workers.dev/usage`.
+- Cloudflare reports the active deployment at 100% traffic. The production build ran `npm test` followed by `npx wrangler deploy` from `cloudflare/usage-monitor`.
+- The Cloudflare Builds integration tracks `feature/gems-system-modules`; automatic builds are disabled, so production changes require an intentional build.
+- The Worker has the required secret bindings: `APP_ORIGIN`, `FIREBASE_API_KEY`, `CF_ACCOUNT_ID`, and `CF_API_TOKEN`. The plain-text `FIREBASE_PROJECT_ID` binding is `bece-hub-d9ad5`. Secret values are not readable back from Cloudflare and must never be copied into source control.
+- The Owner usage panel has been isolated into the main branch and published through GitHub Pages (PR #26). The production preflight smoke check and responsive UI audit passed.
+- The CORS preflight is verified. A full authenticated metrics request still needs a live Owner session to confirm the secret values and upstream Analytics permissions end to end.
+- The existing Firestore rules were not changed. The Worker relies on the signed-in user's own `ownerSessions/{uid}` read and the Owner-only `auditLogs` rule.
 
 ## Authentication and authorization
 
@@ -48,41 +50,23 @@ npm test
 
 The tests use mocked Firebase, Firestore, and Cloudflare responses. They do not require real account credentials or make live external calls.
 
-## Deployment setup — not performed
+## Deployment maintenance — Worker already deployed
 
-Do not deploy until the metrics tests pass, the actual website origin is confirmed, and a Cloudflare account holder is ready to configure the account.
+The production Worker is built from the `feature/gems-system-modules` branch with root directory `cloudflare/usage-monitor`. Cloudflare Builds currently uses:
 
-Use a **local secrets file** for the first deployment. Cloudflare supports uploading required secrets together with the Worker deployment, which avoids trying to add secrets to a Worker that does not exist yet.
+- Build command: `npm test`
+- Deploy command: `npx wrangler deploy`
+- Automatic builds: disabled
+- Previews: enabled
 
-1. In this folder, create a local file named `.env.production`. The folder's `.gitignore` excludes it from Git.
-2. Put the following names in that file, replacing each placeholder locally. Do not paste real values into GitHub, chat, or source files.
+For a deliberate Worker update, first run the tests, inspect the Cloudflare diff, then trigger a production build from the configured branch. Preserve the existing Cloudflare secret bindings. Do not add secrets to GitHub, issues, source files, or chat, and do not create a committed `.env.production` file.
 
-```dotenv
-APP_ORIGIN="https://your-real-app-origin.example"
-FIREBASE_API_KEY="your-firebase-web-api-key"
-CF_ACCOUNT_ID="your-cloudflare-account-id"
-CF_API_TOKEN="your-account-analytics-read-token"
-```
+The website's `bece-usage-api` meta value must continue to match the deployed Worker URL exactly, including `/usage`. The allowed app origin is `https://muzanjacson12345.github.io`.
 
-3. From this folder, deploy the Worker and upload the secrets in the same operation:
+To review or rotate a secret, do so privately in the Cloudflare dashboard. The binding names can be listed, but Cloudflare does not reveal the stored secret values. A successful browser preflight does not prove that Firebase authentication or the Cloudflare Analytics token works; verify those using the protected Owner refresh while signed in as the Owner.
 
-```sh
-npx wrangler deploy --secrets-file .env.production
-```
+No Firestore rules or Gems wallet/event functions are deployed by this usage-monitor release.
 
-Cloudflare documents this deployment method and preserves existing secrets on later deployments:
-https://developers.cloudflare.com/workers/configuration/secrets/
-
-After deployment, copy the Worker URL shown by Wrangler. The app's `bece-usage-api` meta value must then be set to that exact HTTPS URL with `/usage` at the end. Do not guess the address.
-
-- APP_ORIGIN must be the exact app origin including protocol but no path, for example `https://your-site.example`.
-- FIREBASE_API_KEY is the public Firebase web API key for Bece Hub.
-- CF_ACCOUNT_ID is the Cloudflare account containing the Workers whose request totals you want to monitor.
-- CF_API_TOKEN should be scoped to that account with only Account Analytics Read permission.
-
-The Firebase project ID is the non-secret value already set in `wrangler.jsonc`.
-
-This deploy publishes a Worker. It is deliberately not run by this development work. Use a Cloudflare account holder with appropriate adult guidance to complete the account and token setup.
 ## Important limitations
 
 - A Firestore REST check proves the current caller can read their own valid Owner-session document under Firestore Security Rules. It is not a replacement for reviewing those rules.
