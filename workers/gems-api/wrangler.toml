@@ -1,0 +1,14 @@
+name = "bece-hub-gems-api"
+main = "src/index.js"
+compatibility_date = "2026-11-19"
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 0.1
