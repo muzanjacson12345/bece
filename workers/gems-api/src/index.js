@@ -100,8 +100,7 @@ async function verifyFirebaseIdToken(token) {
       || !Number.isFinite(claims.iat)
       || claims.iat > nowSeconds + 60
       || !Number.isFinite(claims.auth_time)
-      || claims.auth_time > nowSeconds + 60
-      || claims.token_use !== 'id') {
+      || claims.auth_time > nowSeconds + 60) {
     throw new Error('UNAUTHORIZED');
   }
   return { uid: claims.sub };
@@ -303,7 +302,7 @@ export default {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') {
       if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-      return json({ ok: true }, 204, origin);
+      return json({ ok: true }, 200, origin);
     }
     if (request.method === 'GET' && url.pathname === '/health') {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
