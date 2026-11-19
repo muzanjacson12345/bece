@@ -1,0 +1,52 @@
+name: Usage monitor connectivity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - '.github/workflows/usage-monitor-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - '.github/workflows/usage-monitor-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  worker-preflight:
+    name: Check protected usage endpoint preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify the deployed Worker accepts the website origin
+        env:
+          WORKER_URL: https://bece-hub-usage-monitor.abeikcrentsil.workers.dev/usage
+          APP_ORIGIN: https://muzanjacson12345.github.io
+        run: |
+          set -euo pipefail
+          headers_file="$(mktemp)"
+          body_file="$(mktemp)"
+          status="$(curl --silent --show-error --max-time 20 \
+            --output "$body_file" \
+            --dump-header "$headers_file" \
+            --write-out '%{http_code}' \
+            --request OPTIONS "$WORKER_URL" \
+            --header "Origin: $APP_ORIGIN" \
+            --header 'Access-Control-Request-Method: GET' \
+            --header 'Access-Control-Request-Headers: authorization')"
+
+          if [[ "$status" != "204" ]]; then
+            echo "Expected HTTP 204 preflight, got $status"
+            cat "$headers_file"
+            cat "$body_file"
+            exit 1
+          fi
+
+          grep -Fqi "access-control-allow-origin: $APP_ORIGIN" "$headers_file"
+          grep -Fqi 'access-control-allow-methods: GET, OPTIONS' "$headers_file"
+          grep -Fqi 'access-control-allow-headers: Authorization, Content-Type' "$headers_file"
+          echo "Worker preflight is healthy for the deployed website origin."
