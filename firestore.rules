@@ -1,0 +1,139 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function role() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null;
+    }
+    function owner() { return role() == 'owner'; }
+    function admin() { return role() in ['admin', 'owner']; }
+    function staff(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid))
+        && get(/databases/$(database)/documents/users/$(uid)).data.role in ['admin', 'owner'];
+    }
+    function banned() {
+      return signedIn() && exists(/databases/$(database)/documents/bans/$(request.auth.uid))
+        && get(/databases/$(database)/documents/bans/$(request.auth.uid)).data.active == true;
+    }
+    function self(uid) { return signedIn() && request.auth.uid == uid; }
+
+    match /users/{uid} {
+      allow read: if true;
+      allow create: if owner() || (self(uid) && !('role' in request.resource.data));
+      allow update: if owner() || (self(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
+      allow delete: if owner();
+    }
+    match /players/{uid} {
+      allow read: if signedIn();
+      allow create: if owner()
+        || (self(uid) && !banned() && !('gems' in request.resource.data) && !('gemOps' in request.resource.data))
+        || (admin() && !staff(uid) && !('gems' in request.resource.data) && !('gemOps' in request.resource.data));
+      allow update: if owner()
+        || (self(uid) && !banned() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['gems','gemOps']))
+        || (admin() && !staff(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['gems','gemOps']));
+      allow delete: if owner() || (admin() && !staff(uid));
+    }
+    match /bans/{uid} {
+      allow read: if admin() || self(uid);
+      allow write: if owner();
+    }
+    match /staffRoster/{uid} {
+      allow read: if signedIn();
+      allow write: if owner();
+    }
+    match /adminBadges/{uid} {
+      allow read: if signedIn();
+      allow create, update: if self(uid) && request.resource.data.role in ['admin','owner'];
+      allow delete: if self(uid) || owner();
+    }
+    match /adminSessions/{uid} {
+      allow read: if self(uid) || owner();
+      allow create, update: if self(uid) || owner();
+      allow delete: if self(uid) || owner();
+    }
+    match /ownerSessions/{uid} {
+      allow read, write: if self(uid) || owner();
+    }
+    match /config/{id} {
+      allow read: if signedIn();
+      allow write: if owner();
+    }
+    match /settings/{id} {
+      allow read: if signedIn();
+      allow write: if owner();
+    }
+    match /announcements/{id} {
+      allow read: if signedIn();
+      allow write: if admin();
+    }
+    match /notices/{uid} {
+      allow read: if self(uid) || admin();
+      allow create, update: if admin();
+      allow delete: if self(uid) || admin();
+    }
+    match /adminNotes/{uid} {
+      allow read, write: if admin();
+    }
+    match /auditLogs/{id} {
+      allow read, delete: if owner();
+      allow create: if admin();
+      allow update: if owner();
+    }
+    match /bugReports/{id} {
+      allow read: if admin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn() && !banned() && request.resource.data.uid == request.auth.uid;
+      allow update: if admin() || (signedIn() && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+      allow delete: if owner();
+    }
+    match /shop/{id} {
+      allow read: if signedIn();
+      allow write: if admin();
+    }
+    match /shopTransactions/{id} {
+      allow read: if admin() || (signedIn() && resource.data.playerId == request.auth.uid);
+      allow create: if signedIn() && !banned() && request.resource.data.playerId == request.auth.uid;
+      allow update, delete: if owner();
+    }
+    match /questions/{id} { allow read: if signedIn(); allow write: if admin(); }
+    match /quizzes/{id} { allow read: if signedIn(); allow write: if admin(); }
+    match /events/{id} { allow read: if signedIn(); allow write: if admin(); }
+    match /duels/{id} {
+      allow read: if admin() || (signedIn() && (resource.data.host == request.auth.uid || resource.data.guest == request.auth.uid));
+      allow create: if signedIn() && !banned() && request.resource.data.host == request.auth.uid;
+      allow update: if owner() || (signedIn() && !banned()
+        && (resource.data.host == request.auth.uid || resource.data.guest == request.auth.uid));
+      allow delete: if owner() || (signedIn() && resource.data.host == request.auth.uid && resource.data.state == 'waiting');
+    }
+    match /duelInvites/{id} {
+      allow read: if admin() || (signedIn() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid));
+      allow create: if signedIn() && !banned() && request.resource.data.fromUid == request.auth.uid;
+      allow update: if owner() || (signedIn() && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid));
+      allow delete: if owner();
+    }
+    match /friendRequests/{id} {
+      allow read: if admin() || (signedIn() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid));
+      allow create: if signedIn() && !banned() && request.resource.data.fromUid == request.auth.uid;
+      allow update: if owner() || (signedIn() && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid));
+      allow delete: if owner();
+    }
+    match /messages/{id} {
+      allow read: if admin() || (signedIn() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid));
+      allow create: if signedIn() && !banned() && request.resource.data.fromUid == request.auth.uid;
+      allow update, delete: if owner();
+    }
+    match /reports/{id} {
+      allow read: if admin();
+      allow create: if signedIn() && !banned() && request.resource.data.reporterId == request.auth.uid;
+      allow update: if admin();
+      allow delete: if owner();
+    }
+    match /activityLogs/{id} {
+      allow read, create: if admin();
+      allow update, delete: if owner();
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
+
