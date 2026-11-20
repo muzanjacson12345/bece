@@ -537,17 +537,42 @@ service cloud.firestore {
 
     // ---------- 1v1 duels ----------
     match /duels/{id} {
-      allow read: if signedIn();
+      // Public rooms are discoverable from the public waiting-room query.
+      // Private rooms are fetched by code only; public listing never returns them.
+      // Existing 5-character private rooms remain usable while their host is active.
+      allow get: if signedIn()
+        && (
+          isStaff()
+          || resource.data.get('vis', '') == 'public'
+          || resource.data.get('host', '') == request.auth.uid
+          || resource.data.get('guest', '') == request.auth.uid
+          || (
+            resource.data.get('vis', '') == 'private'
+            && resource.data.get('state', '') == 'waiting'
+            && resource.data.get('guest', null) == null
+            && (
+              id.size() == 12
+              || (
+                id.size() == 5
+                && resource.data.get('hb', 0) is int
+                && resource.data.hb + 70000 > request.time.toMillis()
+              )
+            )
+          )
+        );
+
+      allow list: if signedIn()
+        && (isStaff() || resource.data.get('vis', '') == 'public');
 
       allow create: if signedIn()
         && !isBanned()
         && (!duelsPaused() || isOwner())
         && request.resource.data.keys().hasOnly([
-          'host', 'hostName', 'guest', 'guestName', 'subject',
+          'host', 'hostName', 'guest', 'guestName', 'subjects', 'subject',
           'secs', 'vis', 'qids', 'state', 'created', 'hb', 'res'
         ])
         && request.resource.data.keys().hasAll([
-          'host', 'hostName', 'guest', 'guestName', 'subject',
+          'host', 'hostName', 'guest', 'guestName', 'subjects', 'subject',
           'secs', 'vis', 'qids', 'state', 'created', 'hb', 'res'
         ])
         && request.resource.data.host == request.auth.uid
@@ -555,7 +580,22 @@ service cloud.firestore {
         && request.resource.data.hostName.size() <= 40
         && request.resource.data.guest == null
         && request.resource.data.guestName == ''
+        && request.resource.data.subjects is list
+        && request.resource.data.subjects.size() >= 1
+        && request.resource.data.subjects.size() <= 8
+        && request.resource.data.subjects.hasOnly([
+          'social', 'arts', 'maths', 'computing',
+          'rme', 'integratedScience', 'french', 'careerTechnology'
+        ])
         && request.resource.data.subject is string
+        && request.resource.data.subject
+             == (request.resource.data.subjects.size() == 1
+                   ? request.resource.data.subjects[0]
+                   : 'mixed')
+        && (
+          (request.resource.data.vis == 'public' && id.size() == 5)
+          || (request.resource.data.vis == 'private' && id.size() == 12)
+        )
         && request.resource.data.secs is int
         && request.resource.data.secs >= 5
         && request.resource.data.secs <= 60
@@ -581,6 +621,16 @@ service cloud.firestore {
           (resource.data.state == 'waiting'
             && resource.data.guest == null
             && resource.data.host != request.auth.uid
+            && (
+              resource.data.vis == 'public'
+              || (resource.data.vis == 'private'
+                  && (
+                    id.size() == 12
+                    || (id.size() == 5
+                        && resource.data.get('hb', 0) is int
+                        && resource.data.hb + 70000 > request.time.toMillis())
+                  ))
+            )
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
               'guest', 'guestName', 'state', 'startAt'
             ])

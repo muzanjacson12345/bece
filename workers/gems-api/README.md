@@ -11,7 +11,7 @@ Add one encrypted Worker secret to the Cloudflare Worker named `bece-hub-gems-ap
 
 The service account needs the **Cloud Datastore User** role on the Firebase project so it can read and update Firestore documents. Do not put the JSON key in GitHub, in the website source, or in ChatGPT. Do not send the key to anyone. Rotate/delete the key if it is ever exposed.
 
-The Worker deliberately refuses all Gems earnings except requests authenticated as the Owner in `users/{uid}.role`. Player-initiated earning must remain disabled until the app has explicitly defined server-verifiable reward rules. Spending is limited to the signed-in player's own balance. No client-supplied UID or balance is accepted.
+The Worker deliberately refuses all Gems earnings except requests authenticated as the active Owner through the same `ownerSessions/{uid}` and protected `config/owner` documents used by the website. Player-initiated earning must remain disabled until the app has explicitly defined server-verifiable reward rules. Spending is limited to the signed-in player's own balance. No client-supplied UID or balance is accepted.
 
 ## Endpoints
 

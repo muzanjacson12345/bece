@@ -1139,7 +1139,7 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
 .duel-item > .duel-chips { grid-column: 1 / -1; }
 .duel-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .duel-chips span { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft); }
-.duel-code { font: 700 44px/1 var(--serif); letter-spacing: .2em; text-align: center; padding: 18px 0; border: 1px dashed var(--line-strong); border-radius: 12px; }
+.duel-code { font: 700 clamp(22px, 6vw, 44px)/1 var(--serif); letter-spacing: .12em; overflow-wrap: anywhere; text-align: center; padding: 18px 8px; border: 1px dashed var(--line-strong); border-radius: 12px; }
 .duel-count { font: 700 72px/1 var(--serif); text-align: center; color: var(--accent); }
 .duel-vs-big .duel-side { flex-direction: column; text-align: center; }
 .duel-nm { display: block; font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -11169,7 +11169,7 @@ const Duel = (() => {
     const all = selected.flatMap(subject => questionsDB[subject] || []);
     const pool = all.filter(q => !q.diagram && q.options && q.options.length && q.correct);
     if (pool.length < c.len) return warn(`Only ${pool.length} questions available for that subject. Pick fewer.`);
-    const code = Array.from({ length: 5 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join('');
+    const code = Array.from({ length: c.vis === 'private' ? 12 : 5 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join('');
     const doc = { host: S.uid, hostName: myName(), guest: null, guestName: '', subjects: selected, subject: selected.length === 1 ? selected[0] : 'mixed', secs: c.secs, vis: c.vis, qids: mix(pool).slice(0, c.len).map(q => q.id), state: 'waiting', created: Date.now(), hb: Date.now(), res: {} };
     try { await col().doc(code).set(doc); } catch (e) { return warn(`Couldn\u2019t create the duel (${(e && (e.code || e.message)) || 'unknown error'}).`); }
     D.doc = doc; watch(code); lobby();
@@ -11277,7 +11277,7 @@ const Duel = (() => {
     syncSubjects();
     const hint = o('p', 'duel-hint'), sync = () => { hint.textContent = D.cfg.vis === 'public' ? 'Public: shows under Open so anyone on the board can accept.' : 'Private: hidden from the list. Only people with your code can join.'; };
     const vis = seg('Who can join', ['public', 'private'], 'vis', v => (v === 'public' ? '\u{1F310} Public' : '\u{1F512} Private'), sync); sync();
-    const inp = document.createElement('input'); inp.className = 'duel-in'; inp.placeholder = 'CODE'; inp.maxLength = 5; inp.autocapitalize = 'characters'; inp.setAttribute('aria-label', 'Duel code');
+    const inp = document.createElement('input'); inp.className = 'duel-in'; inp.placeholder = 'CODE'; inp.maxLength = 12; inp.autocapitalize = 'characters'; inp.setAttribute('aria-label', 'Duel code');
     inp.onkeydown = e => { if (e.key === 'Enter') join(inp.value); };
     D.list = o('ul', 'duel-open');
     D.tiles = ['Wins', 'Losses', 'Draws'].map(l => { const t = o('div', 'duel-tile'), n = o('strong', '', '0'); t.append(n, o('span', '', l)); t.n = n; return t; });

@@ -228,13 +228,35 @@ function parseStringArray(field) {
 
 async function isUserBanned(uid, accessToken) {
   const doc = await getDocument('bans/' + encodeURIComponent(uid), accessToken);
-  return !!(doc && doc.fields && doc.fields.active && doc.fields.active.booleanValue === true);
+  if (!doc || !doc.fields) return false;
+
+  // Current app rules store ban expiry as Unix milliseconds in `until`.
+  // Keep active=true support for legacy records during migration.
+  if (doc.fields.active && doc.fields.active.booleanValue === true) return true;
+  const until = parseIntegerField(doc.fields.until, NaN);
+  return Number.isSafeInteger(until) && (until === 0 || until > Date.now());
 }
 
-async function userRole(uid, accessToken) {
-  const doc = await getDocument('users/' + encodeURIComponent(uid), accessToken);
-  return doc && doc.fields && doc.fields.role && typeof doc.fields.role.stringValue === 'string'
-    ? doc.fields.role.stringValue : null;
+async function isOwnerSession(uid, accessToken) {
+  // Use the same Owner session model as the website and Firestore rules.
+  const results = await Promise.all([
+    getDocument('ownerSessions/' + encodeURIComponent(uid), accessToken),
+    getDocument('config/owner', accessToken)
+  ]);
+  const session = results[0];
+  const config = results[1];
+  if (!session || !config || !session.fields || !config.fields) return false;
+
+  const atValue = session.fields.at && session.fields.at.timestampValue;
+  const createdAt = typeof atValue === 'string' ? Date.parse(atValue) : NaN;
+  if (!Number.isFinite(createdAt) || createdAt + 30 * 60 * 1000 <= Date.now()) return false;
+
+  const sessionPw1 = session.fields.pw1 && session.fields.pw1.stringValue;
+  const sessionPw2 = session.fields.pw2 && session.fields.pw2.stringValue;
+  const configPw1 = config.fields.pw1 && config.fields.pw1.stringValue;
+  const configPw2 = config.fields.pw2 && config.fields.pw2.stringValue;
+  return typeof sessionPw1 === 'string' && typeof sessionPw2 === 'string'
+    && sessionPw1 === configPw1 && sessionPw2 === configPw2;
 }
 
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
@@ -337,8 +359,8 @@ export default {
       const accessToken = await getFirestoreAccessToken(env);
       if (await isUserBanned(identity.uid, accessToken)) return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot use Gems while banned.' }, 403, origin);
       if (action === 'earn') {
-        const role = await userRole(identity.uid, accessToken);
-        if (role !== 'owner') return json({ ok: false, code: 'EARN_REQUIRES_OWNER', error: 'Gems can only be granted by the Owner until approved reward rules are added.' }, 403, origin);
+        const owner = await isOwnerSession(identity.uid, accessToken);
+        if (!owner) return json({ ok: false, code: 'EARN_REQUIRES_OWNER', error: 'Gems can only be granted by the active Owner.' }, 403, origin);
       }
       const outcome = await applyGemChange(identity.uid, action, amount, operationId, accessToken);
       return json({ ok: true, ...outcome }, 200, origin);
