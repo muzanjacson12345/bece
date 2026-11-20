@@ -10873,39 +10873,48 @@ const Duel = (() => {
     const top = o('div', 'duel-top'); top.append(o('span', 'eyebrow', '1v1 duel' + (D.doc ? ' \u00B7 ' + (SUBS[D.doc.subject] || 'Mixed') : '')), x);
     box.replaceChildren(top, ...n);
   }
-  function record(out, forceCoins) {
+  async function record(out, forceCoins) {
     if (!D.code || !D.doc || D.recd === D.code || (D.doc.rec && D.doc.rec[S.uid])) return 0;
-    D.recd = D.code;
-    const F = firebase.firestore.FieldValue, k = out === 'w' ? 'duelW' : out === 'l' ? 'duelL' : 'duelD';
-    const d = S.doc || {}, td = today(), n = d.dcDay === td ? d.dcN || 0 : 0;
-    const base = out === 'w' ? 5 : out === 'd' ? 2 : 1, parts = [];
-    let c = 0; D.limit = false;
-    if (forceCoins !== 0 && n >= 10) D.limit = true;
-    else if (forceCoins !== 0) {
-      parts.push({ label: out === 'w' ? '\u{1F3C6} Duel won' : out === 'd' ? '\u{1F91D} Draw' : '\u2694\uFE0F Duel played', n: base });
-      const inRow = Math.min(3, Math.floor((D.best || 0) / 3));                  // +1 for every 3 right answers in a row (best run), up to +3
-      if (inRow) parts.push({ label: `\u{1F525} Best run: ${D.best} in a row`, n: inRow });
-      if (D.me && D.me.c === total() && total() >= 3) parts.push({ label: '\u{1F31F} Perfect score', n: 2 });
-      const ds = d.lastDay === td || d.lastDay === (typeof yesterday === 'function' ? yesterday() : '') ? d.streak || 0 : 0;
-      const dayCoins = Math.min(3, Math.floor(ds / 3));                           // daily streak: +1 per 3 days, up to +3
-      if (dayCoins) parts.push({ label: `\u{1F4C5} ${ds}-day streak bonus`, n: dayCoins });
-      c = parts.reduce((a, p) => a + p.n, 0);
+    const code = D.code;
+    D.recd = code;
+    try {
+      await push();
+      const data = await callBeceWorker('/duel-reward', { code, forfeit: forceCoins === 0 });
+      D.limit = !!data.limit;
+      D.coinParts = data.coinParts || [];
+      D.bal = Number(data.balance) || 0;
+      D.verifiedOutcome = data.outcome || out;
+      D.verifiedMine = data.mine || null;
+      D.verifiedOpponent = data.opponent || null;
+      if (data.player) {
+        S.doc = { ...(S.doc || {}), ...data.player };
+        const mine = (S.players || []).find(player => player.id === S.uid);
+        if (mine) Object.assign(mine, data.player);
+      }
+      return Number(data.coins) || 0;
+    } catch (error) {
+      D.recd = null;
+      App.toast((error && error.message) || 'The duel reward could not be verified.', 'warn');
+      D.coinParts = [];
+      D.bal = Number((S.doc && S.doc.coins) || 0);
+      D.verifiedOutcome = out;
+      return 0;
     }
-    D.coinParts = parts; D.bal = (d.coins || 0) + c;
-    const b = S.db.batch();
-    b.set(S.db.doc('players/' + S.uid), { [k]: F.increment(1), ...(c ? { coins: F.increment(c), dcDay: td, dcN: n + 1 } : {}) }, { merge: true });
-    b.update(col().doc(D.code), { ['rec.' + S.uid]: true });
-    b.commit().catch(() => { D.recd = null; });
-    return c;
+  } function push() {
+    if (!D.code || !D.me) return Promise.resolve();
+    const code = D.code;
+    const result = { ...D.me, answers: (D.log || []).map(row => ({ id: row.id, key: row.key, ms: row.ms })) };
+    if (D.me.done) result.doneAt = firebase.firestore.FieldValue.serverTimestamp();
+    D.pushing = (D.pushing || Promise.resolve()).catch(() => {}).then(() => col().doc(code).update({ ['res.' + S.uid]: result }));
+    return D.pushing.catch(() => {});
   }
-  function push() { if (D.code && D.me) col().doc(D.code).update({ ['res.' + S.uid]: { ...D.me } }).catch(() => {}); }
   function leave() {
     const playing = D.doc && D.started && D.me && !D.me.done, x = $('duel-x');
     if (playing && !D.armed) { D.armed = true; if (x) x.textContent = 'Forfeit?'; setTimeout(() => { D.armed = false; const y = $('duel-x'); if (y) y.textContent = '\u2715'; }, 3000); return; }
     D.armed = false; close(true);
   }
   function close() {
-    if (D.me && !D.me.done && D.started) { D.me.done = true; D.me.ms += (total() - D.me.n) * secs() * 1000; D.me.n = total(); push(); record('l', 0); }
+    if (D.me && !D.me.done && D.started) { D.me.done = true; D.me.ms += (total() - D.me.n) * secs() * 1000; D.me.n = total(); while (D.log.length < total()) D.log.push({ id: D.doc.qids[D.log.length], key: null, ok: false, ms: secs() * 1000 }); push(); record('l', 0); }
     clearInterval(D.timer); clearInterval(D.scT); clearInterval(D.cdT); clearInterval(D.hbT); clearTimeout(D.wait);
     if (D.unsub) { D.unsub(); D.unsub = null; }
     if (D.doc && D.doc.state === 'waiting' && D.doc.host === S.uid) col().doc(D.code).delete().catch(() => {});
@@ -10961,7 +10970,7 @@ const Duel = (() => {
     clearInterval(D.timer); clearInterval(D.scT); box && box.classList.remove('d-out', 'flash-ok', 'flash-bad');
     const id = D.doc.qids[D.idx]; if (!id) return finish();
     const q = App.questionById(id);
-    if (!q) { D.me.n++; D.me.ms += secs() * 1000; D.log.push({ id, key: null, ok: false }); D.idx++; return ask(); }
+    if (!q) { D.me.n++; D.me.ms += secs() * 1000; D.log.push({ id, key: null, ok: false, ms: secs() * 1000 }); D.idx++; return ask(); }
     D.locked = false; D.qStart = Date.now();
     const side = (pid, nm, cls) => { const s = o('div', 'duel-side ' + cls); D[cls + 'Sc'] = o('strong', '', '0'); D[cls + 'Sub'] = o('span', 'duel-sub'); s.append(av(pid, 40), tint(o('span', 'duel-nm', nm), who(pid)), D[cls + 'Sc'], D[cls + 'Sub']); return s; };
     const vs = o('div', 'duel-vs'); vs.append(side(S.uid, 'You', 'me'), o('b', 'duel-x2', 'VS'), side(oppId(), oppName(), 'opp'));
@@ -11034,8 +11043,9 @@ const Duel = (() => {
       return;
     }
 
-    D.me.n++; D.me.ms += ok ? Date.now() - D.qStart : secs() * 1000; if (ok) D.me.c++;
-    D.log.push({ id: q.id, key, ok });
+    const answerMs = ok ? Math.min(secs() * 1000, Math.max(0, Date.now() - D.qStart)) : secs() * 1000;
+    D.me.n++; D.me.ms += answerMs; if (ok) D.me.c++;
+    D.log.push({ id: q.id, key, ok, ms: answerMs });
     box.querySelectorAll('.option').forEach(b => { b.disabled = true; b.classList.add(b.dataset.key === q.correct ? 'is-correct' : b.dataset.key === key ? 'is-wrong' : 'is-dim'); });
     const right = (q.options.find(x => x.key === q.correct) || {}).text;
     D.dots[D.idx].className = 'duel-dot ' + (ok ? 'ok' : 'bad');
@@ -11049,7 +11059,7 @@ const Duel = (() => {
     setTimeout(() => { if (D.code === tok && box) box.classList.add('d-out'); }, 850);
     setTimeout(() => { if (D.code !== tok || !D.doc) return; D.idx++; ask(); }, 1100);
   }
-  function finish() { D.me.done = true; D.finAt = Date.now(); push(); step(); }
+  async function finish() { D.me.done = true; D.finAt = Date.now(); await push(); step(); }
   function waitOrResult() {
     const r = (D.doc.res || {})[oppId()], left = 120000 - (Date.now() - D.finAt);
     if ((r && r.done) || left <= 0) return result(r);
@@ -11080,10 +11090,13 @@ const Duel = (() => {
       const f = t => { const k = Math.min(1, (t - t0) / 900); el.textContent = `${Math.round(to * k)}/${n}`; if (k < 1) requestAnimationFrame(f); }; el.textContent = `0/${n}`; requestAnimationFrame(f);
     });
   }
-  function result(r) {
-    const me = D.me, opp = r || { c: 0, n: 0, ms: 0, done: false }, n = total();
-    const tie = me.c === opp.c && me.ms === opp.ms, win = me.c !== opp.c ? me.c > opp.c : me.ms < opp.ms;
-    const cn = record(tie ? 'd' : win ? 'w' : 'l');
+  async function result(r) {
+    const n = total();
+    const cn = await record('l');
+    const me = D.verifiedMine ? { ...D.me, c: D.verifiedMine.correct, n: D.verifiedMine.count, ms: D.verifiedMine.ms } : D.me;
+    const opp = D.verifiedOpponent ? { c: D.verifiedOpponent.correct, n: D.verifiedOpponent.count, ms: D.verifiedOpponent.ms, done: true } : (r || { c: 0, n: 0, ms: 0, done: false });
+    const outcome = D.verifiedOutcome || 'loss';
+    const tie = outcome === 'draw', win = outcome === 'win';
     const side = (pid, name, x, w) => { const d = o('div', w ? 'is-win' : ''); d.append(av(pid, 40), o('span', 'duel-nm', name), o('strong', '', `${x.c}/${n}`), o('span', 'duel-sub', `${(x.ms / 1000).toFixed(1)}s total`)); return d; };
     const sc = o('div', 'duel-score'); sc.append(side(S.uid, 'You', me, win && !tie), side(oppId(), oppName(), opp, !win && !tie));
     const rev = o('details', 'duel-review'); rev.append(o('summary', '', `Review your answers (${me.c} right, ${D.log.length - me.c} missed)`));
@@ -11096,7 +11109,7 @@ const Duel = (() => {
     });
     const d = D.doc, cfg = { subjects: d.subjects || (d.subject && d.subject !== 'mixed' ? [d.subject] : ['social']), subjectCount: (d.subjects || []).length || 1, len: n, secs: secs(), vis: d.vis || 'public' };
     put(o('p', 'eyebrow', 'Duel result'), o('h2', tie ? '' : win ? 'duel-win' : '', tie ? 'It\u2019s a draw!' : win ? 'You won! \u{1F3C6}' : `${oppName()} wins this one`), sc,
-      chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, D.best > 1 ? `\u{1F525} best run ${D.best}` : ''),
+      chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, (D.verifiedMine ? D.verifiedMine.bestRun : D.best) > 1 ? `\u{1F525} best run ${(D.verifiedMine ? D.verifiedMine.bestRun : D.best)}` : ''),
       cn ? coinPanel(cn, D.coinParts, D.bal) : o('p', 'muted', D.limit ? '\u{1F4B0} Daily duel coin limit reached (10 duels). Come back tomorrow!' : 'No coins this time.'),
       o('p', 'muted', opp.done ? 'Most correct answers wins; faster total time breaks ties.' : `${oppName()} didn\u2019t finish, so unanswered questions count as wrong.`),
       rev, row(btn('Rematch', 'btn-primary btn-sm', () => { close(); D.cfg = cfg; create(); }), btn('Close', 'btn-ghost btn-sm', () => close())));

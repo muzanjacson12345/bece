@@ -669,6 +669,104 @@ async function applyShopChange(uid, payload, accessToken, mode) {
 }
 
 
+
+function verifyDuelAnswerSheet(result, questionIds, seconds) {
+  if (!result || result.done !== true || !Array.isArray(result.answers) || result.answers.length !== questionIds.length) throw new Error('INVALID_DUEL_RESULT');
+  let correct=0,totalMs=0,currentRun=0,bestRun=0;
+  for(let i=0;i<questionIds.length;i++){
+    const row=result.answers[i],qid=questionIds[i];
+    if(!row||row.id!==qid||!(row.key===null||['A','B','C','D'].includes(row.key)))throw new Error('INVALID_DUEL_ANSWERS');
+    const right=QUIZ_ANSWER_KEY[qid];if(!right)throw new Error('UNKNOWN_DUEL_QUESTION');
+    const isCorrect=row.key===right,elapsed=Number(row.ms);
+    if(!Number.isSafeInteger(elapsed)||elapsed<0||elapsed>seconds*1000)throw new Error('INVALID_DUEL_TIME');
+    if(isCorrect){correct++;currentRun++;bestRun=Math.max(bestRun,currentRun);totalMs+=elapsed;}
+    else{currentRun=0;totalMs+=seconds*1000;}
+  }
+  if(result.c!==correct||result.n!==questionIds.length||result.ms!==totalMs)throw new Error('DUEL_SCORE_MISMATCH');
+  return {correct,count:questionIds.length,ms:totalMs,bestRun,perfect:correct===questionIds.length&&questionIds.length>=3};
+}
+async function applyDuelReward(uid,payload,accessToken){
+  const code=payload&&typeof payload.code==='string'?payload.code.trim().toUpperCase():'';
+  const forfeit=payload&&payload.forfeit===true;
+  if(!/^[A-Z0-9]{5}(?:[A-Z0-9]{7})?$/.test(code))throw new Error('INVALID_DUEL_CODE');
+  const started=await firestoreRequest('projects/'+PROJECT_ID+'/databases/(default)/documents:beginTransaction',accessToken,{method:'POST',body:{}});
+  const transaction=started.transaction;if(!transaction)throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let completed=false;
+  try{
+    const docs=await Promise.all([
+      getDocument('players/'+encodeURIComponent(uid),accessToken,transaction),
+      getDocument('duels/'+encodeURIComponent(code),accessToken,transaction),
+      getDocument('bans/'+encodeURIComponent(uid),accessToken,transaction)
+    ]);
+    const playerDoc=docs[0],duelDoc=docs[1],banDoc=docs[2];
+    if(!playerDoc)throw new Error('PLAYER_PROFILE_NOT_READY');
+    if(!duelDoc)throw new Error('DUEL_NOT_FOUND');
+    if(isDocumentBanned(banDoc,Date.now()))throw new Error('USER_BANNED');
+    const player=decodeFirestoreDocument(playerDoc),duel=decodeFirestoreDocument(duelDoc);
+    const host=duel.host,guest=duel.guest;
+    if(host!==uid&&guest!==uid)throw new Error('NOT_DUEL_PARTICIPANT');
+    if(duel.state!=='playing')throw new Error('DUEL_NOT_ACTIVE');
+    const recent=duel.rec&&typeof duel.rec==='object'?duel.rec:{};
+    if(recent[uid]===true){
+      await firestoreRequest('projects/'+PROJECT_ID+'/databases/(default)/documents:commit',accessToken,{method:'POST',body:{transaction,writes:[]}});
+      completed=true;
+      return {duplicate:true,coins:0,balance:Number(player.coins)||0,coinParts:[],outcome:'recorded',limit:false};
+    }
+    let outcome='loss',coinParts=[],coins=0,limited=false,mine=null,opponent=null;
+    if(!forfeit){
+      const qids=Array.isArray(duel.qids)?duel.qids:[],seconds=Number(duel.secs);
+      if(!qids.length||qids.length>50||!Number.isInteger(seconds)||seconds<5||seconds>60)throw new Error('INVALID_DUEL_SETUP');
+      const results=duel.res&&typeof duel.res==='object'?duel.res:{},own=results[uid];
+      if(!own||own.done!==true)throw new Error('DUEL_RESULT_NOT_READY');
+      const finishedAt=typeof own.doneAt==='string'?Date.parse(own.doneAt):NaN;
+      if(!Number.isFinite(finishedAt))throw new Error('INVALID_DUEL_RESULT_TIME');
+      mine=verifyDuelAnswerSheet(own,qids,seconds);
+      const otherUid=host===uid?guest:host,other=otherUid&&results[otherUid];
+      if(other&&other.done===true)opponent=verifyDuelAnswerSheet(other,qids,seconds);
+      else{
+        if(Date.now()-finishedAt<120000)throw new Error('DUEL_OPPONENT_STILL_PLAYING');
+        opponent={correct:0,count:qids.length,ms:0,bestRun:0,perfect:false};
+      }
+      outcome=mine.correct===opponent.correct?(mine.ms===opponent.ms?'draw':mine.ms<opponent.ms?'win':'loss'):(mine.correct>opponent.correct?'win':'loss');
+      const base=outcome==='win'?5:outcome==='draw'?2:1;
+      const inRow=Math.min(3,Math.floor(mine.bestRun/3));
+      const today=new Date().toISOString().slice(0,10),yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+      const dayStreak=player.lastDay===today||player.lastDay===yesterday?Number(player.streak)||0:0;
+      const dayCoins=Math.min(3,Math.floor(dayStreak/3));
+      const dailyDuelCount=player.dcDay===today?Number(player.dcN)||0:0;
+      if(dailyDuelCount>=10)limited=true;
+      else{
+        coinParts.push({label:outcome==='win'?'🏆 Duel won':outcome==='draw'?'🤝 Draw':'⚔️ Duel played',n:base});
+        if(inRow)coinParts.push({label:'🔥 Best run: '+mine.bestRun+' in a row',n:inRow});
+        if(mine.perfect)coinParts.push({label:'🌟 Perfect score',n:2});
+        if(dayCoins)coinParts.push({label:'📅 '+dayStreak+'-day streak bonus',n:dayCoins});
+        coins=coinParts.reduce((sum,item)=>sum+item.n,0);
+      }
+    }
+    const statField=outcome==='win'?'duelW':outcome==='draw'?'duelD':'duelL';
+    const playerPatch={[statField]:(Number(player[statField])||0)+1};
+    if(coins>0){
+      const today=new Date().toISOString().slice(0,10);
+      playerPatch.coins=(Number(player.coins)||0)+coins;
+      playerPatch.dcDay=today;
+      playerPatch.dcN=(player.dcDay===today?Number(player.dcN)||0:0)+1;
+    }
+    const rec={...recent,[uid]:true};
+    const playerName='projects/'+PROJECT_ID+'/databases/(default)/documents/players/'+uid;
+    const duelName='projects/'+PROJECT_ID+'/databases/(default)/documents/duels/'+code;
+    const playerFields=encodeFirestoreFields(playerPatch),duelFields=encodeFirestoreFields({rec});
+    await firestoreRequest('projects/'+PROJECT_ID+'/databases/(default)/documents:commit',accessToken,{
+      method:'POST',body:{transaction,writes:[
+        {update:{name:playerName,fields:playerFields},updateMask:{fieldPaths:Object.keys(playerFields)}},
+        {update:{name:duelName,fields:duelFields},updateMask:{fieldPaths:['rec']}}
+      ]}
+    });
+    completed=true;
+    return {duplicate:false,coins,coinParts,balance:(Number(player.coins)||0)+coins,outcome,limit:limited,mine,opponent,player:{...playerPatch,coins:(Number(player.coins)||0)+coins}};
+  }finally{if(!completed)await rollbackTransaction(transaction,accessToken);}
+}
+
+
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
   const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
   const transactionResult = await firestoreRequest(
@@ -740,7 +838,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/quiz-reward', '/shop-purchase', '/shop-use'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/quiz-reward', '/shop-purchase', '/shop-use', '/duel-reward'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -764,6 +862,10 @@ export default {
       if (url.pathname === '/shop-purchase' || url.pathname === '/shop-use') {
         const mode = url.pathname === '/shop-purchase' ? 'purchase' : 'use';
         const outcome = await applyShopChange(identity.uid, payload, accessToken, mode);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+      if (url.pathname === '/duel-reward') {
+        const outcome = await applyDuelReward(identity.uid, payload, accessToken);
         return json({ ok: true, ...outcome }, 200, origin);
       }
       const action = payload && payload.action;
@@ -793,6 +895,12 @@ export default {
       if (error && error.message === 'SERVICE_NOT_CONFIGURED') {
         return json({ ok: false, code: 'SERVICE_NOT_CONFIGURED', error: 'The secure Gems service has not been configured yet.' }, 503, origin);
       }
+      if (error && ['INVALID_DUEL_CODE','INVALID_DUEL_SETUP','INVALID_DUEL_RESULT','INVALID_DUEL_ANSWERS','INVALID_DUEL_TIME','UNKNOWN_DUEL_QUESTION','DUEL_SCORE_MISMATCH','INVALID_DUEL_RESULT_TIME'].includes(error.message)) return json({ ok: false, code: error.message, error: 'The duel result could not be verified.' }, 400, origin);
+      if (error && error.message === 'DUEL_OPPONENT_STILL_PLAYING') return json({ ok: false, code: error.message, error: 'Your opponent has not finished yet.' }, 409, origin);
+      if (error && error.message === 'DUEL_RESULT_NOT_READY') return json({ ok: false, code: error.message, error: 'Your duel result has not been saved yet.' }, 409, origin);
+      if (error && error.message === 'DUEL_NOT_FOUND') return json({ ok: false, code: error.message, error: 'That duel could not be found.' }, 404, origin);
+      if (error && error.message === 'NOT_DUEL_PARTICIPANT') return json({ ok: false, code: error.message, error: 'You did not participate in that duel.' }, 403, origin);
+      if (error && error.message === 'DUEL_NOT_ACTIVE') return json({ ok: false, code: error.message, error: 'That duel is no longer active.' }, 409, origin);
       if (error && error.message === 'SHOP_PAUSED') return json({ ok: false, code: 'SHOP_PAUSED', error: 'Shop purchases are temporarily paused.' }, 403, origin);
       if (error && error.message === 'USER_BANNED') return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot make purchases while banned.' }, 403, origin);
       if (error && error.message === 'INSUFFICIENT_COINS') return json({ ok: false, code: 'INSUFFICIENT_COINS', error: 'You do not have enough coins.' }, 409, origin);

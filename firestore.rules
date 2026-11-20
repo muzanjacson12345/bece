@@ -124,9 +124,13 @@ service cloud.firestore {
              .affectedKeys().hasOnly([request.auth.uid])
         && request.resource.data.get('res', {}).get(request.auth.uid, {}) is map
         && request.resource.data.get('res', {}).get(request.auth.uid, {}).keys()
-             .hasOnly(['c', 'n', 'ms', 'done'])
+             .hasOnly(['c', 'n', 'ms', 'done', 'answers', 'doneAt'])
         && request.resource.data.get('res', {}).get(request.auth.uid, {}).keys()
-             .hasAll(['c', 'n', 'ms', 'done'])
+             .hasAll(['c', 'n', 'ms', 'done', 'answers'])
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).answers is list
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).answers.size() <= 50
+        && (!request.resource.data.get('res', {}).get(request.auth.uid, {}).done
+            || request.resource.data.get('res', {}).get(request.auth.uid, {}).get('doneAt', null) is timestamp)
         && request.resource.data.get('res', {}).get(request.auth.uid, {}).c is int
         && request.resource.data.get('res', {}).get(request.auth.uid, {}).n is int
         && request.resource.data.get('res', {}).get(request.auth.uid, {}).ms is number
