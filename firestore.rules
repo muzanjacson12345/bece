@@ -557,10 +557,10 @@ service cloud.firestore {
             && !request.resource.data.diff(resource.data).affectedKeys()
                  .hasAny(['gems', 'gemOps']));
 
-      // The staff UI explicitly prevents self-deletion. Owner may remove
-      // players/admins but not another Owner; Admin may remove ordinary players.
+      // Ordinary players may delete their own profile. Staff records are
+      // protected so deleting an account cannot leave a permanent staff roster entry.
       allow delete: if
-        (signedIn() && request.auth.uid == id)
+        (signedIn() && request.auth.uid == id && !targetIsStaff(id))
         || (isOwner() && request.auth.uid != id && !targetIsOwner(id))
         || (isAdmin() && request.auth.uid != id && !targetIsStaff(id));
     }
