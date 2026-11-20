@@ -10767,24 +10767,19 @@ const Shop = (() => {
     queueSave({ eq: { ...eq, [slot]: eq[slot] === id ? '' : id } }); render(); renderFriends();
   }
   async function buy(it, slot) {
-    const d = S.doc || {};
     if (S.settings.shopPaused && !S.isOwner) return warn('Shop purchases are temporarily paused.');
-    if ((d.coins || 0) < it.price) return warn('Not enough coins yet. Keep practising!');
     if (!S.db) return warn('You need to be online to buy.');
-    const F = firebase.firestore.FieldValue;
-    let patch, docPatch;
-    if (slot === 'p50')     { patch = { coins: F.increment(-it.price), p50: F.increment(1) };       docPatch = { p50: (d.p50 || 0) + 1 }; }
-    else if (slot === 'sfreeze') { patch = { coins: F.increment(-it.price), sfreezes: F.increment(1) }; docPatch = { sfreezes: (d.sfreezes || 0) + 1 }; }
-    else if (slot === 'xpboost') { patch = { coins: F.increment(-it.price), xpBoost: F.increment(1) };  docPatch = { xpBoost: (d.xpBoost || 0) + 1 }; }
-    else { patch = { coins: F.increment(-it.price), owned: { [it.id]: true } }; docPatch = { owned: { ...(d.owned || {}), [it.id]: true } }; }
+    const operationId = 'buy:' + it.id + ':' + Date.now() + ':' + Math.random().toString(36).slice(2, 10);
     try {
-      await S.db.doc('players/' + S.uid).set(patch, { merge: true });
-      S.doc = { ...d, coins: (d.coins || 0) - it.price, ...docPatch };
+      await callBeceWorker('/shop-purchase', { itemId: it.id, operationId });
       App.toast(`Bought ${it.name}!`);
-      if (['p50', 'sfreeze', 'xpboost'].includes(slot)) render(); else equip(slot, it.id);
-    } catch (e) { warn(`Couldn\u2019t buy that (${(e && e.code) || 'error'}).`); }
+      if (['p50', 'sfreeze', 'xpboost'].includes(slot)) render();
+      else { equip(slot, it.id); render(); }
+    } catch (e) {
+      warn(`Couldn’t buy that (${(e && (e.code || e.message)) || 'error'}).`);
+    }
   }
-  function wideItem(icon, title, desc, btnEl) {
+function wideItem(icon, title, desc, btnEl) {
     const c = o('div', 'shop-item shop-wide');
     c.append(o('strong', '', icon + ' ' + title), o('span', 'muted', desc), btnEl); return c;
   }
@@ -11005,17 +11000,30 @@ const Duel = (() => {
       const scBtn = document.createElement('button');
       scBtn.className = 'btn btn-primary btn-sm'; scBtn.type = 'button';
       scBtn.textContent = `\u{1F3AF} Use Second Chance (${S.doc.p50} left)`;
-      scBtn.onclick = () => {
+      scBtn.onclick = async () => {
         clearInterval(D.scT);
-        D.used++; S.doc = { ...S.doc, p50: S.doc.p50 - 1 };
-        S.db && S.db.doc('players/' + S.uid).set({ p50: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(() => {});
-        choice.remove(); bar.remove();
-        D.fb.textContent = '\u{1F3AF} Pick again \u2014 no hints, choose wisely!'; D.fb.className = 'duel-fb';
-        box.querySelectorAll('.option').forEach(b => {
-          if (b.dataset.key === key) return;             // the wrong one stays crossed out
-          b.disabled = false; b.onclick = () => answer(b.dataset.key, true);
-        });
-        D.locked = false; D.qStart = Date.now(); D.timer = setInterval(() => { if (Date.now() - D.qStart > secs() * 1000) answer(null, true); }, 250);
+        scBtn.disabled = true;
+        try {
+          const operationId = 'p50:' + D.code + ':' + D.idx + ':' + (D.used + 1);
+          await callBeceWorker('/shop-use', { itemId: 'p50', operationId });
+          D.used++;
+          choice.remove(); bar.remove();
+          D.fb.textContent = '\\u{1F3AF} Pick again \\u2014 no hints, choose wisely!';
+          D.fb.className = 'duel-fb';
+          box.querySelectorAll('.option').forEach(b => {
+            if (b.dataset.key === key) return;
+            b.disabled = false;
+            b.onclick = () => answer(b.dataset.key, true);
+          });
+          D.locked = false;
+          D.qStart = Date.now();
+          D.timer = setInterval(() => { if (Date.now() - D.qStart > secs() * 1000) answer(null, true); }, 250);
+        } catch (error) {
+          D.fb.textContent = error && error.message ? error.message : 'Could not use Second Chance.';
+          nextBtn.disabled = false;
+          nextBtn.textContent = 'Next →';
+          nextBtn.onclick = () => { choice.remove(); bar.remove(); D.locked = false; answer(key, true); };
+        }
       };
       const nextBtn = document.createElement('button');
       nextBtn.className = 'btn btn-ghost btn-sm'; nextBtn.type = 'button'; nextBtn.textContent = 'Next \u2192';
@@ -12530,6 +12538,33 @@ const GEMS_API_URL = (() => {
   const meta = document.querySelector('meta[name="bece-gems-api"]');
   return meta && meta.content ? meta.content.trim() : '';
 })();
+async function callBeceWorker(path, payload) {
+  if (!S.db || !S.uid) throw new Error('SIGN_IN_REQUIRED');
+  const base = GEMS_API_URL.trim();
+  if (!base || !base.endsWith('/gems')) throw new Error('SECURE_SERVICE_NOT_CONFIGURED');
+  const user = firebase.auth().currentUser;
+  if (!user || user.uid !== S.uid) throw new Error('SIGN_IN_REQUIRED');
+  const idToken = await user.getIdToken();
+  const response = await fetch(base.slice(0, -5) + path, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.ok) {
+    const error = new Error(data.error || 'The secure service could not complete this request.');
+    error.code = data.code || 'SECURE_SERVICE_ERROR';
+    throw error;
+  }
+  if (data.player && Object.keys(data.player).length) {
+    S.doc = { ...(S.doc || {}), ...data.player };
+    const mine = (S.players || []).find(player => player.id === S.uid);
+    if (mine) Object.assign(mine, data.player);
+    renderAccount(); renderFriends(); renderDaily(); renderAchievements();
+  }
+  return data;
+}
+
 const Gems = (() => {
   const MAX_BALANCE = 1000000000;
   const currentBalance = () => {

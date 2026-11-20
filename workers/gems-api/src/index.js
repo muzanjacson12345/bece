@@ -582,6 +582,93 @@ async function applyQuizReward(uid, payload, accessToken) {
 }
 
 
+
+const SHOP_CATALOG = {
+  p50: { price: 15, field: 'p50' },
+  sfreeze: { price: 30, field: 'sfreezes' },
+  xpboost: { price: 50, field: 'xpBoost' },
+  t_bookworm: { price: 80, title: true },
+  t_scholar: { price: 120, title: true },
+  t_champion: { price: 160, title: true },
+  t_legend: { price: 300, title: true }
+};
+function validShopOperationId(value) {
+  return typeof value === 'string' && /^[a-zA-Z0-9._:-]{1,120}$/.test(value);
+}
+async function applyShopChange(uid, payload, accessToken, mode) {
+  const itemId = payload && payload.itemId;
+  const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
+  if (!validShopOperationId(operationId)) throw new Error('INVALID_SHOP_OPERATION_ID');
+  if (mode === 'purchase' && !Object.prototype.hasOwnProperty.call(SHOP_CATALOG, itemId)) throw new Error('INVALID_SHOP_ITEM');
+  if (mode === 'use' && itemId !== 'p50') throw new Error('INVALID_SHOP_USE');
+
+  const owner = await isOwnerSession(uid, accessToken);
+  const started = await firestoreRequest('projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction', accessToken, { method: 'POST', body: {} });
+  const transaction = started.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let completed = false;
+  try {
+    const docs = await Promise.all([
+      getDocument('players/' + encodeURIComponent(uid), accessToken, transaction),
+      getDocument('settings/app', accessToken, transaction),
+      getDocument('bans/' + encodeURIComponent(uid), accessToken, transaction)
+    ]);
+    if (!docs[0]) throw new Error('PLAYER_PROFILE_NOT_READY');
+    if (isDocumentBanned(docs[2], Date.now())) throw new Error('USER_BANNED');
+    const player = decodeFirestoreDocument(docs[0]);
+    const settings = decodeFirestoreDocument(docs[1]);
+    if (mode === 'purchase' && settings.shopPaused === true && !owner) throw new Error('SHOP_PAUSED');
+
+    const recent = parseStringArray(docs[0].fields && docs[0].fields.shopOps);
+    if (recent.includes(operationId)) {
+      await firestoreRequest('projects/' + PROJECT_ID + '/databases/(default)/documents:commit', accessToken, { method: 'POST', body: { transaction, writes: [] } });
+      completed = true;
+      return {
+        player: { coins: Number(player.coins) || 0, p50: Number(player.p50) || 0, sfreezes: Number(player.sfreezes) || 0, xpBoost: Number(player.xpBoost) || 0, owned: player.owned || {} },
+        duplicate: true
+      };
+    }
+
+    const fieldsToWrite = {};
+    if (mode === 'purchase') {
+      const item = SHOP_CATALOG[itemId];
+      const balance = Number(player.coins) || 0;
+      if (!Number.isSafeInteger(balance) || balance < item.price) throw new Error('INSUFFICIENT_COINS');
+      if (item.title && player.owned && player.owned[itemId] === true) throw new Error('ITEM_ALREADY_OWNED');
+      fieldsToWrite.coins = balance - item.price;
+      if (item.title) fieldsToWrite.owned = { ...(player.owned || {}), [itemId]: true };
+      else fieldsToWrite[item.field] = (Number(player[item.field]) || 0) + 1;
+    } else {
+      const count = Number(player.p50) || 0;
+      if (!Number.isSafeInteger(count) || count < 1) throw new Error('NO_SECOND_CHANCE');
+      fieldsToWrite.p50 = count - 1;
+    }
+
+    fieldsToWrite.shopOps = [...recent, operationId].slice(-MAX_RECENT_OPS);
+    const firestoreFields = encodeFirestoreFields(fieldsToWrite);
+    const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
+    await firestoreRequest('projects/' + PROJECT_ID + '/databases/(default)/documents:commit', accessToken, {
+      method: 'POST',
+      body: { transaction, writes: [{ update: { name: documentName, fields: firestoreFields }, updateMask: { fieldPaths: Object.keys(firestoreFields) } }] }
+    });
+    completed = true;
+    return {
+      player: {
+        coins: fieldsToWrite.coins === undefined ? Number(player.coins) || 0 : fieldsToWrite.coins,
+        p50: fieldsToWrite.p50 === undefined ? Number(player.p50) || 0 : fieldsToWrite.p50,
+        sfreezes: fieldsToWrite.sfreezes === undefined ? Number(player.sfreezes) || 0 : fieldsToWrite.sfreezes,
+        xpBoost: fieldsToWrite.xpBoost === undefined ? Number(player.xpBoost) || 0 : fieldsToWrite.xpBoost,
+        owned: fieldsToWrite.owned === undefined ? player.owned || {} : fieldsToWrite.owned
+      },
+      duplicate: false,
+      price: mode === 'purchase' ? SHOP_CATALOG[itemId].price : 0
+    };
+  } finally {
+    if (!completed) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
   const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
   const transactionResult = await firestoreRequest(
@@ -653,7 +740,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/quiz-reward'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/quiz-reward', '/shop-purchase', '/shop-use'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -672,6 +759,11 @@ export default {
       const accessToken = await getFirestoreAccessToken(env);
       if (url.pathname === '/quiz-reward') {
         const outcome = await applyQuizReward(identity.uid, payload, accessToken);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+      if (url.pathname === '/shop-purchase' || url.pathname === '/shop-use') {
+        const mode = url.pathname === '/shop-purchase' ? 'purchase' : 'use';
+        const outcome = await applyShopChange(identity.uid, payload, accessToken, mode);
         return json({ ok: true, ...outcome }, 200, origin);
       }
       const action = payload && payload.action;
@@ -701,6 +793,12 @@ export default {
       if (error && error.message === 'SERVICE_NOT_CONFIGURED') {
         return json({ ok: false, code: 'SERVICE_NOT_CONFIGURED', error: 'The secure Gems service has not been configured yet.' }, 503, origin);
       }
+      if (error && error.message === 'SHOP_PAUSED') return json({ ok: false, code: 'SHOP_PAUSED', error: 'Shop purchases are temporarily paused.' }, 403, origin);
+      if (error && error.message === 'USER_BANNED') return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot make purchases while banned.' }, 403, origin);
+      if (error && error.message === 'INSUFFICIENT_COINS') return json({ ok: false, code: 'INSUFFICIENT_COINS', error: 'You do not have enough coins.' }, 409, origin);
+      if (error && error.message === 'ITEM_ALREADY_OWNED') return json({ ok: false, code: 'ITEM_ALREADY_OWNED', error: 'You already own this title.' }, 409, origin);
+      if (error && error.message === 'NO_SECOND_CHANCE') return json({ ok: false, code: 'NO_SECOND_CHANCE', error: 'You have no Second Chances left.' }, 409, origin);
+      if (error && ['INVALID_SHOP_OPERATION_ID','INVALID_SHOP_ITEM','INVALID_SHOP_USE'].includes(error.message)) return json({ ok: false, code: error.message, error: 'This shop request is not valid.' }, 400, origin);
       if (error && ['INVALID_QUIZ_QUESTIONS','INVALID_QUIZ_ANSWERS','DUPLICATE_QUIZ_QUESTIONS','UNKNOWN_QUIZ_QUESTION','INVALID_QUIZ_ANSWER','NO_QUIZ_ANSWERS'].includes(error.message)) {
         return json({ ok: false, code: error.message, error: 'The quiz submission could not be verified.' }, 400, origin);
       }
