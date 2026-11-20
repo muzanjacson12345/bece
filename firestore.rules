@@ -1,139 +1,609 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function role() {
-      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null;
-    }
-    function owner() { return role() == 'owner'; }
-    function admin() { return role() in ['admin', 'owner']; }
-    function staff(uid) {
-      return exists(/databases/$(database)/documents/users/$(uid))
-        && get(/databases/$(database)/documents/users/$(uid)).data.role in ['admin', 'owner'];
-    }
-    function banned() {
-      return signedIn() && exists(/databases/$(database)/documents/bans/$(request.auth.uid))
-        && get(/databases/$(database)/documents/bans/$(request.auth.uid)).data.active == true;
-    }
-    function self(uid) { return signedIn() && request.auth.uid == uid; }
 
-    match /users/{uid} {
-      allow read: if true;
-      allow create: if owner() || (self(uid) && !('role' in request.resource.data));
-      allow update: if owner() || (self(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
-      allow delete: if owner();
+    // ================================================================
+    // BECE HUB - MERGED FIRESTORE RULES (reviewed against the app data model)
+    // Owner secrets remain config/owner.pw1 and config/owner.pw2.
+    // Admin PIN remains config/admin.pin.
+    // Owner session: 30 minutes. Admin session: 2 hours.
+    // The Gems Worker uses its service account; normal clients cannot
+    // change players.gems or players.gemOps.
+    // ================================================================
+
+    function signedIn() {
+      return request.auth != null;
     }
-    match /players/{uid} {
+
+    function ownerSessionPath(id) {
+      return /databases/$(database)/documents/ownerSessions/$(id);
+    }
+    function adminSessionPath(id) {
+      return /databases/$(database)/documents/adminSessions/$(id);
+    }
+    function ownerConfigPath() {
+      return /databases/$(database)/documents/config/owner;
+    }
+    function adminConfigPath() {
+      return /databases/$(database)/documents/config/admin;
+    }
+    function rosterPath(id) {
+      return /databases/$(database)/documents/staffRoster/$(id);
+    }
+    function badgePath(id) {
+      return /databases/$(database)/documents/adminBadges/$(id);
+    }
+
+    function isAppointed(id) {
+      return exists(rosterPath(id))
+        && get(rosterPath(id)).data.get('appointed', false) == true
+        && get(rosterPath(id)).data.get('role', '') == 'admin';
+    }
+
+    function isOwner() {
+      return signedIn()
+        && exists(ownerSessionPath(request.auth.uid))
+        && exists(ownerConfigPath())
+        && get(ownerSessionPath(request.auth.uid)).data.get('at', null) is timestamp
+        && get(ownerSessionPath(request.auth.uid)).data.at + duration.value(30, 'm') > request.time
+        && get(ownerSessionPath(request.auth.uid)).data.get('pw1', '')
+             == get(ownerConfigPath()).data.get('pw1', '')
+        && get(ownerSessionPath(request.auth.uid)).data.get('pw2', '')
+             == get(ownerConfigPath()).data.get('pw2', '');
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(adminSessionPath(request.auth.uid))
+        && get(adminSessionPath(request.auth.uid)).data.get('at', null) is timestamp
+        && get(adminSessionPath(request.auth.uid)).data.at + duration.value(2, 'h') > request.time
+        && (isAppointed(request.auth.uid)
+            || (exists(adminConfigPath())
+                && get(adminSessionPath(request.auth.uid)).data.get('pin', '')
+                     == get(adminConfigPath()).data.get('pin', '')));
+    }
+
+    function isStaff() {
+      return isOwner() || isAdmin();
+    }
+
+    function rosterExists(id) {
+      return exists(rosterPath(id));
+    }
+
+    function rosterIsOwner(id) {
+      return rosterExists(id)
+        && get(rosterPath(id)).data.get('role', '') == 'owner';
+    }
+
+    function badgeIsLive(id) {
+      return exists(badgePath(id))
+        && get(badgePath(id)).data.get('until', request.time) is timestamp
+        && get(badgePath(id)).data.until > request.time;
+    }
+
+    function targetIsStaff(id) {
+      return rosterExists(id) || badgeIsLive(id);
+    }
+
+    function targetIsOwner(id) {
+      return rosterIsOwner(id)
+        || (badgeIsLive(id)
+            && get(badgePath(id)).data.get('role', 'admin') == 'owner');
+    }
+
+    function isBanned() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/bans/$(request.auth.uid))
+        && (get(/databases/$(database)/documents/bans/$(request.auth.uid)).data.get('until', 0) == 0
+            || get(/databases/$(database)/documents/bans/$(request.auth.uid)).data.get('until', 0) > request.time.toMillis());
+    }
+
+    function duelsPaused() {
+      return exists(/databases/$(database)/documents/settings/app)
+        && get(/databases/$(database)/documents/settings/app).data.get('duelsPaused', false) == true;
+    }
+
+    function isDuelParticipant() {
+      return signedIn()
+        && (resource.data.get('host', '') == request.auth.uid
+            || resource.data.get('guest', '') == request.auth.uid);
+    }
+
+    function validOwnDuelResult() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['res'])
+        && request.resource.data.get('res', {}) is map
+        && resource.data.get('res', {}) is map
+        && request.resource.data.get('res', {}).diff(resource.data.get('res', {}))
+             .affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}) is map
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).keys()
+             .hasOnly(['c', 'n', 'ms', 'done'])
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).keys()
+             .hasAll(['c', 'n', 'ms', 'done'])
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).c is int
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).n is int
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).ms is number
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).done is bool;
+    }
+
+    function validOwnDuelRecord() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rec'])
+        && request.resource.data.get('rec', {}) is map
+        && resource.data.get('rec', {}) is map
+        && request.resource.data.get('rec', {}).diff(resource.data.get('rec', {}))
+             .affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.get('rec', {}).get(request.auth.uid, false) == true;
+    }
+
+    // ---------- Protected configuration documents ----------
+    // These documents are created manually in Firebase Console during setup.
+    // Their contents are never readable by app users.
+    match /config/admin {
+      allow read: if false;
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['pin'])
+        && request.resource.data.keys().hasAll(['pin'])
+        && request.resource.data.pin is string
+        && request.resource.data.pin.size() >= 4
+        && request.resource.data.pin.size() <= 64;
+      allow delete: if false;
+    }
+
+    match /config/owner {
+      allow read: if false;
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['pw1', 'pw2'])
+        && request.resource.data.keys().hasAll(['pw1', 'pw2'])
+        && request.resource.data.pw1 is string
+        && request.resource.data.pw2 is string
+        && request.resource.data.pw1.size() >= 8
+        && request.resource.data.pw1.size() <= 128
+        && request.resource.data.pw2.size() >= 8
+        && request.resource.data.pw2.size() <= 128
+        && request.resource.data.pw1 != request.resource.data.pw2;
+      allow delete: if false;
+    }
+
+    match /config/{other} {
+      allow read, write: if false;
+    }
+
+    // ---------- Staff sessions ----------
+    match /adminSessions/{id} {
+      allow read: if signedIn() && request.auth.uid == id;
+
+      allow create, update: if signedIn()
+        && request.auth.uid == id
+        && request.resource.data.get('at', null) is timestamp
+        && request.resource.data.at == request.time
+        && (
+          (request.resource.data.keys().hasOnly(['pin', 'at'])
+            && request.resource.data.keys().hasAll(['pin', 'at'])
+            && request.resource.data.pin is string
+            && exists(adminConfigPath())
+            && request.resource.data.pin == get(adminConfigPath()).data.get('pin', ''))
+          ||
+          (request.resource.data.keys().hasOnly(['at']) && isAppointed(id))
+        );
+
+      allow delete: if signedIn() && (request.auth.uid == id || isOwner());
+    }
+
+    match /ownerSessions/{id} {
+      allow read: if signedIn() && request.auth.uid == id;
+
+      allow create, update: if signedIn()
+        && request.auth.uid == id
+        && request.resource.data.keys().hasOnly(['pw1', 'pw2', 'at'])
+        && request.resource.data.keys().hasAll(['pw1', 'pw2', 'at'])
+        && request.resource.data.at is timestamp
+        && request.resource.data.at == request.time
+        && exists(ownerConfigPath())
+        && request.resource.data.pw1 == get(ownerConfigPath()).data.get('pw1', '')
+        && request.resource.data.pw2 == get(ownerConfigPath()).data.get('pw2', '');
+
+      allow delete: if signedIn() && request.auth.uid == id;
+    }
+
+    // ---------- Active staff badges ----------
+    match /adminBadges/{id} {
       allow read: if signedIn();
-      allow create: if owner()
-        || (self(uid) && !banned() && !('gems' in request.resource.data) && !('gemOps' in request.resource.data))
-        || (admin() && !staff(uid) && !('gems' in request.resource.data) && !('gemOps' in request.resource.data));
-      allow update: if owner()
-        || (self(uid) && !banned() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['gems','gemOps']))
-        || (admin() && !staff(uid) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['gems','gemOps']));
-      allow delete: if owner() || (admin() && !staff(uid));
+
+      allow create, update: if signedIn()
+        && request.auth.uid == id
+        && request.resource.data.keys().hasOnly(['until', 'role'])
+        && request.resource.data.keys().hasAll(['until', 'role'])
+        && request.resource.data.until is timestamp
+        && request.resource.data.role in ['admin', 'owner']
+        && (
+          (isOwner()
+            && request.resource.data.role == 'owner'
+            && request.resource.data.until
+                 <= get(ownerSessionPath(id)).data.at + duration.value(30, 'm'))
+          ||
+          (isAdmin()
+            && request.resource.data.role == 'admin'
+            && request.resource.data.until
+                 <= get(adminSessionPath(id)).data.at + duration.value(2, 'h'))
+        );
+
+      allow delete: if signedIn() && (request.auth.uid == id || isOwner());
     }
-    match /bans/{uid} {
-      allow read: if admin() || self(uid);
-      allow write: if owner();
-    }
-    match /staffRoster/{uid} {
+
+    // ---------- Permanent staff roster ----------
+    // The Owner's roster record protects the Owner even after a session expires.
+    // The app may promote an existing Admin roster entry to Owner on this device.
+    match /staffRoster/{id} {
       allow read: if signedIn();
-      allow write: if owner();
+
+      allow create: if signedIn()
+        && (
+          (request.auth.uid == id
+            && request.resource.data.keys().hasOnly(['role', 'at'])
+            && request.resource.data.keys().hasAll(['role', 'at'])
+            && request.resource.data.role in ['owner', 'admin']
+            && request.resource.data.at is timestamp
+            && request.resource.data.at == request.time
+            && (request.resource.data.role == 'owner'
+                  ? isOwner()
+                  : (isAdmin() && !isOwner())))
+          ||
+          (isOwner()
+            && id != request.auth.uid
+            && request.resource.data.keys().hasOnly(['role', 'at', 'appointed', 'by'])
+            && request.resource.data.keys().hasAll(['role', 'at', 'appointed', 'by'])
+            && request.resource.data.role == 'admin'
+            && request.resource.data.appointed == true
+            && request.resource.data.by == request.auth.uid
+            && request.resource.data.at is timestamp
+            && request.resource.data.at == request.time)
+        );
+
+      allow update: if
+        (
+          signedIn()
+          && request.auth.uid == id
+          && isOwner()
+          && resource.data.get('role', '') != 'owner'
+          && request.resource.data.keys().hasOnly(['role', 'at'])
+          && request.resource.data.keys().hasAll(['role', 'at'])
+          && request.resource.data.role == 'owner'
+          && request.resource.data.at is timestamp
+          && request.resource.data.at == request.time
+        )
+        ||
+        (
+          signedIn()
+          && request.auth.uid == id
+          && !isOwner()
+          && isAdmin()
+          && resource.data.get('role', '') == 'admin'
+          && resource.data.get('appointed', false) != true
+          && request.resource.data.keys().hasOnly(['role', 'at'])
+          && request.resource.data.keys().hasAll(['role', 'at'])
+          && request.resource.data.role == 'admin'
+          && request.resource.data.at is timestamp
+          && request.resource.data.at == request.time
+        )
+        ||
+        (
+          isOwner()
+          && id != request.auth.uid
+          && !rosterIsOwner(id)
+          && request.resource.data.keys().hasOnly(['role', 'at', 'appointed', 'by'])
+          && request.resource.data.keys().hasAll(['role', 'at', 'appointed', 'by'])
+          && request.resource.data.role == 'admin'
+          && request.resource.data.appointed == true
+          && request.resource.data.by == request.auth.uid
+          && request.resource.data.at is timestamp
+          && request.resource.data.at == request.time
+        );
+
+      // The app lets the Owner remove another device's old staff record, including
+      // an old Owner device. The currently signed-in Owner cannot remove itself.
+      allow delete: if isOwner() && request.auth.uid != id;
     }
-    match /adminBadges/{uid} {
-      allow read: if signedIn();
-      allow create, update: if self(uid) && request.resource.data.role in ['admin','owner'];
-      allow delete: if self(uid) || owner();
-    }
-    match /adminSessions/{uid} {
-      allow read: if self(uid) || owner();
-      allow create, update: if self(uid) || owner();
-      allow delete: if self(uid) || owner();
-    }
-    match /ownerSessions/{uid} {
-      allow read, write: if self(uid) || owner();
-    }
-    match /config/{id} {
-      allow read: if signedIn();
-      allow write: if owner();
-    }
+
+    // ---------- Global app settings ----------
     match /settings/{id} {
       allow read: if signedIn();
-      allow write: if owner();
+
+      allow create, update: if isOwner()
+        && id == 'app'
+        && request.resource.data.keys().hasOnly([
+          'duelsPaused', 'shopPaused',
+          'expMultiplier', 'coinMultiplier',
+          'ratesUpdatedAt', 'ratesUpdatedBy',
+          'shopUpdatedAt', 'shopUpdatedBy',
+          'at', 'by'
+        ])
+        && (!('duelsPaused' in request.resource.data)
+            || request.resource.data.duelsPaused is bool)
+        && (!('shopPaused' in request.resource.data)
+            || request.resource.data.shopPaused is bool)
+        && (!('expMultiplier' in request.resource.data)
+            || (request.resource.data.expMultiplier is number
+                && request.resource.data.expMultiplier in [0.5, 1, 1.5, 2, 3]))
+        && (!('coinMultiplier' in request.resource.data)
+            || (request.resource.data.coinMultiplier is number
+                && request.resource.data.coinMultiplier in [0.5, 1, 1.5, 2, 3]))
+        && (!('ratesUpdatedAt' in request.resource.data)
+            || request.resource.data.ratesUpdatedAt is int)
+        && (!('ratesUpdatedBy' in request.resource.data)
+            || request.resource.data.ratesUpdatedBy == request.auth.uid)
+        && (!('shopUpdatedAt' in request.resource.data)
+            || request.resource.data.shopUpdatedAt is int)
+        && (!('shopUpdatedBy' in request.resource.data)
+            || request.resource.data.shopUpdatedBy == request.auth.uid)
+        && (!('at' in request.resource.data)
+            || request.resource.data.at is int)
+        && (!('by' in request.resource.data)
+            || (request.resource.data.by is string
+                && request.resource.data.by.size() <= 40));
+
+      allow delete: if isOwner() && id == 'app';
     }
+
+    // ---------- Player bans ----------
+    // Ban expiry is stored by the app as Unix milliseconds; 0 means permanent.
+    match /bans/{id} {
+      allow read: if signedIn();
+
+      allow create, update: if
+        ((isOwner() && request.auth.uid != id && !targetIsOwner(id))
+          || (isAdmin() && request.auth.uid != id
+              && !targetIsStaff(id) && !targetIsOwner(id)))
+        && request.resource.data.keys().hasOnly(['at', 'by', 'name', 'reason', 'until'])
+        && request.resource.data.keys().hasAll(['at', 'by', 'name', 'reason', 'until'])
+        && request.resource.data.at is int
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() <= 120
+        && request.resource.data.until is int
+        && request.resource.data.until >= 0;
+
+      // Owner can remove any ban, including an old ban on its own account.
+      // Admins can unban only ordinary players, not staff.
+      allow delete: if isOwner()
+        || (isAdmin() && !targetIsStaff(id));
+    }
+
+    // ---------- Public announcement ----------
+    // Admins may manage ordinary announcements, but cannot replace or clear
+    // an Owner-pinned or Owner-urgent announcement.
     match /announcements/{id} {
       allow read: if signedIn();
-      allow write: if admin();
+
+      allow create: if isOwner()
+        || (isAdmin()
+            && request.resource.data.get('pinned', false) != true
+            && request.resource.data.get('kind', 'info') != 'critical');
+
+      allow update: if isOwner()
+        || (isAdmin()
+            && resource.data.get('pinned', false) != true
+            && resource.data.get('kind', 'info') != 'critical'
+            && request.resource.data.get('pinned', false) != true
+            && request.resource.data.get('kind', 'info') != 'critical');
+
+      allow delete: if isOwner()
+        || (isAdmin()
+            && resource.data.get('pinned', false) != true
+            && resource.data.get('kind', 'info') != 'critical');
     }
-    match /notices/{uid} {
-      allow read: if self(uid) || admin();
-      allow create, update: if admin();
-      allow delete: if self(uid) || admin();
-    }
-    match /adminNotes/{uid} {
-      allow read, write: if admin();
-    }
-    match /auditLogs/{id} {
-      allow read, delete: if owner();
-      allow create: if admin();
-      allow update: if owner();
-    }
+
+    // ---------- Bug reports ----------
     match /bugReports/{id} {
-      allow read: if admin() || (signedIn() && resource.data.uid == request.auth.uid);
-      allow create: if signedIn() && !banned() && request.resource.data.uid == request.auth.uid;
-      allow update: if admin() || (signedIn() && resource.data.uid == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
-      allow delete: if owner();
+      allow read: if signedIn()
+        && (resource.data.get('uid', '') == request.auth.uid || isStaff());
+
+      allow create: if signedIn()
+        && !isBanned()
+        && request.resource.data.keys().hasOnly([
+          'uid', 'name', 'cat', 'text', 'screen', 'device', 'at', 'status'
+        ])
+        && request.resource.data.keys().hasAll([
+          'uid', 'name', 'cat', 'text', 'screen', 'device', 'at', 'status'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.cat in ['bug', 'display', 'content', 'idea', 'other']
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 10
+        && request.resource.data.text.size() <= 600
+        && request.resource.data.screen is string
+        && request.resource.data.screen.size() <= 30
+        && request.resource.data.device is string
+        && request.resource.data.device.size() <= 160
+        && request.resource.data.at is timestamp
+        && request.resource.data.at == request.time
+        && request.resource.data.status == 'open';
+
+      allow update: if isStaff()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'reply', 'replyBy', 'doneAt'
+        ])
+        && request.resource.data.status in ['open', 'fixing', 'done', 'wontfix']
+        && request.resource.data.get('reply', '') is string
+        && request.resource.data.get('reply', '').size() <= 300
+        && request.resource.data.get('replyBy', '') is string
+        && request.resource.data.get('replyBy', '').size() <= 40
+        && request.resource.data.get('doneAt', 0) is int;
+
+      allow delete: if isOwner();
     }
-    match /shop/{id} {
+
+    // ---------- Private staff-to-player notices ----------
+    match /notices/{id} {
+      allow read: if signedIn() && (request.auth.uid == id || isStaff());
+
+      allow create, update: if isStaff()
+        && (isOwner() || !targetIsOwner(id))
+        && request.resource.data.keys().hasOnly(['text', 'at', 'by', 'byName'])
+        && request.resource.data.keys().hasAll(['text', 'at', 'by', 'byName'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 3
+        && request.resource.data.text.size() <= 200
+        && request.resource.data.at is timestamp
+        && request.resource.data.at == request.time
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.byName is string
+        && request.resource.data.byName.size() <= 40;
+
+      allow delete: if signedIn()
+        && (
+          request.auth.uid == id
+          || isOwner()
+          || (isAdmin() && !targetIsOwner(id))
+        );
+    }
+
+    // ---------- Private staff notes ----------
+    match /adminNotes/{id} {
+      allow read: if isStaff();
+
+      allow create, update: if
+        (isOwner() || (isAdmin() && !targetIsOwner(id)))
+        && request.resource.data.keys().hasOnly(['text', 'by', 'at'])
+        && request.resource.data.keys().hasAll(['text', 'by', 'at'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.by is string
+        && request.resource.data.by.size() <= 40
+        && request.resource.data.at is int;
+
+      allow delete: if isOwner() || (isAdmin() && !targetIsOwner(id));
+    }
+
+    // ---------- Owner audit log ----------
+    match /auditLogs/{id} {
+      allow read: if isOwner();
+
+      allow create: if isStaff()
+        && request.resource.data.keys().hasOnly([
+          'at', 'by', 'byName', 'role', 'action', 'target', 'targetName', 'detail'
+        ])
+        && request.resource.data.keys().hasAll([
+          'at', 'by', 'byName', 'role', 'action', 'target', 'targetName', 'detail'
+        ])
+        && request.resource.data.at is timestamp
+        && request.resource.data.at == request.time
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.byName is string
+        && request.resource.data.byName.size() <= 40
+        && request.resource.data.role in ['owner', 'admin']
+        && (request.resource.data.role != 'owner' || isOwner())
+        && request.resource.data.action is string
+        && request.resource.data.target is string
+        && request.resource.data.targetName is string
+        && request.resource.data.detail is string
+        && request.resource.data.detail.size() <= 200;
+
+      allow update: if false;
+      allow delete: if isOwner();
+    }
+
+    // ---------- Player profiles ----------
+    // Gems and gemOps are reserved for the trusted Gems Worker. Client-side
+    // create/update requests cannot add or change either field. Owner actions
+    // remain allowed for direct Owner management.
+    match /players/{id} {
       allow read: if signedIn();
-      allow write: if admin();
+
+      allow create: if isOwner()
+        || (signedIn() && request.auth.uid == id && !isBanned()
+            && !('gems' in request.resource.data)
+            && !('gemOps' in request.resource.data));
+
+      allow update: if isOwner()
+        || (signedIn() && request.auth.uid == id && !isBanned()
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(['gems', 'gemOps']))
+        || (isAdmin() && !targetIsStaff(id)
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(['gems', 'gemOps']));
+
+      // The staff UI explicitly prevents self-deletion. Owner may remove
+      // players/admins but not another Owner; Admin may remove ordinary players.
+      allow delete: if
+        (isOwner() && request.auth.uid != id && !targetIsOwner(id))
+        || (isAdmin() && request.auth.uid != id && !targetIsStaff(id));
     }
-    match /shopTransactions/{id} {
-      allow read: if admin() || (signedIn() && resource.data.playerId == request.auth.uid);
-      allow create: if signedIn() && !banned() && request.resource.data.playerId == request.auth.uid;
-      allow update, delete: if owner();
-    }
-    match /questions/{id} { allow read: if signedIn(); allow write: if admin(); }
-    match /quizzes/{id} { allow read: if signedIn(); allow write: if admin(); }
-    match /events/{id} { allow read: if signedIn(); allow write: if admin(); }
+
+    // ---------- 1v1 duels ----------
     match /duels/{id} {
-      allow read: if admin() || (signedIn() && (resource.data.host == request.auth.uid || resource.data.guest == request.auth.uid));
-      allow create: if signedIn() && !banned() && request.resource.data.host == request.auth.uid;
-      allow update: if owner() || (signedIn() && !banned()
-        && (resource.data.host == request.auth.uid || resource.data.guest == request.auth.uid));
-      allow delete: if owner() || (signedIn() && resource.data.host == request.auth.uid && resource.data.state == 'waiting');
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && !isBanned()
+        && (!duelsPaused() || isOwner())
+        && request.resource.data.keys().hasOnly([
+          'host', 'hostName', 'guest', 'guestName', 'subject',
+          'secs', 'vis', 'qids', 'state', 'created', 'hb', 'res'
+        ])
+        && request.resource.data.keys().hasAll([
+          'host', 'hostName', 'guest', 'guestName', 'subject',
+          'secs', 'vis', 'qids', 'state', 'created', 'hb', 'res'
+        ])
+        && request.resource.data.host == request.auth.uid
+        && request.resource.data.hostName is string
+        && request.resource.data.hostName.size() <= 40
+        && request.resource.data.guest == null
+        && request.resource.data.guestName == ''
+        && request.resource.data.subject is string
+        && request.resource.data.secs is int
+        && request.resource.data.secs >= 5
+        && request.resource.data.secs <= 60
+        && request.resource.data.vis in ['public', 'private']
+        && request.resource.data.qids is list
+        && request.resource.data.qids.size() >= 1
+        && request.resource.data.qids.size() <= 50
+        && request.resource.data.state == 'waiting'
+        && request.resource.data.created is int
+        && request.resource.data.hb is int
+        && request.resource.data.res is map;
+
+      allow update: if signedIn() && !isBanned()
+        && (
+          // Host can refresh the waiting-room heartbeat only.
+          (resource.data.host == request.auth.uid
+            && resource.data.state == 'waiting'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hb'])
+            && request.resource.data.hb is int
+            && request.resource.data.hb >= resource.data.hb)
+          ||
+          // A second player can join a waiting duel once.
+          (resource.data.state == 'waiting'
+            && resource.data.guest == null
+            && resource.data.host != request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'guest', 'guestName', 'state', 'startAt'
+            ])
+            && request.resource.data.guest == request.auth.uid
+            && request.resource.data.guestName is string
+            && request.resource.data.guestName.size() <= 40
+            && request.resource.data.state == 'playing'
+            && request.resource.data.startAt is int)
+          ||
+          // Each participant can update only their own result entry.
+          (isDuelParticipant() && validOwnDuelResult())
+          ||
+          // Each participant can mark only their own reward as recorded.
+          (isDuelParticipant() && validOwnDuelRecord())
+        );
+
+      // The host can cancel a waiting duel. The Owner can remove any duel.
+      allow delete: if isOwner()
+        || (signedIn() && resource.data.host == request.auth.uid
+            && resource.data.state == 'waiting');
     }
-    match /duelInvites/{id} {
-      allow read: if admin() || (signedIn() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid));
-      allow create: if signedIn() && !banned() && request.resource.data.fromUid == request.auth.uid;
-      allow update: if owner() || (signedIn() && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid));
-      allow delete: if owner();
-    }
-    match /friendRequests/{id} {
-      allow read: if admin() || (signedIn() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid));
-      allow create: if signedIn() && !banned() && request.resource.data.fromUid == request.auth.uid;
-      allow update: if owner() || (signedIn() && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid));
-      allow delete: if owner();
-    }
-    match /messages/{id} {
-      allow read: if admin() || (signedIn() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid));
-      allow create: if signedIn() && !banned() && request.resource.data.fromUid == request.auth.uid;
-      allow update, delete: if owner();
-    }
-    match /reports/{id} {
-      allow read: if admin();
-      allow create: if signedIn() && !banned() && request.resource.data.reporterId == request.auth.uid;
-      allow update: if admin();
-      allow delete: if owner();
-    }
-    match /activityLogs/{id} {
-      allow read, create: if admin();
-      allow update, delete: if owner();
-    }
-    match /{document=**} { allow read, write: if false; }
+
+    // All other documents are denied by default because no broader wildcard
+    // read/write rule is present here.
   }
 }
-
