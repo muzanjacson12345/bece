@@ -669,6 +669,11 @@ export default {
     if (!tokenMatch) return json({ ok: false, error: 'UNAUTHORIZED' }, 401, origin);
     try {
       const identity = await verifyFirebaseIdToken(tokenMatch[1]);
+      const accessToken = await getFirestoreAccessToken(env);
+      if (url.pathname === '/quiz-reward') {
+        const outcome = await applyQuizReward(identity.uid, payload, accessToken);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
       const action = payload && payload.action;
       const amount = payload && payload.amount;
       const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
@@ -678,11 +683,6 @@ export default {
       }
       if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(operationId)) {
         return json({ ok: false, error: 'INVALID_GEM_OPERATION_ID' }, 400, origin);
-      }
-      const accessToken = await getFirestoreAccessToken(env);
-      if (url.pathname === '/quiz-reward') {
-        const outcome = await applyQuizReward(identity.uid, payload, accessToken);
-        return json({ ok: true, ...outcome }, 200, origin);
       }
       if (await isUserBanned(identity.uid, accessToken)) return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot use Gems while banned.' }, 403, origin);
       if (action === 'earn') {
