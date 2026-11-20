@@ -9917,7 +9917,7 @@ const yesterday = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
 const lv = e => ({ level: Math.floor(e / LVL) + 1, into: e % LVL });
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const ago = t => { const s = Math.max(0, (Date.now() - t) / 1e3); return s < 60 ? 'just now' : s < 3600 ? `${Math.floor(s / 60)}m ago` : s < 86400 ? `${Math.floor(s / 3600)}h ago` : `${Math.floor(s / 86400)}d ago`; };
-const S = { board: 'day', db: null, user: null, uid: null, doc: null, players: [], names: {}, ready: false, admins: new Set(), badgeMap: new Map(), adminAt: 0, pinFails: 0, pinLock: 0, bans: new Map(), isAdmin: false, banned: false, ann: null };
+const S = { board: 'day', db: null, user: null, uid: null, doc: null, players: [], names: {}, ready: false, admins: new Set(), badgeMap: new Map(), adminAt: 0, pinFails: 0, pinLock: 0, bans: new Map(), bansAll: new Map(), ownBan: null, isAdmin: false, banned: false, ann: null };
 
 function view() { // the signed-in player's stats as the UI expects them
   const d = S.doc; if (!d) return null;
@@ -10191,8 +10191,8 @@ App.on('quiz:finished', async ev => {
       const shownExp = scaledParts.reduce((sum, part) => sum + part.exp, 0);
       scaledParts[scaledParts.length - 1].exp += awardedBonusExp - shownExp;
     }
-    const coinsEarned = Math.floor(baseCoinsEarned * coinRate);
-    const scaledCoinParts = coinParts.map(part => ({ ...part, n: Math.floor(part.n * coinRate) }));
+    const coinsEarned = S.banned ? 0 : Math.floor(baseCoinsEarned * coinRate);
+    const scaledCoinParts = S.banned ? [] : coinParts.map(part => ({ ...part, n: Math.floor(part.n * coinRate) }));
     if (scaledCoinParts.length) {
       const shown = scaledCoinParts.reduce((sum, part) => sum + part.n, 0);
       scaledCoinParts[scaledCoinParts.length - 1].n += coinsEarned - shown;
@@ -11449,10 +11449,19 @@ function liveSub(key, want, make) {
 }
 function syncSubs() {
   if (!S.db) return;
+  liveSub('bans', S.isAdmin, fail => S.db.collection('bans').onSnapshot(sn => {
+    S.bansAll = new Map(sn.docs.map(d => [d.id, d.data()]));
+    refreshBans();
+    Adm.paint();
+  }, fail));
   liveSub('notes', S.isAdmin, fail => S.db.collection('adminNotes').onSnapshot(sn => { S.notes = new Map(sn.docs.map(d => [d.id, d.data()])); Adm.paint(); }, fail));
   liveSub('audit', S.isOwner, fail => S.db.collection('auditLogs').orderBy('at', 'desc').limit(300).onSnapshot(sn => { S.audit = sn.docs.map(d => { const x = d.data({ serverTimestamps: 'estimate' }); return { id: d.id, ...x, at: x.at && x.at.toMillis ? x.at.toMillis() : Date.now() }; }); Adm.paint(); }, fail));
   liveSub('bugs', S.isAdmin, fail => S.db.collection('bugReports').orderBy('at', 'desc').limit(200).onSnapshot(sn => { S.bugs = sn.docs.map(d => { const x = d.data({ serverTimestamps: 'estimate' }); return { id: d.id, ...x, at: x.at && x.at.toMillis ? x.at.toMillis() : Date.now() }; }); Adm.paint(); }, fail));
-  if (!S.isAdmin) { S.notes = new Map(); S.bugs = []; }
+  if (!S.isAdmin) {
+    S.bansAll = S.ownBan ? new Map([[S.uid, S.ownBan]]) : new Map();
+    S.notes = new Map();
+    S.bugs = [];
+  }
   if (!S.isOwner) { S.audit = []; }
 }
 async function logAct(action, target, detail) {
@@ -12646,7 +12655,13 @@ async function init() {
     S.db.doc('ownerSessions/' + S.uid).onSnapshot(sn => { const d = sn.exists ? sn.data() : null; S.ownerAt = d && d.at && d.at.toMillis ? d.at.toMillis() : 0; refreshAdmin(); }, () => {});
     S.db.doc('notices/' + S.uid).onSnapshot(sn => showNotice(sn.exists ? sn.data() : null), () => {});
     setInterval(() => refreshAdmin(), 5000); setInterval(() => refreshBans(), 20000);
-    S.db.collection('bans').onSnapshot(sn => { S.bansAll = new Map(sn.docs.map(d => [d.id, d.data()])); refreshBans(); }, () => {});
+    S.db.doc('bans/' + S.uid).onSnapshot(sn => {
+      S.ownBan = sn.exists ? sn.data() : null;
+      if (!S.isAdmin) {
+        S.bansAll = S.ownBan ? new Map([[S.uid, S.ownBan]]) : new Map();
+        refreshBans();
+      }
+    }, () => {});
     S.db.doc('announcements/current').onSnapshot(sn => { S.ann = sn.exists ? sn.data() : null; showAnn(); }, () => {});
     S.db.collection('staffRoster').onSnapshot(sn => { S.roster = new Map(sn.docs.map(d => [d.id, d.data().role === 'owner' ? 'owner' : 'admin'])); S.rosterData = new Map(sn.docs.map(d => [d.id, d.data()])); refreshBans(); refreshAdmin(true); Adm.paint(); }, () => {});
     S.db.doc('settings/app').onSnapshot(sn => { S.settings = sn.exists ? sn.data() : {}; Adm.paint(); Shop.render(); }, () => {});

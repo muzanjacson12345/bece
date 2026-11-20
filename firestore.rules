@@ -105,6 +105,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/settings/app).data.get('duelsPaused', false) == true;
     }
 
+    function shopPaused() {
+      return exists(/databases/$(database)/documents/settings/app)
+        && get(/databases/$(database)/documents/settings/app).data.get('shopPaused', false) == true;
+    }
+
     function isDuelParticipant() {
       return signedIn()
         && (resource.data.get('host', '') == request.auth.uid
@@ -349,7 +354,9 @@ service cloud.firestore {
     // ---------- Player bans ----------
     // Ban expiry is stored by the app as Unix milliseconds; 0 means permanent.
     match /bans/{id} {
-      allow read: if signedIn();
+      // A player may read their own ban status. Only staff may list bans.
+      allow get: if signedIn() && (request.auth.uid == id || isStaff());
+      allow list: if isStaff();
 
       allow create, update: if
         ((isOwner() && request.auth.uid != id && !targetIsOwner(id))
@@ -523,7 +530,29 @@ service cloud.firestore {
       allow update: if isOwner()
         || (signedIn() && request.auth.uid == id && !isBanned()
             && !request.resource.data.diff(resource.data).affectedKeys()
-                 .hasAny(['gems', 'gemOps']))
+                 .hasAny(['gems', 'gemOps'])
+            // When the shop is paused, players cannot spend coins or add items.
+            && (!shopPaused()
+                || (
+                  request.resource.data.get('coins', resource.data.get('coins', 0))
+                    >= resource.data.get('coins', 0)
+                  && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['owned'])
+                  && request.resource.data.get('p50', 0) <= resource.data.get('p50', 0)
+                  && request.resource.data.get('sfreezes', 0) <= resource.data.get('sfreezes', 0)
+                  && request.resource.data.get('xpBoost', 0) <= resource.data.get('xpBoost', 0)
+                )))
+        || (signedIn() && request.auth.uid == id && isBanned()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'totalExp', 'weekKey', 'weekExp', 'streak', 'bestStreak',
+              'lastDay', 'dayKey', 'dayExp', 'counted', 'challengeState',
+              'achievements', 'recent', 'sfreezes', 'xpBoost'
+            ])
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['sfreezes'])
+                || (request.resource.data.sfreezes is int
+                    && request.resource.data.sfreezes <= resource.data.get('sfreezes', 0)))
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['xpBoost'])
+                || (request.resource.data.xpBoost is int
+                    && request.resource.data.xpBoost <= resource.data.get('xpBoost', 0))))
         || (isAdmin() && !targetIsStaff(id)
             && !request.resource.data.diff(resource.data).affectedKeys()
                  .hasAny(['gems', 'gemOps']));
@@ -531,7 +560,8 @@ service cloud.firestore {
       // The staff UI explicitly prevents self-deletion. Owner may remove
       // players/admins but not another Owner; Admin may remove ordinary players.
       allow delete: if
-        (isOwner() && request.auth.uid != id && !targetIsOwner(id))
+        (signedIn() && request.auth.uid == id)
+        || (isOwner() && request.auth.uid != id && !targetIsOwner(id))
         || (isAdmin() && request.auth.uid != id && !targetIsStaff(id));
     }
 
