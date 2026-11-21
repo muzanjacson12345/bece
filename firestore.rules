@@ -580,10 +580,7 @@ service cloud.firestore {
             && !request.resource.data.diff(resource.data).affectedKeys()
                  .hasAny([
                    'gems', 'gemOps', 'owned', 'p50', 'sfreezes', 'xpBoost',
-                   'coins', 'duelW', 'duelL', 'duelD', 'dcDay', 'dcN',
-                   'totalExp', 'weekKey', 'weekExp', 'dayKey', 'dayExp',
-                   'streak', 'bestStreak', 'lastDay', 'counted',
-                   'challengeState', 'achievements', 'recent'
+                   'coins', 'duelW', 'duelL', 'duelD', 'dcDay', 'dcN'
                  ]));
 
       // The staff UI explicitly prevents self-deletion. Owner may remove
