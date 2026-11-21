@@ -138,3 +138,10 @@ for (const needle of ["async function ask", "function ask(", "const ask =", "GEM
   console.log("\n" + needle + ": " + at);
   if (at >= 0) console.log(source.slice(Math.max(0, at - 300), Math.min(source.length, at + 4200)).replace(/\\s+/g, " ").trim());
 }
+
+showSection("QUESTION LOOKUP FUNCTION", "function questionById(", 800, 5000);
+showSection("QUESTION LOOKUP ALIAS", "questionById(id)", 500, 3000);
+showSection("QUESTION BANK INDEX AND REGISTRY", "const questionIndex", 900, 4200);
+showSection("QUESTION ID GENERATOR", "function makeExtraMCQ(", 800, 5000);
+showSection("APP QUESTION API", "questionById:", 800, 3500);
+showSection("CURRENT EVENT SCREEN PLACEHOLDERS", "gemEvents", 500, 4000);
