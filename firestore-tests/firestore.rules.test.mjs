@@ -56,6 +56,22 @@ test("wallets can be read by their owner but never written by clients", async ()
   await assertFails(updateDoc(doc(alice, "wallets/alice"), { gems: 999 }));
 });
 
+test("practice reward state is owner-readable and server-write-only, while receipts are private", async () => {
+  await seed({
+    "rewardState/alice": { achievementClaims: ["first-answer"] },
+    "rewardOperations/alice_test-op": { uid: "alice", xpEarned: 10 }
+  });
+  const alice = testEnv.authenticatedContext("alice").firestore();
+  const bob = testEnv.authenticatedContext("bob").firestore();
+
+  await assertSucceeds(getDoc(doc(alice, "rewardState/alice")));
+  await assertFails(getDoc(doc(bob, "rewardState/alice")));
+  await assertFails(setDoc(doc(alice, "rewardState/alice"), { achievementClaims: [] }));
+  await assertFails(updateDoc(doc(alice, "rewardState/alice"), { achievementClaims: [] }));
+  await assertFails(getDoc(doc(alice, "rewardOperations/alice_test-op")));
+  await assertFails(setDoc(doc(alice, "rewardOperations/alice_fake"), { uid: "alice" }));
+});
+
 test("Gem transaction and reward-claim records are server-write-only", async () => {
   await seed({
     "gemTransactions/tx1": { uid: "alice", amount: 5 },
