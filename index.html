@@ -9964,7 +9964,7 @@ const CHALLENGE_POOL = (() => {
   ];
   const out = [];
   groups.forEach(([metric, targets, title, detail, icon]) => targets.forEach(target => {
-    out.push({ id: metric + '-' + target, metric, target, title, detail: detail(target), icon, reward: 12 + Math.min(24, Math.ceil(target * 1.5)) });
+    out.push({ id: metric + '-' + target, metric, target, title, detail: detail(target), icon, reward: 12 + Math.min(24, Math.ceil(target * 1.5)), coins: Math.max(1, Math.floor((12 + Math.min(24, Math.ceil(target * 1.5))) / 4)) });
   }));
   return out;
 })();
@@ -10096,129 +10096,104 @@ function renderDaily() {
     const card = o('article', 'challenge-item' + (complete ? ' is-complete' : ''));
     const top = o('div', 'challenge-top'), name = o('div', 'challenge-name'), copy = o('div');
     name.append(o('span', 'challenge-icon', t.icon)); copy.append(o('strong', '', t.title), o('small', '', t.detail)); name.append(copy);
-    top.append(name, o('span', 'challenge-reward', complete ? '✓ Completed' : '+' + t.reward + ' EXP'));
+    top.append(name, o('span', 'challenge-reward', complete ? '✓ Completed' : '+' + t.reward + ' EXP · +' + t.coins + ' Coins'));
     const track = o('div', 'challenge-track'), fill = o('span', 'challenge-fill'); fill.style.width = (progress / t.target * 100) + '%'; track.append(fill);
     const foot = o('div', 'challenge-foot'); foot.append(o('span', '', complete ? 'Reward earned' : progress + ' / ' + t.target), o('span', '', 'Resets daily'));
     card.append(top, track, foot); list.append(card);
   });
-  e.append(head, list, o('p', 'challenge-note', !S.db || !S.uid ? 'Sign in to the Friends board to save progress and bonus EXP.' : 'Only normal practice sessions count. Your missions refresh tomorrow.'));
+  e.append(head, list, o('p', 'challenge-note', !S.db || !S.uid ? 'Sign in to the Friends board to save progress and bonus EXP.' : 'Only normal practice sessions count. Each completed mission gives EXP and Coins. Your missions refresh tomorrow.'));
 }
 App.on('quiz:finished', async ev => {
   const box = $('exp-result'); box.hidden = false;
-  if (!Object.keys(ev.answers).length) { box.replaceChildren(o('p', 'exp-status', 'Answer at least one question to earn EXP.')); return; }
-  if (!S.db || !S.uid) { box.replaceChildren(o('p', 'exp-headline', 'EXP not saved'), o('p', 'exp-status', 'You\u2019re offline or the friends board isn\u2019t connected, so this EXP wasn\u2019t saved. Check your internet and reload.')); return; }
-  box.replaceChildren(o('p', 'exp-status', 'Saving your EXP\u2026'));
+  const answerCount = Object.keys(ev.answers || {}).length;
+  if (!answerCount) {
+    box.replaceChildren(o('p', 'exp-status', 'Answer at least one question to earn EXP.'));
+    return;
+  }
+  if (!S.db || !S.uid || !firebase.auth().currentUser) {
+    box.replaceChildren(
+      o('p', 'exp-headline', 'Rewards not saved'),
+      o('p', 'exp-status', 'Connect to the internet and sign in before finishing a quiz so your progress and rewards can be saved safely.')
+    );
+    return;
+  }
+  box.replaceChildren(o('p', 'exp-status', 'Checking your answers and saving your rewards securely…'));
   try {
-    const d = S.doc || {}, day = today();
-    const counted = d.counted && d.counted.day === day ? d.counted.ids.slice() : [];
-    let fresh = 0, already = 0;
-    for (const id of ev.questionIds) { const q = App.questionById(id); if (q && ev.answers[id] === q.correct) { if (counted.includes(id)) already++; else { counted.push(id); fresh++; } } }
-    let streak = d.streak || 0, extended = false, usedFreeze = false;
-    if (d.lastDay !== day) {
-      if (d.lastDay === yesterday()) { streak = streak + 1; extended = true; }
-      else if ((d.sfreezes || 0) > 0 && streak > 0) { usedFreeze = true; extended = true; }
-      else { streak = 1; extended = true; }
-    }
-    const parts = [];
-    const previousAchievements = d.achievements || {};
-    const achievementStats = { ...(previousAchievements.stats || {}) };
-    const achievementSubjects = [...new Set([...(previousAchievements.subjects || []).filter(code => code !== 'ga-'), ...ev.questionIds.map(id => id.slice(0, 3)).filter(code => code !== 'ga-')])];
-    achievementStats.answered = (achievementStats.answered || 0) + Object.keys(ev.answers || {}).length;
-    achievementStats.correct = (achievementStats.correct || 0) + (ev.correct || 0);
-    achievementStats.quizzes = (achievementStats.quizzes || 0) + 1;
-    if (Object.keys(ev.answers || {}).length > 0 && ev.correct === Object.keys(ev.answers || {}).length) achievementStats.perfect = (achievementStats.perfect || 0) + 1;
-    const subjectMetrics = {};
-    ev.questionIds.forEach(id => {
-      const q = App.questionById(id);
-      if (!q) return;
-      const metric = q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
-      subjectMetrics[metric] = (subjectMetrics[metric] || 0) + 1;
+    const user = firebase.auth().currentUser;
+    const token = await user.getIdToken();
+    const operationId = crypto.randomUUID();
+    const response = await fetch('https://bece-hub-gems-api.abeikcrentsil.workers.dev/practice', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'omit',
+      cache: 'no-store',
+      body: JSON.stringify({
+        operationId,
+        questionIds: ev.questionIds,
+        answers: ev.answers,
+        kind: ev.kind === 'daily' ? 'daily' : 'practice'
+      })
     });
-    Object.entries(subjectMetrics).forEach(([metric, count]) => {
-      achievementStats[metric] = (achievementStats[metric] || 0) + count;
-    });
-    const achievementUnlocked = [...(previousAchievements.unlocked || [])];
-    ACHIEVEMENTS.forEach(a => {
-      const value = a.metric === 'subjects' ? achievementSubjects.length : a.metric === 'streak' ? streak : Number(achievementStats[a.metric] || 0);
-      if (value >= a.target && !achievementUnlocked.includes(a.id)) achievementUnlocked.push(a.id);
-    });
-    const achievements = { stats: achievementStats, subjects: achievementSubjects, unlocked: achievementUnlocked };
-    const previous = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, progress: {}, claimed: [] };
-    const challengeState = { day, progress: { ...(previous.progress || {}) }, subjects: [...(previous.subjects || []).filter(code => code !== 'ga-')], claimed: [...(previous.claimed || [])] };
-    // Daily Quiz sessions are intentionally excluded; only ordinary practice advances these missions.
-    if (ev.kind !== 'daily') {
-      const add = (key, amount) => { challengeState.progress[key] = (challengeState.progress[key] || 0) + amount; };
-      const answeredIds = Object.keys(ev.answers || {}), subjects = new Set(), subjectCounts = {};
-      answeredIds.forEach(id => {
-        const q = App.questionById(id), code = q && q.subject === 'careerTechnology' ? 'ct' : id.slice(0, 3);
-        if (q) { subjects.add(code); subjectCounts[code] = (subjectCounts[code] || 0) + 1; }
-      });
-      add('answered', answeredIds.length);
-      add('correct', ev.correct || 0);
-      add('quizzes', 1);
-      subjects.forEach(code => { if (!challengeState.subjects.includes(code)) challengeState.subjects.push(code); });
-      challengeState.progress.subjects = challengeState.subjects.length;
-      if (answeredIds.length > 0 && ev.correct === answeredIds.length) add('perfect', 1);
-      if ((ev.total || answeredIds.length) >= 10) add('longQuiz', 1);
-      if (subjects.size >= 3) add('mixed', 1);
-      Object.entries(subjectCounts).forEach(([code, count]) => { if (['soc', 'art', 'mat', 'com', 'rme', 'sci', 'fre', 'ct'].includes(code)) add(code, count); });
-      dailyChallengeSet(day).forEach(task => {
-        const value = challengeState.progress[task.metric] || 0;
-        if (value >= task.target && !challengeState.claimed.includes(task.id)) {
-          challengeState.claimed.push(task.id);
-          parts.push({ label: 'Daily challenge: ' + task.detail, exp: task.reward });
-        }
-      });
+    let data;
+    try { data = await response.json(); }
+    catch { throw new Error('The rewards service returned an unreadable response.'); }
+    if (!response.ok || !data || !data.ok || !data.result) {
+      const message = data && data.error ? data.error : 'The rewards service could not save this quiz.';
+      if (response.status === 401) throw new Error('Please reconnect your sign-in, then try again.');
+      if (response.status === 403 && data.code === 'USER_BANNED') throw new Error('This account cannot earn rewards while it is banned.');
+      throw new Error(message);
     }
-    const bonusExp = parts.reduce((a, p) => a + p.exp, 0);
-    const xpMult = (d.xpBoost || 0) > 0 ? 2 : 1;
-    if (xpMult > 1) parts.push({ label: '\u26A1 XP Boost active', exp: fresh * 10 });
-    const earned = fresh * 10 * xpMult;
-    // coins: 1 per new correct answer, a quarter of the daily-challenge bonus, and a streak bonus (+1 for every 3 days in a row, up to +5)
-    const coinParts = [];
-    if (fresh) coinParts.push({ label: `${plural(fresh, 'new correct answer')}`, n: fresh });
-    if (Math.floor(bonusExp / 4)) coinParts.push({ label: 'Daily challenge bonus', n: Math.floor(bonusExp / 4) });
-    const streakCoins = fresh > 0 ? Math.min(5, Math.floor(streak / 3)) : 0;
-    if (streakCoins) coinParts.push({ label: `\u{1F525} ${streak}-day streak bonus`, n: streakCoins });
-    const baseCoinsEarned = coinParts.reduce((a, c) => a + c.n, 0);
-    const expRate = Math.min(3, Math.max(0.5, Number(S.settings.expMultiplier) || 1));
-    const coinRate = Math.min(3, Math.max(0.5, Number(S.settings.coinMultiplier) || 1));
-    const awardedExp = Math.floor((earned + bonusExp) * expRate);
-    const awardedEarned = Math.floor(earned * expRate);
-    const awardedBonusExp = awardedExp - awardedEarned;
-    const scaledParts = parts.map(part => ({ ...part, exp: Math.floor(part.exp * expRate) }));
-    if (scaledParts.length) {
-      const shownExp = scaledParts.reduce((sum, part) => sum + part.exp, 0);
-      scaledParts[scaledParts.length - 1].exp += awardedBonusExp - shownExp;
-    }
-    const coinsEarned = Math.floor(baseCoinsEarned * coinRate);
-    const scaledCoinParts = coinParts.map(part => ({ ...part, n: Math.floor(part.n * coinRate) }));
-    if (scaledCoinParts.length) {
-      const shown = scaledCoinParts.reduce((sum, part) => sum + part.n, 0);
-      scaledCoinParts[scaledCoinParts.length - 1].n += coinsEarned - shown;
-    }
-    const subs = [...new Set(ev.questionIds.map(i => i.slice(0, 3)))];
-    const subject = subs.length === 1 ? SUBJ[subs[0]] || 'mixed subjects' : 'mixed subjects';
-    const recent = [{ kind: ev.kind, subject, correct: ev.correct, total: ev.total, exp: awardedExp, at: Date.now() }, ...(d.recent || [])].slice(0, 5);
-    const sfreezes = usedFreeze ? Math.max(0, (d.sfreezes || 0) - 1) : (d.sfreezes || 0);
-    const xpBoost = xpMult > 1 ? Math.max(0, (d.xpBoost || 0) - 1) : (d.xpBoost || 0);
-    const next = { ...(d.displayName ? { displayName: d.displayName } : {}), ...(d.avatar ? { avatar: d.avatar } : {}), ...(d.photo ? { photo: d.photo } : {}), ...(d.color ? { color: d.color } : {}), ...(d.bio ? { bio: d.bio } : {}), totalExp: (d.totalExp || 0) + awardedExp, weekKey: weekStart(), weekExp: (d.weekKey === weekStart() ? d.weekExp || 0 : 0) + awardedExp, streak, bestStreak: Math.max(d.bestStreak || 0, streak), lastDay: day, dayKey: day, dayExp: (d.dayKey === day ? d.dayExp || 0 : 0) + awardedExp, duelW: d.duelW || 0, duelL: d.duelL || 0, duelD: d.duelD || 0, coins: (d.coins || 0) + coinsEarned, owned: d.owned || {}, eq: d.eq || {}, p50: d.p50 || 0, sfreezes, xpBoost, dcDay: d.dcDay || '', dcN: d.dcN || 0, counted: { day, ids: counted }, challengeState, achievements, recent };
-    const playerRef = S.db.doc('players/' + S.uid);
-    let preserveGemFields = {};
-    await S.db.runTransaction(async transaction => {
-      const currentSnapshot = await transaction.get(playerRef);
-      const currentData = currentSnapshot.exists ? (currentSnapshot.data() || {}) : {};
-      // Preserve Gems only when those fields already exist. New player documents
-      // must omit them so the published Firestore rules permit profile creation.
-      preserveGemFields = {};
-      if (Object.prototype.hasOwnProperty.call(currentData, 'gems')) preserveGemFields.gems = currentData.gems;
-      if (Object.prototype.hasOwnProperty.call(currentData, 'gemOps')) preserveGemFields.gemOps = currentData.gemOps;
-      transaction.set(playerRef, { ...next, ...preserveGemFields });
+    const result = data.result;
+    const current = S.doc || {};
+    const next = {
+      ...current,
+      totalExp: result.totalExp,
+      weekKey: result.weekKey,
+      weekExp: result.weekExp,
+      dayKey: result.dayKey,
+      dayExp: result.dayExp,
+      streak: result.streak,
+      bestStreak: result.streakBest,
+      lastDay: result.dayKey,
+      coins: result.coins,
+      gems: result.gems,
+      sfreezes: result.sfreezes,
+      xpBoost: result.xpBoost,
+      counted: result.counted,
+      challengeState: result.challengeState,
+      achievements: result.achievements,
+    };
+    S.doc = next;
+    renderAccount(); renderDaily(); renderAchievements(); renderFriends();
+    showResult({
+      coins: result.totalCoinsEarned,
+      coinParts: (result.scaledCoinParts || []).map(part => ({ label: part.label, n: part.coins })),
+      balance: result.coins,
+      earned: result.baseExpEarned,
+      bonusExp: result.bonusExpEarned,
+      correct: result.correctCount,
+      already: result.alreadyCounted,
+      parts: (result.scaledXpParts || []).map(part => ({ label: part.label, exp: part.xp })),
+      total: result.totalExp,
+      streak: result.streak,
+      extended: result.extended,
+      usedFreeze: result.usedFreeze,
+      xpMult: result.xpMult,
+      expRate: result.expRate,
+      coinRate: result.coinRate,
+      gemsEarned: result.gemsEarned,
+      newAchievements: result.newAchievements || []
     });
-    S.doc = { ...next, ...preserveGemFields };
-    renderAccount(); renderDaily(); renderAchievements();
-    showResult({ coins: coinsEarned, coinParts: scaledCoinParts, balance: (next.coins || 0), earned: awardedEarned, bonusExp: awardedBonusExp, correct: ev.correct, already, parts: scaledParts, total: next.totalExp, streak, extended, usedFreeze, xpMult, expRate, coinRate });
-  } catch (err) { box.replaceChildren(o('p', 'exp-status', 'Couldn\u2019t save your EXP. ' + (err && err.message || ''))); }
+  } catch (err) {
+    const message = err && err.message ? err.message : 'Unknown error';
+    box.replaceChildren(
+      o('p', 'exp-headline', 'Rewards not saved'),
+      o('p', 'exp-status', 'Couldn’t save this quiz’s rewards. ' + message + ' Please stay on this page and try again after reconnecting.')
+    );
+  }
 });
 // A "coins earned" card: animated total, a line for every reason, and your new balance
 function coinPanel(total, parts, balance) {
@@ -10239,6 +10214,7 @@ function showResult(e) {
   const ul = o('ul', 'exp-breakdown'), add = (a, b) => { const li = o('li'); li.append(o('span', '', a), o('strong', '', `+${b}`)); ul.append(li); };
   add(`${plural(e.correct - e.already, 'new correct answer')} \xD7 10 base · ${e.xpMult || 1}× boost · ${e.expRate || 1}× owner rate`, e.earned); e.parts.forEach(p => add(p.label, p.exp)); t.append(ul);
   if (e.coins) { const cp = coinPanel(e.coins, e.coinParts, e.balance); t.append(cp); }
+  if (e.gemsEarned) t.append(o('p', 'exp-status', `💎 +${e.gemsEarned} Gems earned from ${plural((e.newAchievements || []).length, 'new achievement')}!`));
   if (e.already) t.append(o('p', 'exp-status', `${plural(e.already, 'answer')} already earned EXP earlier today, so ${e.already === 1 ? 'it isn\u2019t' : 'they aren\u2019t'} counted twice.`));
   const { level, into } = lv(e.total), m = o('progress', 'meter'); m.max = LVL; m.value = into;
   t.append(o('p', 'exp-status', `Level ${level} \xB7 ${e.total} EXP total \xB7 ${LVL - into} EXP to level ${level + 1}`), m);
