@@ -674,6 +674,19 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // The practice Worker keeps verified challenge/achievement counters here.
+    // Clients must never seed, alter or clear this reward state.
+    match /rewardState/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      allow create, update, delete: if false;
+    }
+
+    // Permanent idempotency receipts prevent a replayed quiz session from
+    // crediting EXP, Coins or Gems twice.
+    match /rewardOperations/{operationId} {
+      allow read, write: if false;
+    }
+
     match /gemTransactions/{transactionId} {
       allow read: if signedIn()
         && (resource.data.get('uid', '') == request.auth.uid || isOwner());
