@@ -94,3 +94,16 @@ showSection("PLAYER INITIALIZATION DOCUMENT", "players/' + uid", 700, 2200);
 showSection("OWNER CLOUDFLARE USAGE DASHBOARD", "bece-hub-usage-monitor", 1300, 8000);
 showSection("OWNER CLOUDFLARE REQUEST REMAINING DISPLAY", "workerRequestsDaily", 1000, 5000);
 showSection("OWNER USAGE REFRESH AND FRESHNESS", "usageMonitor", 900, 5000);
+
+console.log("\n=== CLOUDFLARE USAGE UI MATCHES ===");
+for (const needle of ["usage", "cloudflare", "quota", "remaining"]) {
+  const re = new RegExp(needle, "gi");
+  let match, shown = 0;
+  while ((match = re.exec(source)) && shown < 18) {
+    const at = match.index;
+    if (at < 900000) continue;
+    const context = source.slice(Math.max(0, at - 500), Math.min(source.length, at + 1000));
+    console.log("[" + needle + "] line " + (source.slice(0, at).split("\n").length) + ": " + context.replace(/\s+/g, " ").trim());
+    shown++;
+  }
+}
