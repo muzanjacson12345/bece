@@ -1864,7 +1864,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/configure', '/events/enter', '/events/retry', '/events/next', '/events/answer'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/configure', '/events/activate', '/events/settle', '/events/enter', '/events/retry', '/events/next', '/events/answer'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -1948,6 +1948,17 @@ export default {
           return json({ ok: false, code: 'INVALID_EVENT_ID', error: 'The event ID is invalid.' }, 400, origin);
         }
         const outcome = await applyGemEventDraftConfig(identity.uid, eventId, payload || {}, accessToken);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+
+      if (url.pathname === '/events/activate' || url.pathname === '/events/settle') {
+        const eventId = payload && typeof payload.eventId === 'string' ? payload.eventId.trim() : '';
+        if (!validateGemEventId(eventId)) {
+          return json({ ok: false, code: 'INVALID_EVENT_ID', error: 'The event ID is invalid.' }, 400, origin);
+        }
+        const outcome = url.pathname === '/events/activate'
+          ? await applyGemEventActivation(identity.uid, eventId, accessToken)
+          : await applyGemEventSettlement(eventId, accessToken);
         return json({ ok: true, ...outcome }, 200, origin);
       }
 
@@ -2068,6 +2079,14 @@ export default {
         EVENT_OWNER_REQUIRED: ['Only the authenticated Owner can configure events.', 403],
         EVENT_CONFIG_LOCKED: ['This event can only be changed while it is a draft with no paid entries.', 409],
         EVENT_NOT_ACTIVE: ['That event is not active.', 409],
+        EVENT_NOT_DRAFT: ['Only an inactive draft can be activated.', 409],
+        EVENT_CLOSE_REQUIRED: ['Set a future closing time before activating an event.', 409],
+        INVALID_EVENT_PRIZES: ['Set valid first, second and third place Gem prizes. The total prize pool must not exceed 1,000,000 Gems.', 400],
+        EVENT_SETTLEMENT_NOT_READY: ['The event must close and its 24-hour finish window must pass before prizes are settled.', 409],
+        EVENT_ATTEMPT_EXPIRED: ['The 24-hour finish window for this event has ended.', 409],
+        EVENT_PRIZE_ALREADY_PAID: ['A prize receipt already exists for this event winner. Please ask the Owner to review the event.', 409],
+        INVALID_GEM_BALANCE: ['A winner Gem balance needs review before prizes can be paid.', 409],
+        PLAYER_BALANCE_LIMIT: ['A prize would exceed the supported Gem balance limit.', 409],
         EVENT_NOT_OPEN: ['That event has not opened yet.', 409],
         EVENT_CLOSED: ['That event has closed.', 409],
         EVENT_ENTRY_LIMIT_REACHED: ['You have used all entries allowed for this event.', 409],
