@@ -12609,11 +12609,13 @@ const Adm = (() => {
   const entryLimit = field("Maximum paid entries per player", "number", "1–100");
   const retryFee = field("Coins per retry", "number", "Only used when retries are enabled");
   const retryLimit = field("Maximum retries per entry", "number", "1–20");
+  const opensAt = field("Opens at (optional)", "datetime-local", "");
+  const closesAt = field("Closes at (optional)", "datetime-local", "");
   const retryEnabled = document.createElement("select"); retryEnabled.className = "adm-sel"; retryEnabled.setAttribute("aria-label", "Paid retries");
   retryEnabled.append(new Option("No paid retries", "no"), new Option("Paid retries enabled", "yes"));
   const retryField = elx("label", "adm-info", "Retry policy", retryEnabled);
   const description = document.createElement("textarea"); description.className = "adm-search"; description.rows = 2; description.maxLength = 500; description.placeholder = "Short description (optional)"; description.setAttribute("aria-label", "Event description");
-  card.append(elx("div", "adm-two", eventId.label, title.label, questionSubjectField, questionCount.label, entryFee.label, entryLimit.label, retryField, retryFee.label, retryLimit.label), elx("label", "adm-info", "Description", description));
+  card.append(elx("div", "adm-two", eventId.label, title.label, questionSubjectField, questionCount.label, entryFee.label, entryLimit.label, retryField, retryFee.label, retryLimit.label, opensAt.label, closesAt.label), elx("label", "adm-info", "Description", description));
   card.append(elx("p", "adm-info", "Technical ceilings: 100 entries per player and 20 retries per entry. Settings lock after the first paid entry. New drafts remain inactive."));
   const save = btn("Save event draft", "btn-primary btn-sm", async () => {
     if (!S.isOwner) return App.toast("Owner access required.", "warn");
@@ -12634,6 +12636,10 @@ const Adm = (() => {
     if (!Array.isArray(pool) || pool.length < count) return App.toast("There are not enough questions in that subject. Choose a smaller count or mixed subjects.", "warn");
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     const questionIds = pool.slice(0, count);
+    const openTime = opensAt.input.value ? new Date(opensAt.input.value).getTime() : null;
+    const closeTime = closesAt.input.value ? new Date(closesAt.input.value).getTime() : null;
+    if ((openTime !== null && (!Number.isSafeInteger(openTime) || openTime < 0)) || (closeTime !== null && (!Number.isSafeInteger(closeTime) || closeTime < 0))) return App.toast("Check the event opening and closing times.", "warn");
+    if (openTime !== null && closeTime !== null && openTime >= closeTime) return App.toast("The closing time must be later than the opening time.", "warn");
     const user = firebase.auth().currentUser;
     if (!user || user.uid !== S.uid) return App.toast("Please reconnect your sign-in.", "warn");
     if (!GEMS_API_URL) return App.toast("The secure event service is not configured.", "warn");
@@ -12645,7 +12651,7 @@ const Adm = (() => {
       const response = await fetch(baseUrl + "/events/configure", {
         method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
         credentials: "omit", cache: "no-store",
-        body: JSON.stringify({ eventId: id, title: name, description: description.value.trim(), questionIds, entryCostCoins: cost, maxEntriesPerUser: limit, retryEnabled: retry, retryCostCoins: retryCost, maxRetriesPerEntry: retries })
+        body: JSON.stringify({ eventId: id, title: name, description: description.value.trim(), questionIds, entryCostCoins: cost, maxEntriesPerUser: limit, retryEnabled: retry, retryCostCoins: retryCost, maxRetriesPerEntry: retries, opensAt: openTime, closesAt: closeTime })
       });
       let data; try { data = await response.json(); } catch { throw new Error("The event service returned an unreadable response."); }
       if (!response.ok || !data || !data.ok || !data.result || data.result.status !== "draft") {
