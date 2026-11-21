@@ -185,3 +185,12 @@ test("event activation is Owner-only and settlement is Worker-controlled and one
   assert.ok(routes.includes("applyGemEventActivation(identity.uid, eventId, accessToken)"));
   assert.ok(routes.includes("applyGemEventSettlement(eventId, accessToken)"));
 });
+
+test("Gem event settlement also has a scheduled Worker trigger", async () => {
+  assert.ok(source.includes("async function settleDueGemEvents(env)"));
+  assert.ok(source.includes("applyGemEventSettlement(eventId, accessToken)"));
+  assert.ok(source.includes("async scheduled(controller, env, ctx)"));
+  assert.ok(source.includes("ctx.waitUntil(settleDueGemEvents(env))"));
+  const wrangler = await readFile(new URL("../wrangler.toml", import.meta.url), "utf8");
+  assert.ok(wrangler.includes('crons = ["*/15 * * * *"]'));
+});
