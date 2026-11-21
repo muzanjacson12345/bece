@@ -743,7 +743,7 @@ service cloud.firestore {
 
     match /gemEvents/{eventId} {
       allow read: if signedIn()
-        && (resource.data.get('status', '') == 'active' || isStaff());
+        && ((resource.data.get('status', '') in ['active', 'settled']) || isStaff());
       allow create, update, delete: if false;
 
       match /questions/{questionId} {
@@ -777,6 +777,11 @@ service cloud.firestore {
 
     // Per-answer event replay receipts stay private and Worker-only.
     match /gemEventAnswerOperations/{operationId} {
+      allow read, write: if false;
+    }
+
+    // Each event winner's Gem prize is paid once by the trusted Worker.
+    match /gemEventPrizeOperations/{operationId} {
       allow read, write: if false;
     }
 
