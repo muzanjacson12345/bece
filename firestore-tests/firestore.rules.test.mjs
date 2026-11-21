@@ -85,21 +85,30 @@ test("Gem transaction and reward-claim records are server-write-only", async () 
   await assertFails(setDoc(doc(alice, "gemRewardClaims/claim2"), { uid: "alice" }));
 });
 
-test("players cannot create or change Coins, Duel rewards, Gems, shop ownership or power-ups", async () => {
+test("players cannot create or change Coins, EXP, streaks, Duel rewards, Gems, shop ownership or power-ups", async () => {
   const alice = testEnv.authenticatedContext("alice").firestore();
 
   await assertSucceeds(setDoc(doc(alice, "players/alice"), {
-    displayName: "Alice", coins: 0, duelW: 0, duelL: 0, duelD: 0, dcN: 0, eq: {}
+    displayName: "Alice", coins: 0, totalExp: 0, weekExp: 0, dayExp: 0,
+    streak: 0, bestStreak: 0, duelW: 0, duelL: 0, duelD: 0, dcN: 0, eq: {}
   }));
   const protectedFields = [
     "gems", "gemOps", "owned", "p50", "sfreezes", "xpBoost",
-    "coins", "duelW", "duelL", "duelD", "dcDay", "dcN"
+    "coins", "duelW", "duelL", "duelD", "dcDay", "dcN",
+    "totalExp", "weekKey", "weekExp", "dayKey", "dayExp",
+    "streak", "bestStreak", "lastDay", "counted",
+    "challengeState", "achievements", "recent"
   ];
   for (const field of protectedFields) {
     const value = field === "owned" ? { t_legend: true }
-      : field === "gemOps" ? ["fake-credit"]
-      : field === "dcDay" ? "2026-11-21" : 1;
-    if (field !== "dcDay") {
+      : field === "gemOps" || field === "counted" ? ["fake-credit"]
+      : field === "dcDay" || field === "weekKey" || field === "dayKey" || field === "lastDay"
+        ? "2026-11-21"
+      : field === "challengeState" ? { day: "2026-11-21", claimed: ["first"] }
+      : field === "achievements" ? { unlocked: ["fake-achievement"] }
+      : field === "recent" ? [{ kind: "practice", correct: 10, total: 10, exp: 100 }]
+      : 1;
+    if (!["dcDay", "weekKey", "dayKey", "lastDay", "counted", "challengeState", "achievements", "recent"].includes(field)) {
       const createUid = field + "-create";
       const createDb = testEnv.authenticatedContext(createUid).firestore();
       await assertFails(setDoc(doc(createDb, "players/" + createUid), {
@@ -108,10 +117,31 @@ test("players cannot create or change Coins, Duel rewards, Gems, shop ownership 
     }
     await assertFails(updateDoc(doc(alice, "players/alice"), { [field]: value }));
   }
+  await assertFails(setDoc(doc(testEnv.authenticatedContext("xp-create").firestore(), "players/xp-create"), {
+    displayName: "XP Create", coins: 0, totalExp: 10
+  }));
+  await assertFails(setDoc(doc(testEnv.authenticatedContext("streak-create").firestore(), "players/streak-create"), {
+    displayName: "Streak Create", coins: 0, streak: 4
+  }));
   await assertFails(updateDoc(doc(alice, "players/alice"), { coins: 11 }));
   await assertSucceeds(updateDoc(doc(alice, "players/alice"), { eq: { title: "t_legend" } }));
   await assertSucceeds(updateDoc(doc(alice, "players/alice"), { displayName: "Alice Updated" }));
 });
+
+test("Admin may correct EXP for an ordinary player but cannot edit Coins or Duel rewards", async () => {
+  await seed({
+    "config/admin": { pin: "1234" },
+    "adminSessions/admin-user": { pin: "1234", at: Timestamp.now() },
+    "players/target-player": { displayName: "Target", coins: 20, totalExp: 10, weekExp: 5, duelW: 1 }
+  });
+  const admin = testEnv.authenticatedContext("admin-user").firestore();
+  await assertSucceeds(updateDoc(doc(admin, "players/target-player"), {
+    totalExp: 25, weekExp: 10, bestStreak: 3
+  }));
+  await assertFails(updateDoc(doc(admin, "players/target-player"), { coins: 999 }));
+  await assertFails(updateDoc(doc(admin, "players/target-player"), { duelW: 99 }));
+});
+
 
 test("power-up use receipts are private and cannot be client-written", async () => {
   const alice = testEnv.authenticatedContext("alice").firestore();
@@ -198,7 +228,7 @@ test("a valid Owner session can still perform authorized Coin and Duel correctio
     "players/target-player": { displayName: "Target", coins: 5, duelW: 0 }
   });
   const db = testEnv.authenticatedContext("owner-user").firestore();
-  await assertSucceeds(updateDoc(doc(db, "players/target-player"), { coins: 500, duelW: 3 }));
+  await assertSucceeds(updateDoc(doc(db, "players/target-player"), { coins: 500, duelW: 3, totalExp: 250 }));
 });
 test("a banned Admin cannot use an unexpired Admin session", async () => {
   const now = Date.now();
