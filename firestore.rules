@@ -551,15 +551,17 @@ service cloud.firestore {
 
       allow create: if isOwner()
         || (signedIn() && request.auth.uid == id && !isBanned()
-            && !request.resource.data.keys().hasAny(['gems', 'gemOps', 'owned']));
+            && !request.resource.data.keys().hasAny([
+              'gems', 'gemOps', 'owned', 'p50', 'sfreezes', 'xpBoost'
+            ]));
 
       allow update: if isOwner()
         || (signedIn() && request.auth.uid == id && !isBanned()
             && !request.resource.data.diff(resource.data).affectedKeys()
-                 .hasAny(['gems', 'gemOps', 'owned']))
+                 .hasAny(['gems', 'gemOps', 'owned', 'p50', 'sfreezes', 'xpBoost']))
         || (isAdmin() && !targetIsStaff(id)
             && !request.resource.data.diff(resource.data).affectedKeys()
-                 .hasAny(['gems', 'gemOps', 'owned']));
+                 .hasAny(['gems', 'gemOps', 'owned', 'p50', 'sfreezes', 'xpBoost']));
 
       // The staff UI explicitly prevents self-deletion. Owner may remove
       // players/admins but not another Owner; Admin may remove ordinary players.
@@ -688,6 +690,11 @@ service cloud.firestore {
 
     // Purchase receipts are private and can only be written by the trusted Worker.
     match /shopOperations/{operationId} {
+      allow read, write: if false;
+    }
+
+    // One-time consumable-use receipts are private and server-written only.
+    match /powerupOperations/{operationId} {
       allow read, write: if false;
     }
 
