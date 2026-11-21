@@ -11087,6 +11087,7 @@ const Duel = (() => {
       const scBtn = document.createElement('button');
       scBtn.className = 'btn btn-primary btn-sm'; scBtn.type = 'button';
       scBtn.textContent = `\u{1F3AF} Use Second Chance (${S.doc.p50} left)`;
+      let pendingPowerupOperationId = null;
       scBtn.onclick = async () => {
         if (scBtn.disabled) return;
         scBtn.disabled = true;
@@ -11095,7 +11096,7 @@ const Duel = (() => {
           const user = firebase.auth().currentUser;
           if (!user) throw new Error('Please reconnect your sign-in.');
           const token = await user.getIdToken();
-          const operationId = crypto.randomUUID();
+          const operationId = pendingPowerupOperationId || (pendingPowerupOperationId = crypto.randomUUID());
           const response = await fetch('https://bece-hub-gems-api.abeikcrentsil.workers.dev/powerups/use', {
             method: 'POST',
             headers: {
@@ -11114,6 +11115,7 @@ const Duel = (() => {
             throw new Error(data && data.error ? data.error : 'The power-up could not be used.');
           }
           const result = data.result;
+          pendingPowerupOperationId = null;
           if (!Number.isSafeInteger(result.quantity) || result.quantity < 0 || result.itemId !== 'p50') {
             throw new Error('The power-up service returned an invalid result.');
           }
