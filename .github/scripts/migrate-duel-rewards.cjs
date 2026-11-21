@@ -19,6 +19,16 @@ function replaceOnce(oldText, newText, label) {
   source = source.replace(oldText, newText);
 }
 
+function replaceBefore(targetToken, oldText, newText, label) {
+  const target = source.indexOf(targetToken);
+  if (target < 0 || source.indexOf(targetToken, target + targetToken.length) >= 0) {
+    throw new Error(label + ": could not identify one target section.");
+  }
+  const at = source.lastIndexOf(oldText, target);
+  if (at < 0) throw new Error(label + ": source marker not found before target.");
+  source = source.slice(0, at) + newText + source.slice(at + oldText.length);
+}
+
 function replaceBetween(startToken, endToken, newText, label) {
   const start = source.indexOf(startToken);
   if (start < 0 || source.indexOf(startToken, start + startToken.length) >= 0) {
@@ -29,7 +39,8 @@ function replaceBetween(startToken, endToken, newText, label) {
   source = source.slice(0, start) + newText + source.slice(end);
 }
 
-replaceOnce(
+replaceBefore(
+  "function record(out, forceCoins)",
   "  const warn = m => App.toast(m, 'warn');",
   `  const warn = m => App.toast(m, 'warn');
   async function duelApi(path, payload) {
