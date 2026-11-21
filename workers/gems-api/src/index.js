@@ -1649,7 +1649,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/configure', '/events/enter', '/events/retry'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/configure', '/events/enter', '/events/retry', '/events/next', '/events/answer'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -1733,6 +1733,37 @@ export default {
           return json({ ok: false, code: 'INVALID_EVENT_ID', error: 'The event ID is invalid.' }, 400, origin);
         }
         const outcome = await applyGemEventDraftConfig(identity.uid, eventId, payload || {}, accessToken);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+
+      if (url.pathname === '/events/next' || url.pathname === '/events/answer') {
+        const eventId = payload && typeof payload.eventId === 'string' ? payload.eventId.trim() : '';
+        const attemptId = payload && typeof payload.attemptId === 'string' ? payload.attemptId.trim() : '';
+        if (!validateGemEventId(eventId)) {
+          return json({ ok: false, code: 'INVALID_EVENT_ID', error: 'The event ID is invalid.' }, 400, origin);
+        }
+        if (!validateOperationUuid(attemptId)) {
+          return json({ ok: false, code: 'INVALID_ATTEMPT_ID', error: 'The event attempt ID is invalid.' }, 400, origin);
+        }
+        if (url.pathname === '/events/next') {
+          const outcome = await startGemEventQuestion(identity.uid, eventId, attemptId, accessToken);
+          return json({ ok: true, ...outcome }, 200, origin);
+        }
+        const questionId = payload && typeof payload.questionId === 'string' ? payload.questionId.trim() : '';
+        const answerKey = payload && Object.prototype.hasOwnProperty.call(payload, 'answerKey') ? payload.answerKey : null;
+        const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
+        if (!isKnownQuestionId(questionId)) {
+          return json({ ok: false, code: 'INVALID_QUESTION_ID', error: 'That event question is not valid.' }, 400, origin);
+        }
+        if (answerKey !== null && (typeof answerKey !== 'string' || !/^[A-D]$/.test(answerKey))) {
+          return json({ ok: false, code: 'INVALID_EVENT_ANSWER', error: 'That event answer is not valid.' }, 400, origin);
+        }
+        if (!validateOperationUuid(operationId)) {
+          return json({ ok: false, code: 'INVALID_OPERATION_ID', error: 'A valid event answer ID is required.' }, 400, origin);
+        }
+        const outcome = await submitGemEventAnswer(
+          identity.uid, eventId, attemptId, questionId, answerKey, operationId, accessToken
+        );
         return json({ ok: true, ...outcome }, 200, origin);
       }
 
@@ -1829,6 +1860,12 @@ export default {
         EVENT_RETRY_LIMIT_REACHED: ['You have used all retries allowed for this entry.', 409],
         EVENT_PARTICIPATION_NOT_FOUND: ['Your event entry could not be found.', 404],
         EVENT_ATTEMPT_NOT_FOUND: ['That event attempt could not be found.', 404],
+        EVENT_ATTEMPT_NOT_PLAYABLE: ['This event attempt is no longer active.', 409],
+        EVENT_ATTEMPT_FINISHED: ['This event attempt has already finished.', 409],
+        EVENT_ATTEMPT_NOT_FINISHED: ['Finish the attempt before claiming its leaderboard result.', 409],
+        EVENT_QUESTION_SEQUENCE: ['That is not the current event question.', 409],
+        EVENT_QUESTION_NOT_STARTED: ['Start the current event question before submitting an answer.', 409],
+        INVALID_EVENT_ANSWER: ['That event answer is not valid.', 400],
         EVENT_ATTEMPT_NOT_RETRYABLE: ['That attempt has already been replaced or closed.', 409],
         INVALID_EVENT_CONFIG: ['The event configuration needs Owner review.', 409],
         INVALID_EVENT_QUESTIONS: ['Choose between 3 and 50 valid questions from the BECE question bank.', 400],
