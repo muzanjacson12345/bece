@@ -112,3 +112,14 @@ showSection("OWNER CLOUDFLARE CARD IMPLEMENTATION", "function cloudflareUsageCar
 showSection("OWNER QUOTA CALCULATOR", "function setQuota(", 300, 3600);
 showSection("OWNER WORKER USAGE METER CREATION", "const workerMetric", 400, 2800);
 showSection("OWNER USAGE REFRESH ACTION", "async function refreshUsage", 300, 4500);
+
+console.log("\n=== EVENT ENTRY / RETRY IMPLEMENTATION AUDIT ===");
+for (const term of ["gemEvents", "gemEventAnswerKeys", "entryCost", "entryPrice", "entryLimit", "retryCost", "retryLimit", "eventEntry", "eventRetry"]) {
+  const re = new RegExp(term, "gi");
+  const hits = [...source.matchAll(re)];
+  console.log(term + ": " + hits.length + " occurrence(s)");
+  for (const hit of hits.slice(0, 4)) {
+    const at = hit.index;
+    console.log("  line " + (source.slice(0, at).split("\n").length) + ": " + source.slice(Math.max(0, at - 240), Math.min(source.length, at + 600)).replace(/\s+/g, " ").trim());
+  }
+}
