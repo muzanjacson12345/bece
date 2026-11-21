@@ -223,7 +223,7 @@ export function getCorrectAnswer(questionId) {
   const fixed = FIXED_ANSWER_KEYS[questionId];
   if (fixed) return fixed;
 
-  const match = /^(mat|com|soc|art|rme|sci|fre|ct)-(\\d{1,3})$/.exec(questionId);
+  const match = /^(mat|com|soc|art|rme|sci|fre|ct)-(\d{1,3})$/.exec(questionId);
   if (!match) return null;
   const range = GENERATED_ID_RANGES[match[1]];
   const number = Number(match[2]);
