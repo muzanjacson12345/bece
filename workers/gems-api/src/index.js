@@ -1247,6 +1247,36 @@ export default {
       const outcome = await applyGemChange(identity.uid, action, amount, operationId, accessToken);
       return json({ ok: true, ...outcome }, 200, origin);
     } catch (error) {
+
+      const duelErrors = {
+        DUEL_NOT_FOUND: 'That duel could not be found.',
+        DUEL_NOT_PLAYING: 'That duel is not active.',
+        DUEL_NOT_PARTICIPANT: 'You are not a participant in this duel.',
+        DUEL_NOT_STARTED: 'Your secure duel session has not started.',
+        DUEL_SESSION_MISMATCH: 'This duel session does not match your account.',
+        DUEL_ALREADY_FINISHED: 'This duel is already finished.',
+        DUEL_QUESTION_SEQUENCE: 'The answer does not match the current duel question.',
+        DUEL_SECOND_CHANCE_LIMIT: 'No more Second Chances are available for this duel question.',
+        DUEL_SETTLEMENT_INVALID: 'The saved duel result could not be verified.',
+        IDEMPOTENCY_KEY_REUSED: 'This answer retry ID was already used for a different answer.',
+        INVALID_DUEL: 'The duel information is invalid.',
+        INVALID_DUEL_QUESTIONS: 'The duel contains an unsupported question.',
+        INVALID_DUEL_SETTINGS: 'The duel settings are invalid.',
+        INVALID_DUEL_TIME: 'The answer timing is invalid.',
+        INVALID_DUEL_DAY: 'The settlement date is invalid.',
+        INVALID_DUEL_SESSION: 'The duel session is invalid.',
+        INVALID_DUEL_CODE: 'The duel code is invalid.',
+        INVALID_DUEL_ANSWER: 'The submitted answer is invalid.',
+        INVALID_OPERATION_ID: 'The answer operation ID is invalid.',
+        INVALID_QUESTION_ID: 'The duel question is invalid.',
+        INVALID_PLAYER_BALANCE: 'The player balance needs review.',
+        PLAYER_BALANCE_LIMIT: 'This player has reached the maximum supported Coin balance.'
+      };
+      if (error && duelErrors[error.message]) {
+        const status = error.message === 'DUEL_NOT_PARTICIPANT' ? 403
+          : error.message === 'DUEL_NOT_FOUND' ? 404 : 409;
+        return json({ ok: false, code: error.message, error: duelErrors[error.message] }, status, origin);
+      }
       if (error && error.message === 'INSUFFICIENT_GEMS') {
         return json({ ok: false, code: 'INSUFFICIENT_GEMS', error: 'You do not have enough Gems.' }, 409, origin);
       }
