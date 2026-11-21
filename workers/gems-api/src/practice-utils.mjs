@@ -124,7 +124,7 @@ export function buildPracticeRewardResult({
   const achievementSubjects = [...new Set([
     ...(Array.isArray(previousAchievements.subjects) ? previousAchievements.subjects : [])
       .map(metricForQuestion).filter(Boolean),
-    ...questionIds.map(metricForQuestion).filter(Boolean)
+    ...answeredIds.map(metricForQuestion).filter(Boolean)
   ])];
 
   achievementStats.answered = safeCount(achievementStats.answered) + answeredIds.length;
@@ -134,7 +134,7 @@ export function buildPracticeRewardResult({
     achievementStats.perfect = safeCount(achievementStats.perfect) + 1;
   }
   const subjectMetrics = {};
-  questionIds.forEach(id => {
+  answeredIds.forEach(id => {
     const metric = metricForQuestion(id);
     if (metric) subjectMetrics[metric] = (subjectMetrics[metric] || 0) + 1;
   });
@@ -196,7 +196,7 @@ export function buildPracticeRewardResult({
     });
     challengeState.progress.subjects = challengeState.subjects.length;
     if (answeredIds.length > 0 && correctCount === answeredIds.length) add("perfect", 1);
-    if (questionIds.length >= 10) add("longQuiz", 1);
+    if (answeredIds.length >= 10) add("longQuiz", 1);
     if (subjects.size >= 3) add("mixed", 1);
     Object.entries(subjectCounts).forEach(([code, count]) => add(code, count));
 
@@ -248,8 +248,8 @@ export function buildPracticeRewardResult({
   const sfreezes = usedFreeze ? Math.max(0, safeCount(player.sfreezes) - 1) : safeCount(player.sfreezes);
   const xpBoost = xpMult > 1 ? Math.max(0, safeCount(player.xpBoost) - 1) : safeCount(player.xpBoost);
   const recent = [{
-    kind, subject: [...new Set(questionIds.map(id => metricForQuestion(id)).filter(Boolean))].join("+") || "mixed",
-    correct: correctCount, total: questionIds.length, exp: totalExpEarned, at: Date.now()
+    kind, subject: [...new Set(answeredIds.map(id => metricForQuestion(id)).filter(Boolean))].join("+") || "mixed",
+    correct: correctCount, total: answeredIds.length, exp: totalExpEarned, at: Date.now()
   }, ...(Array.isArray(player.recent) ? player.recent : [])].slice(0, 5);
 
   return {
