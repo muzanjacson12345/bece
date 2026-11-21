@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildDuelAnswerResult,
+  buildDuelQuestionStart,
   buildDuelForfeitProgress,
   buildDuelSecondChanceProgress,
   buildDuelSettlement,
@@ -31,6 +32,31 @@ test("server verifies each final answer and advances only the expected question"
     duel, progress: first.progress, uid: "host", questionId: "soc-3",
     answerKey: "B", operationId: "22222222-2222-4222-8222-222222222222", now: 6000
   }), /DUEL_QUESTION_SEQUENCE/);
+});
+
+test("the Worker opens the next question clock once and will not restart it on retries", () => {
+  const started = createDuelProgress("host", "ROOM1", 1000);
+  const first = buildDuelQuestionStart({
+    duel, progress: started, uid: "host", questionId: "soc-1", now: 1100
+  });
+  assert.equal(first.duplicate, true);
+  assert.equal(first.result.startedAt, 1000);
+
+  const answered = buildDuelAnswerResult({
+    duel, progress: first.progress, uid: "host", questionId: "soc-1",
+    answerKey: "B", operationId: "11111111-1111-4111-8111-111111111111", now: 2000
+  });
+  assert.equal(answered.progress.questionStartedAt, null);
+  const next = buildDuelQuestionStart({
+    duel, progress: answered.progress, uid: "host", questionId: "soc-2", now: 3500
+  });
+  assert.equal(next.duplicate, false);
+  assert.equal(next.result.startedAt, 3500);
+  const retry = buildDuelQuestionStart({
+    duel, progress: next.progress, uid: "host", questionId: "soc-2", now: 9000
+  });
+  assert.equal(retry.duplicate, true);
+  assert.equal(retry.result.startedAt, 3500);
 });
 
 test("wrong and timed-out answers cannot increase the correct score", () => {
