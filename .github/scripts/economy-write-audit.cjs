@@ -35,14 +35,14 @@ if (!results.length) console.log("No candidate writes matched the audit patterns
 
 function showSection(label, needle, before = 3000, after = 3000) {
   const index = source.indexOf(needle);
-  console.log("\\n=== " + label + " ===");
+  console.log("\n=== " + label + " ===");
   if (index < 0) {
     console.log("Not found: " + needle);
     return;
   }
   const excerpt = source.slice(Math.max(0, index - before), Math.min(source.length, index + after));
-  console.log("Starts at line " + (source.slice(0, index).split("\\n").length));
-  console.log(excerpt.replace(/\\s+/g, " ").trim());
+  console.log("Starts at line " + (source.slice(0, index).split("\n").length));
+  console.log(excerpt.replace(/\s+/g, " ").trim());
 }
 
 showSection("SHOP CATALOG AND PURCHASE FLOW", "async function buy(it, slot)", 6500, 3500);
@@ -68,11 +68,11 @@ showSection("MIGRATED DUEL SETTLEMENT UI", "async function result(r)", 300, 8500
 showSection("MIGRATED DUEL FORFEIT CALL", "duelApi('/duels/forfeit'", 300, 1800);
 showSection("SECOND CHANCE DUEL BINDING", "duelCode: tok", 300, 1800);
 
-console.log("\\n=== PLAYER PROFILE SAVE AND WRITE CALL SITES ===");
-for (const match of source.matchAll(/\\bqueueSave\\s*\\(/g)) {
+console.log("\n=== PLAYER PROFILE SAVE AND WRITE CALL SITES ===");
+for (const match of source.matchAll(/\bqueueSave\s*\(/g)) {
   const at = match.index;
   const context = source.slice(Math.max(0, at - 220), Math.min(source.length, at + 700));
-  console.log("line " + (source.slice(0, at).split("\\n").length) + ": " + context.replace(/\\s+/g, " ").trim());
+  console.log("line " + (source.slice(0, at).split("\n").length) + ": " + context.replace(/\s+/g, " ").trim());
 }
 showSection("PLAYER PROFILE SAVE IMPLEMENTATION", "function queueSave(patch)", 350, 2800);
 showSection("PLAYER PROFILE FLUSH IMPLEMENTATION", "async function flushSave()", 250, 2100);
