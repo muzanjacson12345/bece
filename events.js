@@ -101,8 +101,9 @@
       ]);
       const now = Date.now();
       const events = eventSnapshot.docs
+        // Keep closed events visible so players can finish paid attempts and
+        // inspect final leaderboards. The Worker blocks new paid entries/retries.
         .map(doc => ({ ...doc.data(), eventId: doc.id }))
-        .filter(event => (!Number.isSafeInteger(event.closesAt) || event.closesAt > now))
         .sort((a, b) => {
           const at = Number.isSafeInteger(a.opensAt) ? a.opensAt : 0;
           const bt = Number.isSafeInteger(b.opensAt) ? b.opensAt : 0;
