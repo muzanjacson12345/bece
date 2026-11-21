@@ -9,6 +9,7 @@ import {
 
 const baseEvent = {
   status: "active",
+  questionIds: ["soc-1", "soc-2", "soc-3"],
   entryCostCoins: 35,
   maxEntriesPerUser: 2,
   retryEnabled: true,
