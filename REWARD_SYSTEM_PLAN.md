@@ -69,9 +69,17 @@ The following security and economy work has been implemented on this draft branc
 
 The Owner infrastructure card already shows Worker requests used, the daily limit, requests remaining, percentage used and data freshness when the Owner refreshes it. The readings are account-wide; a Bece Hub feature-by-feature usage breakdown and monthly history are not connected yet.
 
-### Still not implemented
+### Event implementation status
 
-The event entry and retry system described above is still a separate future implementation. It needs per-event entry costs, entry allowances, retry costs and retry limits configured explicitly. No event entry or retry endpoint should be inferred from the existing Gem event collection placeholders.
+The draft Worker now contains a **payment and attempt foundation** for event entry and retries:
+
+- Each `gemEvents/{eventId}` config supplies its own `entryCostCoins`, `maxEntriesPerUser`, `retryEnabled`, `retryCostCoins` and `maxRetriesPerEntry`.
+- Entry and retry charges, participant/attempt updates and permanent operation receipts are committed atomically.
+- Retrying creates a fresh attempt under the same paid entry and marks the previous attempt replaced.
+- Paying an entry or retry fee only spends Coins. It never awards Gems or achievements by itself.
+- The Worker applies technical upper bounds of 100 entries per player per event and 20 retries per entry. An individual event can set lower limits.
+
+The rest of the event feature is still unfinished: there is no event screen in the website, no server-served event question flow or answer submission, no leaderboard calculation or Gem-prize settlement, and no Owner interface for creating/editing event configurations. The new endpoints are not called by the current website and do not make events playable yet.
 
 ### Publishing boundary
 
