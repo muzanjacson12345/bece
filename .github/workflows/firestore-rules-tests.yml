@@ -12,6 +12,7 @@ on:
       - ".github/scripts/migrate-shop-purchases.cjs"
       - ".github/scripts/migrate-powerup-use.cjs"
       - ".github/scripts/migrate-powerup-retry.cjs"
+      - ".github/scripts/migrate-duel-rewards.cjs"
       - "workers/gems-api/src/**"
       - "workers/gems-api/test/**"
       - "workers/gems-api/package.json"
@@ -40,6 +41,9 @@ jobs:
       - name: Reuse the same Second Chance receipt ID on retries
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: node .github/scripts/migrate-powerup-retry.cjs
+      - name: Migrate Duel answers and rewards to the trusted Worker
+        if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
+        run: node .github/scripts/migrate-duel-rewards.cjs
       - name: Commit draft economy app migrations
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: |
@@ -47,7 +51,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add index.html
-            git commit -m "Route shop and power-up writes through trusted Worker"
+            git commit -m "Route shop, power-up, and Duel writes through trusted Worker"
             git push origin "HEAD:$GITHUB_REF_NAME"
           fi
       - name: Check Gems Worker JavaScript syntax
