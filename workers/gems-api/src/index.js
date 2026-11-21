@@ -4,6 +4,14 @@ import { buildPracticeRewardResult } from "./practice-utils.mjs";
 import { isKnownQuestionId } from "./question-keys.mjs";
 import { getShopItem } from "./shop-utils.mjs";
 import { getPowerupUse } from "./powerup-utils.mjs";
+import {
+  buildDuelAnswerResult,
+  buildDuelForfeitProgress,
+  buildDuelQuestionStart,
+  buildDuelSecondChanceProgress,
+  buildDuelSettlement,
+  createDuelProgress
+} from "./duel-utils.mjs";
 
 const PROJECT_ID = 'bece-hub-d9ad5';
 const APP_ORIGIN = 'https://muzanjacson12345.github.io';
@@ -305,6 +313,8 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
   const playerName = base + playerPath;
   const stateName = base + statePath;
   const operationName = base + operationPath;
+  const duelPath = duelCode ? duelDocumentPath(duelCode) : '';
+  const progressPath = duelCode ? duelProgressPath(duelCode, uid) : '';
 
   const transactionResult = await firestoreRequest(
     'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
@@ -591,7 +601,7 @@ async function applyShopPurchase(uid, itemId, operationId, accessToken) {
   }
 }
 
-async function applyPowerupUse(uid, itemId, operationId, accessToken) {
+async function applyPowerupUse(uid, itemId, operationId, accessToken, duelCode = '') {
   const item = getPowerupUse(itemId);
   if (!item) throw new Error('INVALID_POWERUP_ITEM');
 
@@ -610,9 +620,11 @@ async function applyPowerupUse(uid, itemId, operationId, accessToken) {
   if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
   let finished = false;
   try {
-    const [playerDoc, operationDoc] = await Promise.all([
+    const [playerDoc, operationDoc, duelDoc, progressDoc] = await Promise.all([
       getDocument(playerPath, accessToken, transaction),
-      getDocument(operationPath, accessToken, transaction)
+      getDocument(operationPath, accessToken, transaction),
+      duelCode ? getDocument(duelPath, accessToken, transaction) : Promise.resolve(null),
+      duelCode ? getDocument(progressPath, accessToken, transaction) : Promise.resolve(null)
     ]);
 
     if (operationDoc) {
@@ -635,6 +647,13 @@ async function applyPowerupUse(uid, itemId, operationId, accessToken) {
     if (current < 1) throw new Error('NO_POWERUP_AVAILABLE');
 
     const quantity = current - 1;
+    let nextProgress = null;
+    if (duelCode) {
+      if (!duelDoc || !progressDoc) throw new Error('DUEL_NOT_STARTED');
+      const duel = decodeFirestoreFields(duelDoc.fields || {});
+      const progress = decodeFirestoreFields(progressDoc.fields || {});
+      nextProgress = buildDuelSecondChanceProgress({ duel, progress, uid, now: Date.now() });
+    }
     const result = { itemId, field: item.field, quantity };
     const operationRecord = {
       uid,
@@ -649,6 +668,11 @@ async function applyPowerupUse(uid, itemId, operationId, accessToken) {
         updateMask: { fieldPaths: [item.field] },
         currentDocument: { exists: true }
       },
+      ...(nextProgress ? [{
+        update: { name: base + progressPath, fields: encodeFirestoreFields(nextProgress) },
+        updateMask: { fieldPaths: Object.keys(nextProgress) },
+        currentDocument: { exists: true }
+      }] : []),
       {
         update: { name: operationName, fields: encodeFirestoreFields(operationRecord) },
         updateMask: { fieldPaths: Object.keys(operationRecord) },
@@ -662,6 +686,352 @@ async function applyPowerupUse(uid, itemId, operationId, accessToken) {
     );
     finished = true;
     return { duplicate: false, result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+
+function duelDocumentPath(code) {
+  return 'duels/' + encodeURIComponent(code);
+}
+
+function duelProgressPath(code, uid) {
+  return 'duelProgress/' + encodeURIComponent(code + '_' + uid);
+}
+
+function duelSettlementPath(code) {
+  return 'duelSettlements/' + encodeURIComponent(code);
+}
+
+function validateDuelCode(code) {
+  return typeof code === 'string' && /^[A-Z0-9]{4,12}$/.test(code);
+}
+
+async function startDuelProgress(uid, code, accessToken) {
+  const duelPath = duelDocumentPath(code);
+  const progressPath = duelProgressPath(code, uid);
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [duelDoc, progressDoc] = await Promise.all([
+      getDocument(duelPath, accessToken, transaction),
+      getDocument(progressPath, accessToken, transaction)
+    ]);
+    if (!duelDoc) throw new Error('DUEL_NOT_FOUND');
+    const duel = decodeFirestoreFields(duelDoc.fields || {});
+    if (duel.state !== 'playing') throw new Error('DUEL_NOT_PLAYING');
+    if (duel.host !== uid && duel.guest !== uid) throw new Error('DUEL_NOT_PARTICIPANT');
+    if (progressDoc) {
+      const stored = decodeFirestoreFields(progressDoc.fields || {});
+      if (stored.uid !== uid || stored.code !== code) throw new Error('DUEL_SESSION_MISMATCH');
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: { started: true, nextIndex: stored.nextIndex, done: !!stored.done } };
+    }
+    const progress = createDuelProgress(uid, code, Date.now());
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          writes: [{
+            update: { name: base + progressPath, fields: encodeFirestoreFields(progress) },
+            updateMask: { fieldPaths: Object.keys(progress) },
+            currentDocument: { exists: false }
+          }]
+        }
+      }
+    );
+    finished = true;
+    return { duplicate: false, result: { started: true, nextIndex: 0, done: false } };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+async function startDuelQuestion(uid, code, questionId, accessToken) {
+  const duelPath = duelDocumentPath(code);
+  const progressPath = duelProgressPath(code, uid);
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [duelDoc, progressDoc] = await Promise.all([
+      getDocument(duelPath, accessToken, transaction),
+      getDocument(progressPath, accessToken, transaction)
+    ]);
+    if (!duelDoc) throw new Error('DUEL_NOT_FOUND');
+    if (!progressDoc) throw new Error('DUEL_NOT_STARTED');
+    const duel = decodeFirestoreFields(duelDoc.fields || {});
+    const progress = decodeFirestoreFields(progressDoc.fields || {});
+    const outcome = buildDuelQuestionStart({ duel, progress, uid, questionId, now: Date.now() });
+    if (outcome.duplicate) {
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: outcome.result };
+    }
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          writes: [{
+            update: { name: base + progressPath, fields: encodeFirestoreFields(outcome.progress) },
+            updateMask: { fieldPaths: Object.keys(outcome.progress) },
+            currentDocument: { exists: true }
+          }]
+        }
+      }
+    );
+    finished = true;
+    return { duplicate: false, result: outcome.result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+async function submitDuelAnswer(uid, code, questionId, answerKey, operationId, accessToken) {
+  const duelPath = duelDocumentPath(code);
+  const progressPath = duelProgressPath(code, uid);
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [duelDoc, progressDoc] = await Promise.all([
+      getDocument(duelPath, accessToken, transaction),
+      getDocument(progressPath, accessToken, transaction)
+    ]);
+    if (!duelDoc) throw new Error('DUEL_NOT_FOUND');
+    if (!progressDoc) throw new Error('DUEL_NOT_STARTED');
+    const duel = decodeFirestoreFields(duelDoc.fields || {});
+    const progress = decodeFirestoreFields(progressDoc.fields || {});
+    const outcome = buildDuelAnswerResult({
+      duel, progress, uid, questionId, answerKey, operationId, now: Date.now()
+    });
+    if (outcome.duplicate) {
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: outcome.result };
+    }
+    const publicResults = {
+      ...(duel.res && typeof duel.res === 'object' ? duel.res : {}),
+      [uid]: outcome.result.score
+    };
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          writes: [
+            {
+              update: { name: base + progressPath, fields: encodeFirestoreFields(outcome.progress) },
+              updateMask: { fieldPaths: Object.keys(outcome.progress) },
+              currentDocument: { exists: true }
+            },
+            {
+              update: {
+                name: base + duelPath,
+                fields: encodeFirestoreFields({ res: publicResults })
+              },
+              updateMask: { fieldPaths: ['res'] },
+              currentDocument: { exists: true }
+            }
+          ]
+        }
+      }
+    );
+    finished = true;
+    return { duplicate: false, result: outcome.result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+async function forfeitDuel(uid, code, accessToken) {
+  const duelPath = duelDocumentPath(code);
+  const progressPath = duelProgressPath(code, uid);
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [duelDoc, progressDoc] = await Promise.all([
+      getDocument(duelPath, accessToken, transaction),
+      getDocument(progressPath, accessToken, transaction)
+    ]);
+    if (!duelDoc) throw new Error('DUEL_NOT_FOUND');
+    if (!progressDoc) throw new Error('DUEL_NOT_STARTED');
+    const duel = decodeFirestoreFields(duelDoc.fields || {});
+    const progress = decodeFirestoreFields(progressDoc.fields || {});
+    const next = buildDuelForfeitProgress({ duel, progress, uid, now: Date.now() });
+    const score = { c: next.correctCount || 0, n: duel.qids.length, ms: next.totalMs || 0, done: true };
+    const publicResults = {
+      ...(duel.res && typeof duel.res === 'object' ? duel.res : {}),
+      [uid]: score
+    };
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          writes: [
+            {
+              update: { name: base + progressPath, fields: encodeFirestoreFields(next) },
+              updateMask: { fieldPaths: Object.keys(next) },
+              currentDocument: { exists: true }
+            },
+            {
+              update: { name: base + duelPath, fields: encodeFirestoreFields({ res: publicResults }) },
+              updateMask: { fieldPaths: ['res'] },
+              currentDocument: { exists: true }
+            }
+          ]
+        }
+      }
+    );
+    finished = true;
+    return { duplicate: !!progress.done, result: { ...score, forfeit: true } };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+async function settleDuel(uid, code, accessToken) {
+  const duelPath = duelDocumentPath(code);
+  const hostProgressPath = duelProgressPath(code, 'host-placeholder');
+  const settlementPath = duelSettlementPath(code);
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const duelDoc = await getDocument(duelPath, accessToken, transaction);
+    if (!duelDoc) throw new Error('DUEL_NOT_FOUND');
+    const duel = decodeFirestoreFields(duelDoc.fields || {});
+    if (duel.host !== uid && duel.guest !== uid) throw new Error('DUEL_NOT_PARTICIPANT');
+    const storedSettlement = await getDocument(settlementPath, accessToken, transaction);
+    if (storedSettlement) {
+      const stored = decodeFirestoreFields(storedSettlement.fields || {});
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      if (!stored.byUid || !stored.byUid[uid]) throw new Error('DUEL_SETTLEMENT_INVALID');
+      return { duplicate: true, result: stored.byUid[uid] };
+    }
+    if (duel.state !== 'playing') throw new Error('DUEL_NOT_PLAYING');
+    const host = duel.host, guest = duel.guest;
+    if (typeof host !== 'string' || typeof guest !== 'string' || host === guest) throw new Error('INVALID_DUEL');
+    const [hostProgressDoc, guestProgressDoc, hostPlayerDoc, guestPlayerDoc] = await Promise.all([
+      getDocument(duelProgressPath(code, host), accessToken, transaction),
+      getDocument(duelProgressPath(code, guest), accessToken, transaction),
+      getDocument('players/' + encodeURIComponent(host), accessToken, transaction),
+      getDocument('players/' + encodeURIComponent(guest), accessToken, transaction)
+    ]);
+    if (!hostPlayerDoc || !guestPlayerDoc) throw new Error('PLAYER_PROFILE_NOT_READY');
+    const now = Date.now();
+    const progressByUid = {
+      [host]: hostProgressDoc ? decodeFirestoreFields(hostProgressDoc.fields || {}) : null,
+      [guest]: guestProgressDoc ? decodeFirestoreFields(guestProgressDoc.fields || {}) : null
+    };
+    const playerByUid = {
+      [host]: decodeFirestoreFields(hostPlayerDoc.fields || {}),
+      [guest]: decodeFirestoreFields(guestPlayerDoc.fields || {})
+    };
+    const outcome = buildDuelSettlement({
+      duel, progressByUid, playerByUid,
+      day: new Date(now).toISOString().slice(0, 10), now
+    });
+    if (outcome.waiting) {
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { waiting: true, retryAfterMs: outcome.retryAfterMs };
+    }
+    const publicResults = {
+      ...(duel.res && typeof duel.res === 'object' ? duel.res : {}),
+      [host]: outcome.score[host],
+      [guest]: outcome.score[guest]
+    };
+    const receipt = {
+      code,
+      settledAt: outcome.settledAt,
+      byUid: outcome.byUid,
+      outcomes: outcome.outcome
+    };
+    const writes = [
+      {
+        update: { name: base + 'players/' + encodeURIComponent(host), fields: encodeFirestoreFields(outcome.rewards[host].playerUpdates) },
+        updateMask: { fieldPaths: Object.keys(outcome.rewards[host].playerUpdates) },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: base + 'players/' + encodeURIComponent(guest), fields: encodeFirestoreFields(outcome.rewards[guest].playerUpdates) },
+        updateMask: { fieldPaths: Object.keys(outcome.rewards[guest].playerUpdates) },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: base + duelPath, fields: encodeFirestoreFields({ res: publicResults, settled: true, settledAt: outcome.settledAt }) },
+        updateMask: { fieldPaths: ['res', 'settled', 'settledAt'] },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: base + settlementPath, fields: encodeFirestoreFields(receipt) },
+        updateMask: { fieldPaths: Object.keys(receipt) },
+        currentDocument: { exists: false }
+      }
+    ];
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken, { method: 'POST', body: { transaction, writes } }
+    );
+    finished = true;
+    return { duplicate: false, result: outcome.byUid[uid] };
   } finally {
     if (!finished) await rollbackTransaction(transaction, accessToken);
   }
