@@ -278,6 +278,7 @@ export function buildPracticeRewardResult({
     achievements,
     challengeState,
     challengeClaimed,
+    recent,
     weekKey,
     weekExp: weekBefore + totalExpEarned,
     dayExp: dayBefore + totalExpEarned,
