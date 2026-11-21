@@ -59,3 +59,6 @@ showSection("DUEL SUBMIT RESULT FLOW", "function push()", 2200, 2200);
 showSection("DUEL REWARD RECORD FUNCTION", "function record(out, forceCoins)", 1800, 3600);
 
 showSection("DUEL WAIT AND FINISH FLOW", "waitOrResult", 400, 6000);
+showSection("DUEL WAIT DEFINITION", "waitOrResult =", 1200, 4500);
+showSection("DUEL ANSWER COMPLETE", "function answer(key, secondAttempt)", 300, 9000);
+showSection("DUEL PROFILE INIT", "duelW", 1000, 5000);
