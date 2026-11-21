@@ -4,6 +4,7 @@ const MAX_BALANCE = 1_000_000_000;
 const MAX_EVENT_COIN_COST = 1_000_000;
 const MAX_ENTRIES_PER_USER = 100;
 const MAX_RETRIES_PER_ENTRY = 20;
+export const EVENT_FINISH_GRACE_MS = 24 * 60 * 60 * 1000;
 
 function fail(code) {
   throw new Error(code);
@@ -22,6 +23,49 @@ function validateQuestionSet(event) {
     fail("INVALID_EVENT_QUESTIONS");
   }
   return ids;
+}
+
+
+export function validateEventPrizeGems(prizeGems) {
+  if (!prizeGems || typeof prizeGems !== "object" || Array.isArray(prizeGems)) {
+    fail("INVALID_EVENT_PRIZES");
+  }
+  const first = integer(prizeGems.first, "INVALID_EVENT_PRIZES", 1, MAX_OPERATION_AMOUNT);
+  const second = integer(prizeGems.second, "INVALID_EVENT_PRIZES", 0, MAX_OPERATION_AMOUNT);
+  const third = integer(prizeGems.third, "INVALID_EVENT_PRIZES", 0, MAX_OPERATION_AMOUNT);
+  if (first + second + third > MAX_OPERATION_AMOUNT) fail("INVALID_EVENT_PRIZES");
+  return { first, second, third };
+}
+
+export function buildGemEventActivation({ event, ownerUid, now = Date.now() }) {
+  if (!event || event.status !== "draft") fail("EVENT_NOT_DRAFT");
+  if (typeof ownerUid !== "string" || !ownerUid) fail("EVENT_OWNER_REQUIRED");
+  if (!Number.isSafeInteger(now) || now < 0) fail("INVALID_EVENT_TIME");
+  const entryCount = event.entryCount === undefined ? 0 : integer(event.entryCount, "INVALID_EVENT_CONFIG");
+  if (entryCount !== 0) fail("EVENT_CONFIG_LOCKED");
+  validateQuestionSet(event);
+  validateEventPrizeGems(event.prizeGems);
+  if (!Number.isSafeInteger(event.closesAt) || event.closesAt <= now) fail("EVENT_CLOSE_REQUIRED");
+  if (event.opensAt !== null && event.opensAt !== undefined
+      && (!Number.isSafeInteger(event.opensAt) || event.opensAt >= event.closesAt)) {
+    fail("INVALID_EVENT_CONFIG");
+  }
+  validateGemEventConfig({
+    ...event,
+    status: "active",
+    opensAt: null,
+    closesAt: null
+  }, now);
+  return {
+    status: "active",
+    activatedAt: now,
+    activatedBy: ownerUid,
+    openAttempts: 0,
+    settlementGraceMs: EVENT_FINISH_GRACE_MS,
+    leaderboardStatus: "open",
+    updatedAt: now,
+    updatedBy: ownerUid
+  };
 }
 
 export function validateGemEventConfig(event, now = Date.now()) {
@@ -185,7 +229,7 @@ export function buildGemEventRetry({
 export function buildGemEventDraftConfig({
   eventId, title, description = "", questionIds, entryCostCoins, maxEntriesPerUser,
   retryEnabled, retryCostCoins = 0, maxRetriesPerEntry = 0,
-  opensAt = null, closesAt = null, ownerUid, now = Date.now()
+  prizeGems, opensAt = null, closesAt = null, ownerUid, now = Date.now()
 }) {
   if (typeof eventId !== "string" || !/^[A-Za-z0-9_-]{1,80}$/.test(eventId)
       || typeof ownerUid !== "string" || !ownerUid) fail("INVALID_EVENT_CONFIG");
@@ -196,6 +240,7 @@ export function buildGemEventDraftConfig({
   validateQuestionSet({ questionIds });
   if (!Number.isSafeInteger(now) || now < 0) fail("INVALID_EVENT_TIME");
 
+  const prizes = validateEventPrizeGems(prizeGems);
   const policy = validateGemEventConfig({
     status: "active",
     entryCostCoins,
@@ -228,6 +273,7 @@ export function buildGemEventDraftConfig({
     retryEnabled: policy.retryEnabled,
     retryCostCoins: policy.retryCostCoins,
     maxRetriesPerEntry: policy.maxRetriesPerEntry,
+    prizeGems: prizes,
     opensAt: normalizedOpensAt,
     closesAt: normalizedClosesAt,
     entryCount: 0,
