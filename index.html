@@ -3711,6 +3711,7 @@ pre, code { overflow-wrap: anywhere; }
       <h1>Your Achievement Hall</h1>
       <p class="muted">Keep practising, collecting badges and beating your personal best. Locked achievements are greyed out, with a progress bar showing how close you are.</p>
     </div>
+    <p class="muted"><a href="#/gems">View your Gem wallet and transaction history →</a></p>
     <div id="achievement-card" class="achievement-page-card" aria-live="polite"></div>
   </div>
 </section>
@@ -3993,7 +3994,13 @@ pre, code { overflow-wrap: anywhere; }
     <div class="page-intro"><p class="eyebrow">Spend your rewards</p><h1>Coin shop</h1><p class="muted">Use coins earned through practice to unlock profile items and useful power-ups.</p></div>
     <div id="shop-body"></div>
   </div>
-</section> <section id="screen-events" class="screen" data-screen="events" hidden> <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a><div class="page-intro"><p class="eyebrow">Spend Coins · compete for Gems</p><h1>Gem events</h1><p class="muted">Join special events, answer questions and compare your best result on the leaderboard.</p></div><div id="events-body"></div></div></section> 
+</section> <section id="screen-events" class="screen" data-screen="events" hidden> <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a><div class="page-intro"><p class="eyebrow">Spend Coins · compete for Gems</p><h1>Gem events</h1><p class="muted">Join special events, answer questions and compare your best result on the leaderboard.</p></div><div id="events-body"></div><p class="muted"><a href="#/gems">View Gem balance and history</a></p></div></section> 
+<section id="screen-gems" class="screen" data-screen="gems" hidden>
+  <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
+    <div class="page-intro"><p class="eyebrow">Your special currency</p><h1>Gem wallet &amp; history</h1><p class="muted">See your balance and recent approved Gem rewards.</p></div>
+    <div id="gems-body"></div>
+  </div>
+</section>
 <section id="screen-me" class="screen" data-screen="me" hidden>
   <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
     <div class="page-intro"><p class="eyebrow">Your account</p><h1>Me</h1><p class="muted">Your profile, progress and personalisation settings.</p></div>
@@ -8402,8 +8409,8 @@ function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
 }
 
 /* ======================= Router ======================= */
-const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'events', 'shop', 'me'];
-const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', events: 'events', shop: 'shop', me: 'me' };
+const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'events', 'gems', 'shop', 'me'];
+const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', events: 'events', gems: 'gems', shop: 'shop', me: 'me' };
 const PATH_FOR = { home: '', setup: 'practice' };
 let currentScreen = null;
 
@@ -8467,6 +8474,7 @@ function render(screen) {
   if (screen === 'setup') Setup.enter();
   if (screen === 'admin') { window.renderFriends?.(); window.Adm?.sync?.(); }
   if (screen === 'achievements') window.renderAchievements?.();
+  if (screen === 'gems') window.renderGems?.();
   if (changed) {
     window.scrollTo({ top: 0, behavior: 'instant' });
     const heading = $(`screen-${screen}`).querySelector('h1, h2');
@@ -13259,7 +13267,8 @@ document.addEventListener("click", event => {
   if (panel) panel.open = true;
 }, true);
 </script>
-<script type="module" src="./events.js"></script></body>
+<script type="module" src="./events.js"></script>
+<script type="module" src="./gems.js"></script></body>
 </html>
 
 <!-- GitHub Pages rebuild trigger: achievement section is included in the home page. -->
