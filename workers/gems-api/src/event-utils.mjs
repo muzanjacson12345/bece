@@ -1,3 +1,5 @@
+import { isKnownQuestionId } from "./question-keys.mjs";
+
 const MAX_BALANCE = 1_000_000_000;
 const MAX_EVENT_COIN_COST = 1_000_000;
 const MAX_ENTRIES_PER_USER = 100;
@@ -75,8 +77,14 @@ export function buildGemEventEntry({ event, participant, player, uid, eventId, a
   const attempt = {
     uid,
     eventId,
+    attemptId,
     entryNo,
     attemptNo: 1,
+    questionIndex: 0,
+    correctCount: 0,
+    totalMs: 0,
+    answers: [],
+    questionStartedAt: null,
     retriesUsed: 0,
     status: "ready",
     createdAt: now,
@@ -107,7 +115,7 @@ export function buildGemEventRetry({
   if (!currentAttempt || currentAttempt.uid !== uid || currentAttempt.eventId !== eventId) {
     fail("EVENT_ATTEMPT_NOT_FOUND");
   }
-  if (currentAttempt.status === "replaced" || currentAttempt.status === "cancelled") {
+  if (currentAttempt.status !== "completed") {
     fail("EVENT_ATTEMPT_NOT_RETRYABLE");
   }
   const entryNo = integer(currentAttempt.entryNo, "INVALID_EVENT_ATTEMPT", 1, policy.maxEntriesPerUser);
@@ -127,8 +135,14 @@ export function buildGemEventRetry({
   const nextAttempt = {
     uid,
     eventId,
+    attemptId: nextAttemptId,
     entryNo,
     attemptNo: nextAttemptNo,
+    questionIndex: 0,
+    correctCount: 0,
+    totalMs: 0,
+    answers: [],
+    questionStartedAt: null,
     retriesUsed: nextRetriesUsed,
     retryOf: currentAttemptId,
     status: "ready",
@@ -157,7 +171,7 @@ export function buildGemEventRetry({
 }
 
 export function buildGemEventDraftConfig({
-  eventId, title, description = "", entryCostCoins, maxEntriesPerUser,
+  eventId, title, description = "", questionIds, entryCostCoins, maxEntriesPerUser,
   retryEnabled, retryCostCoins = 0, maxRetriesPerEntry = 0,
   opensAt = null, closesAt = null, ownerUid, now = Date.now()
 }) {
@@ -167,6 +181,9 @@ export function buildGemEventDraftConfig({
     fail("INVALID_EVENT_CONFIG");
   }
   if (typeof description !== "string" || description.length > 500) fail("INVALID_EVENT_CONFIG");
+  if (!Array.isArray(questionIds) || questionIds.length < 3 || questionIds.length > 50
+      || new Set(questionIds).size !== questionIds.length
+      || questionIds.some(id => !isKnownQuestionId(id))) fail("INVALID_EVENT_QUESTIONS");
   if (!Number.isSafeInteger(now) || now < 0) fail("INVALID_EVENT_TIME");
 
   const policy = validateGemEventConfig({
@@ -193,6 +210,8 @@ export function buildGemEventDraftConfig({
     eventId,
     title: title.trim(),
     description: description.trim(),
+    questionIds: [...questionIds],
+    questionCount: questionIds.length,
     status: "draft",
     entryCostCoins: policy.entryCostCoins,
     maxEntriesPerUser: policy.maxEntriesPerUser,
