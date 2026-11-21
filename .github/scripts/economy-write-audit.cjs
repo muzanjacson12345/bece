@@ -32,3 +32,21 @@ for (const [index, item] of results.entries()) {
   console.log(item.context);
 }
 if (!results.length) console.log("No candidate writes matched the audit patterns; manually verify the source patterns.");
+
+function showSection(label, needle, before = 3000, after = 3000) {
+  const index = source.indexOf(needle);
+  console.log("\\n=== " + label + " ===");
+  if (index < 0) {
+    console.log("Not found: " + needle);
+    return;
+  }
+  const excerpt = source.slice(Math.max(0, index - before), Math.min(source.length, index + after));
+  console.log("Starts at line " + (source.slice(0, index).split("\\n").length));
+  console.log(excerpt.replace(/\\s+/g, " ").trim());
+}
+
+showSection("SHOP CATALOG AND PURCHASE FLOW", "async function buy(it, slot)", 6500, 3500);
+showSection("DUEL REWARD FLOW", "D.coinParts = parts", 2800, 1800);
+showSection("SECOND-CHANCE CONSUMPTION", "Use Second Chance", 900, 1500);
+showSection("OWNER COIN GIFT FLOW", "Gave " + "${n} coins to", 2600, 1200);
+showSection("OWNER EXP AWARD FLOW", "Awarded ' + n + ' EXP", 2600, 1200);
