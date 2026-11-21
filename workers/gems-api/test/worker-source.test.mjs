@@ -74,3 +74,33 @@ test("event entry and retry endpoints use the authenticated user and server-conf
       "event payment route must not accept " + clientControlledValue);
   }
 });
+
+test("event configuration is Owner-only and saved as an inactive draft", () => {
+  assert.ok(source.includes("async function applyGemEventDraftConfig("));
+  const start = source.indexOf("async function applyGemEventDraftConfig(");
+  const end = source.indexOf("\nasync function applyGemEventEntry", start);
+  assert.ok(start >= 0 && end > start, "event draft config function boundaries must be found");
+  const configure = source.slice(start, end);
+  assert.ok(configure.includes("hasActiveOwnerSession(uid, accessToken)"));
+  assert.ok(configure.includes("EVENT_OWNER_REQUIRED"));
+  assert.ok(configure.includes("EVENT_CONFIG_LOCKED"));
+  assert.ok(configure.includes("buildGemEventDraftConfig("));
+  assert.ok(configure.includes("currentDocument: { exists: !!eventDoc }"));
+
+  const routeStart = source.indexOf("if (url.pathname === '/events/configure')");
+  const routeEnd = source.indexOf("if (url.pathname === '/events/enter' || url.pathname === '/events/retry')", routeStart);
+  assert.ok(routeStart >= 0 && routeEnd > routeStart, "Owner event config route must exist");
+  const route = source.slice(routeStart, routeEnd);
+  assert.ok(route.includes("applyGemEventDraftConfig(identity.uid, eventId, payload || {}, accessToken)"));
+  assert.equal(route.includes("payload.status"), false);
+});
+
+test("each paid event entry increments the event entry count in the same transaction", () => {
+  const start = source.indexOf("async function applyGemEventEntry(");
+  const end = source.indexOf("\nasync function applyGemEventRetry", start);
+  assert.ok(start >= 0 && end > start, "event entry function boundaries must be found");
+  const entry = source.slice(start, end);
+  assert.ok(entry.includes("currentEntryCount + 1"));
+  assert.ok(entry.includes("updateMask: { fieldPaths: ['entryCount'] }"));
+  assert.ok(entry.includes("currentDocument: { exists: true }"));
+});
