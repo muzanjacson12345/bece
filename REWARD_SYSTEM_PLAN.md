@@ -79,7 +79,11 @@ The draft Worker now contains a **payment and attempt foundation** for event ent
 - Paying an entry or retry fee only spends Coins. It never awards Gems or achievements by itself.
 - The Worker applies technical upper bounds of 100 entries per player per event and 20 retries per entry. An individual event can set lower limits.
 
-The Owner panel now has a draft-only event configuration card, and the Worker has an Owner-only `/events/configure` endpoint. The Owner can set an event ID/name, entry cost, entry allowance, retry fee and retry cap. It always saves an inactive draft; it cannot activate an event. The fee/limit settings lock after the first paid entry. The rest of the event feature is still unfinished: there is no player event screen, no server-served event question flow or answer submission, no leaderboard calculation or Gem-prize settlement, and no Owner activation or gameplay-management control. The payment endpoints are not yet called by a player website screen and do not make events playable yet.
+The Owner panel now has a draft-only event configuration card, and the Worker has an Owner-only `/events/configure` endpoint. The Owner can set an event ID/name, choose a subject or mixed subjects, choose 3–50 questions from the existing question bank, and set entry cost, entry allowance, retry fee and retry cap. It always saves an inactive draft; it cannot activate an event. The fee/limit settings lock after the first paid entry.
+
+The draft website now has a player Events screen. Signed-in players can view active events, pay the configured entry fee, resume an attempt, submit answers that the Worker verifies, pay for capped retries after completing an attempt, and read the public leaderboard. Each player’s best completed score is shown, with correct answers first and faster time breaking ties. Entry/retry and answer operations use private permanent receipts to prevent duplicate charges or duplicate answer processing.
+
+Still unfinished: Owner activation and gameplay-management controls, Gem prize tiers and winner payout rules. No event prize Gems are distributed yet. Keep events inactive until those policies and controls are complete.
 
 ### Publishing boundary
 
