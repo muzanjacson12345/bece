@@ -66,7 +66,11 @@ test("event entry and retry endpoints use the authenticated user and server-conf
   const routesEnd = source.indexOf("if (url.pathname.startsWith('/duels/'))", routesStart);
   assert.ok(routesStart >= 0 && routesEnd > routesStart, "event routes must be isolated");
   const routes = source.slice(routesStart, routesEnd);
-  assert.equal(routes.includes("payload.costCoins"), false);
-  assert.equal(routes.includes("payload.price"), false);
-  assert.equal(routes.includes("payload.uid"), false);
+  for (const clientControlledValue of [
+    "payload.costCoins", "payload.retryCostCoins", "payload.entryCostCoins",
+    "payload.maxEntriesPerUser", "payload.maxRetriesPerEntry", "payload.price", "payload.uid"
+  ]) {
+    assert.equal(routes.includes(clientControlledValue), false,
+      "event payment route must not accept " + clientControlledValue);
+  }
 });
