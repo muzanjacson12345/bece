@@ -155,3 +155,56 @@ export function buildGemEventRetry({
     attempt: nextAttempt
   };
 }
+
+export function buildGemEventDraftConfig({
+  eventId, title, description = "", entryCostCoins, maxEntriesPerUser,
+  retryEnabled, retryCostCoins = 0, maxRetriesPerEntry = 0,
+  opensAt = null, closesAt = null, ownerUid, now = Date.now()
+}) {
+  if (typeof eventId !== "string" || !/^[A-Za-z0-9_-]{1,80}$/.test(eventId)
+      || typeof ownerUid !== "string" || !ownerUid) fail("INVALID_EVENT_CONFIG");
+  if (typeof title !== "string" || title.trim().length < 3 || title.trim().length > 80) {
+    fail("INVALID_EVENT_CONFIG");
+  }
+  if (typeof description !== "string" || description.length > 500) fail("INVALID_EVENT_CONFIG");
+  if (!Number.isSafeInteger(now) || now < 0) fail("INVALID_EVENT_TIME");
+
+  const policy = validateGemEventConfig({
+    status: "active",
+    entryCostCoins,
+    maxEntriesPerUser,
+    retryEnabled,
+    retryCostCoins,
+    maxRetriesPerEntry,
+    opensAt: null,
+    closesAt: null
+  }, now);
+
+  const normalizedOpensAt = opensAt === null || opensAt === undefined
+    ? null : integer(opensAt, "INVALID_EVENT_CONFIG", 0, Number.MAX_SAFE_INTEGER);
+  const normalizedClosesAt = closesAt === null || closesAt === undefined
+    ? null : integer(closesAt, "INVALID_EVENT_CONFIG", 0, Number.MAX_SAFE_INTEGER);
+  if (normalizedOpensAt !== null && normalizedClosesAt !== null
+      && normalizedOpensAt >= normalizedClosesAt) {
+    fail("INVALID_EVENT_CONFIG");
+  }
+
+  return {
+    eventId,
+    title: title.trim(),
+    description: description.trim(),
+    status: "draft",
+    entryCostCoins: policy.entryCostCoins,
+    maxEntriesPerUser: policy.maxEntriesPerUser,
+    retryEnabled: policy.retryEnabled,
+    retryCostCoins: policy.retryCostCoins,
+    maxRetriesPerEntry: policy.maxRetriesPerEntry,
+    opensAt: normalizedOpensAt,
+    closesAt: normalizedClosesAt,
+    entryCount: 0,
+    createdAt: now,
+    updatedAt: now,
+    createdBy: ownerUid,
+    updatedBy: ownerUid
+  };
+}
