@@ -610,6 +610,8 @@ async function applyPowerupUse(uid, itemId, operationId, accessToken, duelCode =
   const operationPath = 'powerupOperations/' + encodeURIComponent(uid + '_' + operationId);
   const playerName = base + playerPath;
   const operationName = base + operationPath;
+  const duelPath = duelCode ? duelDocumentPath(duelCode) : '';
+  const progressPath = duelCode ? duelProgressPath(duelCode, uid) : '';
 
   const transactionResult = await firestoreRequest(
     'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
@@ -936,7 +938,6 @@ async function forfeitDuel(uid, code, accessToken) {
 
 async function settleDuel(uid, code, accessToken) {
   const duelPath = duelDocumentPath(code);
-  const hostProgressPath = duelProgressPath(code, 'host-placeholder');
   const settlementPath = duelSettlementPath(code);
   const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
   const transactionResult = await firestoreRequest(
@@ -1108,13 +1109,13 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
     try {
       const raw = await request.text();
-      const maxBytes = url.pathname === '/practice' ? 12000 : 2048;
+      const maxBytes = url.pathname === '/practice' ? 12000 : 4096;
       if (raw.length > maxBytes) return json({ ok: false, error: 'REQUEST_TOO_LARGE' }, 413, origin);
       payload = JSON.parse(raw);
     } catch {
@@ -1172,14 +1173,61 @@ export default {
       if (url.pathname === '/powerups/use') {
         const itemId = payload && typeof payload.itemId === 'string' ? payload.itemId.trim() : '';
         const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
+        const duelCode = payload && typeof payload.duelCode === 'string' ? payload.duelCode.trim() : '';
         if (!/^[a-zA-Z0-9_-]{1,64}$/.test(itemId) || !getPowerupUse(itemId)) {
           return json({ ok: false, code: 'INVALID_POWERUP_ITEM', error: 'That power-up cannot be used here.' }, 400, origin);
         }
         if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId)) {
           return json({ ok: false, code: 'INVALID_OPERATION_ID', error: 'A valid use ID is required.' }, 400, origin);
         }
-        const outcome = await applyPowerupUse(identity.uid, itemId, operationId, accessToken);
+        if (duelCode && !validateDuelCode(duelCode)) {
+          return json({ ok: false, code: 'INVALID_DUEL_CODE', error: 'The duel code is invalid.' }, 400, origin);
+        }
+        const outcome = await applyPowerupUse(identity.uid, itemId, operationId, accessToken, duelCode);
         return json({ ok: true, ...outcome }, 200, origin);
+      }
+
+      if (url.pathname.startsWith('/duels/')) {
+        const code = payload && typeof payload.code === 'string' ? payload.code.trim().toUpperCase() : '';
+        if (!validateDuelCode(code)) {
+          return json({ ok: false, code: 'INVALID_DUEL_CODE', error: 'The duel code is invalid.' }, 400, origin);
+        }
+        if (url.pathname === '/duels/start') {
+          const outcome = await startDuelProgress(identity.uid, code, accessToken);
+          return json({ ok: true, ...outcome }, 200, origin);
+        }
+        if (url.pathname === '/duels/next') {
+          const questionId = payload && typeof payload.questionId === 'string' ? payload.questionId.trim() : '';
+          if (!isKnownQuestionId(questionId)) {
+            return json({ ok: false, code: 'INVALID_QUESTION_ID', error: 'That duel question is not valid.' }, 400, origin);
+          }
+          const outcome = await startDuelQuestion(identity.uid, code, questionId, accessToken);
+          return json({ ok: true, ...outcome }, 200, origin);
+        }
+        if (url.pathname === '/duels/answer') {
+          const questionId = payload && typeof payload.questionId === 'string' ? payload.questionId.trim() : '';
+          const answerKey = payload && Object.prototype.hasOwnProperty.call(payload, 'answerKey') ? payload.answerKey : null;
+          const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
+          if (!isKnownQuestionId(questionId)) {
+            return json({ ok: false, code: 'INVALID_QUESTION_ID', error: 'That duel question is not valid.' }, 400, origin);
+          }
+          if (answerKey !== null && (typeof answerKey !== 'string' || !/^[A-D]$/.test(answerKey))) {
+            return json({ ok: false, code: 'INVALID_DUEL_ANSWER', error: 'That answer is not valid.' }, 400, origin);
+          }
+          if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId)) {
+            return json({ ok: false, code: 'INVALID_OPERATION_ID', error: 'A valid answer ID is required.' }, 400, origin);
+          }
+          const outcome = await submitDuelAnswer(identity.uid, code, questionId, answerKey, operationId, accessToken);
+          return json({ ok: true, ...outcome }, 200, origin);
+        }
+        if (url.pathname === '/duels/forfeit') {
+          const outcome = await forfeitDuel(identity.uid, code, accessToken);
+          return json({ ok: true, ...outcome }, 200, origin);
+        }
+        if (url.pathname === '/duels/settle') {
+          const outcome = await settleDuel(identity.uid, code, accessToken);
+          return json({ ok: true, ...outcome }, 200, origin);
+        }
       }
 
       const action = payload && payload.action;
