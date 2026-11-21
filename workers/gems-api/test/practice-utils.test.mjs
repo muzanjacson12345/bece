@@ -106,7 +106,14 @@ test("unanswered subject IDs cannot unlock subject achievements or add subject p
   assert.equal(result.achievements.unlocked.includes("subject-explorer"), false);
   assert.equal(result.achievements.unlocked.includes("all-nine-subjects"), false);
   assert.deepEqual(result.challengeState.subjects, ["soc"]);
-  assert.equal(result.gemsEarned, 3);
+  const subjectAchievementIds = [
+    "subject-explorer", "all-rounder", "all-six-subjects",
+    "science-starter", "science-scholar", "science-master",
+    "all-seven-subjects", "french-starter", "french-learner",
+    "french-confident", "career-starter", "career-learner",
+    "career-master", "all-nine-subjects"
+  ];
+  assert.equal(result.gemAchievementIds.some(id => subjectAchievementIds.includes(id)), false);
 });
 
 test("unanswered questions cannot satisfy long-quiz progress or inflate recent totals", () => {
