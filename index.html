@@ -12620,6 +12620,81 @@ const Adm = (() => {
   const description = document.createElement("textarea"); description.className = "adm-search"; description.rows = 2; description.maxLength = 500; description.placeholder = "Short description (optional)"; description.setAttribute("aria-label", "Event description");
   card.append(elx("div", "adm-two", eventId.label, title.label, questionSubjectField, questionCount.label, entryFee.label, entryLimit.label, retryField, retryFee.label, retryLimit.label, opensAt.label, closesAt.label, firstPrize.label, secondPrize.label, thirdPrize.label), elx("label", "adm-info", "Description", description));
   card.append(elx("p", "adm-info", "Technical ceilings: 100 entries per player and 20 retries per entry. Settings lock after the first paid entry. New drafts remain inactive."));
+  const managedEvents = elx("div", "adm-info");
+  const refreshEvents = btn("Refresh event list", "btn-ghost btn-sm", refreshManagedEvents);
+  async function ownerEventAction(pathname, managedEventId) {
+    const user = firebase.auth().currentUser;
+    if (!user || user.uid !== S.uid) throw new Error("Please reconnect your sign-in.");
+    if (!GEMS_API_URL) throw new Error("The secure event service is not configured.");
+    const token = await user.getIdToken();
+    let baseUrl = GEMS_API_URL;
+    if (baseUrl.endsWith("/gems")) baseUrl = baseUrl.slice(0, -5);
+    while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
+    const response = await fetch(baseUrl + pathname, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      credentials: "omit", cache: "no-store",
+      body: JSON.stringify({ eventId: managedEventId })
+    });
+    let data; try { data = await response.json(); } catch { throw new Error("The event service returned an unreadable response."); }
+    if (!response.ok || !data || !data.ok) throw new Error(data && data.error ? data.error : "The event action failed.");
+    return data.result || {};
+  }
+  async function refreshManagedEvents() {
+    if (!S.isOwner) return App.toast("Owner access required.", "warn");
+    if (!S.db) return App.toast("Please reconnect your sign-in.", "warn");
+    refreshEvents.disabled = true;
+    refreshEvents.textContent = "Refreshing…";
+    managedEvents.replaceChildren(elx("p", "adm-info", "Loading saved events…"));
+    try {
+      const snapshot = await S.db.collection("gemEvents").limit(100).get();
+      const docs = [...snapshot.docs].sort((a, b) => {
+        const rank = status => status === "active" ? 0 : status === "draft" ? 1 : status === "settled" ? 2 : 3;
+        return rank(a.data().status) - rank(b.data().status)
+          || String(a.id).localeCompare(String(b.id));
+      });
+      managedEvents.replaceChildren();
+      if (!docs.length) managedEvents.append(elx("p", "adm-info", "No saved events yet."));
+      for (const doc of docs) {
+        const data = doc.data() || {};
+        const row = elx("div", "adm-row");
+        const titleText = (data.title || doc.id) + " · " + (data.status || "unknown");
+        const prize = data.prizeGems || {};
+        const detailText = "ID: " + doc.id
+          + " · Entries: " + (Number(data.entryCount) || 0)
+          + " · Unfinished: " + (Number(data.openAttempts) || 0)
+          + " · Closes: " + (Number.isSafeInteger(data.closesAt) ? new Date(data.closesAt).toLocaleString() : "not set")
+          + " · Prizes: " + (Number(prize.first) || 0) + "/" + (Number(prize.second) || 0) + "/" + (Number(prize.third) || 0) + " Gems";
+        row.append(elx("strong", "", titleText), elx("span", "adm-info", detailText));
+        const use = btn("Use ID", "btn-ghost btn-sm", () => {
+          eventId.input.value = doc.id;
+          App.toast("Loaded event ID into the draft controls.");
+        });
+        row.append(use);
+        if (data.status === "active") {
+          const close = btn("Close now", "btn-ghost btn-sm", async () => {
+            if (!window.confirm("Close " + (data.title || doc.id) + " to new entries and paid retries now? Existing paid attempts keep their 24-hour finish window.")) return;
+            close.disabled = true; close.textContent = "Closing…";
+            try {
+              await ownerEventAction("/events/close", doc.id);
+              App.toast("Event closed to new entries. Existing paid attempts have 24 hours to finish.");
+              await refreshManagedEvents();
+            } catch (error) {
+              App.toast("Could not close event. " + ((error && error.message) || "Please try again."), "warn");
+              close.disabled = false; close.textContent = "Close now";
+            }
+          });
+          row.append(close);
+        }
+        managedEvents.append(row);
+      }
+    } catch (error) {
+      managedEvents.replaceChildren(elx("p", "adm-info", "Could not load events: " + ((error && error.message) || "Please try again.")));
+    } finally {
+      refreshEvents.disabled = false;
+      refreshEvents.textContent = "Refresh event list";
+    }
+  }
   const save = btn("Save event draft", "btn-primary btn-sm", async () => {
     if (!S.isOwner) return App.toast("Owner access required.", "warn");
     if (!S.db || !S.uid) return App.toast("Please reconnect your sign-in.", "warn");
@@ -12696,6 +12771,8 @@ const Adm = (() => {
     finally { activate.disabled = false; activate.textContent = "Activate saved draft"; }
   });
   card.append(elx("div", "adm-btns", save, activate));
+  card.append(elx("h4", "", "Saved events"), elx("p", "adm-info", "Review event status, entry counts and Gem prizes. You can close active events here; already-paid attempts keep their finish window."), elx("div", "adm-btns", refreshEvents), managedEvents);
+  if (S.isOwner && S.db) refreshManagedEvents();
   return card;
 }
 function ownerTab() {
