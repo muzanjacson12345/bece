@@ -313,8 +313,6 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
   const playerName = base + playerPath;
   const stateName = base + statePath;
   const operationName = base + operationPath;
-  const duelPath = duelCode ? duelDocumentPath(duelCode) : '';
-  const progressPath = duelCode ? duelProgressPath(duelCode, uid) : '';
 
   const transactionResult = await firestoreRequest(
     'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
@@ -334,12 +332,6 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
 
     if (operationDoc) {
       const stored = decodeFirestoreFields(operationDoc.fields || {});
-      if (!duelDoc || !progressDoc) throw new Error('DUEL_NOT_STARTED');
-      const duel = decodeFirestoreFields(duelDoc.fields || {});
-      const progress = decodeFirestoreFields(progressDoc.fields || {});
-      validatePowerupUseReceiptRetry({
-        stored, uid, itemId, duelCode, duel, progress
-      });
       await firestoreRequest(
         'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
         accessToken,
@@ -638,6 +630,12 @@ async function applyPowerupUse(uid, itemId, operationId, accessToken, duelCode =
 
     if (operationDoc) {
       const stored = decodeFirestoreFields(operationDoc.fields || {});
+      if (!duelDoc || !progressDoc) throw new Error('DUEL_NOT_STARTED');
+      const duel = decodeFirestoreFields(duelDoc.fields || {});
+      const progress = decodeFirestoreFields(progressDoc.fields || {});
+      validatePowerupUseReceiptRetry({
+        stored, uid, itemId, duelCode, duel, progress
+      });
       await firestoreRequest(
         'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
         accessToken,
