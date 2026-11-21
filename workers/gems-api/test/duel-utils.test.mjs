@@ -121,10 +121,16 @@ test("players cannot submit another participant's answers or unsupported questio
 });
 
 test("Second Chance is limited to two uses per duel and one use per question", () => {
-  const started = createDuelProgress("host", "ROOM1", 1000);
+  const started = {
+    ...createDuelProgress("host", "ROOM1", 1000),
+    streak: 2,
+    bestStreak: 3
+  };
   const first = buildDuelSecondChanceProgress({ duel, progress: started, uid: "host", now: 2000 });
   assert.equal(first.secondChancesUsed, 1);
   assert.equal(first.lastAnsweredAt, 2000);
+  assert.equal(first.streak, 0);
+  assert.equal(first.bestStreak, 3);
   assert.throws(() => buildDuelSecondChanceProgress({
     duel, progress: first, uid: "host", now: 2500
   }), /DUEL_SECOND_CHANCE_LIMIT/);
