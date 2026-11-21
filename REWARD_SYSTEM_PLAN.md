@@ -82,6 +82,8 @@ The event lifecycle is now implemented on the draft branch:
 - Players have 24 hours after closing to finish paid attempts. New entries and retries stop at closing; unfinished attempts expire after the grace period and do not qualify for prizes.
 - A 15-minute Cloudflare Cron trigger automatically scans for events ready to settle, up to five per run. The player Events screen can also safely trigger settlement for an overdue event. The Owner management card lists saved drafts, active events and settled events, shows entry/open-attempt counts and prize amounts, and can close an active event early while preserving the paid-attempt grace period.
 
+The Worker now also writes a normalized `gemTransactions` history record for every first-time achievement award and each event prize payout, plus one private `gemRewardClaims` record per achievement. Those records are committed atomically with the balance changes and permanent idempotency receipts; no award values or eligibility rules changed. The read-only history data is now available for the next wallet/history UI phase.
+
 The event flow is implemented but remains on the draft branch until its current CI run passes and the matching Worker, website and Firestore rules are rolled out together. No event has been activated and no Gem prizes have been paid in production.
 
 ### Publishing boundary
