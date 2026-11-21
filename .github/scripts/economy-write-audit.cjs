@@ -107,3 +107,8 @@ for (const needle of ["usage", "cloudflare", "quota", "remaining"]) {
     shown++;
   }
 }
+
+showSection("OWNER CLOUDFLARE CARD IMPLEMENTATION", "function cloudflareUsageCard()", 250, 14000);
+showSection("OWNER QUOTA CALCULATOR", "function setQuota(", 300, 3600);
+showSection("OWNER WORKER USAGE METER CREATION", "const workerMetric", 400, 2800);
+showSection("OWNER USAGE REFRESH ACTION", "async function refreshUsage", 300, 4500);
