@@ -11,6 +11,12 @@ function safeCount(value, max = Number.MAX_SAFE_INTEGER) {
   return Number.isSafeInteger(value) && value >= 0 && value <= max ? value : 0;
 }
 
+function validatePaidAttemptEvent(event, now) {
+  // Event windows stop new entries/retries; an already-paid attempt must be
+  // allowed to finish after the event closes.
+  return validateGemEventConfig({ ...event, opensAt: null, closesAt: null }, now);
+}
+
 export function validateEventQuestionIds(questionIds) {
   if (!Array.isArray(questionIds) || questionIds.length < 3 || questionIds.length > MAX_QUESTIONS
       || new Set(questionIds).size !== questionIds.length
@@ -21,7 +27,7 @@ export function validateEventQuestionIds(questionIds) {
 }
 
 export function buildGemEventQuestionStart({ event, attempt, uid, eventId, attemptId, now = Date.now() }) {
-  validateGemEventConfig(event, now);
+  validatePaidAttemptEvent(event, now);
   const questionIds = validateEventQuestionIds(event.questionIds);
   if (!attempt || attempt.uid !== uid || attempt.eventId !== eventId
       || !attemptId || attempt.attemptId !== attemptId) {
@@ -59,7 +65,7 @@ export function buildGemEventAnswerResult({
   event, attempt, uid, eventId, attemptId, questionId, answerKey,
   operationId, now = Date.now()
 }) {
-  validateGemEventConfig(event, now);
+  validatePaidAttemptEvent(event, now);
   const questionIds = validateEventQuestionIds(event.questionIds);
   if (!attempt || attempt.uid !== uid || attempt.eventId !== eventId
       || !attemptId || attempt.attemptId !== attemptId
