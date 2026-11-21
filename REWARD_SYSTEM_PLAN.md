@@ -71,19 +71,18 @@ The Owner infrastructure card already shows Worker requests used, the daily limi
 
 ### Event implementation status
 
-The draft Worker now contains a **payment and attempt foundation** for event entry and retries:
+The event lifecycle is now implemented on the draft branch:
 
-- Each `gemEvents/{eventId}` config supplies its own `entryCostCoins`, `maxEntriesPerUser`, `retryEnabled`, `retryCostCoins` and `maxRetriesPerEntry`.
-- Entry and retry charges, participant/attempt updates and permanent operation receipts are committed atomically.
-- Retrying creates a fresh attempt under the same paid entry and marks the previous attempt replaced.
-- Paying an entry or retry fee only spends Coins. It never awards Gems or achievements by itself.
-- The Worker applies technical upper bounds of 100 entries per player per event and 20 retries per entry. An individual event can set lower limits.
+- The Owner can save and edit inactive drafts with a subject or mixed-subject selection, 3–50 question IDs, entry and retry Coin fees/limits, opening/closing times, and configurable first/second/third-place Gem prizes.
+- The Owner has an explicit activation control. The Worker checks the active Owner session, requires a future closing time and a valid question/prize configuration, then locks the event settings.
+- Players can enter with Coins, resume attempts, answer questions verified against the private question-key module, pay for capped retries after finishing an attempt and read the leaderboard.
+- Entry, retry, answer and prize operations are transactional and use private permanent receipts. The Worker maintains the number of open paid attempts.
+- Ranking is correct answers descending, total answer time ascending, completion time ascending, then UID for a deterministic final tie-break.
+- The combined top-three prize pool is capped at 1,000,000 Gems. Settlement pays only eligible places and happens once, in the same transaction that marks the event settled.
+- Players have 24 hours after closing to finish paid attempts. New entries and retries stop at closing; unfinished attempts expire after the grace period and do not qualify for prizes.
+- A 15-minute Cloudflare Cron trigger automatically scans for events ready to settle, up to five per run. The player Events screen can also safely trigger settlement for an overdue event.
 
-The Owner panel now has a draft-only event configuration card, and the Worker has an Owner-only `/events/configure` endpoint. The Owner can set an event ID/name, choose a subject or mixed subjects, choose 3–50 questions from the existing question bank, set entry cost, entry allowance, retry fee and retry cap, and optionally schedule opening and closing times. It always saves an inactive draft; it cannot activate an event. The fee/limit settings lock after the first paid entry.
-
-The draft website now has a player Events screen. Signed-in players can view active events, pay the configured entry fee, resume an attempt, submit answers that the Worker verifies, pay for capped retries after completing an attempt, and read the public leaderboard. Each player’s best completed score is shown, with correct answers first and faster time breaking ties. Entry/retry and answer operations use private permanent receipts to prevent duplicate charges or duplicate answer processing.
-
-Still unfinished: Owner activation and gameplay-management controls, Gem prize tiers and winner payout rules. No event prize Gems are distributed yet. Keep events inactive until those policies and controls are complete.
+The event flow is implemented but remains on the draft branch until its current CI run passes and the matching Worker, website and Firestore rules are rolled out together. No event has been activated and no Gem prizes have been paid in production.
 
 ### Publishing boundary
 
