@@ -65,5 +65,23 @@ jobs:
         run: npm --prefix workers/gems-api test
       - name: Install Firestore test dependencies
         run: npm install --prefix firestore-tests
+      - name: Report Firestore test dependency security advisories
+        run: |
+          npm audit --prefix firestore-tests --json > "$RUNNER_TEMP/firestore-dependency-audit.json" || true
+          node - "$RUNNER_TEMP/firestore-dependency-audit.json" <<'NODE'
+          const fs = require('node:fs');
+          let report = {};
+          try { report = JSON.parse(fs.readFileSync(process.argv[2], 'utf8')); } catch {}
+          const vulns = report.vulnerabilities || {};
+          const rows = Object.entries(vulns).map(([name, item]) => ({
+            name,
+            severity: item.severity,
+            direct: item.isDirect,
+            range: item.range,
+            fixAvailable: item.fixAvailable
+          }));
+          console.log('Firestore test dependency audit:', JSON.stringify(report.metadata?.vulnerabilities || {}));
+          for (const row of rows) console.log(JSON.stringify(row));
+          NODE
       - name: Run Firestore Emulator rules tests
         run: npx --yes firebase-tools emulators:exec --project demo-bece-hub-rules --only firestore "npm --prefix firestore-tests test"
