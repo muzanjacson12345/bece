@@ -11087,17 +11087,61 @@ const Duel = (() => {
       const scBtn = document.createElement('button');
       scBtn.className = 'btn btn-primary btn-sm'; scBtn.type = 'button';
       scBtn.textContent = `\u{1F3AF} Use Second Chance (${S.doc.p50} left)`;
-      scBtn.onclick = () => {
+      scBtn.onclick = async () => {
+        if (scBtn.disabled) return;
+        scBtn.disabled = true;
         clearInterval(D.scT);
-        D.used++; S.doc = { ...S.doc, p50: S.doc.p50 - 1 };
-        S.db && S.db.doc('players/' + S.uid).set({ p50: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(() => {});
-        choice.remove(); bar.remove();
-        D.fb.textContent = '\u{1F3AF} Pick again \u2014 no hints, choose wisely!'; D.fb.className = 'duel-fb';
-        box.querySelectorAll('.option').forEach(b => {
-          if (b.dataset.key === key) return;             // the wrong one stays crossed out
-          b.disabled = false; b.onclick = () => answer(b.dataset.key, true);
-        });
-        D.locked = false; D.qStart = Date.now(); D.timer = setInterval(() => { if (Date.now() - D.qStart > secs() * 1000) answer(null, true); }, 250);
+        try {
+          const user = firebase.auth().currentUser;
+          if (!user) throw new Error('Please reconnect your sign-in.');
+          const token = await user.getIdToken();
+          const operationId = crypto.randomUUID();
+          const response = await fetch('https://bece-hub-gems-api.abeikcrentsil.workers.dev/powerups/use', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + token,
+              'Content-Type': 'application/json'
+            },
+            credentials: 'omit',
+            cache: 'no-store',
+            body: JSON.stringify({ itemId: 'p50', operationId })
+          });
+          let data;
+          try { data = await response.json(); }
+          catch { throw new Error('The power-up service returned an unreadable response.'); }
+          if (!response.ok || !data || !data.ok || !data.result) {
+            if (response.status === 401) throw new Error('Please reconnect your sign-in.');
+            throw new Error(data && data.error ? data.error : 'The power-up could not be used.');
+          }
+          const result = data.result;
+          if (!Number.isSafeInteger(result.quantity) || result.quantity < 0 || result.itemId !== 'p50') {
+            throw new Error('The power-up service returned an invalid result.');
+          }
+          D.used++;
+          S.doc = { ...S.doc, p50: result.quantity };
+          choice.remove();
+          bar.remove();
+          D.fb.textContent = '\u{1F3AF} Pick again — no hints, choose wisely!';
+          D.fb.className = 'duel-fb';
+          box.querySelectorAll('.option').forEach(b => {
+            if (b.dataset.key === key) return;
+            b.disabled = false;
+            b.onclick = () => answer(b.dataset.key, true);
+          });
+          D.locked = false;
+          D.qStart = Date.now();
+          D.timer = setInterval(() => {
+            if (Date.now() - D.qStart > secs() * 1000) answer(null, true);
+          }, 250);
+        } catch (e) {
+          App.toast('Could not use Second Chance. ' + ((e && e.message) || 'Please try again.'), 'warn');
+          scBtn.disabled = false;
+          D.scT = setInterval(() => {
+            left--;
+            if (left <= 0) nextBtn.onclick();
+            else msg();
+          }, 1000);
+        }
       };
       const nextBtn = document.createElement('button');
       nextBtn.className = 'btn btn-ghost btn-sm'; nextBtn.type = 'button'; nextBtn.textContent = 'Next \u2192';
