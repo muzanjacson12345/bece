@@ -1,5 +1,7 @@
 import { isFirestoreBanActive } from "./ban-utils.mjs";
 import { hasValidOwnerSession } from "./owner-utils.mjs";
+import { buildPracticeRewardResult } from "./practice-utils.mjs";
+import { isKnownQuestionId } from "./question-keys.mjs";
 
 const PROJECT_ID = 'bece-hub-d9ad5';
 const APP_ORIGIN = 'https://muzanjacson12345.github.io';
@@ -229,6 +231,237 @@ function parseStringArray(field) {
     .filter(Boolean).slice(-MAX_RECENT_OPS);
 }
 
+
+function decodeFirestoreValue(value) {
+  if (!value || typeof value !== 'object') return undefined;
+  if (Object.prototype.hasOwnProperty.call(value, 'stringValue')) return value.stringValue;
+  if (Object.prototype.hasOwnProperty.call(value, 'integerValue')) return Number(value.integerValue);
+  if (Object.prototype.hasOwnProperty.call(value, 'doubleValue')) return Number(value.doubleValue);
+  if (Object.prototype.hasOwnProperty.call(value, 'booleanValue')) return value.booleanValue;
+  if (Object.prototype.hasOwnProperty.call(value, 'nullValue')) return null;
+  if (value.arrayValue) return (value.arrayValue.values || []).map(decodeFirestoreValue);
+  if (value.mapValue) return decodeFirestoreFields(value.mapValue.fields || {});
+  if (Object.prototype.hasOwnProperty.call(value, 'timestampValue')) return value.timestampValue;
+  return undefined;
+}
+
+function decodeFirestoreFields(fields) {
+  return Object.fromEntries(Object.entries(fields || {}).map(([key, value]) => [key, decodeFirestoreValue(value)]));
+}
+
+function encodeFirestoreValue(value) {
+  if (value === null || value === undefined) return { nullValue: 'NULL_VALUE' };
+  if (typeof value === 'string') return { stringValue: value };
+  if (typeof value === 'boolean') return { booleanValue: value };
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new Error('INVALID_REWARD_NUMBER');
+    return Number.isSafeInteger(value)
+      ? { integerValue: String(value) }
+      : { doubleValue: value };
+  }
+  if (Array.isArray(value)) return { arrayValue: { values: value.map(encodeFirestoreValue) } };
+  if (typeof value === 'object') return { mapValue: { fields: encodeFirestoreFields(value) } };
+  throw new Error('INVALID_REWARD_VALUE');
+}
+
+function encodeFirestoreFields(fields) {
+  return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, encodeFirestoreValue(value)]));
+}
+
+function safeInteger(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number >= 0 ? number : fallback;
+}
+
+function combineAchievementDisplay(legacy, verified) {
+  const old = legacy && typeof legacy === 'object' ? legacy : {};
+  const next = verified && typeof verified === 'object' ? verified : {};
+  const oldStats = old.stats && typeof old.stats === 'object' ? old.stats : {};
+  const newStats = next.stats && typeof next.stats === 'object' ? next.stats : {};
+  const stats = { ...oldStats };
+  Object.entries(newStats).forEach(([key, value]) => {
+    stats[key] = Math.max(safeInteger(stats[key]), safeInteger(value));
+  });
+  return {
+    stats,
+    subjects: [...new Set([
+      ...(Array.isArray(old.subjects) ? old.subjects : []),
+      ...(Array.isArray(next.subjects) ? next.subjects : [])
+    ])],
+    unlocked: [...new Set([
+      ...(Array.isArray(old.unlocked) ? old.unlocked : []),
+      ...(Array.isArray(next.unlocked) ? next.unlocked : [])
+    ])]
+  };
+}
+
+async function applyPracticeRewardChange(uid, operationId, questionIds, answers, kind, accessToken) {
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const playerPath = 'players/' + encodeURIComponent(uid);
+  const statePath = 'rewardState/' + encodeURIComponent(uid);
+  const operationPath = 'rewardOperations/' + encodeURIComponent(uid + '_' + operationId);
+  const playerName = base + playerPath;
+  const stateName = base + statePath;
+  const operationName = base + operationPath;
+
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken,
+    { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [playerDoc, stateDoc, settingsDoc, operationDoc] = await Promise.all([
+      getDocument(playerPath, accessToken, transaction),
+      getDocument(statePath, accessToken, transaction),
+      getDocument('settings/app', accessToken, transaction),
+      getDocument(operationPath, accessToken, transaction)
+    ]);
+
+    if (operationDoc) {
+      const stored = decodeFirestoreFields(operationDoc.fields || {});
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken,
+        { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: stored.result || null };
+    }
+
+    const player = decodeFirestoreFields(playerDoc && playerDoc.fields);
+    const trustedState = decodeFirestoreFields(stateDoc && stateDoc.fields);
+    const settings = decodeFirestoreFields(settingsDoc && settingsDoc.fields);
+    const currentCoins = player.coins === undefined ? 0 : Number(player.coins);
+    const currentGems = player.gems === undefined ? 0 : Number(player.gems);
+    const currentExp = player.totalExp === undefined ? 0 : Number(player.totalExp);
+    if (![currentCoins, currentGems, currentExp].every(n => Number.isSafeInteger(n) && n >= 0 && n <= MAX_BALANCE)) {
+      throw new Error('INVALID_PLAYER_BALANCE');
+    }
+
+    // Separate server-owned counters from legacy client-written values. The
+    // display copy can preserve old badges, but only these verified counters
+    // are used to issue new achievement Gem awards.
+    const enginePlayer = {
+      ...player,
+      counted: trustedState.counted || player.counted,
+      challengeState: trustedState.challengeState || player.challengeState,
+      achievements: trustedState.achievements || { stats: {}, subjects: [], unlocked: [] }
+    };
+    const claimedAchievements = Array.isArray(trustedState.achievementClaims)
+      ? trustedState.achievementClaims.filter(id => typeof id === 'string') : [];
+    const day = new Date().toISOString().slice(0, 10);
+    const result = buildPracticeRewardResult({
+      player: enginePlayer,
+      settings,
+      questionIds,
+      answers,
+      day,
+      kind,
+      claimedAchievements
+    });
+
+    const achievementClaims = [...new Set([...claimedAchievements, ...result.gemAchievementIds])];
+    const displayAchievements = combineAchievementDisplay(player.achievements, result.achievements);
+    const recentGemOps = Array.isArray(player.gemOps) ? player.gemOps.filter(x => typeof x === 'string') : [];
+    if (result.gemsEarned > 0) recentGemOps.push(operationId);
+
+    const playerUpdates = {
+      totalExp: result.totalExp,
+      weekKey: result.weekKey,
+      weekExp: result.weekExp,
+      dayKey: day,
+      dayExp: result.dayExp,
+      streak: result.streak,
+      bestStreak: result.streakBest,
+      lastDay: day,
+      coins: result.coins,
+      gems: result.gems,
+      gemOps: [...new Set(recentGemOps)].slice(-MAX_RECENT_OPS),
+      sfreezes: result.sfreezes,
+      xpBoost: result.xpBoost,
+      counted: result.counted,
+      challengeState: result.challengeState,
+      achievements: displayAchievements,
+      recent: result.recent
+    };
+    const stateUpdates = {
+      counted: result.counted,
+      challengeState: result.challengeState,
+      achievements: result.achievements,
+      achievementClaims,
+      updatedAt: Date.now()
+    };
+    const responseResult = {
+      totalExpEarned: result.totalExpEarned,
+      baseExpEarned: result.baseExpEarned,
+      bonusExpEarned: result.bonusExpEarned,
+      totalCoinsEarned: result.totalCoinsEarned,
+      coins: result.coins,
+      gems: result.gems,
+      gemsEarned: result.gemsEarned,
+      newAchievements: result.gemAchievementIds,
+      scaledXpParts: result.scaledXpParts,
+      scaledCoinParts: result.scaledCoinParts,
+      correctCount: result.correctCount,
+      alreadyCounted: result.alreadyCounted,
+      totalExp: result.totalExp,
+      weekKey: result.weekKey,
+      weekExp: result.weekExp,
+      dayKey: day,
+      dayExp: result.dayExp,
+      streak: result.streak,
+      streakBest: result.streakBest,
+      extended: result.extended,
+      usedFreeze: result.usedFreeze,
+      xpMult: result.xpMult,
+      expRate: result.expRate,
+      coinRate: result.coinRate,
+      sfreezes: result.sfreezes,
+      xpBoost: result.xpBoost,
+      counted: result.counted,
+      challengeState: result.challengeState,
+      achievements: displayAchievements
+    };
+
+    const operationRecord = {
+      uid,
+      operationId,
+      day,
+      createdAt: Date.now(),
+      result: responseResult
+    };
+    const writes = [
+      {
+        update: { name: playerName, fields: encodeFirestoreFields(playerUpdates) },
+        updateMask: { fieldPaths: Object.keys(playerUpdates) },
+        currentDocument: { exists: !!playerDoc }
+      },
+      {
+        update: { name: stateName, fields: encodeFirestoreFields(stateUpdates) },
+        updateMask: { fieldPaths: Object.keys(stateUpdates) },
+        currentDocument: { exists: !!stateDoc }
+      },
+      {
+        update: { name: operationName, fields: encodeFirestoreFields(operationRecord) },
+        updateMask: { fieldPaths: Object.keys(operationRecord) },
+        currentDocument: { exists: false }
+      }
+    ];
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      { method: 'POST', body: { transaction, writes } }
+    );
+    finished = true;
+    return { duplicate: false, result: responseResult };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
 async function isUserBanned(uid, accessToken) {
   const doc = await getDocument('bans/' + encodeURIComponent(uid), accessToken);
   return isFirestoreBanActive(doc);
@@ -316,13 +549,14 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || url.pathname !== '/gems') {
+    if (request.method !== 'POST' || !['/gems', '/practice'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
     try {
       const raw = await request.text();
-      if (raw.length > 2048) return json({ ok: false, error: 'REQUEST_TOO_LARGE' }, 413, origin);
+      const maxBytes = url.pathname === '/practice' ? 12000 : 2048;
+      if (raw.length > maxBytes) return json({ ok: false, error: 'REQUEST_TOO_LARGE' }, 413, origin);
       payload = JSON.parse(raw);
     } catch {
       return json({ ok: false, error: 'INVALID_JSON' }, 400, origin);
@@ -332,6 +566,37 @@ export default {
     if (!tokenMatch) return json({ ok: false, error: 'UNAUTHORIZED' }, 401, origin);
     try {
       const identity = await verifyFirebaseIdToken(tokenMatch[1]);
+      const accessToken = await getFirestoreAccessToken(env);
+      if (await isUserBanned(identity.uid, accessToken)) return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot use rewards while banned.' }, 403, origin);
+
+      if (url.pathname === '/practice') {
+        const questionIds = payload && payload.questionIds;
+        const answers = payload && payload.answers;
+        const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
+        const kind = payload && payload.kind;
+        if (!Array.isArray(questionIds) || questionIds.length < 1 || questionIds.length > 100
+          || questionIds.some(id => typeof id !== 'string' || !isKnownQuestionId(id))
+          || new Set(questionIds).size !== questionIds.length) {
+          return json({ ok: false, code: 'INVALID_QUESTION_SET', error: 'The quiz question list is invalid.' }, 400, origin);
+        }
+        if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
+          return json({ ok: false, code: 'INVALID_ANSWERS', error: 'The submitted answers are invalid.' }, 400, origin);
+        }
+        const answerIds = Object.keys(answers);
+        if (!answerIds.length || answerIds.length > questionIds.length
+          || answerIds.some(id => !questionIds.includes(id) || !['A', 'B', 'C', 'D'].includes(answers[id]))) {
+          return json({ ok: false, code: 'INVALID_ANSWERS', error: 'The submitted answers are invalid.' }, 400, origin);
+        }
+        if (kind !== 'practice' && kind !== 'daily') {
+          return json({ ok: false, code: 'INVALID_QUIZ_KIND', error: 'The quiz type is invalid.' }, 400, origin);
+        }
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId)) {
+          return json({ ok: false, code: 'INVALID_OPERATION_ID', error: 'A valid session ID is required.' }, 400, origin);
+        }
+        const outcome = await applyPracticeRewardChange(identity.uid, operationId, questionIds, answers, kind, accessToken);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+
       const action = payload && payload.action;
       const amount = payload && payload.amount;
       const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
@@ -342,8 +607,6 @@ export default {
       if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(operationId)) {
         return json({ ok: false, error: 'INVALID_GEM_OPERATION_ID' }, 400, origin);
       }
-      const accessToken = await getFirestoreAccessToken(env);
-      if (await isUserBanned(identity.uid, accessToken)) return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot use Gems while banned.' }, 403, origin);
       if (action === 'earn') {
         const owner = await hasActiveOwnerSession(identity.uid, accessToken);
         if (!owner) return json({ ok: false, code: 'EARN_REQUIRES_OWNER', error: 'Gems can only be granted by an authenticated Owner until approved reward rules are added.' }, 403, origin);
