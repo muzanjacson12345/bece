@@ -190,7 +190,7 @@ test("Gem event settlement also has a scheduled Worker trigger", async () => {
   assert.ok(source.includes("async function settleDueGemEvents(env)"));
   assert.ok(source.includes("applyGemEventSettlement(eventId, accessToken)"));
   assert.ok(source.includes("async scheduled(controller, env, ctx)"));
-  assert.ok(source.includes("ctx.waitUntil(settleDueGemEvents(env))"));
+  assert.ok(source.includes("await settleDueGemEvents(env)"));
   const wrangler = await readFile(new URL("../wrangler.toml", import.meta.url), "utf8");
   assert.ok(wrangler.includes('crons = ["*/15 * * * *"]'));
 });
