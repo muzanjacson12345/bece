@@ -83,6 +83,7 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add index.html
             git commit -m "Route shop, power-up, and Duel writes through trusted Worker"
+            git pull --rebase origin "$GITHUB_REF_NAME"
             git push origin "HEAD:$GITHUB_REF_NAME"
           fi
       - name: Check Gems Worker JavaScript syntax
