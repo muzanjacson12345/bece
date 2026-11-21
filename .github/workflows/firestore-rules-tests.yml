@@ -11,6 +11,7 @@ on:
       - ".github/scripts/economy-write-audit.cjs"
       - ".github/scripts/migrate-shop-purchases.cjs"
       - ".github/scripts/migrate-powerup-use.cjs"
+      - ".github/scripts/migrate-powerup-retry.cjs"
       - "workers/gems-api/src/**"
       - "workers/gems-api/test/**"
       - "workers/gems-api/package.json"
@@ -36,6 +37,9 @@ jobs:
       - name: Migrate Second Chance use to the trusted Worker
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: node .github/scripts/migrate-powerup-use.cjs
+      - name: Reuse the same Second Chance receipt ID on retries
+        if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
+        run: node .github/scripts/migrate-powerup-retry.cjs
       - name: Commit draft economy app migrations
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: |
