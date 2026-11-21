@@ -15,6 +15,7 @@ on:
       - ".github/scripts/migrate-duel-rewards.cjs"
       - ".github/scripts/migrate-owner-event-drafts.cjs"
       - ".github/scripts/migrate-owner-event-question-selection.cjs"
+      - ".github/scripts/migrate-owner-event-schedule.cjs"
       - ".github/scripts/migrate-event-player-screen.cjs"
       - "events.js"
       - ".github/scripts/check-inline-scripts.cjs"
@@ -55,6 +56,9 @@ jobs:
       - name: Add subject and question-count selection to event drafts
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: node .github/scripts/migrate-owner-event-question-selection.cjs
+      - name: Add opening and closing times to event drafts
+        if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
+        run: node .github/scripts/migrate-owner-event-schedule.cjs
       - name: Add the player-facing Gem Events screen
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: node .github/scripts/migrate-event-player-screen.cjs
