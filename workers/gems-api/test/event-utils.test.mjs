@@ -54,13 +54,16 @@ test("event config rejects missing, unsafe or inconsistent prices and limits", (
   }
 });
 
-test("event opening and closing timestamps are enforced", () => {
-  const timed = { ...baseEvent, opensAt: 2000, closesAt: 5000 };
-  assert.throws(() => validateGemEventConfig(timed, 1999), /EVENT_NOT_OPEN/);
-  assert.equal(validateGemEventConfig(timed, 2000).entryCostCoins, 35);
-  assert.equal(validateGemEventConfig(timed, 4999).entryCostCoins, 35);
-  assert.throws(() => validateGemEventConfig(timed, 5000), /EVENT_CLOSED/);
-  assert.throws(() => validateGemEventConfig({ ...timed, closesAt: 2000 }, 3000), /INVALID_EVENT_CONFIG/);
+test("event opening and closing timestamps accept real Unix milliseconds and are enforced", () => {
+  const opensAt = 1_800_000_000_000;
+  const closesAt = opensAt + 3_600_000;
+  const timed = { ...baseEvent, opensAt, closesAt };
+  assert.throws(() => validateGemEventConfig(timed, opensAt - 1), /EVENT_NOT_OPEN/);
+  assert.equal(validateGemEventConfig(timed, opensAt).entryCostCoins, 35);
+  assert.equal(validateGemEventConfig(timed, closesAt - 1).entryCostCoins, 35);
+  assert.throws(() => validateGemEventConfig(timed, closesAt), /EVENT_CLOSED/);
+  assert.throws(() => validateGemEventConfig({ ...timed, closesAt: opensAt }, opensAt), /INVALID_EVENT_CONFIG/);
+  assert.throws(() => validateGemEventConfig({ ...timed, opensAt: Number.MAX_SAFE_INTEGER + 1 }, opensAt), /INVALID_EVENT_CONFIG/);
 });
 
 test("entry allowance and Coin balance are enforced", () => {
