@@ -127,3 +127,7 @@ for (const term of ["gemEvents", "gemEventAnswerKeys", "entryCost", "entryPrice"
 showSection("OWNER TAB FULL LAYOUT", "function ownerTab()", 700, 17000);
 showSection("ADMIN TAB NAVIGATION", "function adminTab()", 600, 5000);
 showSection("GEM EVENT RULES AND PLACEHOLDERS", "gemEventOperations", 800, 2600);
+
+showSection("OWNER ASK MODAL FIELDS", "async function ask(", 300, 6500);
+showSection("OWNER REWARD RATE ACTION", "async function setRewardRates()", 400, 4500);
+showSection("OWNER CONFIGURATION CONSTANTS", "const OWNER_MS", 300, 1800);
