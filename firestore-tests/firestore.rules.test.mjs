@@ -124,6 +124,32 @@ test("zero, missing and malformed ban expiry fail closed as legacy permanent ban
   }
 });
 
+test("Owner can create valid temporary and permanent bans but not already-expired bans", async () => {
+  const now = Date.now();
+  await seed({
+    "config/owner": { pw1: "owner-secret-one", pw2: "owner-secret-two" },
+    "ownerSessions/owner-user": {
+      pw1: "owner-secret-one",
+      pw2: "owner-secret-two",
+      at: Timestamp.now()
+    }
+  });
+  const db = testEnv.authenticatedContext("owner-user").firestore();
+
+  await assertSucceeds(setDoc(doc(db, "bans/timed-player"), {
+    at: now, by: "owner-user", name: "Timed Player", reason: "temporary",
+    until: now + 60_000
+  }));
+  await assertSucceeds(setDoc(doc(db, "bans/permanent-player"), {
+    at: now, by: "owner-user", name: "Permanent Player", reason: "permanent",
+    until: 0
+  }));
+  await assertFails(setDoc(doc(db, "bans/expired-on-arrival"), {
+    at: now, by: "owner-user", name: "Expired Player", reason: "invalid",
+    until: now - 1000
+  }));
+});
+
 test("a banned Admin cannot use an unexpired Admin session", async () => {
   const now = Date.now();
   await seed({
