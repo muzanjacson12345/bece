@@ -23,6 +23,7 @@ on:
       - "workers/gems-api/src/**"
       - "workers/gems-api/test/**"
       - "workers/gems-api/package.json"
+      - "workers/gems-api/wrangler.toml"
       - "index.html"
   workflow_dispatch:
 
