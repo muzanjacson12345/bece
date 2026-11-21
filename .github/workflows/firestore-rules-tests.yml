@@ -13,6 +13,7 @@ on:
       - ".github/scripts/migrate-powerup-use.cjs"
       - ".github/scripts/migrate-powerup-retry.cjs"
       - ".github/scripts/migrate-duel-rewards.cjs"
+      - ".github/scripts/check-inline-scripts.cjs"
       - "workers/gems-api/src/**"
       - "workers/gems-api/test/**"
       - "workers/gems-api/package.json"
@@ -56,6 +57,8 @@ jobs:
           fi
       - name: Check Gems Worker JavaScript syntax
         run: node --check workers/gems-api/src/index.js
+      - name: Check inline application JavaScript syntax
+        run: node .github/scripts/check-inline-scripts.cjs
       - name: Run economy client-write audit
         run: node .github/scripts/economy-write-audit.cjs
       - name: Run Gems Worker ban unit tests
