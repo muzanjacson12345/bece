@@ -5,6 +5,7 @@ import { isKnownQuestionId } from "./question-keys.mjs";
 import { getShopItem } from "./shop-utils.mjs";
 import { getPowerupUse, validatePowerupUseReceiptRetry } from "./powerup-utils.mjs";
 import { buildGemEventDraftConfig, buildGemEventEntry, buildGemEventRetry } from "./event-utils.mjs";
+import { buildGemEventAnswerResult, buildGemEventLeaderboardEntry, buildGemEventQuestionStart } from "./event-game-utils.mjs";
 import {
   buildDuelAnswerResult,
   buildDuelForfeitProgress,
@@ -1077,6 +1078,10 @@ function gemEventOperationPath(uid, operationId) {
   return 'gemEventOperations/' + encodeURIComponent(uid + '_' + operationId);
 }
 
+function gemEventAnswerOperationPath(uid, operationId) {
+  return 'gemEventAnswerOperations/' + encodeURIComponent(uid + '_' + operationId);
+}
+
 
 async function applyGemEventDraftConfig(uid, eventId, payload, accessToken) {
   const owner = await hasActiveOwnerSession(uid, accessToken);
@@ -1335,6 +1340,163 @@ async function applyGemEventRetry(uid, eventId, currentAttemptId, operationId, a
     );
     finished = true;
     return { duplicate: false, result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+
+async function startGemEventQuestion(uid, eventId, attemptId, accessToken) {
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const eventPath = gemEventPath(eventId);
+  const participantPath = gemEventParticipantPath(eventId, uid);
+  const attemptPath = gemEventAttemptPath(eventId, uid, attemptId);
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [eventDoc, participantDoc, attemptDoc] = await Promise.all([
+      getDocument(eventPath, accessToken, transaction),
+      getDocument(participantPath, accessToken, transaction),
+      getDocument(attemptPath, accessToken, transaction)
+    ]);
+    if (!eventDoc) throw new Error('EVENT_NOT_FOUND');
+    if (!participantDoc) throw new Error('EVENT_PARTICIPATION_NOT_FOUND');
+    if (!attemptDoc) throw new Error('EVENT_ATTEMPT_NOT_FOUND');
+    const event = decodeFirestoreFields(eventDoc.fields || {});
+    const participant = decodeFirestoreFields(participantDoc.fields || {});
+    if (participant.uid !== uid) throw new Error('EVENT_PARTICIPATION_NOT_FOUND');
+    const attempt = decodeFirestoreFields(attemptDoc.fields || {});
+    const outcome = buildGemEventQuestionStart({
+      event, attempt, uid, eventId, attemptId, now: Date.now()
+    });
+    if (outcome.duplicate) {
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: outcome.result };
+    }
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          writes: [{
+            update: { name: base + attemptPath, fields: encodeFirestoreFields(outcome.attempt) },
+            updateMask: { fieldPaths: Object.keys(outcome.attempt) },
+            currentDocument: { exists: true }
+          }]
+        }
+      }
+    );
+    finished = true;
+    return { duplicate: false, result: outcome.result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+async function submitGemEventAnswer(uid, eventId, attemptId, questionId, answerKey, operationId, accessToken) {
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const eventPath = gemEventPath(eventId);
+  const participantPath = gemEventParticipantPath(eventId, uid);
+  const attemptPath = gemEventAttemptPath(eventId, uid, attemptId);
+  const playerPath = 'players/' + encodeURIComponent(uid);
+  const leaderboardPath = gemEventPath(eventId) + '/leaderboard/' + encodeURIComponent(uid);
+  const operationPath = gemEventAnswerOperationPath(uid, operationId);
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [eventDoc, participantDoc, attemptDoc, playerDoc, leaderboardDoc, operationDoc] = await Promise.all([
+      getDocument(eventPath, accessToken, transaction),
+      getDocument(participantPath, accessToken, transaction),
+      getDocument(attemptPath, accessToken, transaction),
+      getDocument(playerPath, accessToken, transaction),
+      getDocument(leaderboardPath, accessToken, transaction),
+      getDocument(operationPath, accessToken, transaction)
+    ]);
+    if (operationDoc) {
+      const stored = decodeFirestoreFields(operationDoc.fields || {});
+      if (stored.uid !== uid || stored.eventId !== eventId || stored.attemptId !== attemptId
+          || stored.questionId !== questionId || stored.answerKey !== answerKey) {
+        throw new Error('IDEMPOTENCY_KEY_REUSED');
+      }
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: stored.result || null, leaderboardUpdated: false };
+    }
+    if (!eventDoc) throw new Error('EVENT_NOT_FOUND');
+    if (!participantDoc) throw new Error('EVENT_PARTICIPATION_NOT_FOUND');
+    if (!attemptDoc) throw new Error('EVENT_ATTEMPT_NOT_FOUND');
+    if (!playerDoc) throw new Error('PLAYER_PROFILE_NOT_READY');
+    const participant = decodeFirestoreFields(participantDoc.fields || {});
+    if (participant.uid !== uid) throw new Error('EVENT_PARTICIPATION_NOT_FOUND');
+    const event = decodeFirestoreFields(eventDoc.fields || {});
+    const attempt = decodeFirestoreFields(attemptDoc.fields || {});
+    const outcome = buildGemEventAnswerResult({
+      event, attempt, uid, eventId, attemptId, questionId, answerKey,
+      operationId, now: Date.now()
+    });
+    const writes = [
+      {
+        update: { name: base + attemptPath, fields: encodeFirestoreFields(outcome.attempt) },
+        updateMask: { fieldPaths: Object.keys(outcome.attempt) },
+        currentDocument: { exists: true }
+      }
+    ];
+    let leaderboardUpdated = false;
+    if (outcome.result.done) {
+      const player = decodeFirestoreFields(playerDoc.fields || {});
+      const prior = decodeFirestoreFields(leaderboardDoc && leaderboardDoc.fields);
+      const board = buildGemEventLeaderboardEntry({
+        attempt: outcome.attempt,
+        previous: prior,
+        uid,
+        displayName: player.displayName || 'Student',
+        now: Date.now()
+      });
+      if (board.changed) {
+        writes.push({
+          update: { name: base + leaderboardPath, fields: encodeFirestoreFields(board.entry) },
+          updateMask: { fieldPaths: Object.keys(board.entry) },
+          currentDocument: { exists: !!leaderboardDoc }
+        });
+        leaderboardUpdated = true;
+      }
+    }
+    const operationRecord = {
+      uid, eventId, attemptId, questionId, answerKey,
+      createdAt: Date.now(),
+      result: outcome.result
+    };
+    writes.push({
+      update: { name: base + operationPath, fields: encodeFirestoreFields(operationRecord) },
+      updateMask: { fieldPaths: Object.keys(operationRecord) },
+      currentDocument: { exists: false }
+    });
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      { method: 'POST', body: { transaction, writes } }
+    );
+    finished = true;
+    return { duplicate: false, result: outcome.result, leaderboardUpdated };
   } finally {
     if (!finished) await rollbackTransaction(transaction, accessToken);
   }
