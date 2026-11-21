@@ -2,6 +2,7 @@ import { isKnownQuestionId } from "./question-keys.mjs";
 
 const MAX_BALANCE = 1_000_000_000;
 const MAX_EVENT_COIN_COST = 1_000_000;
+const MAX_EVENT_PRIZE_POOL = 1_000_000;
 const MAX_ENTRIES_PER_USER = 100;
 const MAX_RETRIES_PER_ENTRY = 20;
 export const EVENT_FINISH_GRACE_MS = 24 * 60 * 60 * 1000;
@@ -30,10 +31,10 @@ export function validateEventPrizeGems(prizeGems) {
   if (!prizeGems || typeof prizeGems !== "object" || Array.isArray(prizeGems)) {
     fail("INVALID_EVENT_PRIZES");
   }
-  const first = integer(prizeGems.first, "INVALID_EVENT_PRIZES", 1, MAX_OPERATION_AMOUNT);
-  const second = integer(prizeGems.second, "INVALID_EVENT_PRIZES", 0, MAX_OPERATION_AMOUNT);
-  const third = integer(prizeGems.third, "INVALID_EVENT_PRIZES", 0, MAX_OPERATION_AMOUNT);
-  if (first + second + third > MAX_OPERATION_AMOUNT) fail("INVALID_EVENT_PRIZES");
+  const first = integer(prizeGems.first, "INVALID_EVENT_PRIZES", 1, MAX_EVENT_PRIZE_POOL);
+  const second = integer(prizeGems.second, "INVALID_EVENT_PRIZES", 0, MAX_EVENT_PRIZE_POOL);
+  const third = integer(prizeGems.third, "INVALID_EVENT_PRIZES", 0, MAX_EVENT_PRIZE_POOL);
+  if (first + second + third > MAX_EVENT_PRIZE_POOL) fail("INVALID_EVENT_PRIZES");
   return { first, second, third };
 }
 
