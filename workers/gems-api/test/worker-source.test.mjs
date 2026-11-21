@@ -210,3 +210,40 @@ test("early event close is Owner-only and leaves paid attempt grace intact", () 
   assert.ok(source.includes("applyGemEventEarlyClose(identity.uid, eventId, accessToken)"));
   assert.ok(source.includes("EVENT_FINISH_GRACE_MS"));
 });
+
+
+test("first-time achievement Gems write a private claim and readable history record atomically", () => {
+  assert.ok(source.includes('buildAchievementGemHistory({'));
+  const start = source.indexOf("async function applyPracticeRewardChange(");
+  const end = source.indexOf("\\nasync function isUserBanned", start);
+  assert.ok(start >= 0 && end > start);
+  const practice = source.slice(start, end);
+  assert.ok(practice.includes("result.gemsEarned > 0"));
+  assert.ok(practice.includes("gemTransactions/"));
+  assert.ok(practice.includes("gemRewardClaims/"));
+  assert.ok(practice.includes("currentDocument: { exists: false }"));
+  assert.ok(practice.includes("body: { transaction, writes }"));
+});
+
+test("event Gem prize payouts also create readable history records in the settlement transaction", () => {
+  assert.ok(source.includes("buildEventGemPrizeHistory({"));
+  const start = source.indexOf("async function applyGemEventSettlement(");
+  const end = source.indexOf("\\nasync function startGemEventQuestion", start);
+  assert.ok(start >= 0 && end > start, "event settlement function boundaries must be found");
+  const settlement = source.slice(start, end);
+  assert.ok(settlement.includes("gemTransactions/"));
+  assert.ok(settlement.includes("gemEventPrizeOperations/"));
+  assert.ok(settlement.includes("currentDocument: { exists: false }"));
+  assert.ok(settlement.includes("body: { transaction, writes }"));
+});
+
+test("manual Owner Gem changes keep a normalized transaction-history record", () => {
+  const start = source.indexOf("async function applyGemChange(");
+  const end = source.indexOf("\\nasync function settleDueGemEvents", start);
+  assert.ok(start >= 0 && end > start, "manual Gem function boundaries must be found");
+  const manual = source.slice(start, end);
+  assert.ok(manual.includes("currency: 'gems'"));
+  assert.ok(manual.includes("kind: 'owner_adjustment'"));
+  assert.ok(manual.includes("balanceBefore: before"));
+  assert.ok(manual.includes("balanceAfter: after"));
+});
