@@ -551,16 +551,15 @@ service cloud.firestore {
 
       allow create: if isOwner()
         || (signedIn() && request.auth.uid == id && !isBanned()
-            && !('gems' in request.resource.data)
-            && !('gemOps' in request.resource.data));
+            && !request.resource.data.keys().hasAny(['gems', 'gemOps', 'owned']));
 
       allow update: if isOwner()
         || (signedIn() && request.auth.uid == id && !isBanned()
             && !request.resource.data.diff(resource.data).affectedKeys()
-                 .hasAny(['gems', 'gemOps']))
+                 .hasAny(['gems', 'gemOps', 'owned']))
         || (isAdmin() && !targetIsStaff(id)
             && !request.resource.data.diff(resource.data).affectedKeys()
-                 .hasAny(['gems', 'gemOps']));
+                 .hasAny(['gems', 'gemOps', 'owned']));
 
       // The staff UI explicitly prevents self-deletion. Owner may remove
       // players/admins but not another Owner; Admin may remove ordinary players.
