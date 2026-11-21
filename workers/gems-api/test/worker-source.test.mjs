@@ -194,3 +194,18 @@ test("Gem event settlement also has a scheduled Worker trigger", async () => {
   const wrangler = await readFile(new URL("../wrangler.toml", import.meta.url), "utf8");
   assert.ok(wrangler.includes('crons = ["*/15 * * * *"]'));
 });
+
+test("early event close is Owner-only and leaves paid attempt grace intact", () => {
+  assert.ok(source.includes("async function applyGemEventEarlyClose("));
+  const start = source.indexOf("async function applyGemEventEarlyClose(");
+  const end = source.indexOf("\nasync function applyGemEventActivation", start);
+  assert.ok(start >= 0 && end > start);
+  const closeFunction = source.slice(start, end);
+  assert.ok(closeFunction.includes("hasActiveOwnerSession(uid, accessToken)"));
+  assert.ok(closeFunction.includes("EVENT_OWNER_REQUIRED"));
+  assert.ok(closeFunction.includes("closesAt: now"));
+  assert.ok(closeFunction.includes("closedBy: uid"));
+  assert.ok(source.includes("'/events/close'"));
+  assert.ok(source.includes("applyGemEventEarlyClose(identity.uid, eventId, accessToken)"));
+  assert.ok(source.includes("EVENT_FINISH_GRACE_MS"));
+});
