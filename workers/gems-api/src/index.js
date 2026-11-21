@@ -2,6 +2,7 @@ import { isFirestoreBanActive } from "./ban-utils.mjs";
 import { hasValidOwnerSession } from "./owner-utils.mjs";
 import { buildPracticeRewardResult } from "./practice-utils.mjs";
 import { isKnownQuestionId } from "./question-keys.mjs";
+import { getShopItem } from "./shop-utils.mjs";
 
 const PROJECT_ID = 'bece-hub-d9ad5';
 const APP_ORIGIN = 'https://muzanjacson12345.github.io';
@@ -484,6 +485,111 @@ async function hasActiveOwnerSession(uid, accessToken) {
   return hasValidOwnerSession(roster, session, config);
 }
 
+
+async function applyShopPurchase(uid, itemId, operationId, accessToken) {
+  const item = getShopItem(itemId);
+  if (!item) throw new Error('INVALID_SHOP_ITEM');
+
+  const owner = await hasActiveOwnerSession(uid, accessToken);
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const playerPath = 'players/' + encodeURIComponent(uid);
+  const operationPath = 'shopOperations/' + encodeURIComponent(uid + '_' + operationId);
+  const playerName = base + playerPath;
+  const operationName = base + operationPath;
+
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken,
+    { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [playerDoc, settingsDoc, operationDoc] = await Promise.all([
+      getDocument(playerPath, accessToken, transaction),
+      getDocument('settings/app', accessToken, transaction),
+      getDocument(operationPath, accessToken, transaction)
+    ]);
+
+    if (operationDoc) {
+      const stored = decodeFirestoreFields(operationDoc.fields || {});
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken,
+        { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: stored.result || null };
+    }
+
+    if (!playerDoc) throw new Error('PLAYER_PROFILE_NOT_READY');
+    const player = decodeFirestoreFields(playerDoc.fields || {});
+    const settings = decodeFirestoreFields(settingsDoc && settingsDoc.fields);
+    if (settings.shopPaused === true && !owner) throw new Error('SHOP_PAUSED');
+
+    const coins = player.coins === undefined ? 0 : Number(player.coins);
+    if (!Number.isSafeInteger(coins) || coins < 0 || coins > MAX_BALANCE) {
+      throw new Error('INVALID_COIN_BALANCE');
+    }
+    if (coins < item.price) throw new Error('INSUFFICIENT_COINS');
+
+    const updates = { coins: coins - item.price };
+    let result;
+    if (item.type === 'title') {
+      const owned = player.owned && typeof player.owned === 'object' ? { ...player.owned } : {};
+      if (owned[itemId] === true) throw new Error('ITEM_ALREADY_OWNED');
+      owned[itemId] = true;
+      updates.owned = owned;
+      result = { itemId, type: 'title', price: item.price, coins: updates.coins, owned };
+    } else {
+      const current = player[item.field] === undefined ? 0 : Number(player[item.field]);
+      if (!Number.isSafeInteger(current) || current < 0 || current >= MAX_BALANCE) {
+        throw new Error('INVALID_POWERUP_BALANCE');
+      }
+      updates[item.field] = current + 1;
+      result = {
+        itemId,
+        type: 'consumable',
+        field: item.field,
+        price: item.price,
+        coins: updates.coins,
+        quantity: updates[item.field]
+      };
+    }
+
+    const operationRecord = {
+      uid,
+      operationId,
+      itemId,
+      price: item.price,
+      createdAt: Date.now(),
+      result
+    };
+    const writes = [
+      {
+        update: { name: playerName, fields: encodeFirestoreFields(updates) },
+        updateMask: { fieldPaths: Object.keys(updates) },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: operationName, fields: encodeFirestoreFields(operationRecord) },
+        updateMask: { fieldPaths: Object.keys(operationRecord) },
+        currentDocument: { exists: false }
+      }
+    ];
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      { method: 'POST', body: { transaction, writes } }
+    );
+    finished = true;
+    return { duplicate: false, result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
   const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
   const transactionResult = await firestoreRequest(
@@ -555,7 +661,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/practice'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/practice', '/shop'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -603,6 +709,19 @@ export default {
         return json({ ok: true, ...outcome }, 200, origin);
       }
 
+      if (url.pathname === '/shop') {
+        const itemId = payload && typeof payload.itemId === 'string' ? payload.itemId.trim() : '';
+        const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
+        if (!/^[a-zA-Z0-9_-]{1,64}$/.test(itemId)) {
+          return json({ ok: false, code: 'INVALID_SHOP_ITEM', error: 'That shop item is not available.' }, 400, origin);
+        }
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId)) {
+          return json({ ok: false, code: 'INVALID_OPERATION_ID', error: 'A valid purchase ID is required.' }, 400, origin);
+        }
+        const outcome = await applyShopPurchase(identity.uid, itemId, operationId, accessToken);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+
       const action = payload && payload.action;
       const amount = payload && payload.amount;
       const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
@@ -628,6 +747,18 @@ export default {
       }
       if (error && error.message === 'PLAYER_BALANCE_LIMIT') {
         return json({ ok: false, code: 'PLAYER_BALANCE_LIMIT', error: 'This account has reached the maximum supported reward balance.' }, 409, origin);
+      }
+      if (error && error.message === 'INSUFFICIENT_COINS') {
+        return json({ ok: false, code: 'INSUFFICIENT_COINS', error: 'You do not have enough Coins for that item.' }, 409, origin);
+      }
+      if (error && error.message === 'ITEM_ALREADY_OWNED') {
+        return json({ ok: false, code: 'ITEM_ALREADY_OWNED', error: 'You already own that item.' }, 409, origin);
+      }
+      if (error && error.message === 'SHOP_PAUSED') {
+        return json({ ok: false, code: 'SHOP_PAUSED', error: 'Shop purchases are temporarily paused.' }, 403, origin);
+      }
+      if (error && error.message === 'INVALID_POWERUP_BALANCE') {
+        return json({ ok: false, code: 'INVALID_POWERUP_BALANCE', error: 'This power-up balance needs Owner review.' }, 409, origin);
       }
       if (error && error.message === 'SERVICE_NOT_CONFIGURED') {
         return json({ ok: false, code: 'SERVICE_NOT_CONFIGURED', error: 'The secure Gems service has not been configured yet.' }, 503, origin);
