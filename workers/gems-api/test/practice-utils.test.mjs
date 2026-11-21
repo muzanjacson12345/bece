@@ -130,3 +130,26 @@ test("unanswered questions cannot satisfy long-quiz progress or inflate recent t
   assert.equal(result.recent[0].total, 1);
   assert.equal(result.recent[0].subject, "soc");
 });
+
+
+test("a partially answered quiz cannot count as a perfect quiz", () => {
+  const partial = buildPracticeRewardResult({
+    player: {},
+    questionIds: ["soc-1", "soc-2"],
+    answers: { "soc-1": "B" },
+    day: "2026-11-21",
+    kind: "practice"
+  });
+  assert.equal(partial.achievements.stats.perfect, undefined);
+  assert.equal(partial.gemAchievementIds.includes("perfect-round"), false);
+
+  const complete = buildPracticeRewardResult({
+    player: {},
+    questionIds: ["soc-1", "soc-2"],
+    answers: { "soc-1": "B", "soc-2": "C" },
+    day: "2026-11-21",
+    kind: "practice"
+  });
+  assert.equal(complete.achievements.stats.perfect, 1);
+  assert.equal(complete.gemAchievementIds.includes("perfect-round"), true);
+});
