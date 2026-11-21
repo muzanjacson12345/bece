@@ -17,7 +17,6 @@ const event = {
   retryCostCoins: 10,
   maxRetriesPerEntry: 2,
   opensAt: null,
-  closesAt: null,
   questionIds: ["soc-1", "soc-2", "soc-3"],
   questionCount: 3,
   prizeGems: { first: 100, second: 50, third: 25 },
