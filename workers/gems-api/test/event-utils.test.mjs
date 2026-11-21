@@ -138,6 +138,19 @@ test("retry policy is bounded per entry and rejects disabled or exhausted retrie
   }), /EVENT_RETRY_DISABLED/);
 });
 
+test("retry cannot replace an entry that has not finished", () => {
+  const first = buildGemEventEntry({
+    event: baseEvent, participant: null, player: { coins: 100 },
+    uid: "alice", eventId: "event-a", attemptId: "attempt-1", now: 1000
+  });
+  assert.throws(() => buildGemEventRetry({
+    event: baseEvent, participant: first.participant, player: { coins: 100 },
+    currentAttempt: first.attempt,
+    uid: "alice", eventId: "event-a", currentAttemptId: "attempt-1",
+    nextAttemptId: "attempt-2", now: 2000
+  }), /EVENT_ATTEMPT_NOT_RETRYABLE/);
+});
+
 test("retry validates participant, attempt ownership and available Coins", () => {
   const first = buildGemEventEntry({
     event: baseEvent, participant: null, player: { coins: 100 },
@@ -151,7 +164,7 @@ test("retry validates participant, attempt ownership and available Coins", () =>
   }), /EVENT_ATTEMPT_NOT_FOUND/);
   assert.throws(() => buildGemEventRetry({
     event: baseEvent, participant: first.participant, player: { coins: 11 },
-    currentAttempt: first.attempt,
+    currentAttempt: { ...first.attempt, status: "completed" },
     uid: "alice", eventId: "event-a", currentAttemptId: "attempt-1",
     nextAttemptId: "attempt-2", now: 2000
   }), /INSUFFICIENT_COINS/);
