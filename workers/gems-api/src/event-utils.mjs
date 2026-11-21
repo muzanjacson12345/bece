@@ -36,8 +36,8 @@ export function validateGemEventConfig(event, now = Date.now()) {
     fail("INVALID_EVENT_CONFIG");
   }
 
-  const opensAt = event.opensAt === undefined ? null : integer(event.opensAt, "INVALID_EVENT_CONFIG");
-  const closesAt = event.closesAt === undefined ? null : integer(event.closesAt, "INVALID_EVENT_CONFIG");
+  const opensAt = event.opensAt === undefined ? null : integer(event.opensAt, "INVALID_EVENT_CONFIG", 0, Number.MAX_SAFE_INTEGER);
+  const closesAt = event.closesAt === undefined ? null : integer(event.closesAt, "INVALID_EVENT_CONFIG", 0, Number.MAX_SAFE_INTEGER);
   if (opensAt !== null && closesAt !== null && opensAt >= closesAt) {
     fail("INVALID_EVENT_CONFIG");
   }
