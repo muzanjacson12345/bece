@@ -1587,9 +1587,9 @@ export default {
         INVALID_EVENT_ID: ['The event ID is invalid.', 400],
         INVALID_EVENT_PARTICIPATION: ['Your event participation record needs review.', 409],
         INVALID_EVENT_ATTEMPT: ['Your event attempt record needs review.', 409],
-        INSUFFICIENT_COINS: ['You do not have enough Coins for this event action.', 409],
         INVALID_COIN_BALANCE: ['Your Coin balance needs review.', 409],
-        INVALID_ATTEMPT_ID: ['The event attempt ID is invalid.', 400]
+        INVALID_ATTEMPT_ID: ['The event attempt ID is invalid.', 400],
+        IDEMPOTENCY_KEY_REUSED: ['This operation ID was already used for a different action.', 409]
       };
       if (error && eventErrors[error.message]) {
         const [message, status] = eventErrors[error.message];
@@ -1644,7 +1644,7 @@ export default {
         return json({ ok: false, code: 'PLAYER_BALANCE_LIMIT', error: 'This account has reached the maximum supported reward balance.' }, 409, origin);
       }
       if (error && error.message === 'INSUFFICIENT_COINS') {
-        return json({ ok: false, code: 'INSUFFICIENT_COINS', error: 'You do not have enough Coins for that item.' }, 409, origin);
+        return json({ ok: false, code: 'INSUFFICIENT_COINS', error: 'You do not have enough Coins for that purchase or event action.' }, 409, origin);
       }
       if (error && error.message === 'ITEM_ALREADY_OWNED') {
         return json({ ok: false, code: 'ITEM_ALREADY_OWNED', error: 'You already own that item.' }, 409, origin);
