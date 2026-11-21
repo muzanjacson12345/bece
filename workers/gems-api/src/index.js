@@ -1569,7 +1569,8 @@ export default {
       }
       const outcome = await applyGemChange(identity.uid, action, amount, operationId, accessToken);
       return json({ ok: true, ...outcome }, 200, origin);
-    } catch (error) {\n      const eventErrors = {
+    } catch (error) {
+      const eventErrors = {
         EVENT_NOT_FOUND: ['That event could not be found.', 404],
         EVENT_NOT_ACTIVE: ['That event is not active.', 409],
         EVENT_NOT_OPEN: ['That event has not opened yet.', 409],
