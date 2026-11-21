@@ -12270,9 +12270,16 @@ const Adm = (() => {
         values.subrequests.value.textContent = number(data.worker.subrequests);
         values.subrequests.description.textContent = 'Total subrequests reported today · 50 per invocation on Free';
       }
-      setQuota('d1read', data.d1 && data.d1.rowsRead);
-      setQuota('d1write', data.d1 && data.d1.rowsWritten);
-      setQuota('d1storage', data.d1 && data.d1.storage, bytes);
+      if (data.d1 && data.d1.detected === false) {
+        for (const key of ['d1read', 'd1write', 'd1storage']) {
+          values[key].value.textContent = 'Not enabled';
+          values[key].description.textContent = 'No D1 usage is configured for this account.';
+        }
+      } else {
+        setQuota('d1read', data.d1 && data.d1.rowsRead);
+        setQuota('d1write', data.d1 && data.d1.rowsWritten);
+        setQuota('d1storage', data.d1 && data.d1.storage, bytes);
+      }
       if (data.d1 && data.d1.storage && data.d1.storage.asOf) {
         const storageSample = new Date(data.d1.storage.asOf);
         if (Number.isFinite(storageSample.getTime())) {
@@ -12288,12 +12295,14 @@ const Adm = (() => {
         ? 'The latest Worker analytics record is more than 10 minutes old.'
         : data.worker.freshness === 'recent'
           ? 'The latest Worker analytics record is recent.'
-          : 'Cloudflare did not provide a latest-event timestamp.';
+          : data.worker.freshness === 'no_events'
+            ? 'No Worker invocation events have been reported for this UTC day yet. The total is currently 0; Cloudflare analytics can be delayed.'
+            : 'Cloudflare did not provide a latest-event timestamp.';
       statusTitle.textContent = fromCache
         ? 'Saved usage reading · not live'
         : data.worker.complete ? 'Usage retrieved' : 'Partly unavailable';
       statusText.textContent = (fromCache ? 'Showing the last successful refresh saved on this browser. ' : '') +
-        freshness + (data.d1 && !data.d1.detected ? ' D1 analytics are not available for this account yet.' : '');
+        freshness + (data.d1 && !data.d1.detected ? ' D1 is not enabled on this account, so those quota meters do not apply.' : '');
       const stamp = data.generatedAt ? new Date(data.generatedAt) : null;
       const savedStamp = savedAt ? new Date(savedAt) : null;
       updated.textContent = 'Retrieved: ' + (stamp && Number.isFinite(stamp.getTime()) ? stamp.toLocaleString() : 'timestamp unavailable') +
