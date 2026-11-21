@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  buildGemEventActivation,
   buildGemEventEntry,
   buildGemEventDraftConfig,
   buildGemEventRetry,
@@ -14,7 +15,8 @@ const baseEvent = {
   maxEntriesPerUser: 2,
   retryEnabled: true,
   retryCostCoins: 12,
-  maxRetriesPerEntry: 2
+  maxRetriesPerEntry: 2,
+  prizeGems: { first: 100, second: 50, third: 25 }
 };
 
 test("event-specific entry fees and entry allowances are read from the event config", () => {
@@ -188,6 +190,7 @@ test("Owner event configuration is saved as a validated inactive draft", () => {
     retryEnabled: true,
     retryCostCoins: 15,
     maxRetriesPerEntry: 2,
+    prizeGems: { first: 100, second: 50, third: 25 },
     opensAt: 1_800_000_000_000,
     closesAt: 1_800_000_900_000,
     ownerUid: "owner-1",
@@ -203,10 +206,51 @@ test("Owner event configuration is saved as a validated inactive draft", () => {
   assert.equal(draft.createdBy, "owner-1");
 });
 
+test("event prize pool validates all places and caps the total at one million Gems", () => {
+  assert.throws(() => buildGemEventDraftConfig({
+    eventId: "event-2", title: "Event Two", questionIds: ["soc-1", "soc-2", "soc-3"],
+    entryCostCoins: 20, maxEntriesPerUser: 2, retryEnabled: false,
+    prizeGems: { first: 0, second: 0, third: 0 }, ownerUid: "owner-1", now: 1000
+  }), /INVALID_EVENT_PRIZES/);
+  assert.throws(() => buildGemEventDraftConfig({
+    eventId: "event-2", title: "Event Two", questionIds: ["soc-1", "soc-2", "soc-3"],
+    entryCostCoins: 20, maxEntriesPerUser: 2, retryEnabled: false,
+    prizeGems: { first: 900000, second: 100000, third: 1 }, ownerUid: "owner-1", now: 1000
+  }), /INVALID_EVENT_PRIZES/);
+});
+
+test("Owner activation requires a saved draft, valid prizes and a future closing time", () => {
+  const draft = buildGemEventDraftConfig({
+    eventId: "event-ready", title: "Ready Event",
+    questionIds: ["soc-1", "soc-2", "soc-3"],
+    entryCostCoins: 25, maxEntriesPerUser: 2, retryEnabled: false,
+    prizeGems: { first: 90, second: 40, third: 10 },
+    opensAt: 2000, closesAt: 10000, ownerUid: "owner-1", now: 1000
+  });
+  const activation = buildGemEventActivation({ event: draft, ownerUid: "owner-1", now: 1500 });
+  assert.equal(activation.status, "active");
+  assert.equal(activation.activatedBy, "owner-1");
+  assert.equal(activation.openAttempts, 0);
+  assert.equal(activation.leaderboardStatus, "open");
+  assert.equal(activation.settlementGraceMs, 86400000);
+  assert.throws(() => buildGemEventActivation({
+    event: { ...draft, closesAt: null }, ownerUid: "owner-1", now: 1500
+  }), /EVENT_CLOSE_REQUIRED/);
+  assert.throws(() => buildGemEventActivation({
+    event: { ...draft, entryCount: 1 }, ownerUid: "owner-1", now: 1500
+  }), /EVENT_CONFIG_LOCKED/);
+  assert.throws(() => buildGemEventActivation({
+    event: { ...draft, status: "active" }, ownerUid: "owner-1", now: 1500
+  }), /EVENT_NOT_DRAFT/);
+  assert.throws(() => buildGemEventActivation({
+    event: draft, ownerUid: "", now: 1500
+  }), /EVENT_OWNER_REQUIRED/);
+});
+
 test("event draft creation rejects unsafe names, fees, limits, times and Owner identity", () => {
   const valid = {
     eventId: "event-1", title: "Event One", questionIds: ["soc-1", "soc-2", "soc-3"], entryCostCoins: 20,
-    maxEntriesPerUser: 2, retryEnabled: false, ownerUid: "owner-1", now: 1000
+    maxEntriesPerUser: 2, retryEnabled: false, prizeGems: { first: 100, second: 50, third: 25 }, ownerUid: "owner-1", now: 1000
   };
   for (const invalid of [
     { ...valid, eventId: "../players/alice" },
