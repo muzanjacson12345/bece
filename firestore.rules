@@ -770,6 +770,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Permanent entry/retry payment receipts are private and Worker-only.
+    match /gemEventOperations/{operationId} {
+      allow read, write: if false;
+    }
+
     match /gemMarketplace/{itemId} {
       allow read: if signedIn()
         && (resource.data.get('active', false) == true || isStaff());
