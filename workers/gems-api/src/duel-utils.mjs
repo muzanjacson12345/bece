@@ -79,7 +79,7 @@ export function buildDuelAnswerResult({
   const previous = Array.isArray(progress.answers) ? progress.answers : [];
   const duplicate = previous.find(item => item && item.operationId === operationId);
   if (duplicate) {
-    if (duplicate.questionId !== questionId || duplicate.answerKey !== answerKey) {
+    if (duplicate.questionId !== questionId || duplicate.requestedKey !== answerKey) {
       fail("IDEMPOTENCY_KEY_REUSED");
     }
     return { duplicate: true, progress, result: duplicate.response };
@@ -125,6 +125,7 @@ export function buildDuelAnswerResult({
     index,
     questionId,
     answerKey: acceptedKey,
+    requestedKey: answerKey,
     correct,
     elapsedMs,
     operationId,
@@ -253,7 +254,8 @@ export function buildDuelSettlement({
   if (!duel || typeof duel.host !== "string" || typeof duel.guest !== "string"
       || duel.host === duel.guest || !Array.isArray(duel.qids)
       || duel.qids.length < 1 || duel.qids.length > 50
-      || duel.qids.some(id => !isKnownQuestionId(id))) {
+      || duel.qids.some(id => !isKnownQuestionId(id))
+      || !Number.isSafeInteger(duel.secs) || duel.secs < 5 || duel.secs > 60) {
     fail("INVALID_DUEL");
   }
   if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day)) fail("INVALID_DUEL_DAY");
