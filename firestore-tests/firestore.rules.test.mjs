@@ -90,7 +90,9 @@ test("players cannot create or change server-managed Gems, shop ownership or pow
 
   await assertSucceeds(setDoc(doc(alice, "players/alice"), { displayName: "Alice", coins: 10, eq: {} }));
   for (const field of ["gems", "gemOps", "owned", "p50", "sfreezes", "xpBoost"]) {
-    await assertFails(setDoc(doc(alice, "players/" + field + "-create"), {
+    const createUid = field + "-create";
+    const createDb = testEnv.authenticatedContext(createUid).firestore();
+    await assertFails(setDoc(doc(createDb, "players/" + createUid), {
       displayName: "Alice",
       [field]: field === "owned" ? { t_legend: true } : field === "gemOps" ? ["fake-credit"] : 1
     }));
