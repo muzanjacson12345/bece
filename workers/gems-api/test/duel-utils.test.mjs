@@ -67,9 +67,12 @@ test("wrong and timed-out answers cannot increase the correct score", () => {
   });
   assert.equal(wrong.result.correct, false);
   assert.equal(wrong.result.score.c, 0);
+  const nextQuestion = buildDuelQuestionStart({
+    duel, progress: wrong.progress, uid: "host", questionId: "soc-2", now: 3000
+  });
   const late = buildDuelAnswerResult({
-    duel, progress: wrong.progress, uid: "host", questionId: "soc-2",
-    answerKey: "C", operationId: "22222222-2222-4222-8222-222222222222", now: 19000
+    duel, progress: nextQuestion.progress, uid: "host", questionId: "soc-2",
+    answerKey: "C", operationId: "22222222-2222-4222-8222-222222222222", now: 20000
   });
   assert.equal(late.result.timedOut, true);
   assert.equal(late.result.answerKey, null);
