@@ -144,3 +144,43 @@ test("event question start and answer routes use private attempt state and authe
     assert.equal(routes.includes(forbidden), false, "event answer route must not accept " + forbidden);
   }
 });
+
+test("event activation is Owner-only and settlement is Worker-controlled and one-time", () => {
+  assert.ok(source.includes("async function applyGemEventActivation("));
+  assert.ok(source.includes("async function applyGemEventSettlement("));
+  assert.ok(source.includes("buildGemEventActivation("));
+  assert.ok(source.includes("buildGemEventSettlement("));
+  assert.ok(source.includes("gemEventPrizeOperations/"));
+  assert.ok(source.includes("EVENT_PRIZE_ALREADY_PAID"));
+  assert.ok(source.includes("collectionId: 'leaderboard'"));
+  assert.ok(source.includes("fieldPath: 'rankKey'"));
+  assert.ok(source.includes("'/events/activate'"));
+  assert.ok(source.includes("'/events/settle'"));
+  assert.ok(source.includes("applyGemEventActivation(identity.uid, eventId, accessToken)"));
+  assert.ok(source.includes("applyGemEventSettlement(eventId, accessToken)"));
+
+  const activationStart = source.indexOf("async function applyGemEventActivation(");
+  const activationEnd = source.indexOf("\nasync function applyGemEventSettlement", activationStart);
+  assert.ok(activationStart >= 0 && activationEnd > activationStart);
+  const activation = source.slice(activationStart, activationEnd);
+  assert.ok(activation.includes("hasActiveOwnerSession(uid, accessToken)"));
+  assert.ok(activation.includes("buildGemEventActivation("));
+  assert.ok(activation.includes("currentDocument: { exists: true }"));
+
+  const settlementStart = source.indexOf("async function applyGemEventSettlement(");
+  const settlementEnd = source.indexOf("\nasync function startGemEventQuestion", settlementStart);
+  assert.ok(settlementStart >= 0 && settlementEnd > settlementStart);
+  const settlement = source.slice(settlementStart, settlementEnd);
+  assert.ok(settlement.includes("if (event.status === 'settled')"));
+  assert.ok(settlement.includes("buildGemEventSettlement("));
+  assert.ok(settlement.includes("gemEventPrizeOperations/"));
+  assert.ok(settlement.includes("currentDocument: { exists: false }"));
+  assert.ok(settlement.includes("updateMask: { fieldPaths: Object.keys(eventUpdates) }"));
+
+  const routesStart = source.indexOf("if (url.pathname === '/events/activate' || url.pathname === '/events/settle')");
+  const routesEnd = source.indexOf("if (url.pathname === '/events/next' || url.pathname === '/events/answer')", routesStart);
+  assert.ok(routesStart >= 0 && routesEnd > routesStart);
+  const routes = source.slice(routesStart, routesEnd);
+  assert.ok(routes.includes("applyGemEventActivation(identity.uid, eventId, accessToken)"));
+  assert.ok(routes.includes("applyGemEventSettlement(eventId, accessToken)"));
+});
