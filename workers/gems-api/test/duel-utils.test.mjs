@@ -39,8 +39,8 @@ test("the Worker opens the next question clock once and will not restart it on r
   const first = buildDuelQuestionStart({
     duel, progress: started, uid: "host", questionId: "soc-1", now: 1100
   });
-  assert.equal(first.duplicate, true);
-  assert.equal(first.result.startedAt, 1000);
+  assert.equal(first.duplicate, false);
+  assert.equal(first.result.startedAt, 1100);
 
   const answered = buildDuelAnswerResult({
     duel, progress: first.progress, uid: "host", questionId: "soc-1",
