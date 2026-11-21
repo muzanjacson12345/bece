@@ -131,3 +131,10 @@ showSection("GEM EVENT RULES AND PLACEHOLDERS", "gemEventOperations", 800, 2600)
 showSection("OWNER ASK MODAL FIELDS", "async function ask(", 300, 6500);
 showSection("OWNER REWARD RATE ACTION", "async function setRewardRates()", 400, 4500);
 showSection("OWNER CONFIGURATION CONSTANTS", "const OWNER_MS", 300, 1800);
+
+console.log("\n=== ASK DIALOG IMPLEMENTATION MATCHES ===");
+for (const needle of ["async function ask", "function ask(", "const ask =", "GEMS_API_URL =", "bece-gems-api"]) {
+  const at = source.indexOf(needle);
+  console.log("\n" + needle + ": " + at);
+  if (at >= 0) console.log(source.slice(Math.max(0, at - 300), Math.min(source.length, at + 4200)).replace(/\\s+/g, " ").trim());
+}
