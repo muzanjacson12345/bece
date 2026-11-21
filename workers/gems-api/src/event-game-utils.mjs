@@ -1,5 +1,5 @@
 import { isKnownQuestionId, isCorrectAnswer } from "./question-keys.mjs";
-import { validateGemEventConfig } from "./event-utils.mjs";
+import { EVENT_FINISH_GRACE_MS, validateEventPrizeGems, validateGemEventConfig } from "./event-utils.mjs";
 
 const MAX_QUESTIONS = 50;
 
@@ -12,9 +12,11 @@ function safeCount(value, max = Number.MAX_SAFE_INTEGER) {
 }
 
 function validatePaidAttemptEvent(event, now) {
-  // Event windows stop new entries/retries; an already-paid attempt must be
-  // allowed to finish after the event closes.
-  return validateGemEventConfig({ ...event, opensAt: null, closesAt: null }, now);
+  // Event windows stop new entries/retries; paid attempts get a 24-hour finish grace.
+  validateGemEventConfig({ ...event, opensAt: null, closesAt: null }, now);
+  if (Number.isSafeInteger(event.closesAt) && now >= event.closesAt + EVENT_FINISH_GRACE_MS) {
+    fail("EVENT_ATTEMPT_EXPIRED");
+  }
 }
 
 export function validateEventQuestionIds(questionIds) {
@@ -114,12 +116,30 @@ export function buildGemEventAnswerResult({
   return { duplicate: false, attempt: nextAttempt, result: response };
 }
 
+function eventRankKey({ correctCount, totalQuestions, elapsedMs, completedAt, uid }) {
+  const pad = (value, width) => String(value).padStart(width, "0");
+  return [
+    pad(totalQuestions - correctCount, 2),
+    pad(elapsedMs, 16),
+    pad(completedAt, 16),
+    String(uid)
+  ].join("|");
+}
+
+function compareEventRanks(a, b) {
+  return (b.correctCount - a.correctCount)
+    || (a.elapsedMs - b.elapsedMs)
+    || ((a.completedAt || Number.MAX_SAFE_INTEGER) - (b.completedAt || Number.MAX_SAFE_INTEGER))
+    || String(a.uid).localeCompare(String(b.uid));
+}
+
 export function buildGemEventLeaderboardEntry({ attempt, previous, uid, displayName, now = Date.now() }) {
   if (!attempt || attempt.uid !== uid || attempt.status !== "completed") fail("EVENT_ATTEMPT_NOT_FINISHED");
   const correctCount = safeCount(attempt.correctCount, MAX_QUESTIONS);
   const totalQuestions = safeCount(attempt.questionIndex, MAX_QUESTIONS);
   const elapsedMs = safeCount(attempt.totalMs);
-  if (totalQuestions < 3 || correctCount > totalQuestions) fail("INVALID_EVENT_ATTEMPT");
+  const completedAt = Number.isSafeInteger(attempt.completedAt) ? attempt.completedAt : now;
+  if (totalQuestions < 3 || correctCount > totalQuestions || completedAt < 0) fail("INVALID_EVENT_ATTEMPT");
   if (!Number.isSafeInteger(now) || now < 0) fail("INVALID_EVENT_TIME");
   const candidate = {
     uid,
@@ -128,8 +148,10 @@ export function buildGemEventLeaderboardEntry({ attempt, previous, uid, displayN
     correctCount,
     totalQuestions,
     elapsedMs,
+    completedAt,
     attemptId: attempt.attemptId || "",
-    updatedAt: now
+    updatedAt: now,
+    rankKey: eventRankKey({ correctCount, totalQuestions, elapsedMs, completedAt, uid })
   };
   const prior = previous && previous.uid === uid
     && Number.isSafeInteger(previous.correctCount)
@@ -138,9 +160,66 @@ export function buildGemEventLeaderboardEntry({ attempt, previous, uid, displayN
     ? previous : null;
   if (prior && (
     prior.correctCount > candidate.correctCount
-    || (prior.correctCount === candidate.correctCount && prior.elapsedMs <= candidate.elapsedMs)
+    || (prior.correctCount === candidate.correctCount && prior.elapsedMs < candidate.elapsedMs)
+    || (prior.correctCount === candidate.correctCount && prior.elapsedMs === candidate.elapsedMs
+      && Number(prior.completedAt || Number.MAX_SAFE_INTEGER) <= candidate.completedAt)
   )) {
     return { changed: false, entry: prior };
   }
   return { changed: true, entry: candidate };
+}
+
+const MAX_GEM_BALANCE = 1_000_000_000;
+
+export function buildGemEventSettlement({ event, leaderboardEntries, playerByUid, now = Date.now() }) {
+  if (!event || event.status !== "active") fail("EVENT_NOT_ACTIVE");
+  if (!Number.isSafeInteger(now) || now < 0) fail("INVALID_EVENT_TIME");
+  if (!Number.isSafeInteger(event.closesAt)) fail("EVENT_CLOSE_REQUIRED");
+  if (now < event.closesAt + EVENT_FINISH_GRACE_MS) fail("EVENT_SETTLEMENT_NOT_READY");
+  const prizes = validateEventPrizeGems(event.prizeGems);
+  const entries = Array.isArray(leaderboardEntries) ? leaderboardEntries.filter(entry =>
+    entry && typeof entry.uid === "string" && entry.uid
+      && Number.isSafeInteger(entry.correctCount) && entry.correctCount >= 0
+      && Number.isSafeInteger(entry.totalQuestions) && entry.totalQuestions === event.questionCount
+      && Number.isSafeInteger(entry.elapsedMs) && entry.elapsedMs >= 0
+      && entry.correctCount <= entry.totalQuestions
+      && Number.isSafeInteger(entry.completedAt) && entry.completedAt >= 0
+  ).sort(compareEventRanks) : [];
+  const prizeByPlace = [prizes.first, prizes.second, prizes.third];
+  const winners = entries.slice(0, 3).map((entry, index) => ({
+    rank: index + 1,
+    uid: entry.uid,
+    displayName: typeof entry.displayName === "string" ? entry.displayName.slice(0, 60) : "Student",
+    correctCount: entry.correctCount,
+    totalQuestions: entry.totalQuestions,
+    elapsedMs: entry.elapsedMs,
+    completedAt: entry.completedAt,
+    prizeGems: prizeByPlace[index]
+  }));
+  const payouts = [];
+  let totalGemsAwarded = 0;
+  for (const winner of winners) {
+    if (winner.prizeGems === 0) continue;
+    const player = playerByUid && playerByUid[winner.uid];
+    if (!player) fail("PLAYER_PROFILE_NOT_READY");
+    const before = player.gems === undefined ? 0 : player.gems;
+    if (!Number.isSafeInteger(before) || before < 0 || before > MAX_GEM_BALANCE) fail("INVALID_GEM_BALANCE");
+    const balance = before + winner.prizeGems;
+    if (!Number.isSafeInteger(balance) || balance > MAX_GEM_BALANCE) fail("PLAYER_BALANCE_LIMIT");
+    payouts.push({
+      uid: winner.uid,
+      rank: winner.rank,
+      amount: winner.prizeGems,
+      balance
+    });
+    totalGemsAwarded += winner.prizeGems;
+  }
+  return {
+    status: "settled",
+    settledAt: now,
+    totalGemsAwarded,
+    winners,
+    payouts,
+    uncompletedAttempts: safeCount(event.openAttempts)
+  };
 }
