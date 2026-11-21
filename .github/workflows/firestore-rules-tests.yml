@@ -78,7 +78,10 @@ jobs:
             severity: item.severity,
             direct: item.isDirect,
             range: item.range,
-            fixAvailable: item.fixAvailable
+            fixAvailable: item.fixAvailable,
+            via: (item.via || []).map(v => typeof v === 'string' ? v : ({
+              name: v.name, title: v.title, url: v.url, range: v.range, cwe: v.cwe
+            }))
           }));
           console.log('Firestore test dependency audit:', JSON.stringify(report.metadata?.vulnerabilities || {}));
           for (const row of rows) console.log(JSON.stringify(row));
