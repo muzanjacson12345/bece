@@ -292,6 +292,12 @@ test("event participants can read their own entries but cannot write entries or 
     "gemEventAnswerOperations/alice_answer-1": {
       uid: "alice", eventId: "EVENT1", attemptId: "ATTEMPT1", questionId: "soc-1"
     },
+    "gemEventPrizeOperations/EVENT1_alice": {
+      eventId: "EVENT1", uid: "alice", rank: 1, amount: 100
+    },
+    "gemEvents/SETTLED1": {
+      status: "settled", settledAt: Date.now(), winners: [{ uid: "alice", rank: 1, prizeGems: 100 }]
+    },
     "gemEvents/EVENT1/leaderboard/alice": {
       uid: "alice", displayName: "Alice", correctCount: 2, totalQuestions: 3, elapsedMs: 5000
     }
@@ -300,6 +306,7 @@ test("event participants can read their own entries but cannot write entries or 
   const bob = testEnv.authenticatedContext("bob").firestore();
 
   await assertSucceeds(getDoc(doc(alice, "gemEvents/EVENT1")));
+  await assertSucceeds(getDoc(doc(alice, "gemEvents/SETTLED1")));
   await assertFails(updateDoc(doc(alice, "gemEvents/EVENT1"), { entryCostCoins: 1 }));
   await assertFails(setDoc(doc(alice, "gemEvents/FAKE"), {
     status: "active", entryCostCoins: 1, maxEntriesPerUser: 99
@@ -314,6 +321,9 @@ test("event participants can read their own entries but cannot write entries or 
   await assertFails(setDoc(doc(alice, "gemEventOperations/alice_fake"), { uid: "alice" }));
   await assertFails(getDoc(doc(alice, "gemEventAnswerOperations/alice_answer-1")));
   await assertFails(setDoc(doc(alice, "gemEventAnswerOperations/alice_fake"), { uid: "alice" }));
+  await assertFails(getDoc(doc(alice, "gemEventPrizeOperations/EVENT1_alice")));
+  await assertFails(setDoc(doc(alice, "gemEventPrizeOperations/EVENT1_fake"), { uid: "alice", amount: 999999 }));
+  await assertFails(setDoc(doc(alice, "gemEvents/EVENT1/leaderboard/alice"), { uid: "alice", correctCount: 99 }));
   await assertFails(updateDoc(doc(alice, "gemEvents/EVENT1/participants/alice"), { entriesUsed: 99 }));
   await assertFails(setDoc(doc(alice, "gemEvents/EVENT1/participants/alice/attempts/ATTEMPT2"), {
     uid: "alice", eventId: "EVENT1", entryNo: 1, attemptNo: 2, status: "ready"
