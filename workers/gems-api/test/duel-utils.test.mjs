@@ -59,6 +59,18 @@ test("the Worker opens the next question clock once and will not restart it on r
   assert.equal(retry.result.startedAt, 3500);
 });
 
+test("a settled Duel cannot start another question or accept another answer", () => {
+  const settledDuel = { ...duel, state: "finished", settled: true };
+  const started = createDuelProgress("host", "ROOM1", 1000);
+  assert.throws(() => buildDuelQuestionStart({
+    duel: settledDuel, progress: started, uid: "host", questionId: "soc-1", now: 1500
+  }), /DUEL_NOT_PLAYING/);
+  assert.throws(() => buildDuelAnswerResult({
+    duel: settledDuel, progress: started, uid: "host", questionId: "soc-1",
+    answerKey: "B", operationId: "11111111-1111-4111-8111-111111111111", now: 1500
+  }), /DUEL_NOT_PLAYING/);
+});
+
 test("wrong and timed-out answers cannot increase the correct score", () => {
   const started = createDuelProgress("host", "ROOM1", 1000);
   const wrong = buildDuelAnswerResult({
