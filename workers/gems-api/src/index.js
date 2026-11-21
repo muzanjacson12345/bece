@@ -1203,13 +1203,18 @@ async function applyGemEventEntry(uid, eventId, operationId, accessToken) {
       createdAt: Date.now(), result
     };
     const currentEntryCount = event.entryCount === undefined ? 0 : Number(event.entryCount);
-    if (!Number.isSafeInteger(currentEntryCount) || currentEntryCount < 0 || currentEntryCount >= MAX_BALANCE) {
+    const currentOpenAttempts = event.openAttempts === undefined ? 0 : Number(event.openAttempts);
+    if (!Number.isSafeInteger(currentEntryCount) || currentEntryCount < 0 || currentEntryCount >= MAX_BALANCE
+        || !Number.isSafeInteger(currentOpenAttempts) || currentOpenAttempts < 0 || currentOpenAttempts >= MAX_BALANCE) {
       throw new Error('INVALID_EVENT_CONFIG');
     }
     const writes = [
       {
-        update: { name: base + eventPath, fields: encodeFirestoreFields({ entryCount: currentEntryCount + 1 }) },
-        updateMask: { fieldPaths: ['entryCount'] },
+        update: { name: base + eventPath, fields: encodeFirestoreFields({
+          entryCount: currentEntryCount + 1,
+          openAttempts: currentOpenAttempts + 1
+        }) },
+        updateMask: { fieldPaths: ['entryCount', 'openAttempts'] },
         currentDocument: { exists: true }
       },
       {
@@ -1308,7 +1313,16 @@ async function applyGemEventRetry(uid, eventId, currentAttemptId, operationId, a
       attemptId: nextAttemptId,
       createdAt: Date.now(), result
     };
+    const currentOpenAttempts = event.openAttempts === undefined ? 0 : Number(event.openAttempts);
+    if (!Number.isSafeInteger(currentOpenAttempts) || currentOpenAttempts < 0 || currentOpenAttempts >= MAX_BALANCE) {
+      throw new Error('INVALID_EVENT_CONFIG');
+    }
     const writes = [
+      {
+        update: { name: base + eventPath, fields: encodeFirestoreFields({ openAttempts: currentOpenAttempts + 1 }) },
+        updateMask: { fieldPaths: ['openAttempts'] },
+        currentDocument: { exists: true }
+      },
       {
         update: { name: base + playerPath, fields: encodeFirestoreFields({ coins: outcome.coins }) },
         updateMask: { fieldPaths: ['coins'] },
@@ -1463,6 +1477,15 @@ async function submitGemEventAnswer(uid, eventId, attemptId, questionId, answerK
     ];
     let leaderboardUpdated = false;
     if (outcome.result.done) {
+      const currentOpenAttempts = event.openAttempts === undefined ? 0 : Number(event.openAttempts);
+      if (!Number.isSafeInteger(currentOpenAttempts) || currentOpenAttempts < 1) {
+        throw new Error('INVALID_EVENT_CONFIG');
+      }
+      writes.push({
+        update: { name: base + eventPath, fields: encodeFirestoreFields({ openAttempts: currentOpenAttempts - 1 }) },
+        updateMask: { fieldPaths: ['openAttempts'] },
+        currentDocument: { exists: true }
+      });
       const player = decodeFirestoreFields(playerDoc.fields || {});
       const prior = decodeFirestoreFields(leaderboardDoc && leaderboardDoc.fields);
       const board = buildGemEventLeaderboardEntry({
