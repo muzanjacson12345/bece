@@ -50,3 +50,10 @@ showSection("DUEL REWARD FLOW", "D.coinParts = parts", 2800, 1800);
 showSection("SECOND-CHANCE CONSUMPTION", "Use Second Chance", 900, 1500);
 showSection("OWNER COIN GIFT FLOW", "Gave " + "${n} coins to", 2600, 1200);
 showSection("OWNER EXP AWARD FLOW", "Awarded ' + n + ' EXP", 2600, 1200);
+
+
+showSection("DUEL ANSWER HANDLER", "function answer(", 4200, 4200);
+showSection("DUEL QUESTION / STEP HANDLER", "function step(", 4200, 4200);
+showSection("DUEL START / CREATE FLOW", "function create(", 2600, 3000);
+showSection("DUEL SUBMIT RESULT FLOW", "function push()", 2200, 2200);
+showSection("DUEL REWARD RECORD FUNCTION", "function record(out, forceCoins)", 1800, 3600);
