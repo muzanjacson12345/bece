@@ -12611,11 +12611,14 @@ const Adm = (() => {
   const retryLimit = field("Maximum retries per entry", "number", "1–20");
   const opensAt = field("Opens at (optional)", "datetime-local", "");
   const closesAt = field("Closes at (optional)", "datetime-local", "");
+  const firstPrize = field("First-place prize (Gems)", "number", "Required · e.g. 100");
+  const secondPrize = field("Second-place prize (Gems)", "number", "0 disables this prize");
+  const thirdPrize = field("Third-place prize (Gems)", "number", "0 disables this prize");
   const retryEnabled = document.createElement("select"); retryEnabled.className = "adm-sel"; retryEnabled.setAttribute("aria-label", "Paid retries");
   retryEnabled.append(new Option("No paid retries", "no"), new Option("Paid retries enabled", "yes"));
   const retryField = elx("label", "adm-info", "Retry policy", retryEnabled);
   const description = document.createElement("textarea"); description.className = "adm-search"; description.rows = 2; description.maxLength = 500; description.placeholder = "Short description (optional)"; description.setAttribute("aria-label", "Event description");
-  card.append(elx("div", "adm-two", eventId.label, title.label, questionSubjectField, questionCount.label, entryFee.label, entryLimit.label, retryField, retryFee.label, retryLimit.label, opensAt.label, closesAt.label), elx("label", "adm-info", "Description", description));
+  card.append(elx("div", "adm-two", eventId.label, title.label, questionSubjectField, questionCount.label, entryFee.label, entryLimit.label, retryField, retryFee.label, retryLimit.label, opensAt.label, closesAt.label, firstPrize.label, secondPrize.label, thirdPrize.label), elx("label", "adm-info", "Description", description));
   card.append(elx("p", "adm-info", "Technical ceilings: 100 entries per player and 20 retries per entry. Settings lock after the first paid entry. New drafts remain inactive."));
   const save = btn("Save event draft", "btn-primary btn-sm", async () => {
     if (!S.isOwner) return App.toast("Owner access required.", "warn");
@@ -12640,6 +12643,10 @@ const Adm = (() => {
     const closeTime = closesAt.input.value ? new Date(closesAt.input.value).getTime() : null;
     if ((openTime !== null && (!Number.isSafeInteger(openTime) || openTime < 0)) || (closeTime !== null && (!Number.isSafeInteger(closeTime) || closeTime < 0))) return App.toast("Check the event opening and closing times.", "warn");
     if (openTime !== null && closeTime !== null && openTime >= closeTime) return App.toast("The closing time must be later than the opening time.", "warn");
+    const prizeFirst = Number(firstPrize.input.value), prizeSecond = Number(secondPrize.input.value || 0), prizeThird = Number(thirdPrize.input.value || 0);
+    if (!Number.isSafeInteger(prizeFirst) || prizeFirst < 1 || prizeFirst > 1000000) return App.toast("First-place prize must be 1–1,000,000 Gems.", "warn");
+    if (!Number.isSafeInteger(prizeSecond) || prizeSecond < 0 || prizeSecond > 1000000 || !Number.isSafeInteger(prizeThird) || prizeThird < 0 || prizeThird > 1000000) return App.toast("Second- and third-place prizes must be whole Gems or zero.", "warn");
+    if (prizeFirst + prizeSecond + prizeThird > 1000000) return App.toast("The total event Gem prize pool cannot exceed 1,000,000 Gems.", "warn");
     const user = firebase.auth().currentUser;
     if (!user || user.uid !== S.uid) return App.toast("Please reconnect your sign-in.", "warn");
     if (!GEMS_API_URL) return App.toast("The secure event service is not configured.", "warn");
@@ -12651,7 +12658,7 @@ const Adm = (() => {
       const response = await fetch(baseUrl + "/events/configure", {
         method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
         credentials: "omit", cache: "no-store",
-        body: JSON.stringify({ eventId: id, title: name, description: description.value.trim(), questionIds, entryCostCoins: cost, maxEntriesPerUser: limit, retryEnabled: retry, retryCostCoins: retryCost, maxRetriesPerEntry: retries, opensAt: openTime, closesAt: closeTime })
+        body: JSON.stringify({ eventId: id, title: name, description: description.value.trim(), questionIds, entryCostCoins: cost, maxEntriesPerUser: limit, retryEnabled: retry, retryCostCoins: retryCost, maxRetriesPerEntry: retries, prizeGems: { first: prizeFirst, second: prizeSecond, third: prizeThird }, opensAt: openTime, closesAt: closeTime })
       });
       let data; try { data = await response.json(); } catch { throw new Error("The event service returned an unreadable response."); }
       if (!response.ok || !data || !data.ok || !data.result || data.result.status !== "draft") {
@@ -12663,7 +12670,32 @@ const Adm = (() => {
     } catch (error) { App.toast("Could not save event draft. " + ((error && error.message) || "Please try again."), "warn"); }
     finally { save.disabled = false; save.textContent = "Save event draft"; }
   });
-  card.append(elx("div", "adm-btns", save));
+  const activate = btn("Activate saved draft", "btn-secondary btn-sm", async () => {
+    if (!S.isOwner) return App.toast("Owner access required.", "warn");
+    if (!S.db || !S.uid) return App.toast("Please reconnect your sign-in.", "warn");
+    const idValue = eventId.input.value.trim();
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(idValue)) return App.toast("Enter the saved event ID first.", "warn");
+    if (!window.confirm("Activate " + idValue + "? Players will be able to enter when its opening time arrives. Its questions, fees and prize amounts will be locked. Gem prizes are paid after the event closes and the 24-hour finish window ends.")) return;
+    const user = firebase.auth().currentUser;
+    if (!user || user.uid !== S.uid) return App.toast("Please reconnect your sign-in.", "warn");
+    if (!GEMS_API_URL) return App.toast("The secure event service is not configured.", "warn");
+    activate.disabled = true; activate.textContent = "Activating…";
+    try {
+      const token = await user.getIdToken(); let baseUrl = GEMS_API_URL;
+      if (baseUrl.endsWith("/gems")) baseUrl = baseUrl.slice(0, -5);
+      while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
+      const response = await fetch(baseUrl + "/events/activate", {
+        method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+        credentials: "omit", cache: "no-store", body: JSON.stringify({ eventId: idValue })
+      });
+      let data; try { data = await response.json(); } catch { throw new Error("The event service returned an unreadable response."); }
+      if (!response.ok || !data || !data.ok || !data.result || data.result.status !== "active") throw new Error(data && data.error ? data.error : "The event could not be activated.");
+      App.toast("Event activated. Entry opens according to its schedule.");
+      if (typeof logAct === "function") logAct("event-activate", "", idValue);
+    } catch (error) { App.toast("Could not activate event. " + ((error && error.message) || "Please try again."), "warn"); }
+    finally { activate.disabled = false; activate.textContent = "Activate saved draft"; }
+  });
+  card.append(elx("div", "adm-btns", save, activate));
   return card;
 }
 function ownerTab() {
