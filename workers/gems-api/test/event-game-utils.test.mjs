@@ -1,11 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  buildGemEventSettlement,
   buildGemEventAnswerResult,
   buildGemEventLeaderboardEntry,
   buildGemEventQuestionStart,
   validateEventQuestionIds
 } from "../src/event-game-utils.mjs";
+import { EVENT_FINISH_GRACE_MS } from "../src/event-utils.mjs";
 
 const event = {
   status: "active",
@@ -16,7 +18,10 @@ const event = {
   maxRetriesPerEntry: 2,
   opensAt: null,
   closesAt: null,
-  questionIds: ["soc-1", "soc-2", "soc-3"]
+  questionIds: ["soc-1", "soc-2", "soc-3"],
+  questionCount: 3,
+  prizeGems: { first: 100, second: 50, third: 25 },
+  closesAt: 100_000
 };
 const attempt = {
   uid: "alice",
@@ -98,6 +103,14 @@ test("a paid event attempt can finish after the event closes", () => {
   });
   assert.equal(answered.result.correct, true);
   assert.equal(answered.attempt.questionIndex, 1);
+});
+
+test("paid event attempts expire exactly after the 24-hour post-close finish window", () => {
+  const closedEvent = { ...event, closesAt: 1000 };
+  assert.throws(() => buildGemEventQuestionStart({
+    event: closedEvent, attempt, uid: "alice", eventId: "event-1",
+    attemptId: "attempt-1", now: 1000 + EVENT_FINISH_GRACE_MS
+  }), /EVENT_ATTEMPT_EXPIRED/);
 });
 
 test("event answers are verified against the server answer key and update score", () => {
@@ -202,3 +215,53 @@ test("leaderboard keeps each player's best score and uses faster time to break t
   assert.equal(tieFaster.changed, true);
   assert.equal(tieFaster.entry.elapsedMs, 7000);
 });
+
+test("event settlement ranks the top three and calculates one-time Gem payouts", () => {
+  const entries = [
+    { uid: "charlie", displayName: "Charlie", correctCount: 2, totalQuestions: 3, elapsedMs: 500, completedAt: 3000 },
+    { uid: "alice", displayName: "Alice", correctCount: 3, totalQuestions: 3, elapsedMs: 1000, completedAt: 2500 },
+    { uid: "bob", displayName: "Bob", correctCount: 3, totalQuestions: 3, elapsedMs: 800, completedAt: 4000 },
+    { uid: "dana", displayName: "Dana", correctCount: 1, totalQuestions: 3, elapsedMs: 100, completedAt: 2000 }
+  ];
+  const result = buildGemEventSettlement({
+    event: { ...event, openAttempts: 1 },
+    leaderboardEntries: entries,
+    playerByUid: {
+      bob: { gems: 10 },
+      alice: { gems: 5 },
+      charlie: { gems: 0 }
+    },
+    now: event.closesAt + EVENT_FINISH_GRACE_MS
+  });
+  assert.equal(result.status, "settled");
+  assert.deepEqual(result.winners.map(w => w.uid), ["bob", "alice", "charlie"]);
+  assert.deepEqual(result.winners.map(w => w.prizeGems), [100, 50, 25]);
+  assert.deepEqual(result.payouts.map(p => p.balance), [110, 55, 25]);
+  assert.equal(result.totalGemsAwarded, 175);
+  assert.equal(result.uncompletedAttempts, 1);
+});
+
+test("event settlement waits until the close-time finish grace has elapsed", () => {
+  assert.throws(() => buildGemEventSettlement({
+    event,
+    leaderboardEntries: [],
+    playerByUid: {},
+    now: event.closesAt + EVENT_FINISH_GRACE_MS - 1
+  }), /EVENT_SETTLEMENT_NOT_READY/);
+});
+
+test("event settlement handles fewer than three competitors and no Gem payouts beyond entrants", () => {
+  const one = buildGemEventSettlement({
+    event,
+    leaderboardEntries: [{
+      uid: "solo", displayName: "Solo", correctCount: 3,
+      totalQuestions: 3, elapsedMs: 1200, completedAt: 2000
+    }],
+    playerByUid: { solo: { gems: 8 } },
+    now: event.closesAt + EVENT_FINISH_GRACE_MS
+  });
+  assert.equal(one.winners.length, 1);
+  assert.equal(one.payouts.length, 1);
+  assert.equal(one.payouts[0].balance, 108);
+});
+
