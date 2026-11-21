@@ -99,7 +99,6 @@
         db.collection("gemEvents").where("status", "==", "active").limit(100).get(),
         db.collection("players").doc(user.uid).get().catch(() => null)
       ]);
-      const now = Date.now();
       const events = eventSnapshot.docs
         // Keep closed events visible so players can finish paid attempts and
         // inspect final leaderboards. The Worker blocks new paid entries/retries.
