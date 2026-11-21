@@ -12590,7 +12590,66 @@ const Adm = (() => {
     );
   }
 
-  function ownerTab() {
+  function ownerEventDraftCard() {
+  const card = elx("div", "adm-card");
+  card.append(elx("h4", "", "Gem event drafts"), elx("p", "adm-info", "Set this event entry fee, entry allowance and optional paid retry rules. Saving creates or updates a draft only; it cannot activate the event or charge players."));
+  const field = (labelText, type, placeholder, maxLength) => {
+    const input = document.createElement("input"); input.type = type; input.className = "adm-search"; input.placeholder = placeholder || ""; input.setAttribute("aria-label", labelText);
+    if (maxLength) input.maxLength = maxLength;
+    if (type === "number") { input.min = "0"; input.step = "1"; input.inputMode = "numeric"; }
+    return { label: elx("label", "adm-info", labelText, input), input };
+  };
+  const eventId = field("Event ID (letters, numbers, - and _)", "text", "e.g. maths-weekend", 80);
+  const title = field("Event name", "text", "Event title", 80);
+  const entryFee = field("Coins per entry", "number", "Whole Coin amount");
+  const entryLimit = field("Maximum paid entries per player", "number", "1–100");
+  const retryFee = field("Coins per retry", "number", "Only used when retries are enabled");
+  const retryLimit = field("Maximum retries per entry", "number", "1–20");
+  const retryEnabled = document.createElement("select"); retryEnabled.className = "adm-sel"; retryEnabled.setAttribute("aria-label", "Paid retries");
+  retryEnabled.append(new Option("No paid retries", "no"), new Option("Paid retries enabled", "yes"));
+  const retryField = elx("label", "adm-info", "Retry policy", retryEnabled);
+  const description = document.createElement("textarea"); description.className = "adm-search"; description.rows = 2; description.maxLength = 500; description.placeholder = "Short description (optional)"; description.setAttribute("aria-label", "Event description");
+  card.append(elx("div", "adm-two", eventId.label, title.label, entryFee.label, entryLimit.label, retryField, retryFee.label, retryLimit.label), elx("label", "adm-info", "Description", description));
+  card.append(elx("p", "adm-info", "Technical ceilings: 100 entries per player and 20 retries per entry. Settings lock after the first paid entry. New drafts remain inactive."));
+  const save = btn("Save event draft", "btn-primary btn-sm", async () => {
+    if (!S.isOwner) return App.toast("Owner access required.", "warn");
+    if (!S.db || !S.uid) return App.toast("Please reconnect your sign-in.", "warn");
+    const id = eventId.input.value.trim(), name = title.input.value.trim();
+    const cost = Number(entryFee.input.value), limit = Number(entryLimit.input.value), retry = retryEnabled.value === "yes";
+    const retryCost = retry ? Number(retryFee.input.value) : 0, retries = retry ? Number(retryLimit.input.value) : 0;
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(id)) return App.toast("Enter a valid event ID using letters, numbers, - or _.", "warn");
+    if (name.length < 3 || name.length > 80) return App.toast("The event name must be 3–80 characters.", "warn");
+    if (!Number.isSafeInteger(cost) || cost < 1 || cost > 1000000) return App.toast("Entry cost must be 1–1,000,000 Coins.", "warn");
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) return App.toast("Entry allowance must be 1–100.", "warn");
+    if (retry && (!Number.isSafeInteger(retryCost) || retryCost < 1 || retryCost > 1000000)) return App.toast("Retry cost must be 1–1,000,000 Coins.", "warn");
+    if (retry && (!Number.isSafeInteger(retries) || retries < 1 || retries > 20)) return App.toast("Retry limit must be 1–20 per entry.", "warn");
+    const user = firebase.auth().currentUser;
+    if (!user || user.uid !== S.uid) return App.toast("Please reconnect your sign-in.", "warn");
+    if (!GEMS_API_URL) return App.toast("The secure event service is not configured.", "warn");
+    save.disabled = true; save.textContent = "Saving draft…";
+    try {
+      const token = await user.getIdToken(); let baseUrl = GEMS_API_URL;
+      if (baseUrl.endsWith("/gems")) baseUrl = baseUrl.slice(0, -5);
+      while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
+      const response = await fetch(baseUrl + "/events/configure", {
+        method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+        credentials: "omit", cache: "no-store",
+        body: JSON.stringify({ eventId: id, title: name, description: description.value.trim(), entryCostCoins: cost, maxEntriesPerUser: limit, retryEnabled: retry, retryCostCoins: retryCost, maxRetriesPerEntry: retries })
+      });
+      let data; try { data = await response.json(); } catch { throw new Error("The event service returned an unreadable response."); }
+      if (!response.ok || !data || !data.ok || !data.result || data.result.status !== "draft") {
+        if (response.status === 401) throw new Error("Please reconnect your sign-in.");
+        throw new Error(data && data.error ? data.error : "The event draft could not be saved.");
+      }
+      App.toast("Event draft saved. It stays inactive until its gameplay and prize rules are finished.");
+      if (typeof logAct === "function") logAct("event-draft-save", "", id + " · entry " + cost + " Coins · " + limit + " entries");
+    } catch (error) { App.toast("Could not save event draft. " + ((error && error.message) || "Please try again."), "warn"); }
+    finally { save.disabled = false; save.textContent = "Save event draft"; }
+  });
+  card.append(elx("div", "adm-btns", save));
+  return card;
+}
+function ownerTab() {
     // Keep the Owner console usable while Firestore snapshot data is warming up.
     if (!(S.badgeMap instanceof Map)) S.badgeMap = new Map();
     if (!(S.badgeRole instanceof Map)) S.badgeRole = new Map();
@@ -12619,7 +12678,7 @@ const Adm = (() => {
       part('Security', () => card('\u{1F510} Security', 'The admin PIN opens admin sessions. The 2 owner passwords open this console. Changing either one signs people out.', btn('Change admin PIN', 'btn-ghost btn-sm', changeAdminPin), btn('Change owner passwords', 'btn-ghost btn-sm', changeOwnerPw))),
       part('Bulk tools', () => card('\u{1F381} Bulk tools', 'Owner-only rewards and maintenance commands. Every action is recorded in the audit log.', btn('Gift coins\u2026', 'btn-primary btn-sm', giftAll), btn('Award EXP\u2026', 'btn-primary btn-sm', giftExpAll), btn('Reset weekly board\u2026', 'btn-ghost btn-sm adm-danger', weeklyReset), btn('Clear expired bans', 'btn-ghost btn-sm adm-danger', clearExpired))),
       part('Global practice economy', () => card('\u{1F4C8} Global practice economy', 'Set the EXP and coin multipliers earned by every player in new practice quizzes.', elx('p', 'adm-info', 'Current rates: ' + (Number(S.settings.expMultiplier) || 1) + '× EXP · ' + (Number(S.settings.coinMultiplier) || 1) + '× coins'), btn('Change reward rates…', 'btn-primary btn-sm', setRewardRates))),
-      part('Shop control', () => card('\u{1F6D2} Shop control', S.settings.shopPaused ? 'Purchases are currently paused for every player. Owned items can still be equipped.' : 'Purchases are open for everyone. You can temporarily pause new purchases without removing anyone’s items.', btn(S.settings.shopPaused ? 'Reopen shop purchases' : 'Pause shop purchases', S.settings.shopPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleShop))),
+      part('Gem event drafts', () => ownerEventDraftCard()), part('Shop control', () => card('\u{1F6D2} Shop control', S.settings.shopPaused ? 'Purchases are currently paused for every player. Owned items can still be equipped.' : 'Purchases are open for everyone. You can temporarily pause new purchases without removing anyone’s items.', btn(S.settings.shopPaused ? 'Reopen shop purchases' : 'Pause shop purchases', S.settings.shopPaused ? 'btn-primary btn-sm' : 'btn-ghost btn-sm adm-danger', toggleShop))),
       part('Owner exports', () => card('\u{1F4C1} Owner exports', 'Download full player records, owned and equipped items, bug reports, staff roster and audit history for private backup or repair.', btn('Export full player records (JSON)', 'btn-primary btn-sm', exportPlayersJson), btn('Export bug reports (CSV)', 'btn-ghost btn-sm', bugCsv), btn('Export staff roster (CSV)', 'btn-ghost btn-sm', exportRosterCsv), btn('Export audit log (CSV)', 'btn-ghost btn-sm', downloadAuditCsv))),
       part('Staff control', () => card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins…', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false)))));
   }
