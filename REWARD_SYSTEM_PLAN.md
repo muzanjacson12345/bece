@@ -83,6 +83,6 @@ The rest of the event feature is still unfinished: there is no event screen in t
 
 ### Publishing boundary
 
-This work is draft-only. Production Firestore rules, the GitHub Pages site and the live Gems Worker have not been updated by this draft implementation. At the last inspection, the live `bece-hub-gems-api` was still version 5 and did not contain the new Shop, power-up, Duel or permanent Gem-receipt endpoints.
+This work is draft-only. Production Firestore rules, the GitHub Pages site and the live Gems Worker have not been updated by this draft implementation. At the last inspection, the live `bece-hub-gems-api` was still version 5 and did not contain the new Shop, power-up, Duel, permanent Gem-receipt or event entry/retry endpoints.
 
 A production rollout must be coordinated: deploy and verify the matching trusted Worker first, then publish the compatible website and Firestore rules. Never publish only one part of that set.
