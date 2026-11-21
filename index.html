@@ -11015,7 +11015,7 @@ const Duel = (() => {
     const d = D.doc; if (!d) return;
     if (d.state === 'waiting') return lobby();
     if (!D.started) { if (!D.cd) countdown(); return; }
-    if (d.settled && D.me) { clearInterval(D.timer); D.me.done = true; return result((d.res || {})[S.uid]); }
+    if (d.settled && D.code) { clearInterval(D.timer); if (D.me) D.me.done = true; return result((d.res || {})[S.uid]); }
     if (D.me && D.me.done) return waitOrResult();
     paintScore();
   }
