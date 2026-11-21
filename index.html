@@ -11115,10 +11115,10 @@ const Duel = (() => {
             throw new Error(data && data.error ? data.error : 'The power-up could not be used.');
           }
           const result = data.result;
-          pendingPowerupOperationId = null;
           if (!Number.isSafeInteger(result.quantity) || result.quantity < 0 || result.itemId !== 'p50') {
             throw new Error('The power-up service returned an invalid result.');
           }
+          pendingPowerupOperationId = null;
           D.used++;
           S.doc = { ...S.doc, p50: result.quantity };
           choice.remove();
