@@ -74,6 +74,32 @@ test("event question start rejects the wrong participant, event and inactive eve
   }), /EVENT_NOT_ACTIVE/);
 });
 
+test("a paid event attempt can finish after the event closes", () => {
+  const closedEvent = { ...event, closesAt: 1500 };
+  const started = buildGemEventQuestionStart({
+    event: closedEvent,
+    attempt,
+    uid: "alice",
+    eventId: "event-1",
+    attemptId: "attempt-1",
+    now: 2000
+  });
+  assert.equal(started.result.questionId, "soc-1");
+  const answered = buildGemEventAnswerResult({
+    event: closedEvent,
+    attempt: started.attempt,
+    uid: "alice",
+    eventId: "event-1",
+    attemptId: "attempt-1",
+    questionId: "soc-1",
+    answerKey: "B",
+    operationId: op,
+    now: 2500
+  });
+  assert.equal(answered.result.correct, true);
+  assert.equal(answered.attempt.questionIndex, 1);
+});
+
 test("event answers are verified against the server answer key and update score", () => {
   const started = buildGemEventQuestionStart({
     event, attempt, uid: "alice", eventId: "event-1", attemptId: "attempt-1", now: 1000
