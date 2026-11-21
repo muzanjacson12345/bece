@@ -93,7 +93,7 @@ test("retry charges the configured event fee and creates a new attempt within th
     event: baseEvent,
     participant: first.participant,
     player: { coins: first.coins },
-    currentAttempt: first.attempt,
+    currentAttempt: { ...first.attempt, status: "completed", questionIndex: 3, correctCount: 2, totalMs: 9000 },
     uid: "alice",
     eventId: "event-a",
     currentAttemptId: "attempt-1",
@@ -117,14 +117,14 @@ test("retry policy is bounded per entry and rejects disabled or exhausted retrie
   });
   const retry1 = buildGemEventRetry({
     event: baseEvent, participant: first.participant, player: { coins: 88 },
-    currentAttempt: { ...first.attempt, retriesUsed: 1, attemptNo: 2 },
+    currentAttempt: { ...first.attempt, status: "completed", retriesUsed: 1, attemptNo: 2 },
     uid: "alice", eventId: "event-a", currentAttemptId: "attempt-2",
     nextAttemptId: "attempt-3", now: 3000
   });
   assert.equal(retry1.retriesUsed, 2);
   assert.throws(() => buildGemEventRetry({
     event: baseEvent, participant: retry1.participant, player: { coins: 76 },
-    currentAttempt: retry1.attempt,
+    currentAttempt: { ...retry1.attempt, status: "completed" },
     uid: "alice", eventId: "event-a", currentAttemptId: "attempt-3",
     nextAttemptId: "attempt-4", now: 4000
   }), /EVENT_RETRY_LIMIT_REACHED/);
@@ -132,7 +132,7 @@ test("retry policy is bounded per entry and rejects disabled or exhausted retrie
   const noRetryEvent = { ...baseEvent, retryEnabled: false, retryCostCoins: 0, maxRetriesPerEntry: 0 };
   assert.throws(() => buildGemEventRetry({
     event: noRetryEvent, participant: first.participant, player: { coins: 100 },
-    currentAttempt: first.attempt,
+    currentAttempt: { ...first.attempt, status: "completed" },
     uid: "alice", eventId: "event-a", currentAttemptId: "attempt-1",
     nextAttemptId: "attempt-2", now: 2000
   }), /EVENT_RETRY_DISABLED/);
@@ -145,7 +145,7 @@ test("retry validates participant, attempt ownership and available Coins", () =>
   });
   assert.throws(() => buildGemEventRetry({
     event: baseEvent, participant: first.participant, player: { coins: 100 },
-    currentAttempt: { ...first.attempt, uid: "bob" },
+    currentAttempt: { ...first.attempt, status: "completed", uid: "bob" },
     uid: "alice", eventId: "event-a", currentAttemptId: "attempt-1",
     nextAttemptId: "attempt-2", now: 2000
   }), /EVENT_ATTEMPT_NOT_FOUND/);
@@ -167,6 +167,7 @@ test("Owner event configuration is saved as a validated inactive draft", () => {
   const draft = buildGemEventDraftConfig({
     eventId: "maths-challenge",
     title: "Maths Challenge",
+    questionIds: ["soc-1", "soc-2", "soc-3"],
     description: "A timed maths event.",
     entryCostCoins: 40,
     maxEntriesPerUser: 3,
@@ -190,7 +191,7 @@ test("Owner event configuration is saved as a validated inactive draft", () => {
 
 test("event draft creation rejects unsafe names, fees, limits, times and Owner identity", () => {
   const valid = {
-    eventId: "event-1", title: "Event One", entryCostCoins: 20,
+    eventId: "event-1", title: "Event One", questionIds: ["soc-1", "soc-2", "soc-3"], entryCostCoins: 20,
     maxEntriesPerUser: 2, retryEnabled: false, ownerUid: "owner-1", now: 1000
   };
   for (const invalid of [
