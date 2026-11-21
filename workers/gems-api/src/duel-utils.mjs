@@ -188,6 +188,9 @@ export function buildDuelSecondChanceProgress({ duel, progress, uid, now = Date.
   if (!Number.isSafeInteger(now) || now < progress.startedAt) fail("INVALID_DUEL_TIME");
   return {
     ...progress,
+    // The first wrong pick breaks the current answer streak even when the
+    // player spends a Second Chance to retry this question.
+    streak: 0,
     secondChancesUsed: used + 1,
     secondChanceIndexes: [...indexes, index],
     lastAnsweredAt: now,
