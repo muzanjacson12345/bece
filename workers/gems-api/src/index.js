@@ -1,3 +1,5 @@
+import { isFirestoreBanActive } from "./ban-utils.mjs";
+
 const PROJECT_ID = 'bece-hub-d9ad5';
 const APP_ORIGIN = 'https://muzanjacson12345.github.io';
 const ISSUER = 'https://securetoken.google.com/' + PROJECT_ID;
@@ -228,7 +230,7 @@ function parseStringArray(field) {
 
 async function isUserBanned(uid, accessToken) {
   const doc = await getDocument('bans/' + encodeURIComponent(uid), accessToken);
-  return !!(doc && doc.fields && doc.fields.active && doc.fields.active.booleanValue === true);
+  return isFirestoreBanActive(doc);
 }
 
 async function userRole(uid, accessToken) {
