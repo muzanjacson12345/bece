@@ -233,10 +233,36 @@ async function isUserBanned(uid, accessToken) {
   return isFirestoreBanActive(doc);
 }
 
-async function userRole(uid, accessToken) {
-  const doc = await getDocument('users/' + encodeURIComponent(uid), accessToken);
-  return doc && doc.fields && doc.fields.role && typeof doc.fields.role.stringValue === 'string'
-    ? doc.fields.role.stringValue : null;
+async function hasActiveOwnerSession(uid, accessToken) {
+  // The app's actual staff model is staffRoster + ownerSessions + config/owner.
+  // It does not use users/{uid}.role for Owner authorization.
+  const [roster, session, config] = await Promise.all([
+    getDocument('staffRoster/' + encodeURIComponent(uid), accessToken),
+    getDocument('ownerSessions/' + encodeURIComponent(uid), accessToken),
+    getDocument('config/owner', accessToken)
+  ]);
+  if (!roster || !session || !config) return false;
+
+  const rosterFields = roster.fields || {};
+  const sessionFields = session.fields || {};
+  const configFields = config.fields || {};
+  if (!rosterFields.role || rosterFields.role.stringValue !== 'owner') return false;
+
+  const atValue = sessionFields.at && sessionFields.at.timestampValue;
+  const startedAt = typeof atValue === 'string' ? Date.parse(atValue) : NaN;
+  const now = Date.now();
+  if (!Number.isFinite(startedAt)
+      || startedAt > now + 60000
+      || startedAt + (30 * 60 * 1000) <= now) return false;
+
+  const sessionPw1 = sessionFields.pw1 && sessionFields.pw1.stringValue;
+  const sessionPw2 = sessionFields.pw2 && sessionFields.pw2.stringValue;
+  const configPw1 = configFields.pw1 && configFields.pw1.stringValue;
+  const configPw2 = configFields.pw2 && configFields.pw2.stringValue;
+  return typeof sessionPw1 === 'string'
+    && typeof sessionPw2 === 'string'
+    && sessionPw1 === configPw1
+    && sessionPw2 === configPw2;
 }
 
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
@@ -339,8 +365,8 @@ export default {
       const accessToken = await getFirestoreAccessToken(env);
       if (await isUserBanned(identity.uid, accessToken)) return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot use Gems while banned.' }, 403, origin);
       if (action === 'earn') {
-        const role = await userRole(identity.uid, accessToken);
-        if (role !== 'owner') return json({ ok: false, code: 'EARN_REQUIRES_OWNER', error: 'Gems can only be granted by the Owner until approved reward rules are added.' }, 403, origin);
+        const owner = await hasActiveOwnerSession(identity.uid, accessToken);
+        if (!owner) return json({ ok: false, code: 'EARN_REQUIRES_OWNER', error: 'Gems can only be granted by an authenticated Owner until approved reward rules are added.' }, 403, origin);
       }
       const outcome = await applyGemChange(identity.uid, action, amount, operationId, accessToken);
       return json({ ok: true, ...outcome }, 200, origin);
