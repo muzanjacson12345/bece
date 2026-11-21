@@ -78,6 +78,8 @@ jobs:
         run: node --check events.js
       - name: Check event-screen migration script syntax
         run: node --check .github/scripts/migrate-event-player-screen.cjs
+      - name: Check Owner event scheduling migration syntax
+        run: node --check .github/scripts/migrate-owner-event-schedule.cjs
       - name: Check inline application JavaScript syntax
         run: node .github/scripts/check-inline-scripts.cjs
       - name: Run economy client-write audit
