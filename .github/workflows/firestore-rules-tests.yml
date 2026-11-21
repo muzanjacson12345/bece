@@ -13,6 +13,7 @@ on:
       - ".github/scripts/migrate-powerup-use.cjs"
       - ".github/scripts/migrate-powerup-retry.cjs"
       - ".github/scripts/migrate-duel-rewards.cjs"
+      - ".github/scripts/migrate-owner-event-drafts.cjs"
       - ".github/scripts/check-inline-scripts.cjs"
       - "workers/gems-api/src/**"
       - "workers/gems-api/test/**"
@@ -45,6 +46,9 @@ jobs:
       - name: Migrate Duel answers and rewards to the trusted Worker
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: node .github/scripts/migrate-duel-rewards.cjs
+      - name: Add Owner event draft configuration card
+        if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
+        run: node .github/scripts/migrate-owner-event-drafts.cjs
       - name: Commit draft economy app migrations
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: |
