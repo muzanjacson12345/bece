@@ -37,6 +37,7 @@ All POST endpoints require a Firebase ID token in the `Authorization: Bearer <to
 | `POST /events/enter` | Charges the event's configured entry Coin fee, enforces the player's entry allowance, creates a private attempt and records a permanent receipt. |
 | `POST /events/retry` | Charges the event's configured retry Coin fee, enforces the per-entry retry cap, marks the previous attempt replaced and creates a new attempt. |
 | `POST /events/activate` | Owner-only activation of a valid saved draft. Requires a future closing time and a configured Gem prize pool; locks the event configuration. |
+| `POST /events/close` | Owner-only early close. Stops new entries and paid retries immediately while preserving the 24-hour finish window for already-paid attempts. |
 | `POST /events/settle` | Settles an event after its closing time and 24-hour finish grace, pays the top three once and stores the final result. |
 | `POST /events/next` | Starts or resumes the next question in a participant's paid attempt without resetting an existing server start time. |
 | `POST /events/answer` | Verifies the answer with the private question-key module, advances the attempt, and updates the player's best leaderboard score when complete. |
@@ -80,7 +81,7 @@ Each draft includes a configurable top-three Gem prize pool:
 - Second and third place can be set to 0 to disable those payouts.
 - The combined prize pool cannot exceed 1,000,000 Gems.
 - Ranking is by correct answers (highest first), then total answer time (fastest first), then earliest verified completion time. A final UID ordering makes exact ties deterministic.
-- The Owner activates a saved draft explicitly with `POST /events/activate`. Activation requires a future closing time and locks the question list, fees, schedule and prizes. Only an authenticated active Owner can activate.
+- The Owner activates a saved draft explicitly with `POST /events/activate`. Activation requires a future closing time and locks the question list, fees, schedule and prizes. Only an authenticated active Owner can activate. The Owner management card also lists saved drafts, active events and settled events, displays entry/open-attempt counts and the prize pool, and can close an active event early through `POST /events/close`.
 
 Players can view active and settled events, pay the configured Coin entry fee, resume an attempt, submit answers checked against the private BECE answer-key module, pay a capped retry after completing an attempt, and view the public leaderboard. The Worker maintains a transactional `openAttempts` counter. An attempt may continue for 24 hours after the event closes; unfinished attempts expire after that window and do not qualify for prizes. New entries and retries are blocked at the closing time.
 
