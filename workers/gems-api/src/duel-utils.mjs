@@ -49,7 +49,7 @@ export function createDuelProgress(uid, code, now = Date.now()) {
     code,
     startedAt: now,
     lastAnsweredAt: now,
-    questionStartedAt: null,
+    questionStartedAt: now,
     nextIndex: 0,
     correctCount: 0,
     totalMs: 0,
