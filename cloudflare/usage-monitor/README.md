@@ -37,7 +37,9 @@ This depends on the existing Firestore rules continuing to allow a signed-in use
 - D1 storage: queried separately from d1StorageAdaptiveGroups, ordered by datetime descending. The shared parser selects the latest available sample per database and sums those samples once; it does not add historical samples together or select the largest historical size. The response includes the oldest timestamp among those latest per-database samples so the aggregate's age is visible.
 - Quota percentages map to Owner warnings at 50%, 70%, 85%, and 95%. Values over the quota are marked exceeded; remaining use never goes negative.
 - Cloudflare analytics are delayed and must be displayed with their source and latest update time. They are not a live billing meter.
-- If results are incomplete, empty, malformed, or at the 10,000-row cap, the affected metric is unavailable instead of presenting a partial total as complete.
+- If a Workers Analytics query succeeds but returns no rows for the UTC day, the Worker request and subrequest totals are returned as zero with a distinct `no_events` freshness state. This means no events have been reported in that window; Cloudflare analytics can still be delayed, so it is not a live billing meter.
+- Malformed or incomplete results and results at the 10,000-row cap remain unavailable instead of presenting partial totals as complete.
+- If the account has no D1 Analytics rows, D1 readings remain unavailable. The Owner panel labels those D1 meters as not enabled rather than treating them as failures. The monitor does not create a D1 database just to populate usage cards.
 
 ## Local tests
 
