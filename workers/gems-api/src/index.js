@@ -347,7 +347,7 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
     const enginePlayer = {
       ...player,
       counted: trustedState.counted || player.counted,
-      challengeState: trustedState.challengeState || player.challengeState,
+      challengeState: trustedState.challengeState,
       achievements: trustedState.achievements || { stats: {}, subjects: [], unlocked: [] }
     };
     const claimedAchievements = Array.isArray(trustedState.achievementClaims)
