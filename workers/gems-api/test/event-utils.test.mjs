@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildGemEventEntry,
+  buildGemEventDraftConfig,
   buildGemEventRetry,
   validateGemEventConfig
 } from "../src/event-utils.mjs";
@@ -160,4 +161,47 @@ test("retry validates participant, attempt ownership and available Coins", () =>
     uid: "alice", eventId: "event-a", currentAttemptId: "attempt-1",
     nextAttemptId: "attempt-2", now: 2000
   }), /EVENT_ATTEMPT_NOT_RETRYABLE/);
+});
+
+test("Owner event configuration is saved as a validated inactive draft", () => {
+  const draft = buildGemEventDraftConfig({
+    eventId: "maths-challenge",
+    title: "Maths Challenge",
+    description: "A timed maths event.",
+    entryCostCoins: 40,
+    maxEntriesPerUser: 3,
+    retryEnabled: true,
+    retryCostCoins: 15,
+    maxRetriesPerEntry: 2,
+    opensAt: 1_800_000_000_000,
+    closesAt: 1_800_000_900_000,
+    ownerUid: "owner-1",
+    now: 1_799_999_000_000
+  });
+  assert.equal(draft.status, "draft");
+  assert.equal(draft.entryCostCoins, 40);
+  assert.equal(draft.maxEntriesPerUser, 3);
+  assert.equal(draft.retryEnabled, true);
+  assert.equal(draft.retryCostCoins, 15);
+  assert.equal(draft.maxRetriesPerEntry, 2);
+  assert.equal(draft.entryCount, 0);
+  assert.equal(draft.createdBy, "owner-1");
+});
+
+test("event draft creation rejects unsafe names, fees, limits, times and Owner identity", () => {
+  const valid = {
+    eventId: "event-1", title: "Event One", entryCostCoins: 20,
+    maxEntriesPerUser: 2, retryEnabled: false, ownerUid: "owner-1", now: 1000
+  };
+  for (const invalid of [
+    { ...valid, eventId: "../players/alice" },
+    { ...valid, title: "x" },
+    { ...valid, entryCostCoins: 0 },
+    { ...valid, maxEntriesPerUser: 101 },
+    { ...valid, retryEnabled: true },
+    { ...valid, opensAt: 5000, closesAt: 4000 },
+    { ...valid, ownerUid: "" }
+  ]) {
+    assert.throws(() => buildGemEventDraftConfig(invalid));
+  }
 });
