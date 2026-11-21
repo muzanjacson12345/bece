@@ -303,8 +303,8 @@ export function buildDuelSettlement({
   const hostDoneAt = Number(hostProgress.completedAt) || 0;
   const guestDoneAt = Number(guestProgress.completedAt) || 0;
   const bothDone = hostProgress.done === true && guestProgress.done === true;
-  const hostWaitExpired = hostProgress.done === true && hostDoneAt > 0 && now - hostDoneAt >= graceMs;
-  const guestWaitExpired = guestProgress.done === true && guestDoneAt > 0 && now - guestDoneAt >= graceMs;
+  const hostWaitExpired = hostProgress.done === true && (hostProgress.forfeit === true || (hostDoneAt > 0 && now - hostDoneAt >= graceMs));
+  const guestWaitExpired = guestProgress.done === true && (guestProgress.forfeit === true || (guestDoneAt > 0 && now - guestDoneAt >= graceMs));
 
   if (!bothDone && !hostWaitExpired && !guestWaitExpired) {
     const completedAt = [hostDoneAt, guestDoneAt].filter(Boolean);
