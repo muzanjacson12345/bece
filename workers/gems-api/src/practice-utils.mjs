@@ -20,7 +20,7 @@ export function challengeHash(value) {
 }
 
 export function dailyChallengeSet(day) {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(day)) throw new TypeError("INVALID_DAY");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new TypeError("INVALID_DAY");
   const pool = CHALLENGE_GROUPS.flatMap(group => group.targets.map(target => ({
     id: group.metric + "-" + target,
     metric: group.metric,
@@ -85,7 +85,7 @@ export function buildPracticeRewardResult({
   if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
     throw new TypeError("INVALID_ANSWERS");
   }
-  if (typeof day !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(day)) {
+  if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day)) {
     throw new TypeError("INVALID_DAY");
   }
 
