@@ -101,7 +101,8 @@ test("each paid event entry increments the event entry count in the same transac
   assert.ok(start >= 0 && end > start, "event entry function boundaries must be found");
   const entry = source.slice(start, end);
   assert.ok(entry.includes("currentEntryCount + 1"));
-  assert.ok(entry.includes("updateMask: { fieldPaths: ['entryCount'] }"));
+  assert.ok(entry.includes("openAttempts: currentOpenAttempts + 1"));
+  assert.ok(entry.includes("updateMask: { fieldPaths: ['entryCount', 'openAttempts'] }"));
   assert.ok(entry.includes("currentDocument: { exists: true }"));
 });
 
