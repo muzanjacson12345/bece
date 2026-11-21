@@ -178,12 +178,13 @@ test("event activation is Owner-only and settlement is Worker-controlled and one
   assert.ok(settlement.includes("currentDocument: { exists: false }"));
   assert.ok(settlement.includes("updateMask: { fieldPaths: Object.keys(eventUpdates) }"));
 
-  const routesStart = source.indexOf("if (url.pathname === '/events/activate' || url.pathname === '/events/settle')");
+  const routesStart = source.indexOf("if (url.pathname === '/events/activate' || url.pathname === '/events/close' || url.pathname === '/events/settle')");
   const routesEnd = source.indexOf("if (url.pathname === '/events/next' || url.pathname === '/events/answer')", routesStart);
   assert.ok(routesStart >= 0 && routesEnd > routesStart);
   const routes = source.slice(routesStart, routesEnd);
   assert.ok(routes.includes("applyGemEventActivation(identity.uid, eventId, accessToken)"));
   assert.ok(routes.includes("applyGemEventSettlement(eventId, accessToken)"));
+  assert.ok(routes.includes("applyGemEventEarlyClose(identity.uid, eventId, accessToken)"));
 });
 
 test("Gem event settlement also has a scheduled Worker trigger", async () => {
