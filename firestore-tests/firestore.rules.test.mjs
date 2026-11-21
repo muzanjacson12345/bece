@@ -85,23 +85,32 @@ test("Gem transaction and reward-claim records are server-write-only", async () 
   await assertFails(setDoc(doc(alice, "gemRewardClaims/claim2"), { uid: "alice" }));
 });
 
-test("players cannot create or change server-managed Gems, shop ownership or power-up fields", async () => {
+test("players cannot create or change Coins, Duel rewards, Gems, shop ownership or power-ups", async () => {
   const alice = testEnv.authenticatedContext("alice").firestore();
 
-  await assertSucceeds(setDoc(doc(alice, "players/alice"), { displayName: "Alice", coins: 10, eq: {} }));
-  for (const field of ["gems", "gemOps", "owned", "p50", "sfreezes", "xpBoost"]) {
-    const createUid = field + "-create";
-    const createDb = testEnv.authenticatedContext(createUid).firestore();
-    await assertFails(setDoc(doc(createDb, "players/" + createUid), {
-      displayName: "Alice",
-      [field]: field === "owned" ? { t_legend: true } : field === "gemOps" ? ["fake-credit"] : 1
-    }));
-    await assertFails(updateDoc(doc(alice, "players/alice"), {
-      [field]: field === "owned" ? { t_legend: true } : field === "gemOps" ? ["fake-credit"] : 1
-    }));
+  await assertSucceeds(setDoc(doc(alice, "players/alice"), {
+    displayName: "Alice", coins: 0, duelW: 0, duelL: 0, duelD: 0, dcN: 0, eq: {}
+  }));
+  const protectedFields = [
+    "gems", "gemOps", "owned", "p50", "sfreezes", "xpBoost",
+    "coins", "duelW", "duelL", "duelD", "dcDay", "dcN"
+  ];
+  for (const field of protectedFields) {
+    const value = field === "owned" ? { t_legend: true }
+      : field === "gemOps" ? ["fake-credit"]
+      : field === "dcDay" ? "2026-11-21" : 1;
+    if (field !== "dcDay") {
+      const createUid = field + "-create";
+      const createDb = testEnv.authenticatedContext(createUid).firestore();
+      await assertFails(setDoc(doc(createDb, "players/" + createUid), {
+        displayName: "Alice", [field]: value
+      }));
+    }
+    await assertFails(updateDoc(doc(alice, "players/alice"), { [field]: value }));
   }
-  await assertSucceeds(updateDoc(doc(alice, "players/alice"), { coins: 11 }));
+  await assertFails(updateDoc(doc(alice, "players/alice"), { coins: 11 }));
   await assertSucceeds(updateDoc(doc(alice, "players/alice"), { eq: { title: "t_legend" } }));
+  await assertSucceeds(updateDoc(doc(alice, "players/alice"), { displayName: "Alice Updated" }));
 });
 
 test("power-up use receipts are private and cannot be client-written", async () => {
@@ -122,7 +131,7 @@ test("temporary bans block player writes until their expiry", async () => {
     "players/temporary": { displayName: "Temp", coins: 1 }
   });
   const temp = testEnv.authenticatedContext("temporary").firestore();
-  await assertFails(updateDoc(doc(temp, "players/temporary"), { coins: 2 }));
+  await assertFails(updateDoc(doc(temp, "players/temporary"), { displayName: "Blocked while banned" }));
 });
 
 test("expired temporary bans no longer block player writes", async () => {
@@ -135,7 +144,7 @@ test("expired temporary bans no longer block player writes", async () => {
     "players/expired": { displayName: "Expired", coins: 1 }
   });
   const expired = testEnv.authenticatedContext("expired").firestore();
-  await assertSucceeds(updateDoc(doc(expired, "players/expired"), { coins: 2 }));
+  await assertSucceeds(updateDoc(doc(expired, "players/expired"), { displayName: "Allowed after expiry" }));
 });
 
 test("zero, missing and malformed ban expiry fail closed as legacy permanent bans", async () => {
@@ -150,7 +159,7 @@ test("zero, missing and malformed ban expiry fail closed as legacy permanent ban
   });
   for (const uid of ["permanent", "missing", "malformed"]) {
     const db = testEnv.authenticatedContext(uid).firestore();
-    await assertFails(updateDoc(doc(db, "players/" + uid), { coins: 2 }));
+    await assertFails(updateDoc(doc(db, "players/" + uid), { displayName: "Still banned" }));
   }
 });
 
@@ -215,6 +224,29 @@ test("an expired ban does not prevent a valid Admin session", async () => {
     text: "Allowed after expiry", by: "formerly-banned-admin", at: now
   }));
 });
+
+test("Duel answer progress and settlement receipts are private and client-write-only", async () => {
+  await seed({
+    "duels/RESULT1": {
+      host: "alice", hostName: "Alice", guest: "bob", guestName: "Bob",
+      subject: "maths", subjects: ["maths"], secs: 30, vis: "public",
+      qids: ["mat-1", "mat-2"], state: "playing", created: Date.now(),
+      hb: Date.now(), res: { alice: { c: 0, n: 0, ms: 0, done: false } }
+    },
+    "duelProgress/RESULT1_alice": { uid: "alice", code: "RESULT1", nextIndex: 0 },
+    "duelSettlements/RESULT1": { code: "RESULT1", byUid: {} }
+  });
+  const alice = testEnv.authenticatedContext("alice").firestore();
+  await assertFails(getDoc(doc(alice, "duelProgress/RESULT1_alice")));
+  await assertFails(setDoc(doc(alice, "duelProgress/RESULT1_fake"), { uid: "alice" }));
+  await assertFails(getDoc(doc(alice, "duelSettlements/RESULT1")));
+  await assertFails(setDoc(doc(alice, "duelSettlements/RESULT1_fake"), { uid: "alice" }));
+  await assertFails(updateDoc(doc(alice, "duels/RESULT1"), {
+    "res.alice": { c: 99, n: 99, ms: 1, done: true }
+  }));
+  await assertFails(updateDoc(doc(alice, "duels/RESULT1"), { "rec.alice": true }));
+});
+
 
 test("Duel creation accepts the app's subjects field and rejects duplicate subjects", async () => {
   const db = testEnv.authenticatedContext("duel-host").firestore();
