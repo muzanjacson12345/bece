@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
-const sourcePath = fileURLToPath(new URL("../../gems.js", import.meta.url));
+const sourcePath = fileURLToPath(new URL("../../../gems.js", import.meta.url));
 const source = await readFile(sourcePath, "utf8");
 
 test("Gem wallet reads only the signed-in student's balance and transaction history", () => {
