@@ -14,6 +14,7 @@ on:
       - ".github/scripts/migrate-powerup-retry.cjs"
       - ".github/scripts/migrate-duel-rewards.cjs"
       - ".github/scripts/migrate-owner-event-drafts.cjs"
+      - ".github/scripts/migrate-owner-event-question-selection.cjs"
       - ".github/scripts/check-inline-scripts.cjs"
       - "workers/gems-api/src/**"
       - "workers/gems-api/test/**"
@@ -49,6 +50,9 @@ jobs:
       - name: Add Owner event draft configuration card
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: node .github/scripts/migrate-owner-event-drafts.cjs
+      - name: Add subject and question-count selection to event drafts
+        if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
+        run: node .github/scripts/migrate-owner-event-question-selection.cjs
       - name: Commit draft economy app migrations
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: |
