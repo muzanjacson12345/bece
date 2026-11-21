@@ -85,22 +85,29 @@ test("Gem transaction and reward-claim records are server-write-only", async () 
   await assertFails(setDoc(doc(alice, "gemRewardClaims/claim2"), { uid: "alice" }));
 });
 
-test("players cannot create or change protected Gems and owned-shop fields", async () => {
+test("players cannot create or change server-managed Gems, shop ownership or power-up fields", async () => {
   const alice = testEnv.authenticatedContext("alice").firestore();
 
   await assertSucceeds(setDoc(doc(alice, "players/alice"), { displayName: "Alice", coins: 10, eq: {} }));
-  await assertFails(setDoc(doc(alice, "players/alice"), {
-    displayName: "Alice", coins: 10, gems: 500
-  }));
-  await assertFails(setDoc(doc(alice, "players/alice"), {
-    displayName: "Alice", coins: 10, owned: { t_legend: true }
-  }));
-
-  await assertFails(updateDoc(doc(alice, "players/alice"), { gems: 500 }));
-  await assertFails(updateDoc(doc(alice, "players/alice"), { gemOps: ["fake-credit"] }));
-  await assertFails(updateDoc(doc(alice, "players/alice"), { owned: { t_legend: true } }));
+  for (const field of ["gems", "gemOps", "owned", "p50", "sfreezes", "xpBoost"]) {
+    await assertFails(setDoc(doc(alice, "players/" + field + "-create"), {
+      displayName: "Alice",
+      [field]: field === "owned" ? { t_legend: true } : field === "gemOps" ? ["fake-credit"] : 1
+    }));
+    await assertFails(updateDoc(doc(alice, "players/alice"), {
+      [field]: field === "owned" ? { t_legend: true } : field === "gemOps" ? ["fake-credit"] : 1
+    }));
+  }
   await assertSucceeds(updateDoc(doc(alice, "players/alice"), { coins: 11 }));
   await assertSucceeds(updateDoc(doc(alice, "players/alice"), { eq: { title: "t_legend" } }));
+});
+
+test("power-up use receipts are private and cannot be client-written", async () => {
+  const alice = testEnv.authenticatedContext("alice").firestore();
+  await assertFails(setDoc(doc(alice, "powerupOperations/alice_use-1"), {
+    uid: "alice", itemId: "p50", operationId: "use-1"
+  }));
+  await assertFails(getDoc(doc(alice, "powerupOperations/alice_use-1")));
 });
 
 test("temporary bans block player writes until their expiry", async () => {
