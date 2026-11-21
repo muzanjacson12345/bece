@@ -312,23 +312,20 @@ export function buildDuelSettlement({
     return { waiting: true, retryAfterMs: Math.max(1000, Math.min(15000, nextAt - now)) };
   }
 
+  const explicitForfeit = hostProgress.forfeit === true || guestProgress.forfeit === true;
+  const settleIncomplete = (item) => item.done === true ? item : {
+    ...item,
+    nextIndex: total,
+    totalMs: safeCount(item.totalMs) + Math.max(0, total - safeCount(item.nextIndex)) * duel.secs * 1000,
+    done: true,
+    // An explicit leave gives the other participant the win, even if they have not finished.
+    // Only the normal two-minute timeout marks the lagging participant as a forfeit.
+    forfeit: explicitForfeit ? false : true,
+    completedAt: now
+  };
   const progress = {
-    [host]: hostProgress.done === true ? hostProgress : {
-      ...hostProgress,
-      nextIndex: total,
-      totalMs: safeCount(hostProgress.totalMs) + Math.max(0, total - safeCount(hostProgress.nextIndex)) * duel.secs * 1000,
-      done: true,
-      forfeit: true,
-      completedAt: now
-    },
-    [guest]: guestProgress.done === true ? guestProgress : {
-      ...guestProgress,
-      nextIndex: total,
-      totalMs: safeCount(guestProgress.totalMs) + Math.max(0, total - safeCount(guestProgress.nextIndex)) * duel.secs * 1000,
-      done: true,
-      forfeit: true,
-      completedAt: now
-    }
+    [host]: settleIncomplete(hostProgress),
+    [guest]: settleIncomplete(guestProgress)
   };
 
   const score = {
