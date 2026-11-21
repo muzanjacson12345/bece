@@ -25,6 +25,10 @@ on:
       - "index.html"
   workflow_dispatch:
 
+concurrency:
+  group: bece-draft-economy-migrations
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
