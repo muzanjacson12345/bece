@@ -83,3 +83,43 @@ test("unanswered questions do not count as correct answers", () => {
   assert.equal(result.correctCount, 1);
   assert.equal(result.achievements.stats.answered, 1);
 });
+
+
+test("unanswered subject IDs cannot unlock subject achievements or add subject progress", () => {
+  const questionIds = [
+    "soc-1", "art-1", "mat-101", "com-101",
+    "rme-115", "sci-27", "fre-1", "ct-1"
+  ];
+  const result = buildPracticeRewardResult({
+    player: {},
+    questionIds,
+    answers: { "soc-1": "B" },
+    day: "2026-11-21",
+    kind: "practice"
+  });
+
+  assert.deepEqual(result.achievements.subjects, ["soc"]);
+  assert.equal(result.achievements.stats.soc, 1);
+  for (const metric of ["art", "mat", "com", "rme", "sci", "fre", "ct"]) {
+    assert.equal(result.achievements.stats[metric], undefined);
+  }
+  assert.equal(result.achievements.unlocked.includes("subject-explorer"), false);
+  assert.equal(result.achievements.unlocked.includes("all-nine-subjects"), false);
+  assert.deepEqual(result.challengeState.subjects, ["soc"]);
+  assert.equal(result.gemsEarned, 3);
+});
+
+test("unanswered questions cannot satisfy long-quiz progress or inflate recent totals", () => {
+  const questionIds = Array.from({ length: 10 }, (_, index) => "soc-" + (index + 1));
+  const result = buildPracticeRewardResult({
+    player: {},
+    questionIds,
+    answers: { "soc-1": "B" },
+    day: "2026-11-21",
+    kind: "practice"
+  });
+
+  assert.equal(result.challengeState.progress.longQuiz, undefined);
+  assert.equal(result.recent[0].total, 1);
+  assert.equal(result.recent[0].subject, "soc");
+});
