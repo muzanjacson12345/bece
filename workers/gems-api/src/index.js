@@ -1362,6 +1362,62 @@ async function applyGemEventRetry(uid, eventId, currentAttemptId, operationId, a
 
 
 
+
+async function applyGemEventEarlyClose(uid, eventId, accessToken) {
+  const owner = await hasActiveOwnerSession(uid, accessToken);
+  if (!owner) throw new Error('EVENT_OWNER_REQUIRED');
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const eventPath = gemEventPath(eventId);
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const eventDoc = await getDocument(eventPath, accessToken, transaction);
+    if (!eventDoc) throw new Error('EVENT_NOT_FOUND');
+    const event = decodeFirestoreFields(eventDoc.fields || {});
+    if (event.status !== 'active') throw new Error('EVENT_NOT_ACTIVE');
+    const now = Date.now();
+    if (Number.isSafeInteger(event.closesAt) && event.closesAt <= now) {
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: { eventId, status: 'active', closesAt: event.closesAt } };
+    }
+    const fields = {
+      closesAt: now,
+      closedAt: now,
+      closedBy: uid,
+      updatedAt: now,
+      updatedBy: uid
+    };
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          writes: [{
+            update: { name: base + eventPath, fields: encodeFirestoreFields(fields) },
+            updateMask: { fieldPaths: Object.keys(fields) },
+            currentDocument: { exists: true }
+          }]
+        }
+      }
+    );
+    finished = true;
+    return { duplicate: false, result: { eventId, status: 'active', ...fields } };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
 async function applyGemEventActivation(uid, eventId, accessToken) {
   const owner = await hasActiveOwnerSession(uid, accessToken);
   if (!owner) throw new Error('EVENT_OWNER_REQUIRED');
