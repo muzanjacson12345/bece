@@ -123,3 +123,7 @@ for (const term of ["gemEvents", "gemEventAnswerKeys", "entryCost", "entryPrice"
     console.log("  line " + (source.slice(0, at).split("\n").length) + ": " + source.slice(Math.max(0, at - 240), Math.min(source.length, at + 600)).replace(/\s+/g, " ").trim());
   }
 }
+
+showSection("OWNER TAB FULL LAYOUT", "function ownerTab()", 700, 17000);
+showSection("ADMIN TAB NAVIGATION", "function adminTab()", 600, 5000);
+showSection("GEM EVENT RULES AND PLACEHOLDERS", "gemEventOperations", 800, 2600);
