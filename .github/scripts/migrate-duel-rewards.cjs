@@ -31,7 +31,7 @@ function replaceBetween(startToken, endToken, newText, label) {
 
 replaceOnce(
   "  const warn = m => App.toast(m, 'warn');",
-  \`  const warn = m => App.toast(m, 'warn');
+  `  const warn = m => App.toast(m, 'warn');
   async function duelApi(path, payload) {
     const user = firebase.auth().currentUser;
     if (!user) throw new Error('Please reconnect your sign-in.');
@@ -54,13 +54,13 @@ replaceOnce(
       throw new Error(data && data.error ? data.error : 'The secure Duel service could not complete this action.');
     }
     return data;
-  }\`,
+  }`,
   "add authenticated Duel API helper"
 );
 
 replaceOnce(
   "  function begin() { D.started = true; D.used = 0; D.idx = 0; D.log = []; D.streak = 0; D.best = 0; D.oppN = 0; D.me = { c: 0, n: 0, ms: 0, done: false }; ask(); }",
-  \`  async function begin() {
+  `  async function begin() {
     D.started = true; D.used = 0; D.idx = 0; D.log = []; D.streak = 0; D.best = 0;
     D.oppN = 0; D.me = { c: 0, n: 0, ms: 0, done: false };
     D.pendingAnswer = null; D.settleBusy = false; D.settlementShown = false;
@@ -72,18 +72,18 @@ replaceOnce(
       warn('Could not start the secure Duel. ' + ((e && e.message) || 'Please try again.'));
       close();
     }
-  }\`,
+  }`,
   "initialize the secure Duel session"
 );
 
 replaceOnce("  function ask() {", "  async function ask() {", "make Duel question loading asynchronous");
 
 replaceOnce(
-  \`    const id = D.doc.qids[D.idx]; if (!id) return finish();
+  `    const id = D.doc.qids[D.idx]; if (!id) return finish();
     const q = App.questionById(id);
     if (!q) { D.me.n++; D.me.ms += secs() * 1000; D.log.push({ id, key: null, ok: false }); D.idx++; return ask(); }
-    D.locked = false; D.qStart = Date.now();\`,
-  \`    const id = D.doc.qids[D.idx]; if (!id) return finish();
+    D.locked = false; D.qStart = Date.now();`,
+  `    const id = D.doc.qids[D.idx]; if (!id) return finish();
     try {
       const started = await duelApi('/duels/next', { code: D.code, questionId: id });
       if (!started.result || started.result.questionId !== id) throw new Error('The question clock could not be verified.');
@@ -94,7 +94,7 @@ replaceOnce(
     }
     const q = App.questionById(id);
     D.locked = false; D.qStart = Date.now();
-    if (!q) { answer(null, true); return; }\`,
+    if (!q) { answer(null, true); return; }`,
   "start each question on the trusted server"
 );
 
@@ -113,9 +113,9 @@ replaceOnce(
 );
 
 replaceOnce(
-  \`    D.me.n++; D.me.ms += ok ? Date.now() - D.qStart : secs() * 1000; if (ok) D.me.c++;
-    D.log.push({ id: q.id, key, ok });\`,
-  \`    const pending = D.pendingAnswer;
+  `    D.me.n++; D.me.ms += ok ? Date.now() - D.qStart : secs() * 1000; if (ok) D.me.c++;
+    D.log.push({ id: q.id, key, ok });`,
+  `    const pending = D.pendingAnswer;
     if (pending && (pending.questionId !== questionId || pending.key !== key)) {
       D.locked = false;
       App.toast('Please retry the same answer while the connection recovers.', 'warn');
@@ -153,19 +153,19 @@ replaceOnce(
     D.me = { ...verified.score };
     D.streak = verified.streak || 0;
     D.best = verified.best || 0;
-    D.log.push({ id: questionId, key, ok });\`,
+    D.log.push({ id: questionId, key, ok });`,
   "send each answer to the server and trust its verified score"
 );
 
 replaceOnce(
-  \`    box.querySelectorAll('.option').forEach(b => { b.disabled = true; b.classList.add(b.dataset.key === q.correct ? 'is-correct' : b.dataset.key === key ? 'is-wrong' : 'is-dim'); });
-    const right = (q.options.find(x => x.key === q.correct) || {}).text;\`,
-  \`    const correctKey = q && q.correct;
+  `    box.querySelectorAll('.option').forEach(b => { b.disabled = true; b.classList.add(b.dataset.key === q.correct ? 'is-correct' : b.dataset.key === key ? 'is-wrong' : 'is-dim'); });
+    const right = (q.options.find(x => x.key === q.correct) || {}).text;`,
+  `    const correctKey = q && q.correct;
     box.querySelectorAll('.option').forEach(b => {
       b.disabled = true;
       b.classList.add(b.dataset.key === correctKey ? 'is-correct' : b.dataset.key === key ? 'is-wrong' : 'is-dim');
     });
-    const right = q ? ((q.options.find(x => x.key === q.correct) || {}).text) : '';\`,
+    const right = q ? ((q.options.find(x => x.key === q.correct) || {}).text) : '';`,
   "make answer feedback safe for unavailable local question data"
 );
 
@@ -196,11 +196,11 @@ replaceOnce(
 
 replaceOnce(
   "    if (D.me && !D.me.done && D.started) { D.me.done = true; D.me.ms += (total() - D.me.n) * secs() * 1000; D.me.n = total(); push(); record('l', 0); }",
-  \`    if (D.me && !D.me.done && D.started && D.code) {
+  `    if (D.me && !D.me.done && D.started && D.code) {
       const code = D.code;
       clearTimeout(D.answerRetryT); D.answerRetryT = null;
       duelApi('/duels/forfeit', { code }).catch(e => console.warn('Duel forfeit could not be recorded:', e && e.message));
-    }\`,
+    }`,
   "send Duel forfeits to the trusted server"
 );
 
@@ -213,7 +213,7 @@ replaceOnce(
 replaceBetween(
   "  function result(r) {",
   "    const side = (pid, name, x, w) =>",
-  \`  async function result(r) {
+  `  async function result(r) {
     if (D.settleBusy || D.settlementShown || !D.code) return;
     D.settleBusy = true;
     let settled;
@@ -250,7 +250,7 @@ replaceBetween(
     D.coinParts = receipt.reward.parts || [];
     D.bal = receipt.reward.balance;
     D.limit = !!receipt.reward.dailyLimit;
-\`,
+`,
   "settle Duel results and rewards on the server"
 );
 
