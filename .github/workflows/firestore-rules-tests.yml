@@ -16,6 +16,7 @@ on:
       - ".github/scripts/migrate-owner-event-drafts.cjs"
       - ".github/scripts/migrate-owner-event-question-selection.cjs"
       - ".github/scripts/migrate-owner-event-schedule.cjs"
+      - ".github/scripts/migrate-owner-event-prizes-activation.cjs"
       - ".github/scripts/migrate-event-player-screen.cjs"
       - "events.js"
       - ".github/scripts/check-inline-scripts.cjs"
@@ -63,6 +64,9 @@ jobs:
       - name: Add opening and closing times to event drafts
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: node .github/scripts/migrate-owner-event-schedule.cjs
+      - name: Add Gem prizes and Owner event activation
+        if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
+        run: node .github/scripts/migrate-owner-event-prizes-activation.cjs
       - name: Add the player-facing Gem Events screen
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: node .github/scripts/migrate-event-player-screen.cjs
@@ -84,6 +88,8 @@ jobs:
         run: node --check .github/scripts/migrate-event-player-screen.cjs
       - name: Check Owner event scheduling migration syntax
         run: node --check .github/scripts/migrate-owner-event-schedule.cjs
+      - name: Check Owner event prize and activation migration syntax
+        run: node --check .github/scripts/migrate-owner-event-prizes-activation.cjs
       - name: Check inline application JavaScript syntax
         run: node .github/scripts/check-inline-scripts.cjs
       - name: Run economy client-write audit
