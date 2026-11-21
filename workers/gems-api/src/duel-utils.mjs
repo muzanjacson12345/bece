@@ -49,6 +49,7 @@ export function createDuelProgress(uid, code, now = Date.now()) {
     code,
     startedAt: now,
     lastAnsweredAt: now,
+    questionStartedAt: now,
     nextIndex: 0,
     correctCount: 0,
     totalMs: 0,
@@ -59,6 +60,31 @@ export function createDuelProgress(uid, code, now = Date.now()) {
     answers: [],
     done: false,
     forfeit: false
+  };
+}
+
+
+export function buildDuelQuestionStart({ duel, progress, uid, questionId, now = Date.now() }) {
+  validateDuel(duel, uid);
+  if (!progress || progress.uid !== uid) fail("DUEL_NOT_STARTED");
+  if (progress.done) fail("DUEL_ALREADY_FINISHED");
+  if (!Number.isSafeInteger(now) || now < progress.startedAt) fail("INVALID_DUEL_TIME");
+  const index = safeCount(progress.nextIndex);
+  if (index >= duel.qids.length || duel.qids[index] !== questionId) {
+    fail("DUEL_QUESTION_SEQUENCE");
+  }
+  if (Number.isSafeInteger(progress.questionStartedAt)) {
+    return {
+      duplicate: true,
+      progress,
+      result: { questionId, startedAt: progress.questionStartedAt, index }
+    };
+  }
+  const nextProgress = { ...progress, questionStartedAt: now };
+  return {
+    duplicate: false,
+    progress: nextProgress,
+    result: { questionId, startedAt: now, index }
   };
 }
 
@@ -91,13 +117,13 @@ export function buildDuelAnswerResult({
     fail("DUEL_QUESTION_SEQUENCE");
   }
   const startedAt = Number(progress.startedAt);
-  const lastAnsweredAt = Number(progress.lastAnsweredAt ?? startedAt);
+  const questionStartedAt = Number(progress.questionStartedAt);
   if (!Number.isSafeInteger(startedAt) || startedAt <= 0
-      || !Number.isSafeInteger(lastAnsweredAt) || lastAnsweredAt < startedAt) {
+      || !Number.isSafeInteger(questionStartedAt) || questionStartedAt < startedAt) {
     fail("INVALID_DUEL_SESSION");
   }
 
-  const rawElapsed = Math.max(0, now - lastAnsweredAt);
+  const rawElapsed = Math.max(0, now - questionStartedAt);
   const limit = duel.secs * 1000;
   const timedOut = rawElapsed > limit + ANSWER_TIME_GRACE_MS;
   const acceptedKey = timedOut ? null : answerKey;
@@ -140,6 +166,7 @@ export function buildDuelAnswerResult({
     streak,
     bestStreak,
     lastAnsweredAt: now,
+    questionStartedAt: null,
     done,
     ...(done ? { completedAt: now } : {})
   };
@@ -163,7 +190,8 @@ export function buildDuelSecondChanceProgress({ duel, progress, uid, now = Date.
     ...progress,
     secondChancesUsed: used + 1,
     secondChanceIndexes: [...indexes, index],
-    lastAnsweredAt: now
+    lastAnsweredAt: now,
+    questionStartedAt: now
   };
 }
 
