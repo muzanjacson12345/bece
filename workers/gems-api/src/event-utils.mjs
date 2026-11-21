@@ -14,6 +14,16 @@ function integer(value, code, min = 0, max = MAX_BALANCE) {
   return value;
 }
 
+function validateQuestionSet(event) {
+  const ids = event && event.questionIds;
+  if (!Array.isArray(ids) || ids.length < 3 || ids.length > 50
+      || new Set(ids).size !== ids.length
+      || ids.some(id => !isKnownQuestionId(id))) {
+    fail("INVALID_EVENT_QUESTIONS");
+  }
+  return ids;
+}
+
 export function validateGemEventConfig(event, now = Date.now()) {
   if (!event || event.status !== "active") fail("EVENT_NOT_ACTIVE");
   const entryCostCoins = integer(event.entryCostCoins, "INVALID_EVENT_CONFIG", 1, MAX_EVENT_COIN_COST);
@@ -54,6 +64,7 @@ export function buildGemEventEntry({ event, participant, player, uid, eventId, a
   if (typeof uid !== "string" || !uid || typeof eventId !== "string" || !eventId
       || typeof attemptId !== "string" || !attemptId) fail("INVALID_EVENT_REQUEST");
   const policy = validateGemEventConfig(event, now);
+  validateQuestionSet(event);
   if (participant && participant.uid !== uid) fail("INVALID_EVENT_PARTICIPATION");
   const entriesUsed = integer(participant && participant.entriesUsed !== undefined
     ? participant.entriesUsed : 0, "INVALID_EVENT_PARTICIPATION", 0, policy.maxEntriesPerUser);
@@ -110,6 +121,7 @@ export function buildGemEventRetry({
       || typeof nextAttemptId !== "string" || !nextAttemptId
       || currentAttemptId === nextAttemptId) fail("INVALID_EVENT_REQUEST");
   const policy = validateGemEventConfig(event, now);
+  validateQuestionSet(event);
   if (!policy.retryEnabled || policy.maxRetriesPerEntry < 1) fail("EVENT_RETRY_DISABLED");
   if (!participant || participant.uid !== uid) fail("EVENT_PARTICIPATION_NOT_FOUND");
   if (!currentAttempt || currentAttempt.uid !== uid || currentAttempt.eventId !== eventId) {
@@ -181,9 +193,7 @@ export function buildGemEventDraftConfig({
     fail("INVALID_EVENT_CONFIG");
   }
   if (typeof description !== "string" || description.length > 500) fail("INVALID_EVENT_CONFIG");
-  if (!Array.isArray(questionIds) || questionIds.length < 3 || questionIds.length > 50
-      || new Set(questionIds).size !== questionIds.length
-      || questionIds.some(id => !isKnownQuestionId(id))) fail("INVALID_EVENT_QUESTIONS");
+  validateQuestionSet({ questionIds });
   if (!Number.isSafeInteger(now) || now < 0) fail("INVALID_EVENT_TIME");
 
   const policy = validateGemEventConfig({
