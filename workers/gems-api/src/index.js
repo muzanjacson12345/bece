@@ -4,6 +4,7 @@ import { buildPracticeRewardResult } from "./practice-utils.mjs";
 import { isKnownQuestionId } from "./question-keys.mjs";
 import { getShopItem } from "./shop-utils.mjs";
 import { getPowerupUse, validatePowerupUseReceiptRetry } from "./powerup-utils.mjs";
+import { buildGemEventEntry, buildGemEventRetry } from "./event-utils.mjs";
 import {
   buildDuelAnswerResult,
   buildDuelForfeitProgress,
@@ -1050,6 +1051,219 @@ async function settleDuel(uid, code, accessToken) {
   }
 }
 
+
+function validateGemEventId(eventId) {
+  return typeof eventId === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(eventId);
+}
+
+function validateOperationUuid(operationId) {
+  return typeof operationId === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId);
+}
+
+function gemEventPath(eventId) {
+  return 'gemEvents/' + encodeURIComponent(eventId);
+}
+
+function gemEventParticipantPath(eventId, uid) {
+  return gemEventPath(eventId) + '/participants/' + encodeURIComponent(uid);
+}
+
+function gemEventAttemptPath(eventId, uid, attemptId) {
+  return gemEventParticipantPath(eventId, uid) + '/attempts/' + encodeURIComponent(attemptId);
+}
+
+function gemEventOperationPath(uid, operationId) {
+  return 'gemEventOperations/' + encodeURIComponent(uid + '_' + operationId);
+}
+
+async function applyGemEventEntry(uid, eventId, operationId, accessToken) {
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const eventPath = gemEventPath(eventId);
+  const participantPath = gemEventParticipantPath(eventId, uid);
+  const playerPath = 'players/' + encodeURIComponent(uid);
+  const operationPath = gemEventOperationPath(uid, operationId);
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [eventDoc, participantDoc, playerDoc, operationDoc] = await Promise.all([
+      getDocument(eventPath, accessToken, transaction),
+      getDocument(participantPath, accessToken, transaction),
+      getDocument(playerPath, accessToken, transaction),
+      getDocument(operationPath, accessToken, transaction)
+    ]);
+    if (operationDoc) {
+      const stored = decodeFirestoreFields(operationDoc.fields || {});
+      if (stored.uid !== uid || stored.eventId !== eventId || stored.action !== 'enter') {
+        throw new Error('IDEMPOTENCY_KEY_REUSED');
+      }
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: stored.result || null };
+    }
+    if (!eventDoc) throw new Error('EVENT_NOT_FOUND');
+    if (!playerDoc) throw new Error('PLAYER_PROFILE_NOT_READY');
+    const event = decodeFirestoreFields(eventDoc.fields || {});
+    const participant = decodeFirestoreFields(participantDoc && participantDoc.fields);
+    const player = decodeFirestoreFields(playerDoc.fields || {});
+    const attemptId = crypto.randomUUID();
+    const outcome = buildGemEventEntry({
+      event, participant, player, uid, eventId, attemptId, now: Date.now()
+    });
+    const result = {
+      eventId,
+      entryNo: outcome.entryNo,
+      attemptId,
+      costCoins: outcome.costCoins,
+      coins: outcome.coins
+    };
+    const operationRecord = {
+      uid, eventId, action: 'enter', operationId, attemptId,
+      createdAt: Date.now(), result
+    };
+    const writes = [
+      {
+        update: { name: base + playerPath, fields: encodeFirestoreFields({ coins: outcome.coins }) },
+        updateMask: { fieldPaths: ['coins'] },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: base + participantPath, fields: encodeFirestoreFields(outcome.participant) },
+        updateMask: { fieldPaths: Object.keys(outcome.participant) },
+        currentDocument: { exists: !!participantDoc }
+      },
+      {
+        update: { name: base + gemEventAttemptPath(eventId, uid, attemptId), fields: encodeFirestoreFields(outcome.attempt) },
+        updateMask: { fieldPaths: Object.keys(outcome.attempt) },
+        currentDocument: { exists: false }
+      },
+      {
+        update: { name: base + operationPath, fields: encodeFirestoreFields(operationRecord) },
+        updateMask: { fieldPaths: Object.keys(operationRecord) },
+        currentDocument: { exists: false }
+      }
+    ];
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken, { method: 'POST', body: { transaction, writes } }
+    );
+    finished = true;
+    return { duplicate: false, result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+async function applyGemEventRetry(uid, eventId, currentAttemptId, operationId, accessToken) {
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const eventPath = gemEventPath(eventId);
+  const participantPath = gemEventParticipantPath(eventId, uid);
+  const playerPath = 'players/' + encodeURIComponent(uid);
+  const currentAttemptPath = gemEventAttemptPath(eventId, uid, currentAttemptId);
+  const operationPath = gemEventOperationPath(uid, operationId);
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [eventDoc, participantDoc, playerDoc, attemptDoc, operationDoc] = await Promise.all([
+      getDocument(eventPath, accessToken, transaction),
+      getDocument(participantPath, accessToken, transaction),
+      getDocument(playerPath, accessToken, transaction),
+      getDocument(currentAttemptPath, accessToken, transaction),
+      getDocument(operationPath, accessToken, transaction)
+    ]);
+    if (operationDoc) {
+      const stored = decodeFirestoreFields(operationDoc.fields || {});
+      if (stored.uid !== uid || stored.eventId !== eventId || stored.action !== 'retry'
+          || stored.previousAttemptId !== currentAttemptId) {
+        throw new Error('IDEMPOTENCY_KEY_REUSED');
+      }
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: stored.result || null };
+    }
+    if (!eventDoc) throw new Error('EVENT_NOT_FOUND');
+    if (!participantDoc) throw new Error('EVENT_PARTICIPATION_NOT_FOUND');
+    if (!playerDoc) throw new Error('PLAYER_PROFILE_NOT_READY');
+    if (!attemptDoc) throw new Error('EVENT_ATTEMPT_NOT_FOUND');
+    const event = decodeFirestoreFields(eventDoc.fields || {});
+    const participant = decodeFirestoreFields(participantDoc.fields || {});
+    const player = decodeFirestoreFields(playerDoc.fields || {});
+    const currentAttempt = decodeFirestoreFields(attemptDoc.fields || {});
+    const nextAttemptId = crypto.randomUUID();
+    const outcome = buildGemEventRetry({
+      event, participant, player, currentAttempt, uid, eventId,
+      currentAttemptId, nextAttemptId, now: Date.now()
+    });
+    const result = {
+      eventId,
+      entryNo: outcome.entryNo,
+      previousAttemptId: currentAttemptId,
+      attemptId: nextAttemptId,
+      attemptNo: outcome.attemptNo,
+      retriesUsed: outcome.retriesUsed,
+      costCoins: outcome.costCoins,
+      coins: outcome.coins
+    };
+    const operationRecord = {
+      uid, eventId, action: 'retry', operationId,
+      previousAttemptId: currentAttemptId,
+      attemptId: nextAttemptId,
+      createdAt: Date.now(), result
+    };
+    const writes = [
+      {
+        update: { name: base + playerPath, fields: encodeFirestoreFields({ coins: outcome.coins }) },
+        updateMask: { fieldPaths: ['coins'] },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: base + participantPath, fields: encodeFirestoreFields(outcome.participant) },
+        updateMask: { fieldPaths: Object.keys(outcome.participant) },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: base + currentAttemptPath, fields: encodeFirestoreFields(outcome.previousAttempt) },
+        updateMask: { fieldPaths: Object.keys(outcome.previousAttempt) },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: base + gemEventAttemptPath(eventId, uid, nextAttemptId), fields: encodeFirestoreFields(outcome.attempt) },
+        updateMask: { fieldPaths: Object.keys(outcome.attempt) },
+        currentDocument: { exists: false }
+      },
+      {
+        update: { name: base + operationPath, fields: encodeFirestoreFields(operationRecord) },
+        updateMask: { fieldPaths: Object.keys(operationRecord) },
+        currentDocument: { exists: false }
+      }
+    ];
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken, { method: 'POST', body: { transaction, writes } }
+    );
+    finished = true;
+    return { duplicate: false, result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
   const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
   const playerPath = 'players/' + encodeURIComponent(uid);
@@ -1197,7 +1411,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/enter', '/events/retry'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -1275,6 +1489,27 @@ export default {
         return json({ ok: true, ...outcome }, 200, origin);
       }
 
+      if (url.pathname === '/events/enter' || url.pathname === '/events/retry') {
+        const eventId = payload && typeof payload.eventId === 'string' ? payload.eventId.trim() : '';
+        const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
+        if (!validateGemEventId(eventId)) {
+          return json({ ok: false, code: 'INVALID_EVENT_ID', error: 'The event ID is invalid.' }, 400, origin);
+        }
+        if (!validateOperationUuid(operationId)) {
+          return json({ ok: false, code: 'INVALID_OPERATION_ID', error: 'A valid event operation ID is required.' }, 400, origin);
+        }
+        if (url.pathname === '/events/enter') {
+          const outcome = await applyGemEventEntry(identity.uid, eventId, operationId, accessToken);
+          return json({ ok: true, ...outcome }, 200, origin);
+        }
+        const attemptId = payload && typeof payload.attemptId === 'string' ? payload.attemptId.trim() : '';
+        if (!validateOperationUuid(attemptId)) {
+          return json({ ok: false, code: 'INVALID_ATTEMPT_ID', error: 'The event attempt ID is invalid.' }, 400, origin);
+        }
+        const outcome = await applyGemEventRetry(identity.uid, eventId, attemptId, operationId, accessToken);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+
       if (url.pathname.startsWith('/duels/')) {
         const code = payload && typeof payload.code === 'string' ? payload.code.trim().toUpperCase() : '';
         if (!validateDuelCode(code)) {
@@ -1334,7 +1569,32 @@ export default {
       }
       const outcome = await applyGemChange(identity.uid, action, amount, operationId, accessToken);
       return json({ ok: true, ...outcome }, 200, origin);
-    } catch (error) {
+    } catch (error) {\n      const eventErrors = {
+        EVENT_NOT_FOUND: ['That event could not be found.', 404],
+        EVENT_NOT_ACTIVE: ['That event is not active.', 409],
+        EVENT_NOT_OPEN: ['That event has not opened yet.', 409],
+        EVENT_CLOSED: ['That event has closed.', 409],
+        EVENT_ENTRY_LIMIT_REACHED: ['You have used all entries allowed for this event.', 409],
+        EVENT_RETRY_DISABLED: ['Retries are not enabled for this event.', 409],
+        EVENT_RETRY_LIMIT_REACHED: ['You have used all retries allowed for this entry.', 409],
+        EVENT_PARTICIPATION_NOT_FOUND: ['Your event entry could not be found.', 404],
+        EVENT_ATTEMPT_NOT_FOUND: ['That event attempt could not be found.', 404],
+        EVENT_ATTEMPT_NOT_RETRYABLE: ['That attempt has already been replaced or closed.', 409],
+        INVALID_EVENT_CONFIG: ['The event configuration needs Owner review.', 409],
+        INVALID_EVENT_REQUEST: ['The event request is invalid.', 400],
+        INVALID_EVENT_TIME: ['The event timing is invalid.', 400],
+        INVALID_EVENT_ID: ['The event ID is invalid.', 400],
+        INVALID_EVENT_PARTICIPATION: ['Your event participation record needs review.', 409],
+        INVALID_EVENT_ATTEMPT: ['Your event attempt record needs review.', 409],
+        INSUFFICIENT_COINS: ['You do not have enough Coins for this event action.', 409],
+        INVALID_COIN_BALANCE: ['Your Coin balance needs review.', 409],
+        INVALID_ATTEMPT_ID: ['The event attempt ID is invalid.', 400]
+      };
+      if (error && eventErrors[error.message]) {
+        const [message, status] = eventErrors[error.message];
+        return json({ ok: false, code: error.message, error: message }, status, origin);
+      }
+
 
       const duelErrors = {
         DUEL_NOT_FOUND: 'That duel could not be found.',
