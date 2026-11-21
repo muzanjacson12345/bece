@@ -1045,7 +1045,12 @@ async function settleDuel(uid, code, accessToken) {
 }
 
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
-  const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const playerPath = 'players/' + encodeURIComponent(uid);
+  const receiptPath = 'gemTransactions/' + encodeURIComponent(uid + '_' + operationId);
+  const playerName = base + playerPath;
+  const receiptName = base + receiptPath;
+
   const transactionResult = await firestoreRequest(
     'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
     accessToken,
@@ -1055,49 +1060,120 @@ async function applyGemChange(uid, action, amount, operationId, accessToken) {
   if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
   let finished = false;
   try {
-    const player = await getDocument('players/' + encodeURIComponent(uid), accessToken, transaction);
+    const [player, receiptDoc] = await Promise.all([
+      getDocument(playerPath, accessToken, transaction),
+      getDocument(receiptPath, accessToken, transaction)
+    ]);
     if (!player) throw new Error('PLAYER_PROFILE_NOT_READY');
+
     const fields = player.fields || {};
     const before = fields.gems ? parseIntegerField(fields.gems, 0) : 0;
-    if (!Number.isSafeInteger(before) || before < 0 || before > MAX_BALANCE) throw new Error('INVALID_GEM_BALANCE');
+    if (!Number.isSafeInteger(before) || before < 0 || before > MAX_BALANCE) {
+      throw new Error('INVALID_GEM_BALANCE');
+    }
     const recentOps = parseStringArray(fields.gemOps);
-    if (recentOps.includes(operationId)) {
+
+    if (receiptDoc) {
+      const stored = decodeFirestoreFields(receiptDoc.fields || {});
+      if (stored.uid !== uid) throw new Error('GEM_RECEIPT_INVALID');
+      if (stored.action !== 'legacy' && (stored.action !== action || stored.amount !== amount)) {
+        throw new Error('IDEMPOTENCY_KEY_REUSED');
+      }
       await firestoreRequest(
         'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
         accessToken,
         { method: 'POST', body: { transaction, writes: [] } }
       );
       finished = true;
-      return { previous: before, balance: before, change: 0, duplicate: true, operations: recentOps };
+      const prior = stored.result && typeof stored.result === 'object' ? stored.result : {
+        previous: Number.isSafeInteger(stored.previous) ? stored.previous : before,
+        balance: Number.isSafeInteger(stored.balance) ? stored.balance : before,
+        change: Number.isSafeInteger(stored.change) ? stored.change : 0
+      };
+      return { ...prior, duplicate: true, operations: recentOps };
     }
+
+    if (recentOps.includes(operationId)) {
+      // Migrate a legacy rolling operation ID to a permanent receipt so it
+      // cannot become replayable after it ages out of players.gemOps.
+      const result = { previous: before, balance: before, change: 0, duplicate: true, operations: recentOps };
+      const receipt = {
+        uid, operationId, action: 'legacy', amount: 0,
+        previous: before, balance: before, change: 0,
+        createdAt: Date.now(), result
+      };
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken,
+        {
+          method: 'POST',
+          body: {
+            transaction,
+            writes: [{
+              update: { name: receiptName, fields: encodeFirestoreFields(receipt) },
+              updateMask: { fieldPaths: Object.keys(receipt) },
+              currentDocument: { exists: false }
+            }]
+          }
+        }
+      );
+      finished = true;
+      return result;
+    }
+
     if (action === 'spend' && before < amount) {
       const error = new Error('INSUFFICIENT_GEMS');
       error.code = 'INSUFFICIENT_GEMS';
       throw error;
     }
     const after = action === 'earn' ? before + amount : before - amount;
-    if (!Number.isSafeInteger(after) || after < 0 || after > MAX_BALANCE) throw new Error('GEM_BALANCE_LIMIT');
+    if (!Number.isSafeInteger(after) || after < 0 || after > MAX_BALANCE) {
+      throw new Error('GEM_BALANCE_LIMIT');
+    }
     const operations = [...recentOps, operationId].slice(-MAX_RECENT_OPS);
-    const fieldsToWrite = {
-      gems: { integerValue: String(after) },
-      gemOps: { arrayValue: { values: operations.map(value => ({ stringValue: value })) } }
+    const result = {
+      previous: before,
+      balance: after,
+      change: action === 'earn' ? amount : -amount,
+      duplicate: false,
+      operations
     };
+    const receipt = {
+      uid,
+      operationId,
+      action,
+      amount,
+      previous: before,
+      balance: after,
+      change: result.change,
+      createdAt: Date.now(),
+      result
+    };
+    const writes = [
+      {
+        update: {
+          name: playerName,
+          fields: {
+            gems: { integerValue: String(after) },
+            gemOps: { arrayValue: { values: operations.map(value => ({ stringValue: value })) } }
+          }
+        },
+        updateMask: { fieldPaths: ['gems', 'gemOps'] },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: receiptName, fields: encodeFirestoreFields(receipt) },
+        updateMask: { fieldPaths: Object.keys(receipt) },
+        currentDocument: { exists: false }
+      }
+    ];
     await firestoreRequest(
       'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
       accessToken,
-      {
-        method: 'POST',
-        body: {
-          transaction,
-          writes: [{
-            update: { name: documentName, fields: fieldsToWrite },
-            updateMask: { fieldPaths: ['gems', 'gemOps'] }
-          }]
-        }
-      }
+      { method: 'POST', body: { transaction, writes } }
     );
     finished = true;
-    return { previous: before, balance: after, change: action === 'earn' ? amount : -amount, duplicate: false, operations };
+    return result;
   } finally {
     if (!finished) await rollbackTransaction(transaction, accessToken);
   }
@@ -1284,6 +1360,12 @@ export default {
         const status = error.message === 'DUEL_NOT_PARTICIPANT' ? 403
           : error.message === 'DUEL_NOT_FOUND' ? 404 : 409;
         return json({ ok: false, code: error.message, error: duelErrors[error.message] }, status, origin);
+      }
+      if (error && error.message === 'IDEMPOTENCY_KEY_REUSED') {
+        return json({ ok: false, code: 'IDEMPOTENCY_KEY_REUSED', error: 'This Gem operation ID was already used for a different action.' }, 409, origin);
+      }
+      if (error && error.message === 'GEM_RECEIPT_INVALID') {
+        return json({ ok: false, code: 'GEM_RECEIPT_INVALID', error: 'This Gem operation receipt needs Owner review.' }, 409, origin);
       }
       if (error && error.message === 'INSUFFICIENT_GEMS') {
         return json({ ok: false, code: 'INSUFFICIENT_GEMS', error: 'You do not have enough Gems.' }, 409, origin);
