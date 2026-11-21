@@ -331,7 +331,8 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
       return { duplicate: true, result: stored.result || null };
     }
 
-    const player = decodeFirestoreFields(playerDoc && playerDoc.fields);
+    if (!playerDoc) throw new Error('PLAYER_PROFILE_NOT_READY');
+    const player = decodeFirestoreFields(playerDoc.fields);
     const trustedState = decodeFirestoreFields(stateDoc && stateDoc.fields);
     const settings = decodeFirestoreFields(settingsDoc && settingsDoc.fields);
     const currentCoins = player.coins === undefined ? 0 : Number(player.coins);
@@ -362,6 +363,10 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
       kind,
       claimedAchievements
     });
+    const balances = [result.coins, result.gems, result.totalExp, result.weekExp, result.dayExp];
+    if (!balances.every(value => Number.isSafeInteger(value) && value >= 0 && value <= MAX_BALANCE)) {
+      throw new Error('PLAYER_BALANCE_LIMIT');
+    }
 
     const achievementClaims = [...new Set([...claimedAchievements, ...result.gemAchievementIds])];
     const displayAchievements = combineAchievementDisplay(player.achievements, result.achievements);
@@ -620,6 +625,9 @@ export default {
       }
       if (error && error.message === 'PLAYER_PROFILE_NOT_READY') {
         return json({ ok: false, code: 'PLAYER_PROFILE_NOT_READY', error: 'Your player profile is still being created. Please try again shortly.' }, 409, origin);
+      }
+      if (error && error.message === 'PLAYER_BALANCE_LIMIT') {
+        return json({ ok: false, code: 'PLAYER_BALANCE_LIMIT', error: 'This account has reached the maximum supported reward balance.' }, 409, origin);
       }
       if (error && error.message === 'SERVICE_NOT_CONFIGURED') {
         return json({ ok: false, code: 'SERVICE_NOT_CONFIGURED', error: 'The secure Gems service has not been configured yet.' }, 503, origin);
