@@ -3549,7 +3549,7 @@ pre, code { overflow-wrap: anywhere; }
       <a href="#/friends" data-nav="friends">Friends</a>
       <a href="#/admin" data-nav="admin" data-admin-nav hidden>Admin</a>
       <a href="#/duels" data-nav="duels">Duels</a>
-      <a href="#/notes" data-nav="notes">Notes</a>
+      <a href="#/events" data-nav="events"><span aria-hidden="true">💎</span><span>Events</span></a> <a href="#/notes" data-nav="notes">Notes</a>
     </nav>
     <div class="nav-tools">
       <button id="theme-toggle" class="icon-button" type="button" aria-label="Toggle dark mode" aria-pressed="false">
@@ -3993,7 +3993,7 @@ pre, code { overflow-wrap: anywhere; }
     <div class="page-intro"><p class="eyebrow">Spend your rewards</p><h1>Coin shop</h1><p class="muted">Use coins earned through practice to unlock profile items and useful power-ups.</p></div>
     <div id="shop-body"></div>
   </div>
-</section>
+</section> <section id="screen-events" class="screen" data-screen="events" hidden> <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a><div class="page-intro"><p class="eyebrow">Spend Coins · compete for Gems</p><h1>Gem events</h1><p class="muted">Join special events, answer questions and compare your best result on the leaderboard.</p></div><div id="events-body"></div></div></section> 
 <section id="screen-me" class="screen" data-screen="me" hidden>
   <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
     <div class="page-intro"><p class="eyebrow">Your account</p><h1>Me</h1><p class="muted">Your profile, progress and personalisation settings.</p></div>
@@ -8402,8 +8402,8 @@ function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
 }
 
 /* ======================= Router ======================= */
-const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'shop', 'me'];
-const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', shop: 'shop', me: 'me' };
+const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'events', 'shop', 'me'];
+const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', events: 'events', shop: 'shop', me: 'me' };
 const PATH_FOR = { home: '', setup: 'practice' };
 let currentScreen = null;
 
@@ -9898,7 +9898,7 @@ window.App = {
   toast,
   el,
   icon,
-  questionById: id => questionIndex.get(id),
+  questionById: id => questionIndex.get(id), questionIds: subject => [...questionIndex.entries()].filter(([, q]) => !subject || q.subject === subject).map(([questionId]) => questionId),
   startQuiz: opts => Quiz.start(opts),
   get screen() { return currentScreen; },
   get quizKind() { return Quiz.opts?.kind; },
@@ -12601,6 +12601,10 @@ const Adm = (() => {
   };
   const eventId = field("Event ID (letters, numbers, - and _)", "text", "e.g. maths-weekend", 80);
   const title = field("Event name", "text", "Event title", 80);
+  const questionCount = field("Questions per attempt", "number", "3–50");
+  const questionSubject = document.createElement("select"); questionSubject.className = "adm-sel"; questionSubject.setAttribute("aria-label", "Event question subject");
+  [["", "Mixed subjects"], ["maths", "Mathematics"], ["social", "Social Studies"], ["arts", "Creative Arts"], ["computing", "Computing"], ["rme", "RME"], ["integratedScience", "Integrated Science"], ["french", "French"]].forEach(([value, label]) => questionSubject.append(new Option(label, value)));
+  const questionSubjectField = elx("label", "adm-info", "Question subject", questionSubject);
   const entryFee = field("Coins per entry", "number", "Whole Coin amount");
   const entryLimit = field("Maximum paid entries per player", "number", "1–100");
   const retryFee = field("Coins per retry", "number", "Only used when retries are enabled");
@@ -12609,7 +12613,7 @@ const Adm = (() => {
   retryEnabled.append(new Option("No paid retries", "no"), new Option("Paid retries enabled", "yes"));
   const retryField = elx("label", "adm-info", "Retry policy", retryEnabled);
   const description = document.createElement("textarea"); description.className = "adm-search"; description.rows = 2; description.maxLength = 500; description.placeholder = "Short description (optional)"; description.setAttribute("aria-label", "Event description");
-  card.append(elx("div", "adm-two", eventId.label, title.label, entryFee.label, entryLimit.label, retryField, retryFee.label, retryLimit.label), elx("label", "adm-info", "Description", description));
+  card.append(elx("div", "adm-two", eventId.label, title.label, questionSubjectField, questionCount.label, entryFee.label, entryLimit.label, retryField, retryFee.label, retryLimit.label), elx("label", "adm-info", "Description", description));
   card.append(elx("p", "adm-info", "Technical ceilings: 100 entries per player and 20 retries per entry. Settings lock after the first paid entry. New drafts remain inactive."));
   const save = btn("Save event draft", "btn-primary btn-sm", async () => {
     if (!S.isOwner) return App.toast("Owner access required.", "warn");
@@ -12623,6 +12627,13 @@ const Adm = (() => {
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) return App.toast("Entry allowance must be 1–100.", "warn");
     if (retry && (!Number.isSafeInteger(retryCost) || retryCost < 1 || retryCost > 1000000)) return App.toast("Retry cost must be 1–1,000,000 Coins.", "warn");
     if (retry && (!Number.isSafeInteger(retries) || retries < 1 || retries > 20)) return App.toast("Retry limit must be 1–20 per entry.", "warn");
+    const count = Number(questionCount.input.value);
+    if (!Number.isSafeInteger(count) || count < 3 || count > 50) return App.toast("Choose between 3 and 50 questions.", "warn");
+    if (typeof App.questionIds !== "function") return App.toast("The question bank is not available. Refresh the app and try again.", "warn");
+    const pool = App.questionIds(questionSubject.value || null);
+    if (!Array.isArray(pool) || pool.length < count) return App.toast("There are not enough questions in that subject. Choose a smaller count or mixed subjects.", "warn");
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    const questionIds = pool.slice(0, count);
     const user = firebase.auth().currentUser;
     if (!user || user.uid !== S.uid) return App.toast("Please reconnect your sign-in.", "warn");
     if (!GEMS_API_URL) return App.toast("The secure event service is not configured.", "warn");
@@ -12634,7 +12645,7 @@ const Adm = (() => {
       const response = await fetch(baseUrl + "/events/configure", {
         method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
         credentials: "omit", cache: "no-store",
-        body: JSON.stringify({ eventId: id, title: name, description: description.value.trim(), entryCostCoins: cost, maxEntriesPerUser: limit, retryEnabled: retry, retryCostCoins: retryCost, maxRetriesPerEntry: retries })
+        body: JSON.stringify({ eventId: id, title: name, description: description.value.trim(), questionIds, entryCostCoins: cost, maxEntriesPerUser: limit, retryEnabled: retry, retryCostCoins: retryCost, maxRetriesPerEntry: retries })
       });
       let data; try { data = await response.json(); } catch { throw new Error("The event service returned an unreadable response."); }
       if (!response.ok || !data || !data.ok || !data.result || data.result.status !== "draft") {
@@ -13133,7 +13144,7 @@ document.addEventListener("click", event => {
   if (panel) panel.open = true;
 }, true);
 </script>
-</body>
+<script type="module" src="./events.js"></script></body>
 </html>
 
 <!-- GitHub Pages rebuild trigger: achievement section is included in the home page. -->
