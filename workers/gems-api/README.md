@@ -33,6 +33,7 @@ All POST endpoints require a Firebase ID token in the `Authorization: Bearer <to
 | `POST /duels/answer` | Validates the selected answer against the server answer key and computes correctness, score and time. Requires a UUID answer operation ID. |
 | `POST /duels/forfeit` | Records a participant leaving a Duel and triggers settlement. |
 | `POST /duels/settle` | Calculates the final result and eligible Coin rewards for both participants, then writes a permanent settlement receipt. |
+| `POST /events/configure` | Owner-only operation that creates or edits an event's draft pricing/entry/retry configuration. It never activates an event and locks the fee/limit settings after the first paid entry. |
 | `POST /events/enter` | Charges the event's configured entry Coin fee, enforces the player's entry allowance, creates a private attempt and records a permanent receipt. |
 | `POST /events/retry` | Charges the event's configured retry Coin fee, enforces the per-entry retry cap, marks the previous attempt replaced and creates a new attempt. |
 | `POST /gems` | Performs an authenticated Gem earn/spend operation. Spending affects only the signed-in player's balance; granting Gems requires a valid Owner session. |
@@ -65,7 +66,7 @@ The supported balance ceiling is 1,000,000,000 units. A single `/gems` operation
 
 ## Event entry and retry foundation
 
-The draft Worker now has transactional payment endpoints for event entry and retries. These endpoints use per-event configuration from `gemEvents/{eventId}`; the browser cannot supply a price, balance, entry allowance or retry allowance.
+The draft Worker now has transactional payment endpoints for event entry and retries. These endpoints use per-event configuration from `gemEvents/{eventId}`; the browser cannot supply a price, balance, entry allowance or retry allowance. An Owner-only `/events/configure` endpoint creates or updates those settings as an inactive draft. The form cannot activate an event.
 
 Required event fields:
 
@@ -78,7 +79,7 @@ Required event fields:
 
 The backend has technical safety ceilings of 100 entries per user and 20 retries per entry; an event's configured limits may be lower. Entry and retry charges are atomic with the participant/attempt updates and a permanent `gemEventOperations` receipt. Reusing an operation ID cannot charge twice. A retry creates a new attempt under the same paid entry and marks the previous attempt as replaced. Entry and retry payments only deduct Coins; they do not award Gems or achievements.
 
-**Still not complete:** there is no event screen in the website yet, no event question-serving or answer-submission flow, no leaderboard calculation or event prize/Gem distribution, and no Owner interface for creating or editing event configurations. These endpoints are the payment/attempt foundation only. The event gameplay and prize rules need to be completed before the feature is enabled for players. Do not treat achievement Gem rules as event prize rules.
+**Still not complete:** there is no event screen in the website yet, no event question-serving or answer-submission flow, no leaderboard calculation or event prize/Gem distribution, and no Owner activation control or event gameplay management screen. The Owner panel can create or edit inactive pricing drafts, but cannot activate an event. These endpoints are the payment/attempt foundation only. The event gameplay and prize rules need to be completed before the feature is enabled for players. Do not treat achievement Gem rules as event prize rules.
 
 ## Related services
 
