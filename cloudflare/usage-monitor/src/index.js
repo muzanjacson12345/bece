@@ -154,8 +154,14 @@ async function verifyOwnerSession(uid, idToken, env, fetchFn, nowMs) {
 
 function readWorkersMetrics(account) {
   const rows = account && account.workersInvocationsAdaptive;
-  if (!Array.isArray(rows) || rows.length === 0 || rows.length >= GRAPHQL_ROW_LIMIT) {
-    return { complete: false, requests: null, subrequests: null, latestEventAt: null, records: Array.isArray(rows) ? rows.length : 0 };
+  if (!Array.isArray(rows) || rows.length >= GRAPHQL_ROW_LIMIT) {
+    return { complete: false, requests: null, subrequests: null, latestEventAt: null, records: Array.isArray(rows) ? rows.length : 0, noEvents: false };
+  }
+  // A successful GraphQL response with no rows means Cloudflare has not
+  // reported any invocations in this UTC window. Keep this distinct from a
+  // failed or malformed query; the UI labels it as no events reported yet.
+  if (rows.length === 0) {
+    return { complete: true, requests: 0, subrequests: 0, latestEventAt: null, records: 0, noEvents: true };
   }
   const parsed = parseWorkersUsage({ data: { viewer: { accounts: [account] } } });
   if (parsed.requests === null || parsed.subrequests === null) {
@@ -171,7 +177,8 @@ function readWorkersMetrics(account) {
     requests: parsed.requests,
     subrequests: parsed.subrequests,
     latestEventAt: latest ? new Date(latest).toISOString() : null,
-    records: rows.length
+    records: rows.length,
+    noEvents: false
   };
 }
 
@@ -302,7 +309,9 @@ async function fetchCloudflareMetrics(env, fetchFn, nowMs) {
       records: worker.records,
       complete: worker.complete,
       latestEventAt: worker.latestEventAt,
-      freshness: freshness.status === "unavailable" ? "unknown" : freshness.status === "stale" ? "delayed" : "recent"
+      freshness: worker.noEvents ? "no_events"
+        : freshness.status === "unavailable" ? "unknown"
+        : freshness.status === "stale" ? "delayed" : "recent"
     },
     d1: {
       detected: d1.complete || storage.complete,
