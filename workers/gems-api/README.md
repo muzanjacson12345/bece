@@ -36,6 +36,8 @@ All POST endpoints require a Firebase ID token in the `Authorization: Bearer <to
 | `POST /events/configure` | Owner-only operation that creates or edits an event's draft pricing/entry/retry configuration. It never activates an event and locks the fee/limit settings after the first paid entry. |
 | `POST /events/enter` | Charges the event's configured entry Coin fee, enforces the player's entry allowance, creates a private attempt and records a permanent receipt. |
 | `POST /events/retry` | Charges the event's configured retry Coin fee, enforces the per-entry retry cap, marks the previous attempt replaced and creates a new attempt. |
+| `POST /events/activate` | Owner-only activation of a valid saved draft. Requires a future closing time and a configured Gem prize pool; locks the event configuration. |
+| `POST /events/settle` | Settles an event after its closing time and 24-hour finish grace, pays the top three once and stores the final result. |
 | `POST /events/next` | Starts or resumes the next question in a participant's paid attempt without resetting an existing server start time. |
 | `POST /events/answer` | Verifies the answer with the private question-key module, advances the attempt, and updates the player's best leaderboard score when complete. |
 | `POST /gems` | Performs an authenticated Gem earn/spend operation. Spending affects only the signed-in player's balance; granting Gems requires a valid Owner session. |
@@ -51,6 +53,7 @@ The Worker uses permanent, private Firestore receipts so a network retry cannot 
 - `duelSettlements/{duelCode}` for the final Duel settlement.
 - `gemEventOperations/{uid}_{operationId}` for event entry and retry payments.
 - `gemEventAnswerOperations/{uid}_{operationId}` for individual event answer submissions.
+- `gemEventPrizeOperations/{eventId}_{uid}` for each one-time event Gem payout.
 - `gemTransactions/{uid}_{operationId}` for manual Gem balance changes.
 
 Client Firestore rules deny access to private receipts and server-owned Duel progress. The Worker remains responsible for validating the participant, answer order, balances, daily Duel reward cap and duplicate-operation IDs.
@@ -67,24 +70,25 @@ Client Firestore rules deny access to private receipts and server-owned Duel pro
 
 The supported balance ceiling is 1,000,000,000 units. A single `/gems` operation is capped at 1,000,000 Gems. Invalid balances fail closed and require review.
 
-## Event entry and retry foundation
+## Event lifecycle, prizes and settlement
 
-The draft Worker now has transactional payment endpoints for event entry and retries. These endpoints use per-event configuration from `gemEvents/{eventId}`; the browser cannot supply a price, balance, entry allowance or retry allowance. An Owner-only `/events/configure` endpoint creates or updates those settings as an inactive draft. The form cannot activate an event.
+The Owner-only `POST /events/configure` endpoint creates or edits an inactive draft. The Owner can choose a subject or mixed subjects, select 3–50 question IDs from the existing question bank, configure entry/retry Coin fees and limits, and set optional opening and closing times. Saving never activates or charges players.
 
-Required event fields:
+Each draft includes a configurable top-three Gem prize pool:
 
-- `status: "active"`
-- `entryCostCoins`: positive integer Coin fee for each paid entry.
-- `maxEntriesPerUser`: maximum number of paid entries a player may make for this event.
-- `retryEnabled`: whether a paid retry is available.
-- When retries are enabled: `retryCostCoins` and `maxRetriesPerEntry`.
-- Optional `opensAt` and `closesAt`: Unix-millisecond event window boundaries.
+- First place must receive at least 1 Gem.
+- Second and third place can be set to 0 to disable those payouts.
+- The combined prize pool cannot exceed 1,000,000 Gems.
+- Ranking is by correct answers (highest first), then total answer time (fastest first), then earliest verified completion time. A final UID ordering makes exact ties deterministic.
+- The Owner activates a saved draft explicitly with `POST /events/activate`. Activation requires a future closing time and locks the question list, fees, schedule and prizes. Only an authenticated active Owner can activate.
 
-The backend has technical safety ceilings of 100 entries per user and 20 retries per entry; an event's configured limits may be lower. Entry and retry charges are atomic with the participant/attempt updates and a permanent `gemEventOperations` receipt. Reusing an operation ID cannot charge twice. A retry creates a new attempt under the same paid entry and marks the previous attempt as replaced. Entry and retry payments only deduct Coins; they do not award Gems or achievements. Event opening and closing times gate new entries and paid retries. Once an attempt has been paid for, its player may finish it after the event closes; closed events remain visible so existing attempts and leaderboards can still be reached.
+Players can view active and settled events, pay the configured Coin entry fee, resume an attempt, submit answers checked against the private BECE answer-key module, pay a capped retry after completing an attempt, and view the public leaderboard. The Worker maintains a transactional `openAttempts` counter. An attempt may continue for 24 hours after the event closes; unfinished attempts expire after that window and do not qualify for prizes. New entries and retries are blocked at the closing time.
 
-The draft website now includes an Events screen. Signed-in players can view active events, enter with the configured Coin fee, resume an attempt, submit answers, pay for a capped retry after completing an attempt, and read the public leaderboard. The Worker chooses each question from the Owner-configured question list and verifies every answer against the private BECE answer-key module. Answer submissions use permanent receipts, and the leaderboard retains each player's best score (correct answers first, fastest time as the tie-breaker). A lost network response can be retried with the same answer operation ID. A player cannot pay for another entry while their latest attempt is still ready or in progress.
+Settlement is one atomic Firestore transaction. The Worker reads the top three leaderboard entries, updates winner Gem balances, creates private `gemEventPrizeOperations` receipts and changes the event to `settled`. Each winner can be paid only once. Events with fewer than three eligible competitors pay only the available positions. Events with no eligible competitors settle with no payout.
 
-**Still not complete:** no Owner activation control or event gameplay management screen exists yet. No Gem prize tiers or winner payout rules have been configured, so the event flow does not distribute Gems or award achievements. The Owner panel can create or edit inactive pricing/question drafts, but cannot activate an event. Keep events inactive until the prize/tie policy and Owner activation controls are completed. Do not treat achievement Gem rules as event prize rules.
+The Worker has a 15-minute Cloudflare Cron trigger. It scans active events and automatically settles events whose 24-hour finish grace has elapsed, processing up to five due events per scheduled run. The player Events screen can also request settlement when it sees an overdue event; both paths use the same transaction and are idempotent.
+
+Entry and retry payments deduct Coins only. They do not award Gems or achievements. Do not treat achievement Gem rules as event prize rules.
 
 ## Related services
 
