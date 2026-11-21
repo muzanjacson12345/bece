@@ -4,7 +4,7 @@ import { buildPracticeRewardResult } from "./practice-utils.mjs";
 import { isKnownQuestionId } from "./question-keys.mjs";
 import { getShopItem } from "./shop-utils.mjs";
 import { getPowerupUse, validatePowerupUseReceiptRetry } from "./powerup-utils.mjs";
-import { EVENT_FINISH_GRACE_MS, buildGemEventActivation, buildGemEventDraftConfig, buildGemEventEntry, buildGemEventRetry } from "./event-utils.mjs";
+import { EVENT_FINISH_GRACE_MS, buildGemEventActivation, buildGemEventDraftConfig, buildGemEventEntry, buildGemEventRetry, validateEventPrizeGems } from "./event-utils.mjs";
 import { buildGemEventAnswerResult, buildGemEventLeaderboardEntry, buildGemEventQuestionStart, buildGemEventSettlement } from "./event-game-utils.mjs";
 import {
   buildDuelAnswerResult,
@@ -1360,6 +1360,197 @@ async function applyGemEventRetry(uid, eventId, currentAttemptId, operationId, a
   }
 }
 
+
+
+async function applyGemEventActivation(uid, eventId, accessToken) {
+  const owner = await hasActiveOwnerSession(uid, accessToken);
+  if (!owner) throw new Error('EVENT_OWNER_REQUIRED');
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const eventPath = gemEventPath(eventId);
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const eventDoc = await getDocument(eventPath, accessToken, transaction);
+    if (!eventDoc) throw new Error('EVENT_NOT_FOUND');
+    const event = decodeFirestoreFields(eventDoc.fields || {});
+    if (event.status === 'active' && event.activatedBy === uid) {
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: { eventId, status: 'active', activatedAt: event.activatedAt } };
+    }
+    const fields = buildGemEventActivation({ event, ownerUid: uid, now: Date.now() });
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          writes: [{
+            update: { name: base + eventPath, fields: encodeFirestoreFields(fields) },
+            updateMask: { fieldPaths: Object.keys(fields) },
+            currentDocument: { exists: true }
+          }]
+        }
+      }
+    );
+    finished = true;
+    return { duplicate: false, result: { eventId, ...fields } };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+async function applyGemEventSettlement(eventId, accessToken) {
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const eventPath = gemEventPath(eventId);
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const eventDoc = await getDocument(eventPath, accessToken, transaction);
+    if (!eventDoc) throw new Error('EVENT_NOT_FOUND');
+    const event = decodeFirestoreFields(eventDoc.fields || {});
+    if (event.status === 'settled') {
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken, { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      const saved = event.settlement || {};
+      return {
+        duplicate: true,
+        result: {
+          eventId,
+          status: 'settled',
+          settledAt: event.settledAt,
+          winners: saved.winners || event.winners || [],
+          totalGemsAwarded: saved.totalGemsAwarded || event.totalGemsAwarded || 0,
+          uncompletedAttempts: saved.uncompletedAttempts || event.uncompletedAttempts || 0
+        }
+      };
+    }
+    if (event.status !== 'active') throw new Error('EVENT_NOT_ACTIVE');
+
+    const queryPath = 'projects/' + PROJECT_ID + '/databases/(default)/documents/' + eventPath + ':runQuery';
+    const queryRows = await firestoreRequest(
+      queryPath,
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          structuredQuery: {
+            from: [{ collectionId: 'leaderboard' }],
+            orderBy: [{ field: { fieldPath: 'rankKey' }, direction: 'ASCENDING' }],
+            limit: 3
+          }
+        }
+      }
+    );
+    const leaderboardEntries = (Array.isArray(queryRows) ? queryRows : [])
+      .filter(row => row && row.document && row.document.fields)
+      .map(row => decodeFirestoreFields(row.document.fields));
+
+    const prizes = validateEventPrizeGems(event.prizeGems);
+    const candidateWinners = leaderboardEntries.slice(0, 3);
+    const paidWinners = candidateWinners.filter((entry, index) =>
+      entry && typeof entry.uid === 'string'
+      && [prizes.first, prizes.second, prizes.third][index] > 0
+    );
+    const reads = await Promise.all(paidWinners.map(async winner => {
+      const playerPath = 'players/' + encodeURIComponent(winner.uid);
+      const receiptPath = 'gemEventPrizeOperations/' + encodeURIComponent(eventId + '_' + winner.uid);
+      const [playerDoc, receiptDoc] = await Promise.all([
+        getDocument(playerPath, accessToken, transaction),
+        getDocument(receiptPath, accessToken, transaction)
+      ]);
+      return { uid: winner.uid, playerDoc, receiptDoc };
+    }));
+    const playerByUid = {};
+    const receiptByUid = {};
+    for (const item of reads) {
+      playerByUid[item.uid] = item.playerDoc ? decodeFirestoreFields(item.playerDoc.fields || {}) : null;
+      receiptByUid[item.uid] = item.receiptDoc;
+      if (item.receiptDoc) throw new Error('EVENT_PRIZE_ALREADY_PAID');
+    }
+    const summary = buildGemEventSettlement({
+      event,
+      leaderboardEntries,
+      playerByUid,
+      now: Date.now()
+    });
+
+    const writes = [];
+    for (const payout of summary.payouts) {
+      const playerPath = 'players/' + encodeURIComponent(payout.uid);
+      const receiptPath = 'gemEventPrizeOperations/' + encodeURIComponent(eventId + '_' + payout.uid);
+      const receipt = {
+        eventId,
+        uid: payout.uid,
+        rank: payout.rank,
+        amount: payout.amount,
+        balanceAfter: payout.balance,
+        paidAt: summary.settledAt
+      };
+      writes.push({
+        update: { name: base + playerPath, fields: encodeFirestoreFields({ gems: payout.balance }) },
+        updateMask: { fieldPaths: ['gems'] },
+        currentDocument: { exists: true }
+      });
+      writes.push({
+        update: { name: base + receiptPath, fields: encodeFirestoreFields(receipt) },
+        updateMask: { fieldPaths: Object.keys(receipt) },
+        currentDocument: { exists: false }
+      });
+    }
+
+    const settlement = {
+      eventId,
+      status: 'settled',
+      settledAt: summary.settledAt,
+      winners: summary.winners,
+      totalGemsAwarded: summary.totalGemsAwarded,
+      uncompletedAttempts: summary.uncompletedAttempts
+    };
+    const eventUpdates = {
+      status: 'settled',
+      leaderboardStatus: 'settled',
+      settledAt: summary.settledAt,
+      settledBy: 'system',
+      winners: summary.winners,
+      totalGemsAwarded: summary.totalGemsAwarded,
+      uncompletedAttempts: summary.uncompletedAttempts,
+      openAttempts: 0,
+      settlement
+    };
+    writes.push({
+      update: { name: base + eventPath, fields: encodeFirestoreFields(eventUpdates) },
+      updateMask: { fieldPaths: Object.keys(eventUpdates) },
+      currentDocument: { exists: true }
+    });
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken, { method: 'POST', body: { transaction, writes } }
+    );
+    finished = true;
+    return { duplicate: false, result: settlement };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
 
 async function startGemEventQuestion(uid, eventId, attemptId, accessToken) {
   const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
