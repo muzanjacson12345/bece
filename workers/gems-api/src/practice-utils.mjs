@@ -130,7 +130,7 @@ export function buildPracticeRewardResult({
   achievementStats.answered = safeCount(achievementStats.answered) + answeredIds.length;
   achievementStats.correct = safeCount(achievementStats.correct) + correctCount;
   achievementStats.quizzes = safeCount(achievementStats.quizzes) + 1;
-  if (answeredIds.length > 0 && correctCount === answeredIds.length) {
+  if (answeredIds.length === questionIds.length && answeredIds.length > 0 && correctCount === answeredIds.length) {
     achievementStats.perfect = safeCount(achievementStats.perfect) + 1;
   }
   const subjectMetrics = {};
