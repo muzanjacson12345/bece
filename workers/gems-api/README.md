@@ -33,6 +33,8 @@ All POST endpoints require a Firebase ID token in the `Authorization: Bearer <to
 | `POST /duels/answer` | Validates the selected answer against the server answer key and computes correctness, score and time. Requires a UUID answer operation ID. |
 | `POST /duels/forfeit` | Records a participant leaving a Duel and triggers settlement. |
 | `POST /duels/settle` | Calculates the final result and eligible Coin rewards for both participants, then writes a permanent settlement receipt. |
+| `POST /events/enter` | Charges the event's configured entry Coin fee, enforces the player's entry allowance, creates a private attempt and records a permanent receipt. |
+| `POST /events/retry` | Charges the event's configured retry Coin fee, enforces the per-entry retry cap, marks the previous attempt replaced and creates a new attempt. |
 | `POST /gems` | Performs an authenticated Gem earn/spend operation. Spending affects only the signed-in player's balance; granting Gems requires a valid Owner session. |
 
 ## Idempotency and server-owned records
@@ -44,6 +46,7 @@ The Worker uses permanent, private Firestore receipts so a network retry cannot 
 - `powerupOperations/{uid}_{operationId}` for consumable use.
 - `duelProgress/{duelCode}_{uid}` for each participant's trusted answer history and timing.
 - `duelSettlements/{duelCode}` for the final Duel settlement.
+- `gemEventOperations/{uid}_{operationId}` for event entry and retry payments.
 - `gemTransactions/{uid}_{operationId}` for manual Gem balance changes.
 
 Client Firestore rules deny access to private receipts and server-owned Duel progress. The Worker remains responsible for validating the participant, answer order, balances, daily Duel reward cap and duplicate-operation IDs.
@@ -60,9 +63,22 @@ Client Firestore rules deny access to private receipts and server-owned Duel pro
 
 The supported balance ceiling is 1,000,000,000 units. A single `/gems` operation is capped at 1,000,000 Gems. Invalid balances fail closed and require review.
 
-## Events are separate
+## Event entry and retry foundation
 
-Event entry and paid retries are a separate planned feature, not implemented by these endpoints yet. The agreed policy is to use Coins for event entry, configure entry prices and allowances per event, cap retries, and ensure paying a retry fee does not itself grant Gems or achievements. Do not treat the achievement Gem rules as event-entry rules.
+The draft Worker now has transactional payment endpoints for event entry and retries. These endpoints use per-event configuration from `gemEvents/{eventId}`; the browser cannot supply a price, balance, entry allowance or retry allowance.
+
+Required event fields:
+
+- `status: "active"`
+- `entryCostCoins`: positive integer Coin fee for each paid entry.
+- `maxEntriesPerUser`: maximum number of paid entries a player may make for this event.
+- `retryEnabled`: whether a paid retry is available.
+- When retries are enabled: `retryCostCoins` and `maxRetriesPerEntry`.
+- Optional `opensAt` and `closesAt`: Unix-millisecond event window boundaries.
+
+The backend has technical safety ceilings of 100 entries per user and 20 retries per entry; an event's configured limits may be lower. Entry and retry charges are atomic with the participant/attempt updates and a permanent `gemEventOperations` receipt. Reusing an operation ID cannot charge twice. A retry creates a new attempt under the same paid entry and marks the previous attempt as replaced. Entry and retry payments only deduct Coins; they do not award Gems or achievements.
+
+**Still not complete:** there is no event screen in the website yet, no event question-serving or answer-submission flow, no leaderboard calculation or event prize/Gem distribution, and no Owner interface for creating or editing event configurations. These endpoints are the payment/attempt foundation only. The event gameplay and prize rules need to be completed before the feature is enabled for players. Do not treat achievement Gem rules as event prize rules.
 
 ## Related services
 
