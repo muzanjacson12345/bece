@@ -11320,7 +11320,14 @@ const ADMIN_MS = 2 * 3600 * 1000, OWNER_MS = 30 * 60 * 1000, OWNER_AWAY_MS = 5 *
 const elx = (tag, cls, ...kids) => { const n = document.createElement(tag); if (cls) n.className = cls; kids.flat().forEach(k => { if (k === null || k === undefined || k === false) return; n.append(k && k.nodeType ? k : document.createTextNode(String(k))); }); return n; };
 const fsv = () => firebase.firestore;
 const fmtTime = t => { try { return new Date(t).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); } catch { return String(t); } };
-const banActive = b => !!b && (!b.until || b.until > Date.now());
+const banActive = b => {
+  if (!b) return false;
+  const until = b.until;
+  if (until === undefined || until === null || until === 0) return true;
+  // Match Firestore rules and the Gems Worker: malformed expiry values
+  // fail closed and remain visible for explicit staff review.
+  return !Number.isSafeInteger(until) || until < 0 || until > Date.now();
+};
 // roster = permanent staff record (never expires), so protection holds even when the owner is locked
 const isAppointed = id => !!(S.rosterData.get(id) || {}).appointed;
 const roleOf = id => (S.owners.has(id) || S.roster.get(id) === 'owner') ? 'owner' : (S.admins.has(id) || S.roster.has(id)) ? 'admin' : null;
