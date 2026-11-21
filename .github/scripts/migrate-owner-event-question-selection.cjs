@@ -4,10 +4,12 @@ if (process.env.GITHUB_REF_NAME && process.env.GITHUB_REF_NAME !== expected) thr
 const file = 'index.html';
 let source = fs.readFileSync(file, 'utf8');
 
-const oldApi = 'questionById: id => questionIndex.get(id), startQuiz: opts => Quiz.start(opts),';
-const newApi = 'questionById: id => questionIndex.get(id), questionIds: subject => [...questionIndex.values()].filter(q => !subject || q.subject === subject).map(q => q.id), startQuiz: opts => Quiz.start(opts),';
-if (source.includes(oldApi)) source = source.replace(oldApi, newApi);
-else if (!source.includes('questionIds: subject => [...questionIndex.values()]')) throw new Error('Could not extend the public question bank lookup API.');
+const hasQuestionIds = /questionIds\\s*:\\s*subject\\s*=>/.test(source);
+if (!hasQuestionIds) {
+  const lookup = /questionById\\s*:\\s*id\\s*=>\\s*questionIndex\\.get\\(id\\)\\s*,/;
+  if (!lookup.test(source)) throw new Error('Could not find the public questionById lookup.');
+  source = source.replace(lookup, match => match + ' questionIds: subject => [...questionIndex.entries()].filter(([, q]) => !subject || q.subject === subject).map(([questionId]) => questionId),');
+}
 
 const titleMarker = '  const title = field("Event name", "text", "Event title", 80);';
 const questionFields = [
