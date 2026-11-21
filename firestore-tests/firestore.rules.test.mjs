@@ -12,7 +12,8 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-  Timestamp
+  Timestamp,
+  serverTimestamp
 } from "firebase/firestore";
 
 const PROJECT_ID = "demo-bece-hub-rules";
@@ -137,7 +138,7 @@ test("a banned Admin cannot use an unexpired Admin session", async () => {
     text: "Should be blocked", by: "banned-admin", at: now
   }));
   await assertFails(setDoc(doc(db, "adminSessions/banned-admin"), {
-    pin: "1234", at: Timestamp.now()
+    pin: "1234", at: serverTimestamp()
   }));
 });
 
@@ -152,7 +153,7 @@ test("an expired ban does not prevent a valid Admin session", async () => {
   });
   const db = testEnv.authenticatedContext("formerly-banned-admin").firestore();
   await assertSucceeds(setDoc(doc(db, "adminSessions/formerly-banned-admin"), {
-    pin: "1234", at: Timestamp.now()
+    pin: "1234", at: serverTimestamp()
   }));
   await assertSucceeds(setDoc(doc(db, "adminNotes/player1"), {
     text: "Allowed after expiry", by: "formerly-banned-admin", at: now
