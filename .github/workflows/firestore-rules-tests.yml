@@ -1,0 +1,29 @@
+name: Firestore Rules Tests
+
+on:
+  push:
+    branches:
+      - draft/firestore-rules-gems-foundation-2026-11-21
+    paths:
+      - "firestore.rules"
+      - "firestore-tests/**"
+      - ".github/workflows/firestore-rules-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firestore-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install test dependencies
+        run: npm install --prefix firestore-tests
+      - name: Run Firestore Emulator rules tests
+        run: npx --yes firebase-tools emulators:exec --project demo-bece-hub-rules --only firestore "npm --prefix firestore-tests test"
