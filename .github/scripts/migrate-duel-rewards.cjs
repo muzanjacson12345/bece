@@ -8,6 +8,14 @@ if (process.env.GITHUB_REF_NAME && process.env.GITHUB_REF_NAME !== EXPECTED_BRAN
 const file = "index.html";
 let source = fs.readFileSync(file, "utf8");
 
+const doubleCountedStreak = "    D.streak = ok ? (D.streak || 0) + 1 : 0; if (D.streak > (D.best || 0)) D.best = D.streak;\\n";
+if (source.includes(doubleCountedStreak)) {
+  source = source.replace(doubleCountedStreak, "");
+  fs.writeFileSync(file, source, "utf8");
+  console.log("Removed the duplicate local increment of the server-verified Duel streak.");
+  process.exit(0);
+}
+
 if (source.includes("duelApi('/duels/answer'") && source.includes("duelApi('/duels/settle'")) {
   console.log("Duel answers and rewards already use the trusted Worker.");
   process.exit(0);
