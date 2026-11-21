@@ -12881,7 +12881,7 @@ window.Gems = Gems;
 async function init() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   renderAccount(); renderDaily(); renderAchievements();
-  App.on('screen', s => { if (['friends', 'admin', 'duels', 'shop', 'me'].includes(s)) renderFriends(); });
+  App.on('screen', s => { if (['friends', 'admin', 'duels', 'events', 'shop', 'me'].includes(s)) renderFriends(); });
   try {
     const fb = await connectFirebase();
     S.db = fb.db; S.uid = fb.uid; Duel.start();
