@@ -1,6 +1,7 @@
 import { isFirestoreBanActive } from "./ban-utils.mjs";
 import { hasValidOwnerSession } from "./owner-utils.mjs";
 import { buildPracticeRewardResult } from "./practice-utils.mjs";
+import { buildAchievementGemHistory, buildEventGemPrizeHistory } from "./gem-history.mjs";
 import { isKnownQuestionId } from "./question-keys.mjs";
 import { getShopItem } from "./shop-utils.mjs";
 import { getPowerupUse, validatePowerupUseReceiptRetry } from "./powerup-utils.mjs";
@@ -451,6 +452,16 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
       createdAt: Date.now(),
       result: responseResult
     };
+    const gemHistory = result.gemsEarned > 0
+      ? buildAchievementGemHistory({
+          uid,
+          operationId,
+          achievementIds: result.gemAchievementIds,
+          balanceBefore: currentGems,
+          balanceAfter: result.gems,
+          now: Date.now()
+        })
+      : null;
     const writes = [
       {
         update: { name: playerName, fields: encodeFirestoreFields(playerUpdates) },
@@ -468,6 +479,23 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
         currentDocument: { exists: false }
       }
     ];
+    if (gemHistory) {
+      const transactionPath = 'gemTransactions/' + encodeURIComponent(gemHistory.transaction.transactionId);
+      writes.push({
+        update: { name: base + transactionPath, fields: encodeFirestoreFields(gemHistory.transaction) },
+        updateMask: { fieldPaths: Object.keys(gemHistory.transaction) },
+        currentDocument: { exists: false }
+      });
+      for (const claim of gemHistory.claims) {
+        const claimId = uid + '_' + claim.achievementId;
+        const claimPath = 'gemRewardClaims/' + encodeURIComponent(claimId);
+        writes.push({
+          update: { name: base + claimPath, fields: encodeFirestoreFields(claim) },
+          updateMask: { fieldPaths: Object.keys(claim) },
+          currentDocument: { exists: false }
+        });
+      }
+    }
     await firestoreRequest(
       'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
       accessToken,
@@ -1549,6 +1577,16 @@ async function applyGemEventSettlement(eventId, accessToken) {
       now: Date.now()
     });
 
+    const gemHistory = buildEventGemPrizeHistory({
+      eventId,
+      eventTitle: event.title || 'Gem event',
+      payouts: summary.payouts,
+      now: summary.settledAt
+    });
+    if (gemHistory.totalGemsAwarded !== summary.totalGemsAwarded) {
+      throw new Error('GEM_HISTORY_PAYOUT_MISMATCH');
+    }
+
     const writes = [];
     for (const payout of summary.payouts) {
       const playerPath = 'players/' + encodeURIComponent(payout.uid);
@@ -1569,6 +1607,14 @@ async function applyGemEventSettlement(eventId, accessToken) {
       writes.push({
         update: { name: base + receiptPath, fields: encodeFirestoreFields(receipt) },
         updateMask: { fieldPaths: Object.keys(receipt) },
+        currentDocument: { exists: false }
+      });
+    }
+    for (const record of gemHistory.transactions) {
+      const historyPath = 'gemTransactions/' + encodeURIComponent(record.transactionId);
+      writes.push({
+        update: { name: base + historyPath, fields: encodeFirestoreFields(record) },
+        updateMask: { fieldPaths: Object.keys(record) },
         currentDocument: { exists: false }
       });
     }
@@ -1828,7 +1874,10 @@ async function applyGemChange(uid, action, amount, operationId, accessToken) {
       const result = { previous: before, balance: before, change: 0, duplicate: true, operations: recentOps };
       const receipt = {
         uid, operationId, action: 'legacy', amount: 0,
+        currency: 'gems', kind: 'owner_adjustment', direction: 'credit',
+        referenceId: operationId, description: 'Migrated legacy Gem operation',
         previous: before, balance: before, change: 0,
+        balanceBefore: before, balanceAfter: before, source: 'owner',
         createdAt: Date.now(), result
       };
       await firestoreRequest(
@@ -1872,9 +1921,17 @@ async function applyGemChange(uid, action, amount, operationId, accessToken) {
       operationId,
       action,
       amount,
+      currency: 'gems',
+      kind: 'owner_adjustment',
+      direction: action === 'earn' ? 'credit' : 'debit',
+      referenceId: operationId,
+      description: action === 'earn' ? 'Owner Gem grant' : 'Owner Gem deduction',
       previous: before,
       balance: after,
       change: result.change,
+      balanceBefore: before,
+      balanceAfter: after,
+      source: 'owner',
       createdAt: Date.now(),
       result
     };
