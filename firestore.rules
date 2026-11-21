@@ -63,11 +63,10 @@ service cloud.firestore {
       return signedIn()
         && exists(banPath(request.auth.uid))
         && (
-          !('until' in get(banPath(request.auth.uid)).data)
-          || get(banPath(request.auth.uid)).data.until == null
-          || get(banPath(request.auth.uid)).data.until == 0
-          || (get(banPath(request.auth.uid)).data.until is int
-              && get(banPath(request.auth.uid)).data.until > request.time.toMillis())
+          get(banPath(request.auth.uid)).data.get('until', null) == null
+          || get(banPath(request.auth.uid)).data.get('until', null) == 0
+          || (get(banPath(request.auth.uid)).data.get('until', null) is int
+              && get(banPath(request.auth.uid)).data.get('until', null) > request.time.toMillis())
         );
     }
 
@@ -537,6 +536,12 @@ service cloud.firestore {
     // Gems and gemOps are reserved for the trusted Gems Worker. Client-side
     // create/update requests cannot add or change either field. Owner actions
     // remain allowed for direct Owner management.
+    //
+    // SECURITY FOLLOW-UP: Legacy players.coins, EXP, streak and achievement
+    // fields are still client-updated by the current quiz flow. We have not
+    // blocked those writes here because doing so would break existing practice
+    // rewards. Move those writes to trusted transactions before treating Coins,
+    // EXP or achievement progress as tamper-proof.
     match /players/{id} {
       allow read: if signedIn();
 
