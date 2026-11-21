@@ -90,3 +90,7 @@ for (const match of source.matchAll(/\.set\s*\(/g)) {
 
 showSection("PLAYER INITIALIZATION HOOK", "if (!playerSnap.exists)", 1100, 2400);
 showSection("PLAYER INITIALIZATION DOCUMENT", "players/' + uid", 700, 2200);
+
+showSection("OWNER CLOUDFLARE USAGE DASHBOARD", "bece-hub-usage-monitor", 1300, 8000);
+showSection("OWNER CLOUDFLARE REQUEST REMAINING DISPLAY", "workerRequestsDaily", 1000, 5000);
+showSection("OWNER USAGE REFRESH AND FRESHNESS", "usageMonitor", 900, 5000);
