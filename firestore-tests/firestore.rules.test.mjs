@@ -189,6 +189,17 @@ test("Owner can create valid temporary and permanent bans but not already-expire
   }));
 });
 
+test("a valid Owner session can still perform authorized Coin and Duel corrections", async () => {
+  await seed({
+    "config/owner": { pw1: "owner-secret-one", pw2: "owner-secret-two" },
+    "ownerSessions/owner-user": {
+      pw1: "owner-secret-one", pw2: "owner-secret-two", at: Timestamp.now()
+    },
+    "players/target-player": { displayName: "Target", coins: 5, duelW: 0 }
+  });
+  const db = testEnv.authenticatedContext("owner-user").firestore();
+  await assertSucceeds(updateDoc(doc(db, "players/target-player"), { coins: 500, duelW: 3 }));
+});
 test("a banned Admin cannot use an unexpired Admin session", async () => {
   const now = Date.now();
   await seed({
@@ -214,7 +225,8 @@ test("an expired ban does not prevent a valid Admin session", async () => {
     "adminSessions/formerly-banned-admin": { pin: "1234", at: Timestamp.now() },
     "bans/formerly-banned-admin": {
       at: now - 60_000, by: "owner", name: "Admin", reason: "test", until: now - 1000
-    }
+    },
+    "players/formerly-banned-admin": { displayName: "Admin", coins: 50 }
   });
   const db = testEnv.authenticatedContext("formerly-banned-admin").firestore();
   await assertSucceeds(setDoc(doc(db, "adminSessions/formerly-banned-admin"), {
@@ -223,6 +235,8 @@ test("an expired ban does not prevent a valid Admin session", async () => {
   await assertSucceeds(setDoc(doc(db, "adminNotes/player1"), {
     text: "Allowed after expiry", by: "formerly-banned-admin", at: now
   }));
+  await assertFails(updateDoc(doc(db, "players/formerly-banned-admin"), { coins: 51 }));
+  await assertSucceeds(updateDoc(doc(db, "players/formerly-banned-admin"), { displayName: "Admin Updated" }));
 });
 
 test("Duel answer progress and settlement receipts are private and client-write-only", async () => {
