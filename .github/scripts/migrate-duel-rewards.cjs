@@ -199,11 +199,12 @@ replaceBetween(
   "remove browser-side Coin reward calculation and player write"
 );
 
-replaceOnce(
-  "  function push() { if (D.code && D.me) col().doc(D.code).update({ ['res.'+S.uid]: { ...D.me } }).catch(() => {}); }",
-  "  function push() {}",
-  "remove browser-side Duel score writes"
-);
+const pushStart = source.indexOf("  function push() {");
+const pushEnd = pushStart < 0 ? -1 : source.indexOf("\n  function ", pushStart + 1);
+if (pushStart < 0 || pushEnd < 0 || source.indexOf("  function push() {", pushStart + 1) >= 0) {
+  throw new Error("Could not isolate the Duel score push helper.");
+}
+source = source.slice(0, pushStart) + "  function push() {}\n" + source.slice(pushEnd + 1);
 
 replaceOnce(
   "    if (D.me && !D.me.done && D.started) { D.me.done = true; D.me.ms += (total() - D.me.n) * secs() * 1000; D.me.n = total(); push(); record('l', 0); }",
