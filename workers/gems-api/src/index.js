@@ -2231,6 +2231,6 @@ export default {
     }
   },
   async scheduled(controller, env, ctx) {
-    ctx.waitUntil(settleDueGemEvents(env));
+    await settleDueGemEvents(env);
   }
 };
