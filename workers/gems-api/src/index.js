@@ -3,6 +3,7 @@ import { hasValidOwnerSession } from "./owner-utils.mjs";
 import { buildPracticeRewardResult } from "./practice-utils.mjs";
 import { isKnownQuestionId } from "./question-keys.mjs";
 import { getShopItem } from "./shop-utils.mjs";
+import { getPowerupUse } from "./powerup-utils.mjs";
 
 const PROJECT_ID = 'bece-hub-d9ad5';
 const APP_ORIGIN = 'https://muzanjacson12345.github.io';
@@ -590,6 +591,82 @@ async function applyShopPurchase(uid, itemId, operationId, accessToken) {
   }
 }
 
+async function applyPowerupUse(uid, itemId, operationId, accessToken) {
+  const item = getPowerupUse(itemId);
+  if (!item) throw new Error('INVALID_POWERUP_ITEM');
+
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const playerPath = 'players/' + encodeURIComponent(uid);
+  const operationPath = 'powerupOperations/' + encodeURIComponent(uid + '_' + operationId);
+  const playerName = base + playerPath;
+  const operationName = base + operationPath;
+
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken,
+    { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [playerDoc, operationDoc] = await Promise.all([
+      getDocument(playerPath, accessToken, transaction),
+      getDocument(operationPath, accessToken, transaction)
+    ]);
+
+    if (operationDoc) {
+      const stored = decodeFirestoreFields(operationDoc.fields || {});
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken,
+        { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: stored.result || null };
+    }
+
+    if (!playerDoc) throw new Error('PLAYER_PROFILE_NOT_READY');
+    const player = decodeFirestoreFields(playerDoc.fields || {});
+    const current = player[item.field] === undefined ? 0 : Number(player[item.field]);
+    if (!Number.isSafeInteger(current) || current < 0 || current > MAX_BALANCE) {
+      throw new Error('INVALID_POWERUP_BALANCE');
+    }
+    if (current < 1) throw new Error('NO_POWERUP_AVAILABLE');
+
+    const quantity = current - 1;
+    const result = { itemId, field: item.field, quantity };
+    const operationRecord = {
+      uid,
+      operationId,
+      itemId,
+      createdAt: Date.now(),
+      result
+    };
+    const writes = [
+      {
+        update: { name: playerName, fields: encodeFirestoreFields({ [item.field]: quantity }) },
+        updateMask: { fieldPaths: [item.field] },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: operationName, fields: encodeFirestoreFields(operationRecord) },
+        updateMask: { fieldPaths: Object.keys(operationRecord) },
+        currentDocument: { exists: false }
+      }
+    ];
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      { method: 'POST', body: { transaction, writes } }
+    );
+    finished = true;
+    return { duplicate: false, result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
   const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
   const transactionResult = await firestoreRequest(
@@ -661,7 +738,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/practice', '/shop'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -722,6 +799,19 @@ export default {
         return json({ ok: true, ...outcome }, 200, origin);
       }
 
+      if (url.pathname === '/powerups/use') {
+        const itemId = payload && typeof payload.itemId === 'string' ? payload.itemId.trim() : '';
+        const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
+        if (!/^[a-zA-Z0-9_-]{1,64}$/.test(itemId) || !getPowerupUse(itemId)) {
+          return json({ ok: false, code: 'INVALID_POWERUP_ITEM', error: 'That power-up cannot be used here.' }, 400, origin);
+        }
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId)) {
+          return json({ ok: false, code: 'INVALID_OPERATION_ID', error: 'A valid use ID is required.' }, 400, origin);
+        }
+        const outcome = await applyPowerupUse(identity.uid, itemId, operationId, accessToken);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+
       const action = payload && payload.action;
       const amount = payload && payload.amount;
       const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
@@ -759,6 +849,9 @@ export default {
       }
       if (error && error.message === 'INVALID_POWERUP_BALANCE') {
         return json({ ok: false, code: 'INVALID_POWERUP_BALANCE', error: 'This power-up balance needs Owner review.' }, 409, origin);
+      }
+      if (error && error.message === 'NO_POWERUP_AVAILABLE') {
+        return json({ ok: false, code: 'NO_POWERUP_AVAILABLE', error: 'You do not have a Second Chance available.' }, 409, origin);
       }
       if (error && error.message === 'SERVICE_NOT_CONFIGURED') {
         return json({ ok: false, code: 'SERVICE_NOT_CONFIGURED', error: 'The secure Gems service has not been configured yet.' }, 503, origin);
