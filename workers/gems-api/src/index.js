@@ -334,6 +334,20 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
 
     if (operationDoc) {
       const stored = decodeFirestoreFields(operationDoc.fields || {});
+      if (stored.uid !== uid || stored.itemId !== itemId || stored.duelCode !== duelCode) {
+        throw new Error('IDEMPOTENCY_KEY_REUSED');
+      }
+      if (!duelDoc || !progressDoc) throw new Error('DUEL_NOT_STARTED');
+      const duel = decodeFirestoreFields(duelDoc.fields || {});
+      const progress = decodeFirestoreFields(progressDoc.fields || {});
+      const storedIndex = Number(stored.questionIndex);
+      const usedIndexes = Array.isArray(progress.secondChanceIndexes) ? progress.secondChanceIndexes : [];
+      if (duel.settled === true || duel.state !== 'playing'
+          || !Number.isSafeInteger(storedIndex)
+          || storedIndex !== Number(progress.nextIndex)
+          || !usedIndexes.includes(storedIndex)) {
+        throw new Error('IDEMPOTENCY_KEY_REUSED');
+      }
       await firestoreRequest(
         'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
         accessToken,
@@ -662,6 +676,8 @@ async function applyPowerupUse(uid, itemId, operationId, accessToken, duelCode =
       uid,
       operationId,
       itemId,
+      duelCode,
+      questionIndex: nextProgress.nextIndex,
       createdAt: Date.now(),
       result
     };
@@ -1255,7 +1271,7 @@ export default {
       if (url.pathname === '/powerups/use') {
         const itemId = payload && typeof payload.itemId === 'string' ? payload.itemId.trim() : '';
         const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
-        const duelCode = payload && typeof payload.duelCode === 'string' ? payload.duelCode.trim() : '';
+        const duelCode = payload && typeof payload.duelCode === 'string' ? payload.duelCode.trim().toUpperCase() : '';
         if (!/^[a-zA-Z0-9_-]{1,64}$/.test(itemId) || !getPowerupUse(itemId)) {
           return json({ ok: false, code: 'INVALID_POWERUP_ITEM', error: 'That power-up cannot be used here.' }, 400, origin);
         }
