@@ -19,6 +19,7 @@
     screen: "list",
     event: null,
     attemptId: null,
+    pendingAnswer: null,
     locked: false
   };
 
@@ -187,7 +188,17 @@
     const attempt = event.attempt;
     const entriesUsed = participant && Number.isSafeInteger(participant.entriesUsed) ? participant.entriesUsed : 0;
     const entriesLeft = Math.max(0, (event.maxEntriesPerUser || 0) - entriesUsed);
+    const now = Date.now();
+    const upcoming = Number.isSafeInteger(event.opensAt) && event.opensAt > now;
+    const closed = Number.isSafeInteger(event.closesAt) && event.closesAt <= now;
+    const activeAttempt = attempt && ["ready", "in_progress"].includes(attempt.status);
     card.append(make("p", "muted", "Your paid entries used: " + entriesUsed + " · remaining: " + entriesLeft));
+
+    if (upcoming) {
+      card.append(make("p", "muted", "This event has not opened yet."));
+    } else if (closed) {
+      card.append(make("p", "muted", "This event has closed."));
+    }
 
     if (attempt && attempt.status === "in_progress") {
       card.append(actionButton("Resume attempt", () => startAttempt(event, attempt.attemptId)));
@@ -195,13 +206,15 @@
       card.append(actionButton("Start attempt", () => startAttempt(event, attempt.attemptId)));
     } else if (attempt && attempt.status === "completed") {
       card.append(make("p", "muted", "Last result: " + (attempt.correctCount || 0) + "/" + (attempt.questionIndex || 0) + " correct"));
-      if (event.retryEnabled && (attempt.retriesUsed || 0) < event.maxRetriesPerEntry) {
+      if (event.retryEnabled && (attempt.retriesUsed || 0) < event.maxRetriesPerEntry && !upcoming && !closed) {
         card.append(actionButton("Retry this entry · " + formatCoins(event.retryCostCoins) + " Coins", () => retryAttempt(event, attempt)));
       }
     }
 
-    if (entriesLeft > 0) {
+    if (entriesLeft > 0 && !activeAttempt && !upcoming && !closed) {
       card.append(actionButton("Enter event · " + formatCoins(event.entryCostCoins) + " Coins", () => enterEvent(event), true));
+    } else if (activeAttempt) {
+      card.append(make("p", "muted", "Finish or resume your current attempt before paying for another entry."));
     }
     card.append(actionButton("View leaderboard", () => showLeaderboard(event), true));
     return card;
@@ -246,6 +259,7 @@
   async function startAttempt(event, attemptId) {
     state.event = event;
     state.attemptId = attemptId;
+    state.pendingAnswer = null;
     state.screen = "quiz";
     await loadNextQuestion();
   }
@@ -294,34 +308,62 @@
 
   async function submitAnswer(event, attemptId, questionId, answerKey, question, options, wrap) {
     if (state.locked) return;
+    if (!state.pendingAnswer) {
+      state.pendingAnswer = { questionId, answerKey, operationId: id() };
+    } else if (state.pendingAnswer.questionId !== questionId || state.pendingAnswer.answerKey !== answerKey) {
+      return;
+    }
+
+    const pending = state.pendingAnswer;
     state.locked = true;
     options.querySelectorAll("button").forEach(button => { button.disabled = true; });
-    try {
-      const response = await callWorker("/events/answer", {
-        eventId: event.eventId,
-        attemptId,
-        questionId,
-        answerKey,
-        operationId: id()
-      });
-      const result = response.result;
-      if (!result) throw new Error("The event answer could not be verified.");
-      const feedback = make("p", result.correct ? "duel-fb good" : "duel-fb bad",
-        result.correct ? "Correct!" : "Not quite. " + (question.explanation || ""));
-      wrap.append(feedback);
-      if (result.done) {
-        wrap.append(make("h3", "", "Attempt complete"));
-        wrap.append(make("p", "muted", "Your verified score: " + result.score.correctCount + "/" + result.score.totalQuestions));
-        wrap.append(actionButton("View event leaderboard", () => showLeaderboard(event)));
-        wrap.append(actionButton("Back to events", loadEventCards, true));
-      } else {
-        wrap.append(actionButton("Next question", loadNextQuestion));
-      }
-    } catch (error) {
-      state.locked = false;
-      options.querySelectorAll("button").forEach(button => { button.disabled = false; });
-      toast((error && error.message) || "Your answer could not be saved.", "warn");
+
+    let retryButton = wrap.querySelector("[data-retry-answer]");
+    if (!retryButton) {
+      retryButton = actionButton("Retry saving my answer", sendPendingAnswer);
+      retryButton.dataset.retryAnswer = "true";
+      retryButton.hidden = true;
+      wrap.append(retryButton);
     }
+
+    async function sendPendingAnswer() {
+      if (!state.pendingAnswer || state.pendingAnswer.operationId !== pending.operationId) return;
+      state.locked = true;
+      retryButton.disabled = true;
+      retryButton.hidden = true;
+      try {
+        const response = await callWorker("/events/answer", {
+          eventId: event.eventId,
+          attemptId,
+          questionId: pending.questionId,
+          answerKey: pending.answerKey,
+          operationId: pending.operationId
+        });
+        const result = response.result;
+        if (!result) throw new Error("The event answer could not be verified.");
+        state.pendingAnswer = null;
+        retryButton.remove();
+        const feedback = make("p", result.correct ? "duel-fb good" : "duel-fb bad",
+          result.correct ? "Correct!" : "Not quite. " + (question.explanation || ""));
+        wrap.append(feedback);
+        if (result.done) {
+          wrap.append(make("h3", "", "Attempt complete"));
+          wrap.append(make("p", "muted", "Your verified score: " + result.score.correctCount + "/" + result.score.totalQuestions));
+          wrap.append(actionButton("View event leaderboard", () => showLeaderboard(event)));
+          wrap.append(actionButton("Back to events", loadEventCards, true));
+        } else {
+          wrap.append(actionButton("Next question", loadNextQuestion));
+        }
+      } catch (error) {
+        state.locked = false;
+        retryButton.hidden = false;
+        retryButton.disabled = false;
+        toast("Your answer has not been confirmed. Retry saving the same answer; do not choose a different option. " +
+          ((error && error.message) || ""), "warn");
+      }
+    }
+
+    await sendPendingAnswer();
   }
 
   async function showLeaderboard(event) {
