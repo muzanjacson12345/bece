@@ -77,3 +77,16 @@ for (const match of source.matchAll(/\bqueueSave\s*\(/g)) {
 showSection("PLAYER PROFILE SAVE IMPLEMENTATION", "function queueSave(patch)", 350, 2800);
 showSection("PLAYER PROFILE FLUSH IMPLEMENTATION", "async function flushSave()", 250, 2100);
 showSection("PLAYER REWARD WRITE / PRACTICE CALL", "totalCoinsEarned", 500, 2400);
+
+console.log("\n=== PROFILE DOCUMENT SET CALLS ===");
+let shownProfileWrites = 0;
+for (const match of source.matchAll(/\.set\s*\(/g)) {
+  const at = match.index;
+  const context = source.slice(Math.max(0, at - 850), Math.min(source.length, at + 1200));
+  if (!/(players\/|player|profile)/i.test(context)) continue;
+  console.log("line " + (source.slice(0, at).split("\n").length) + ": " + context.replace(/\s+/g, " ").trim());
+  if (++shownProfileWrites >= 15) break;
+}
+
+showSection("PLAYER INITIALIZATION HOOK", "if (!playerSnap.exists)", 1100, 2400);
+showSection("PLAYER INITIALIZATION DOCUMENT", "players/' + uid", 700, 2200);
