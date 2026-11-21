@@ -54,3 +54,27 @@ Keep the earlier event design separate from achievement rewards:
 ## Firestore publishing gate
 
 **Do not publish the draft rules yet.** I will explicitly tell the user when the app/Worker changes and tests are ready. At that point I must ask whether the rules have actually been updated and wait for their confirmation; I must not assume that a prior instruction or a link click means publishing is complete.
+
+## Draft implementation status — 21 November 2026
+
+The following security and economy work has been implemented on this draft branch and is covered by the current Worker and Firestore Emulator test suites:
+
+- Practice and daily quiz answers are checked by the trusted Worker before EXP, Coins, streak progress, challenge progress or achievement Gems are credited.
+- Shop purchases use the fixed server-side catalog and permanent purchase receipts.
+- Second Chance consumption is server-authorized, limited per Duel and protected by receipts bound to the player, Duel and current question.
+- Duel answers, timing, scores, forfeits, daily reward caps and final Coin settlement are calculated by the Worker. Clients cannot write their own Duel score or Coin reward.
+- Normal player clients cannot edit Coins, EXP, streaks, Duel results, Gems, inventory or server-managed practice progress. Owner and Admin correction rights remain separately scoped and tested.
+- Manual Gem changes use permanent transaction receipts.
+- The Firestore test toolchain pins a patched `@grpc/grpc-js` release; CI runs an advisory check as well as Worker syntax, inline application syntax and Firestore Emulator tests.
+
+The Owner infrastructure card already shows Worker requests used, the daily limit, requests remaining, percentage used and data freshness when the Owner refreshes it. The readings are account-wide; a Bece Hub feature-by-feature usage breakdown and monthly history are not connected yet.
+
+### Still not implemented
+
+The event entry and retry system described above is still a separate future implementation. It needs per-event entry costs, entry allowances, retry costs and retry limits configured explicitly. No event entry or retry endpoint should be inferred from the existing Gem event collection placeholders.
+
+### Publishing boundary
+
+This work is draft-only. Production Firestore rules, the GitHub Pages site and the live Gems Worker have not been updated by this draft implementation. At the last inspection, the live `bece-hub-gems-api` was still version 5 and did not contain the new Shop, power-up, Duel or permanent Gem-receipt endpoints.
+
+A production rollout must be coordinated: deploy and verify the matching trusted Worker first, then publish the compatible website and Firestore rules. Never publish only one part of that set.
