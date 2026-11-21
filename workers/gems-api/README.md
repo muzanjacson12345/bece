@@ -55,7 +55,9 @@ The Worker uses permanent, private Firestore receipts so a network retry cannot 
 - `gemEventOperations/{uid}_{operationId}` for event entry and retry payments.
 - `gemEventAnswerOperations/{uid}_{operationId}` for individual event answer submissions.
 - `gemEventPrizeOperations/{eventId}_{uid}` for each one-time event Gem payout.
-- `gemTransactions/{uid}_{operationId}` for manual Gem balance changes.
+- `gemTransactions/{transactionId}` for manual Owner adjustments, first-time achievement awards and event prize payouts. These records are read-only to clients and readable only by the recipient (or Owner).
+- `gemRewardClaims/{uid}_{achievementId}` for each first-time achievement Gem claim. Each claim is created in the same transaction as the balance update.
+- Achievement and event Gem history records are written atomically with the matching balance change and permanent receipt. This gives the future wallet-history screen one consistent, server-managed source to read without changing the current Gem reward amounts.
 
 Client Firestore rules deny access to private receipts and server-owned Duel progress. The Worker remains responsible for validating the participant, answer order, balances, daily Duel reward cap and duplicate-operation IDs.
 
