@@ -10087,7 +10087,7 @@ function renderDaily() {
   const done = tasks.filter(t => claimed.includes(t.id)).length;
   const head = o('div', 'challenge-heading'), info = o('div', 'daily-info');
   info.append(o('p', 'eyebrow', '3 fresh missions every day'), o('h2', '', 'Daily Challenges'));
-  info.append(o('p', 'muted', CHALLENGE_POOL.length + ' possible missions. Your three are randomly selected each day, with changing targets and bonus EXP.'));
+  info.append(o('p', 'muted', CHALLENGE_POOL.length + ' possible missions. Your three are randomly selected each day, with changing targets and bonus EXP and Coins.'));
   const summary = o('div', 'challenge-summary'); summary.append(o('strong', '', done + '/3'), o('span', '', 'completed'));
   head.append(info, summary);
   const list = o('div', 'challenge-list');
@@ -10165,6 +10165,7 @@ App.on('quiz:finished', async ev => {
       counted: result.counted,
       challengeState: result.challengeState,
       achievements: result.achievements,
+      recent: result.recent || current.recent || [],
     };
     S.doc = next;
     renderAccount(); renderDaily(); renderAchievements(); renderFriends();
