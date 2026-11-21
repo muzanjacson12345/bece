@@ -29,6 +29,8 @@ jobs:
           node-version: 22
       - name: Check Gems Worker JavaScript syntax
         run: node --check workers/gems-api/src/index.js
+      - name: Run economy client-write audit
+        run: node .github/scripts/economy-write-audit.cjs
       - name: Run Gems Worker ban unit tests
         run: npm --prefix workers/gems-api test
       - name: Install Firestore test dependencies
