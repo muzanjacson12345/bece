@@ -4,7 +4,7 @@ import { buildPracticeRewardResult } from "./practice-utils.mjs";
 import { isKnownQuestionId } from "./question-keys.mjs";
 import { getShopItem } from "./shop-utils.mjs";
 import { getPowerupUse, validatePowerupUseReceiptRetry } from "./powerup-utils.mjs";
-import { buildGemEventEntry, buildGemEventRetry } from "./event-utils.mjs";
+import { buildGemEventDraftConfig, buildGemEventEntry, buildGemEventRetry } from "./event-utils.mjs";
 import {
   buildDuelAnswerResult,
   buildDuelForfeitProgress,
@@ -1077,6 +1077,72 @@ function gemEventOperationPath(uid, operationId) {
   return 'gemEventOperations/' + encodeURIComponent(uid + '_' + operationId);
 }
 
+
+async function applyGemEventDraftConfig(uid, eventId, payload, accessToken) {
+  const owner = await hasActiveOwnerSession(uid, accessToken);
+  if (!owner) throw new Error('EVENT_OWNER_REQUIRED');
+
+  const eventPath = gemEventPath(eventId);
+  const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/' + eventPath;
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken, { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const eventDoc = await getDocument(eventPath, accessToken, transaction);
+    let previous = null;
+    if (eventDoc) {
+      previous = decodeFirestoreFields(eventDoc.fields || {});
+      const entryCount = previous.entryCount === undefined ? 0 : Number(previous.entryCount);
+      if (previous.status !== 'draft' || !Number.isSafeInteger(entryCount) || entryCount !== 0) {
+        throw new Error('EVENT_CONFIG_LOCKED');
+      }
+    }
+
+    const config = buildGemEventDraftConfig({
+      eventId,
+      title: payload.title,
+      description: payload.description === undefined ? '' : payload.description,
+      entryCostCoins: payload.entryCostCoins,
+      maxEntriesPerUser: payload.maxEntriesPerUser,
+      retryEnabled: payload.retryEnabled,
+      retryCostCoins: payload.retryCostCoins === undefined ? 0 : payload.retryCostCoins,
+      maxRetriesPerEntry: payload.maxRetriesPerEntry === undefined ? 0 : payload.maxRetriesPerEntry,
+      opensAt: payload.opensAt === undefined ? null : payload.opensAt,
+      closesAt: payload.closesAt === undefined ? null : payload.closesAt,
+      ownerUid: uid,
+      now: Date.now()
+    });
+    if (previous) {
+      config.createdAt = previous.createdAt || config.createdAt;
+      config.createdBy = previous.createdBy || uid;
+      config.entryCount = 0;
+    }
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          writes: [{
+            update: { name: documentName, fields: encodeFirestoreFields(config) },
+            updateMask: { fieldPaths: Object.keys(config) },
+            currentDocument: { exists: !!eventDoc }
+          }]
+        }
+      }
+    );
+    finished = true;
+    return { duplicate: false, result: config };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
 async function applyGemEventEntry(uid, eventId, operationId, accessToken) {
   const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
   const eventPath = gemEventPath(eventId);
@@ -1129,7 +1195,16 @@ async function applyGemEventEntry(uid, eventId, operationId, accessToken) {
       uid, eventId, action: 'enter', operationId, attemptId,
       createdAt: Date.now(), result
     };
+    const currentEntryCount = event.entryCount === undefined ? 0 : Number(event.entryCount);
+    if (!Number.isSafeInteger(currentEntryCount) || currentEntryCount < 0 || currentEntryCount >= MAX_BALANCE) {
+      throw new Error('INVALID_EVENT_CONFIG');
+    }
     const writes = [
+      {
+        update: { name: base + eventPath, fields: encodeFirestoreFields({ entryCount: currentEntryCount + 1 }) },
+        updateMask: { fieldPaths: ['entryCount'] },
+        currentDocument: { exists: true }
+      },
       {
         update: { name: base + playerPath, fields: encodeFirestoreFields({ coins: outcome.coins }) },
         updateMask: { fieldPaths: ['coins'] },
@@ -1411,7 +1486,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/enter', '/events/retry'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/configure', '/events/enter', '/events/retry'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -1486,6 +1561,15 @@ export default {
           return json({ ok: false, code: 'INVALID_DUEL_CODE', error: 'The duel code is invalid.' }, 400, origin);
         }
         const outcome = await applyPowerupUse(identity.uid, itemId, operationId, accessToken, duelCode);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+
+      if (url.pathname === '/events/configure') {
+        const eventId = payload && typeof payload.eventId === 'string' ? payload.eventId.trim() : '';
+        if (!validateGemEventId(eventId)) {
+          return json({ ok: false, code: 'INVALID_EVENT_ID', error: 'The event ID is invalid.' }, 400, origin);
+        }
+        const outcome = await applyGemEventDraftConfig(identity.uid, eventId, payload || {}, accessToken);
         return json({ ok: true, ...outcome }, 200, origin);
       }
 
@@ -1572,6 +1656,8 @@ export default {
     } catch (error) {
       const eventErrors = {
         EVENT_NOT_FOUND: ['That event could not be found.', 404],
+        EVENT_OWNER_REQUIRED: ['Only the authenticated Owner can configure events.', 403],
+        EVENT_CONFIG_LOCKED: ['This event can only be changed while it is a draft with no paid entries.', 409],
         EVENT_NOT_ACTIVE: ['That event is not active.', 409],
         EVENT_NOT_OPEN: ['That event has not opened yet.', 409],
         EVENT_CLOSED: ['That event has closed.', 409],
