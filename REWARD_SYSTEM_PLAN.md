@@ -79,7 +79,7 @@ The draft Worker now contains a **payment and attempt foundation** for event ent
 - Paying an entry or retry fee only spends Coins. It never awards Gems or achievements by itself.
 - The Worker applies technical upper bounds of 100 entries per player per event and 20 retries per entry. An individual event can set lower limits.
 
-The rest of the event feature is still unfinished: there is no event screen in the website, no server-served event question flow or answer submission, no leaderboard calculation or Gem-prize settlement, and no Owner interface for creating/editing event configurations. The new endpoints are not called by the current website and do not make events playable yet.
+The Owner panel now has a draft-only event configuration card, and the Worker has an Owner-only `/events/configure` endpoint. The Owner can set an event ID/name, entry cost, entry allowance, retry fee and retry cap. It always saves an inactive draft; it cannot activate an event. The fee/limit settings lock after the first paid entry. The rest of the event feature is still unfinished: there is no player event screen, no server-served event question flow or answer submission, no leaderboard calculation or Gem-prize settlement, and no Owner activation or gameplay-management control. The payment endpoints are not yet called by a player website screen and do not make events playable yet.
 
 ### Publishing boundary
 
