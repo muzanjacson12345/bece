@@ -16,6 +16,15 @@ if (source.includes(doubleCountedStreak)) {
   process.exit(0);
 }
 
+const oldSettledGuard = "    if (d.settled && D.me) { clearInterval(D.timer); D.me.done = true; return result((d.res || {})[S.uid]); }\n    if (D.me && D.me.done) return waitOrResult();";
+const newSettledGuard = "    if (d.settled && D.code) { clearInterval(D.timer); if (D.me) D.me.done = true; return result((d.res || {})[S.uid]); }\n    if (D.me && D.me.done) return waitOrResult();";
+if (source.includes(oldSettledGuard)) {
+  source = source.replace(oldSettledGuard, newSettledGuard);
+  fs.writeFileSync(file, source, "utf8");
+  console.log("Prevented a previously settled Duel from starting a new countdown.");
+  process.exit(0);
+}
+
 if (source.includes("duelApi('/duels/answer'") && source.includes("duelApi('/duels/settle'")) {
   console.log("Duel answers and rewards already use the trusted Worker.");
   process.exit(0);
