@@ -269,6 +269,44 @@ test("an expired ban does not prevent a valid Admin session", async () => {
   await assertSucceeds(updateDoc(doc(db, "players/formerly-banned-admin"), { displayName: "Admin Updated" }));
 });
 
+test("event participants can read their own entries but cannot write entries or payment receipts", async () => {
+  await seed({
+    "gemEvents/EVENT1": {
+      status: "active",
+      entryCostCoins: 35,
+      maxEntriesPerUser: 2,
+      retryEnabled: true,
+      retryCostCoins: 12,
+      maxRetriesPerEntry: 2
+    },
+    "gemEvents/EVENT1/participants/alice": {
+      uid: "alice", entriesUsed: 1, totalRetries: 0
+    },
+    "gemEvents/EVENT1/participants/alice/attempts/ATTEMPT1": {
+      uid: "alice", eventId: "EVENT1", entryNo: 1, attemptNo: 1, status: "ready"
+    },
+    "gemEventAnswerKeys/EVENT1": { answers: { "q1": "B" } },
+    "gemEventOperations/alice_operation-1": {
+      uid: "alice", eventId: "EVENT1", action: "enter"
+    }
+  });
+  const alice = testEnv.authenticatedContext("alice").firestore();
+  const bob = testEnv.authenticatedContext("bob").firestore();
+
+  await assertSucceeds(getDoc(doc(alice, "gemEvents/EVENT1")));
+  await assertSucceeds(getDoc(doc(alice, "gemEvents/EVENT1/participants/alice")));
+  await assertSucceeds(getDoc(doc(alice, "gemEvents/EVENT1/participants/alice/attempts/ATTEMPT1")));
+  await assertFails(getDoc(doc(bob, "gemEvents/EVENT1/participants/alice")));
+  await assertFails(getDoc(doc(bob, "gemEvents/EVENT1/participants/alice/attempts/ATTEMPT1")));
+  await assertFails(getDoc(doc(alice, "gemEventAnswerKeys/EVENT1")));
+  await assertFails(getDoc(doc(alice, "gemEventOperations/alice_operation-1")));
+  await assertFails(setDoc(doc(alice, "gemEventOperations/alice_fake"), { uid: "alice" }));
+  await assertFails(updateDoc(doc(alice, "gemEvents/EVENT1/participants/alice"), { entriesUsed: 99 }));
+  await assertFails(setDoc(doc(alice, "gemEvents/EVENT1/participants/alice/attempts/ATTEMPT2"), {
+    uid: "alice", eventId: "EVENT1", entryNo: 1, attemptNo: 2, status: "ready"
+  }));
+});
+
 test("Duel answer progress and settlement receipts are private and client-write-only", async () => {
   await seed({
     "duels/RESULT1": {
