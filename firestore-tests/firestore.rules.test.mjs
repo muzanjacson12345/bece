@@ -85,17 +85,22 @@ test("Gem transaction and reward-claim records are server-write-only", async () 
   await assertFails(setDoc(doc(alice, "gemRewardClaims/claim2"), { uid: "alice" }));
 });
 
-test("players cannot create or change protected Gems fields", async () => {
+test("players cannot create or change protected Gems and owned-shop fields", async () => {
   const alice = testEnv.authenticatedContext("alice").firestore();
 
-  await assertSucceeds(setDoc(doc(alice, "players/alice"), { displayName: "Alice", coins: 10 }));
+  await assertSucceeds(setDoc(doc(alice, "players/alice"), { displayName: "Alice", coins: 10, eq: {} }));
   await assertFails(setDoc(doc(alice, "players/alice"), {
     displayName: "Alice", coins: 10, gems: 500
+  }));
+  await assertFails(setDoc(doc(alice, "players/alice"), {
+    displayName: "Alice", coins: 10, owned: { t_legend: true }
   }));
 
   await assertFails(updateDoc(doc(alice, "players/alice"), { gems: 500 }));
   await assertFails(updateDoc(doc(alice, "players/alice"), { gemOps: ["fake-credit"] }));
+  await assertFails(updateDoc(doc(alice, "players/alice"), { owned: { t_legend: true } }));
   await assertSucceeds(updateDoc(doc(alice, "players/alice"), { coins: 11 }));
+  await assertSucceeds(updateDoc(doc(alice, "players/alice"), { eq: { title: "t_legend" } }));
 });
 
 test("temporary bans block player writes until their expiry", async () => {
