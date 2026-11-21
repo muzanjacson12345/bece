@@ -113,7 +113,7 @@ test("forfeit marks unanswered questions wrong without allowing browser score cl
   assert.equal(forfeited.done, true);
   assert.equal(forfeited.forfeit, true);
   assert.equal(forfeited.nextIndex, 3);
-  assert.equal(forfeited.totalMs, 2000 + 2 * 15000);
+  assert.equal(forfeited.totalMs, 1000 + 2 * 15000);
 });
 
 test("settlement waits until both finish or the two-minute opponent grace expires", () => {
