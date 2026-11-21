@@ -1,4 +1,5 @@
 import { isFirestoreBanActive } from "./ban-utils.mjs";
+import { hasValidOwnerSession } from "./owner-utils.mjs";
 
 const PROJECT_ID = 'bece-hub-d9ad5';
 const APP_ORIGIN = 'https://muzanjacson12345.github.io';
@@ -241,28 +242,7 @@ async function hasActiveOwnerSession(uid, accessToken) {
     getDocument('ownerSessions/' + encodeURIComponent(uid), accessToken),
     getDocument('config/owner', accessToken)
   ]);
-  if (!roster || !session || !config) return false;
-
-  const rosterFields = roster.fields || {};
-  const sessionFields = session.fields || {};
-  const configFields = config.fields || {};
-  if (!rosterFields.role || rosterFields.role.stringValue !== 'owner') return false;
-
-  const atValue = sessionFields.at && sessionFields.at.timestampValue;
-  const startedAt = typeof atValue === 'string' ? Date.parse(atValue) : NaN;
-  const now = Date.now();
-  if (!Number.isFinite(startedAt)
-      || startedAt > now + 60000
-      || startedAt + (30 * 60 * 1000) <= now) return false;
-
-  const sessionPw1 = sessionFields.pw1 && sessionFields.pw1.stringValue;
-  const sessionPw2 = sessionFields.pw2 && sessionFields.pw2.stringValue;
-  const configPw1 = configFields.pw1 && configFields.pw1.stringValue;
-  const configPw2 = configFields.pw2 && configFields.pw2.stringValue;
-  return typeof sessionPw1 === 'string'
-    && typeof sessionPw2 === 'string'
-    && sessionPw1 === configPw1
-    && sessionPw2 === configPw2;
+  return hasValidOwnerSession(roster, session, config);
 }
 
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
