@@ -289,6 +289,7 @@ test("Duel answer progress and settlement receipts are private and client-write-
     "res.alice": { c: 99, n: 99, ms: 1, done: true }
   }));
   await assertFails(updateDoc(doc(alice, "duels/RESULT1"), { "rec.alice": true }));
+  await assertFails(updateDoc(doc(alice, "duels/RESULT1"), { state: "finished" }));
 });
 
 
