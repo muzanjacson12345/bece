@@ -604,6 +604,7 @@ async function applyShopPurchase(uid, itemId, operationId, accessToken) {
 async function applyPowerupUse(uid, itemId, operationId, accessToken, duelCode = '') {
   const item = getPowerupUse(itemId);
   if (!item) throw new Error('INVALID_POWERUP_ITEM');
+  if (!validateDuelCode(duelCode)) throw new Error('DUEL_CODE_REQUIRED');
 
   const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
   const playerPath = 'players/' + encodeURIComponent(uid);
@@ -1262,6 +1263,7 @@ export default {
         DUEL_QUESTION_SEQUENCE: 'The answer does not match the current duel question.',
         DUEL_SECOND_CHANCE_LIMIT: 'No more Second Chances are available for this duel question.',
         DUEL_SETTLEMENT_INVALID: 'The saved duel result could not be verified.',
+        DUEL_CODE_REQUIRED: 'A valid active Duel is required to use Second Chance.',
         IDEMPOTENCY_KEY_REUSED: 'This answer retry ID was already used for a different answer.',
         INVALID_DUEL: 'The duel information is invalid.',
         INVALID_DUEL_QUESTIONS: 'The duel contains an unsupported question.',
