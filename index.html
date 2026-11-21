@@ -11224,7 +11224,6 @@ const Duel = (() => {
     });
     const right = q ? ((q.options.find(x => x.key === q.correct) || {}).text) : '';
     if (D.dots[D.idx]) D.dots[D.idx].className = 'duel-dot ' + (ok ? 'ok' : 'bad');
-    D.streak = ok ? (D.streak || 0) + 1 : 0; if (D.streak > (D.best || 0)) D.best = D.streak;
     const bonusHit = ok && D.streak % 3 === 0 && D.streak <= 9;
     box.classList.remove('flash-ok', 'flash-bad'); void box.offsetWidth; box.classList.add(ok ? 'flash-ok' : 'flash-bad');
     if (ok) { const pt = o('span', 'duel-plus' + (bonusHit ? ' big' : ''), bonusHit ? `\u{1F525} ${D.streak} in a row! +1 \u{1F4B0}` : D.streak > 1 ? `+1  \u{1F525}\u00D7${D.streak}` : '+1'); box.append(pt); setTimeout(() => pt.remove(), bonusHit ? 1500 : 1000); }
