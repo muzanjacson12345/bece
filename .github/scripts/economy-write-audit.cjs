@@ -62,3 +62,8 @@ showSection("DUEL WAIT AND FINISH FLOW", "waitOrResult", 400, 6000);
 showSection("DUEL WAIT DEFINITION", "waitOrResult =", 1200, 4500);
 showSection("DUEL ANSWER COMPLETE", "function answer(key, secondAttempt)", 300, 9000);
 showSection("DUEL PROFILE INIT", "duelW", 1000, 5000);
+
+showSection("MIGRATED DUEL ANSWER SUBMISSION", "const pending = D.pendingAnswer", 300, 5200);
+showSection("MIGRATED DUEL SETTLEMENT UI", "async function result(r)", 300, 8500);
+showSection("MIGRATED DUEL FORFEIT CALL", "duelApi('/duels/forfeit'", 300, 1800);
+showSection("SECOND CHANCE DUEL BINDING", "duelCode: tok", 300, 1800);
