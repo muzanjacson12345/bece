@@ -56,14 +56,14 @@
       return;
     }
 
-    const list = make("div", "stack");
+    const list = make("div", "adm-list");
     for (const record of records) {
       const amount = Number(record.amount);
       if (!Number.isSafeInteger(amount) || amount < 0) continue;
       const debit = record.direction === "debit" || record.action === "spend";
       const signedAmount = (debit ? "−" : "+") + formatGems(amount) + " Gems";
       const row = make("article", "card");
-      const top = make("div", "row-between");
+      const top = make("div", "adm-head");
       top.append(make("strong", "", titleFor(record)), make("strong", debit ? "muted" : "good", signedAmount));
       row.append(top);
 
