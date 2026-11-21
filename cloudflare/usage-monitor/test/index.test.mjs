@@ -291,6 +291,57 @@ test("D1 analytics failure does not hide valid Worker request metrics", async ()
   assert.equal(body.d1.storage.used, null);
 });
 
+test("an empty Workers Analytics result is a zero reading, not a failed reading", async () => {
+  const response = await handleRequest(makeRequest(), envFor("empty-workers"), {
+    now: NOW,
+    fetch: async (url, options = {}) => {
+      const target = String(url);
+      if (target.includes("identitytoolkit.googleapis.com")) {
+        return responseJson({ users: [{ localId: "owner-empty-workers" }] });
+      }
+      if (target.includes("firestore.googleapis.com")) {
+        return responseJson({
+          fields: {
+            pw1: { stringValue: "secret-one" },
+            pw2: { stringValue: "secret-two" },
+            at: { timestampValue: new Date(NOW - 1000).toISOString() }
+          }
+        });
+      }
+      const query = JSON.parse(options.body).query;
+      if (query.includes("WorkerUsage")) {
+        return responseJson({ data: { viewer: { accounts: [{
+          workersInvocationsAdaptive: []
+        }] } } });
+      }
+      if (query.includes("D1RowUsage")) {
+        return responseJson({ data: { viewer: { accounts: [{
+          d1AnalyticsAdaptiveGroups: []
+        }] } } });
+      }
+      if (query.includes("D1StorageUsage")) {
+        return responseJson({ data: { viewer: { accounts: [{
+          d1StorageAdaptiveGroups: []
+        }] } } });
+      }
+      throw new Error("Unexpected upstream request");
+    }
+  });
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.worker.complete, true);
+  assert.equal(body.worker.used, 0);
+  assert.equal(body.worker.subrequests, 0);
+  assert.equal(body.worker.remaining, 100000);
+  assert.equal(body.worker.latestEventAt, null);
+  assert.equal(body.worker.freshness, "no_events");
+  assert.equal(body.d1.detected, false);
+  assert.equal(body.d1.rowsRead.used, null);
+  assert.equal(body.d1.rowsWritten.used, null);
+  assert.equal(body.d1.storage.used, null);
+});
+
 test("Cloudflare credentials are never sent to Firebase and Firebase tokens never go to Cloudflare", async () => {
   const env = envFor("separation");
   const authCalls = [];
