@@ -23,7 +23,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install test dependencies
+      - name: Run Gems Worker ban unit tests
+        run: npm --prefix workers/gems-api test
+      - name: Install Firestore test dependencies
         run: npm install --prefix firestore-tests
       - name: Run Firestore Emulator rules tests
         run: npx --yes firebase-tools emulators:exec --project demo-bece-hub-rules --only firestore "npm --prefix firestore-tests test"
