@@ -64,9 +64,9 @@ service cloud.firestore {
         && exists(banPath(request.auth.uid))
         && (
           get(banPath(request.auth.uid)).data.get('until', null) == null
+          || !(get(banPath(request.auth.uid)).data.get('until', null) is int)
           || get(banPath(request.auth.uid)).data.get('until', null) == 0
-          || (get(banPath(request.auth.uid)).data.get('until', null) is int
-              && get(banPath(request.auth.uid)).data.get('until', null) > request.time.toMillis())
+          || get(banPath(request.auth.uid)).data.get('until', null) > request.time.toMillis()
         );
     }
 
@@ -591,6 +591,8 @@ service cloud.firestore {
           'social', 'arts', 'maths', 'computing', 'rme',
           'integratedScience', 'french', 'careerTechnology'
         ])
+        && request.resource.data.subjects.toSet().size()
+             == request.resource.data.subjects.size()
         && request.resource.data.subject
              == (request.resource.data.subjects.size() == 1
                   ? request.resource.data.subjects[0]
