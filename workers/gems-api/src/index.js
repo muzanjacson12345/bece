@@ -423,7 +423,8 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
       xpBoost: result.xpBoost,
       counted: result.counted,
       challengeState: result.challengeState,
-      achievements: displayAchievements
+      achievements: displayAchievements,
+      recent: result.recent
     };
 
     const operationRecord = {
