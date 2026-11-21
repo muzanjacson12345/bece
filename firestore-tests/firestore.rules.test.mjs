@@ -288,6 +288,12 @@ test("event participants can read their own entries but cannot write entries or 
     "gemEventAnswerKeys/EVENT1": { answers: { "q1": "B" } },
     "gemEventOperations/alice_operation-1": {
       uid: "alice", eventId: "EVENT1", action: "enter"
+    },
+    "gemEventAnswerOperations/alice_answer-1": {
+      uid: "alice", eventId: "EVENT1", attemptId: "ATTEMPT1", questionId: "soc-1"
+    },
+    "gemEvents/EVENT1/leaderboard/alice": {
+      uid: "alice", displayName: "Alice", correctCount: 2, totalQuestions: 3, elapsedMs: 5000
     }
   });
   const alice = testEnv.authenticatedContext("alice").firestore();
@@ -300,11 +306,14 @@ test("event participants can read their own entries but cannot write entries or 
   }));
   await assertSucceeds(getDoc(doc(alice, "gemEvents/EVENT1/participants/alice")));
   await assertSucceeds(getDoc(doc(alice, "gemEvents/EVENT1/participants/alice/attempts/ATTEMPT1")));
+  await assertSucceeds(getDoc(doc(bob, "gemEvents/EVENT1/leaderboard/alice")));
   await assertFails(getDoc(doc(bob, "gemEvents/EVENT1/participants/alice")));
   await assertFails(getDoc(doc(bob, "gemEvents/EVENT1/participants/alice/attempts/ATTEMPT1")));
   await assertFails(getDoc(doc(alice, "gemEventAnswerKeys/EVENT1")));
   await assertFails(getDoc(doc(alice, "gemEventOperations/alice_operation-1")));
   await assertFails(setDoc(doc(alice, "gemEventOperations/alice_fake"), { uid: "alice" }));
+  await assertFails(getDoc(doc(alice, "gemEventAnswerOperations/alice_answer-1")));
+  await assertFails(setDoc(doc(alice, "gemEventAnswerOperations/alice_fake"), { uid: "alice" }));
   await assertFails(updateDoc(doc(alice, "gemEvents/EVENT1/participants/alice"), { entriesUsed: 99 }));
   await assertFails(setDoc(doc(alice, "gemEvents/EVENT1/participants/alice/attempts/ATTEMPT2"), {
     uid: "alice", eventId: "EVENT1", entryNo: 1, attemptNo: 2, status: "ready"
