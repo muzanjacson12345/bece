@@ -1852,6 +1852,47 @@ async function applyGemChange(uid, action, amount, operationId, accessToken) {
   }
 }
 
+
+async function settleDueGemEvents(env) {
+  try {
+    const accessToken = await getFirestoreAccessToken(env);
+    const now = Date.now();
+    let pageToken = "";
+    let pages = 0;
+    let settledCount = 0;
+    const maxSettlementsPerRun = 5;
+    do {
+      const query = "?pageSize=100" + (pageToken ? "&pageToken=" + encodeURIComponent(pageToken) : "");
+      const listing = await firestoreRequest(
+        "projects/" + PROJECT_ID + "/databases/(default)/documents/gemEvents" + query,
+        accessToken
+      );
+      for (const document of listing.documents || []) {
+        if (settledCount >= maxSettlementsPerRun) break;
+        const event = decodeFirestoreFields(document.fields || {});
+        if (event.status !== "active" || !Number.isSafeInteger(event.closesAt)
+            || now < event.closesAt + EVENT_FINISH_GRACE_MS) continue;
+        const name = String(document.name || "");
+        const eventId = decodeURIComponent(name.split("/").pop() || "");
+        if (!validateGemEventId(eventId)) continue;
+        try {
+          await applyGemEventSettlement(eventId, accessToken);
+          settledCount += 1;
+        } catch (error) {
+          console.error("Scheduled Gem event settlement failed:", eventId, error && error.message ? error.message : "unknown error");
+        }
+      }
+      if (settledCount >= maxSettlementsPerRun) break;
+      pageToken = listing.nextPageToken || "";
+      pages += 1;
+    } while (pageToken && pages < 10);
+    return { settledCount, pages };
+  } catch (error) {
+    console.error("Scheduled Gem event scan failed:", error && error.message ? error.message : "unknown error");
+    return { settledCount: 0, error: true };
+  }
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('origin') || '';
@@ -2188,5 +2229,8 @@ export default {
       console.error('Gems API request failed:', error && error.message ? error.message : 'unknown error');
       return json({ ok: false, code: 'GEMS_SERVICE_ERROR', error: 'The secure Gems service could not complete this request.' }, 502, origin);
     }
+  },
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(settleDueGemEvents(env));
   }
 };
