@@ -4,9 +4,9 @@ if (process.env.GITHUB_REF_NAME && process.env.GITHUB_REF_NAME !== expected) thr
 const file = 'index.html';
 let source = fs.readFileSync(file, 'utf8');
 
-const hasQuestionIds = /questionIds\\s*:\\s*subject\\s*=>/.test(source);
+const hasQuestionIds = /questionIds\s*:\s*subject\s*=>/.test(source);
 if (!hasQuestionIds) {
-  const lookup = /questionById\\s*:\\s*id\\s*=>\\s*questionIndex\\.get\\(id\\)\\s*,/;
+  const lookup = /questionById\s*:\s*id\s*=>\s*questionIndex\.get\(id\)\s*,/;
   if (!lookup.test(source)) throw new Error('Could not find the public questionById lookup.');
   source = source.replace(lookup, match => match + ' questionIds: subject => [...questionIndex.entries()].filter(([, q]) => !subject || q.subject === subject).map(([questionId]) => questionId),');
 }
