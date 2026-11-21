@@ -1961,7 +1961,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/configure', '/events/activate', '/events/settle', '/events/enter', '/events/retry', '/events/next', '/events/answer'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/configure', '/events/activate', '/events/close', '/events/settle', '/events/enter', '/events/retry', '/events/next', '/events/answer'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -2048,14 +2048,16 @@ export default {
         return json({ ok: true, ...outcome }, 200, origin);
       }
 
-      if (url.pathname === '/events/activate' || url.pathname === '/events/settle') {
+      if (url.pathname === '/events/activate' || url.pathname === '/events/close' || url.pathname === '/events/settle') {
         const eventId = payload && typeof payload.eventId === 'string' ? payload.eventId.trim() : '';
         if (!validateGemEventId(eventId)) {
           return json({ ok: false, code: 'INVALID_EVENT_ID', error: 'The event ID is invalid.' }, 400, origin);
         }
         const outcome = url.pathname === '/events/activate'
           ? await applyGemEventActivation(identity.uid, eventId, accessToken)
-          : await applyGemEventSettlement(eventId, accessToken);
+          : url.pathname === '/events/close'
+            ? await applyGemEventEarlyClose(identity.uid, eventId, accessToken)
+            : await applyGemEventSettlement(eventId, accessToken);
         return json({ ok: true, ...outcome }, 200, origin);
       }
 
