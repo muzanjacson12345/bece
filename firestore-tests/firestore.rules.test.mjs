@@ -294,6 +294,10 @@ test("event participants can read their own entries but cannot write entries or 
   const bob = testEnv.authenticatedContext("bob").firestore();
 
   await assertSucceeds(getDoc(doc(alice, "gemEvents/EVENT1")));
+  await assertFails(updateDoc(doc(alice, "gemEvents/EVENT1"), { entryCostCoins: 1 }));
+  await assertFails(setDoc(doc(alice, "gemEvents/FAKE"), {
+    status: "active", entryCostCoins: 1, maxEntriesPerUser: 99
+  }));
   await assertSucceeds(getDoc(doc(alice, "gemEvents/EVENT1/participants/alice")));
   await assertSucceeds(getDoc(doc(alice, "gemEvents/EVENT1/participants/alice/attempts/ATTEMPT1")));
   await assertFails(getDoc(doc(bob, "gemEvents/EVENT1/participants/alice")));
