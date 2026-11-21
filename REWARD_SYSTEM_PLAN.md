@@ -80,7 +80,7 @@ The event lifecycle is now implemented on the draft branch:
 - Ranking is correct answers descending, total answer time ascending, completion time ascending, then UID for a deterministic final tie-break.
 - The combined top-three prize pool is capped at 1,000,000 Gems. Settlement pays only eligible places and happens once, in the same transaction that marks the event settled.
 - Players have 24 hours after closing to finish paid attempts. New entries and retries stop at closing; unfinished attempts expire after the grace period and do not qualify for prizes.
-- A 15-minute Cloudflare Cron trigger automatically scans for events ready to settle, up to five per run. The player Events screen can also safely trigger settlement for an overdue event.
+- A 15-minute Cloudflare Cron trigger automatically scans for events ready to settle, up to five per run. The player Events screen can also safely trigger settlement for an overdue event. The Owner management card lists saved drafts, active events and settled events, shows entry/open-attempt counts and prize amounts, and can close an active event early while preserving the paid-attempt grace period.
 
 The event flow is implemented but remains on the draft branch until its current CI run passes and the matching Worker, website and Firestore rules are rolled out together. No event has been activated and no Gem prizes have been paid in production.
 
