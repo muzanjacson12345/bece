@@ -729,6 +729,7 @@ async function startDuelProgress(uid, code, accessToken) {
     ]);
     if (!duelDoc) throw new Error('DUEL_NOT_FOUND');
     const duel = decodeFirestoreFields(duelDoc.fields || {});
+    if (duel.settled === true) throw new Error('DUEL_ALREADY_SETTLED');
     if (duel.state !== 'playing') throw new Error('DUEL_NOT_PLAYING');
     if (duel.host !== uid && duel.guest !== uid) throw new Error('DUEL_NOT_PARTICIPANT');
     if (progressDoc) {
@@ -1022,8 +1023,8 @@ async function settleDuel(uid, code, accessToken) {
         currentDocument: { exists: true }
       },
       {
-        update: { name: base + duelPath, fields: encodeFirestoreFields({ res: publicResults, settled: true, settledAt: outcome.settledAt }) },
-        updateMask: { fieldPaths: ['res', 'settled', 'settledAt'] },
+        update: { name: base + duelPath, fields: encodeFirestoreFields({ res: publicResults, state: 'finished', settled: true, settledAt: outcome.settledAt }) },
+        updateMask: { fieldPaths: ['res', 'state', 'settled', 'settledAt'] },
         currentDocument: { exists: true }
       },
       {
@@ -1260,6 +1261,7 @@ export default {
         DUEL_NOT_STARTED: 'Your secure duel session has not started.',
         DUEL_SESSION_MISMATCH: 'This duel session does not match your account.',
         DUEL_ALREADY_FINISHED: 'This duel is already finished.',
+        DUEL_ALREADY_SETTLED: 'This Duel has already been settled.',
         DUEL_QUESTION_SEQUENCE: 'The answer does not match the current duel question.',
         DUEL_SECOND_CHANCE_LIMIT: 'No more Second Chances are available for this duel question.',
         DUEL_SETTLEMENT_INVALID: 'The saved duel result could not be verified.',
