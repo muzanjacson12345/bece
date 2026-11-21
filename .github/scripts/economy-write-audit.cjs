@@ -145,3 +145,12 @@ showSection("QUESTION BANK INDEX AND REGISTRY", "const questionIndex", 900, 4200
 showSection("QUESTION ID GENERATOR", "function makeExtraMCQ(", 800, 5000);
 showSection("APP QUESTION API", "questionById:", 800, 3500);
 showSection("CURRENT EVENT SCREEN PLACEHOLDERS", "gemEvents", 500, 4000);
+
+
+showSection("QUESTION BANK OBJECT FORMAT", "const questionsDB", 600, 4200);
+showSection("QUESTION EXTRA BANK BUILDER", "function addExtraBank(", 450, 3200);
+showSection("EVENT API ROUTING AND AUTH", "if (url.pathname === '/events/configure')", 1800, 8500);
+showSection("API BODY PARSING", "const payload =", 1000, 5000);
+showSection("SHOP SCREEN HTML", 'id="screen-shop"', 700, 4200);
+showSection("NAVIGATION HTML", 'data-nav="shop"', 600, 2800);
+showSection("SCREEN AND ROUTE REGISTRY", "const SCREENS =", 250, 2200);
