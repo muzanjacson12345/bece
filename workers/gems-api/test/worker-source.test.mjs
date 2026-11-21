@@ -104,3 +104,43 @@ test("each paid event entry increments the event entry count in the same transac
   assert.ok(entry.includes("updateMask: { fieldPaths: ['entryCount'] }"));
   assert.ok(entry.includes("currentDocument: { exists: true }"));
 });
+
+test("event question start and answer routes use private attempt state and authenticated user identity", () => {
+  assert.ok(source.includes("async function startGemEventQuestion("));
+  assert.ok(source.includes("async function submitGemEventAnswer("));
+  assert.ok(source.includes("buildGemEventQuestionStart("));
+  assert.ok(source.includes("buildGemEventAnswerResult("));
+  assert.ok(source.includes("buildGemEventLeaderboardEntry("));
+  assert.ok(source.includes("gemEventAnswerOperationPath(uid, operationId)"));
+  assert.ok(source.includes("'/events/next'"));
+  assert.ok(source.includes("'/events/answer'"));
+  assert.ok(source.includes("startGemEventQuestion(identity.uid, eventId, attemptId, accessToken)"));
+  assert.ok(source.includes("submitGemEventAnswer("));
+
+  const start = source.indexOf("async function startGemEventQuestion(");
+  const end = source.indexOf("\nasync function submitGemEventAnswer", start);
+  assert.ok(start >= 0 && end > start);
+  const startFunction = source.slice(start, end);
+  assert.ok(startFunction.includes("getDocument(eventPath"));
+  assert.ok(startFunction.includes("getDocument(participantPath"));
+  assert.ok(startFunction.includes("getDocument(attemptPath"));
+  assert.ok(startFunction.includes("currentDocument: { exists: true }"));
+
+  const answerStart = source.indexOf("async function submitGemEventAnswer(");
+  const answerEnd = source.indexOf("\nasync function applyGemChange", answerStart);
+  assert.ok(answerStart >= 0 && answerEnd > answerStart);
+  const answerFunction = source.slice(answerStart, answerEnd);
+  assert.ok(answerFunction.includes("buildGemEventAnswerResult("));
+  assert.ok(answerFunction.includes("IDEMPOTENCY_KEY_REUSED"));
+  assert.ok(answerFunction.includes("gemEventAnswerOperationPath(uid, operationId)"));
+  assert.ok(answerFunction.includes("buildGemEventLeaderboardEntry("));
+  assert.ok(answerFunction.includes("currentDocument: { exists: false }"));
+
+  const routeStart = source.indexOf("if (url.pathname === '/events/next' || url.pathname === '/events/answer')");
+  const routeEnd = source.indexOf("if (url.pathname === '/events/enter' || url.pathname === '/events/retry')", routeStart);
+  assert.ok(routeStart >= 0 && routeEnd > routeStart);
+  const routes = source.slice(routeStart, routeEnd);
+  for (const forbidden of ["payload.correctCount", "payload.score", "payload.coins", "payload.gems", "payload.uid"]) {
+    assert.equal(routes.includes(forbidden), false, "event answer route must not accept " + forbidden);
+  }
+});
