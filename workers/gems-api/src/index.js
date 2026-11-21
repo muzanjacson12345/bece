@@ -4,8 +4,8 @@ import { buildPracticeRewardResult } from "./practice-utils.mjs";
 import { isKnownQuestionId } from "./question-keys.mjs";
 import { getShopItem } from "./shop-utils.mjs";
 import { getPowerupUse, validatePowerupUseReceiptRetry } from "./powerup-utils.mjs";
-import { buildGemEventDraftConfig, buildGemEventEntry, buildGemEventRetry } from "./event-utils.mjs";
-import { buildGemEventAnswerResult, buildGemEventLeaderboardEntry, buildGemEventQuestionStart } from "./event-game-utils.mjs";
+import { EVENT_FINISH_GRACE_MS, buildGemEventActivation, buildGemEventDraftConfig, buildGemEventEntry, buildGemEventRetry } from "./event-utils.mjs";
+import { buildGemEventAnswerResult, buildGemEventLeaderboardEntry, buildGemEventQuestionStart, buildGemEventSettlement } from "./event-game-utils.mjs";
 import {
   buildDuelAnswerResult,
   buildDuelForfeitProgress,
@@ -1117,6 +1117,7 @@ async function applyGemEventDraftConfig(uid, eventId, payload, accessToken) {
       retryEnabled: payload.retryEnabled,
       retryCostCoins: payload.retryCostCoins === undefined ? 0 : payload.retryCostCoins,
       maxRetriesPerEntry: payload.maxRetriesPerEntry === undefined ? 0 : payload.maxRetriesPerEntry,
+      prizeGems: payload.prizeGems,
       opensAt: payload.opensAt === undefined ? null : payload.opensAt,
       closesAt: payload.closesAt === undefined ? null : payload.closesAt,
       ownerUid: uid,
