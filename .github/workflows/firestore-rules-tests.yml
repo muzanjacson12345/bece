@@ -10,6 +10,7 @@ on:
       - ".github/workflows/firestore-rules-tests.yml"
       - ".github/scripts/economy-write-audit.cjs"
       - ".github/scripts/migrate-shop-purchases.cjs"
+      - ".github/scripts/migrate-powerup-use.cjs"
       - "workers/gems-api/src/**"
       - "workers/gems-api/test/**"
       - "workers/gems-api/package.json"
@@ -32,14 +33,17 @@ jobs:
       - name: Migrate Coin shop purchases to the trusted Worker
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: node .github/scripts/migrate-shop-purchases.cjs
-      - name: Commit draft shop migration
+      - name: Migrate Second Chance use to the trusted Worker
+        if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
+        run: node .github/scripts/migrate-powerup-use.cjs
+      - name: Commit draft economy app migrations
         if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
         run: |
           if ! git diff --quiet -- index.html; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add index.html
-            git commit -m "Route Coin shop purchases through trusted Worker"
+            git commit -m "Route shop and power-up writes through trusted Worker"
             git push origin "HEAD:$GITHUB_REF_NAME"
           fi
       - name: Check Gems Worker JavaScript syntax
