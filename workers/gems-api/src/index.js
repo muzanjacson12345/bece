@@ -930,7 +930,11 @@ async function forfeitDuel(uid, code, accessToken) {
       }
     );
     finished = true;
-    return { duplicate: !!progress.done, result: { ...score, forfeit: true } };
+    const forfeitResult = { duplicate: !!progress.done, result: { ...score, forfeit: true } };
+    // An explicit leave ends the match immediately and securely credits the
+    // other participant, even if they have not finished every question yet.
+    const settlement = await settleDuel(uid, code, accessToken);
+    return { ...forfeitResult, settlement };
   } finally {
     if (!finished) await rollbackTransaction(transaction, accessToken);
   }
