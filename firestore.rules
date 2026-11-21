@@ -554,8 +554,13 @@ service cloud.firestore {
             && !request.resource.data.keys().hasAny([
               'gems', 'gemOps', 'owned', 'p50', 'sfreezes', 'xpBoost'
             ])
-            // New profiles may contain zeroed display counters, never a client-created balance.
+            // New profiles may contain zeroed display counters, never client-created rewards.
             && request.resource.data.get('coins', 0) == 0
+            && request.resource.data.get('totalExp', 0) == 0
+            && request.resource.data.get('weekExp', 0) == 0
+            && request.resource.data.get('dayExp', 0) == 0
+            && request.resource.data.get('streak', 0) == 0
+            && request.resource.data.get('bestStreak', 0) == 0
             && request.resource.data.get('duelW', 0) == 0
             && request.resource.data.get('duelL', 0) == 0
             && request.resource.data.get('duelD', 0) == 0
@@ -566,13 +571,19 @@ service cloud.firestore {
             && !request.resource.data.diff(resource.data).affectedKeys()
                  .hasAny([
                    'gems', 'gemOps', 'owned', 'p50', 'sfreezes', 'xpBoost',
-                   'coins', 'duelW', 'duelL', 'duelD', 'dcDay', 'dcN'
+                   'coins', 'duelW', 'duelL', 'duelD', 'dcDay', 'dcN',
+                   'totalExp', 'weekKey', 'weekExp', 'dayKey', 'dayExp',
+                   'streak', 'bestStreak', 'lastDay', 'counted',
+                   'challengeState', 'achievements', 'recent'
                  ]))
         || (isAdmin() && !targetIsStaff(id)
             && !request.resource.data.diff(resource.data).affectedKeys()
                  .hasAny([
                    'gems', 'gemOps', 'owned', 'p50', 'sfreezes', 'xpBoost',
-                   'coins', 'duelW', 'duelL', 'duelD', 'dcDay', 'dcN'
+                   'coins', 'duelW', 'duelL', 'duelD', 'dcDay', 'dcN',
+                   'totalExp', 'weekKey', 'weekExp', 'dayKey', 'dayExp',
+                   'streak', 'bestStreak', 'lastDay', 'counted',
+                   'challengeState', 'achievements', 'recent'
                  ]));
 
       // The staff UI explicitly prevents self-deletion. Owner may remove
