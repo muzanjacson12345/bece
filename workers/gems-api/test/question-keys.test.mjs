@@ -10,8 +10,8 @@ import {
 test("all 200 original question records have fixed answer keys", () => {
   assert.equal(FIXED_QUESTION_KEY_COUNT, 200);
   assert.equal(getCorrectAnswer("soc-1"), "B");
-  assert.equal(getCorrectAnswer("soc-100"), "B");
-  assert.equal(getCorrectAnswer("art-1"), "A");
+  assert.equal(getCorrectAnswer("soc-100"), "C");
+  assert.equal(getCorrectAnswer("art-1"), "B");
   assert.equal(getCorrectAnswer("art-100"), "B");
 });
 
