@@ -206,8 +206,8 @@ test("forfeiting players receive no Coins, but their Duel result stat is still r
     bestStreak: 1, done: true, forfeit: true, completedAt: 10000
   };
   const guest = {
-    uid: "guest", nextIndex: 3, correctCount: 2, totalMs: 4000,
-    bestStreak: 2, done: true, forfeit: false, completedAt: 11000
+    uid: "guest", nextIndex: 1, correctCount: 1, totalMs: 2000,
+    bestStreak: 1, done: false, forfeit: false
   };
   const result = buildDuelSettlement({
     duel, progressByUid: { host, guest },
@@ -218,5 +218,7 @@ test("forfeiting players receive no Coins, but their Duel result stat is still r
   assert.equal(result.outcome.guest, "win");
   assert.equal(result.rewards.host.coinsEarned, 0);
   assert.equal(result.rewards.host.playerUpdates.duelL, 2);
+  assert.equal(result.progress.guest.forfeit, false);
+  assert.equal(result.progress.guest.done, true);
   assert.equal(result.rewards.guest.coinsEarned, 5);
 });
