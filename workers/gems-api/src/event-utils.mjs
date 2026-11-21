@@ -52,6 +52,7 @@ export function buildGemEventEntry({ event, participant, player, uid, eventId, a
   if (typeof uid !== "string" || !uid || typeof eventId !== "string" || !eventId
       || typeof attemptId !== "string" || !attemptId) fail("INVALID_EVENT_REQUEST");
   const policy = validateGemEventConfig(event, now);
+  if (participant && participant.uid !== uid) fail("INVALID_EVENT_PARTICIPATION");
   const entriesUsed = integer(participant && participant.entriesUsed !== undefined
     ? participant.entriesUsed : 0, "INVALID_EVENT_PARTICIPATION", 0, policy.maxEntriesPerUser);
   if (entriesUsed >= policy.maxEntriesPerUser) fail("EVENT_ENTRY_LIMIT_REACHED");
@@ -113,6 +114,7 @@ export function buildGemEventRetry({
   const attemptNo = integer(currentAttempt.attemptNo, "INVALID_EVENT_ATTEMPT", 1, policy.maxRetriesPerEntry + 1);
   const retriesUsed = integer(currentAttempt.retriesUsed, "INVALID_EVENT_ATTEMPT", 0, policy.maxRetriesPerEntry);
   if (retriesUsed >= policy.maxRetriesPerEntry) fail("EVENT_RETRY_LIMIT_REACHED");
+  if (attemptNo !== retriesUsed + 1) fail("INVALID_EVENT_ATTEMPT");
   if (integer(participant.entriesUsed, "INVALID_EVENT_PARTICIPATION", 0, policy.maxEntriesPerUser) < entryNo) {
     fail("EVENT_PARTICIPATION_NOT_FOUND");
   }
