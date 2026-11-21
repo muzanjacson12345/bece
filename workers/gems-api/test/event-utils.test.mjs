@@ -66,7 +66,7 @@ test("event opening and closing timestamps are enforced", () => {
 test("entry allowance and Coin balance are enforced", () => {
   assert.throws(() => buildGemEventEntry({
     event: baseEvent,
-    participant: { entriesUsed: 2, totalRetries: 0 },
+    participant: { uid: "alice", entriesUsed: 2, totalRetries: 0 },
     player: { coins: 100 },
     uid: "alice", eventId: "event-a", attemptId: "attempt-3", now: 3000
   }), /EVENT_ENTRY_LIMIT_REACHED/);
