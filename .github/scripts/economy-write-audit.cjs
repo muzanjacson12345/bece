@@ -67,3 +67,13 @@ showSection("MIGRATED DUEL ANSWER SUBMISSION", "const pending = D.pendingAnswer"
 showSection("MIGRATED DUEL SETTLEMENT UI", "async function result(r)", 300, 8500);
 showSection("MIGRATED DUEL FORFEIT CALL", "duelApi('/duels/forfeit'", 300, 1800);
 showSection("SECOND CHANCE DUEL BINDING", "duelCode: tok", 300, 1800);
+
+console.log("\\n=== PLAYER PROFILE SAVE AND WRITE CALL SITES ===");
+for (const match of source.matchAll(/\\bqueueSave\\s*\\(/g)) {
+  const at = match.index;
+  const context = source.slice(Math.max(0, at - 220), Math.min(source.length, at + 700));
+  console.log("line " + (source.slice(0, at).split("\\n").length) + ": " + context.replace(/\\s+/g, " ").trim());
+}
+showSection("PLAYER PROFILE SAVE IMPLEMENTATION", "function queueSave(patch)", 350, 2800);
+showSection("PLAYER PROFILE FLUSH IMPLEMENTATION", "async function flushSave()", 250, 2100);
+showSection("PLAYER REWARD WRITE / PRACTICE CALL", "totalCoinsEarned", 500, 2400);
