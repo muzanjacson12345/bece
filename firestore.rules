@@ -687,6 +687,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Purchase receipts are private and can only be written by the trusted Worker.
+    match /shopOperations/{operationId} {
+      allow read, write: if false;
+    }
+
     match /gemTransactions/{transactionId} {
       allow read: if signedIn()
         && (resource.data.get('uid', '') == request.auth.uid || isOwner());
