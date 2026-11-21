@@ -79,7 +79,7 @@ The draft Worker now contains a **payment and attempt foundation** for event ent
 - Paying an entry or retry fee only spends Coins. It never awards Gems or achievements by itself.
 - The Worker applies technical upper bounds of 100 entries per player per event and 20 retries per entry. An individual event can set lower limits.
 
-The Owner panel now has a draft-only event configuration card, and the Worker has an Owner-only `/events/configure` endpoint. The Owner can set an event ID/name, choose a subject or mixed subjects, choose 3–50 questions from the existing question bank, and set entry cost, entry allowance, retry fee and retry cap. It always saves an inactive draft; it cannot activate an event. The fee/limit settings lock after the first paid entry.
+The Owner panel now has a draft-only event configuration card, and the Worker has an Owner-only `/events/configure` endpoint. The Owner can set an event ID/name, choose a subject or mixed subjects, choose 3–50 questions from the existing question bank, set entry cost, entry allowance, retry fee and retry cap, and optionally schedule opening and closing times. It always saves an inactive draft; it cannot activate an event. The fee/limit settings lock after the first paid entry.
 
 The draft website now has a player Events screen. Signed-in players can view active events, pay the configured entry fee, resume an attempt, submit answers that the Worker verifies, pay for capped retries after completing an attempt, and read the public leaderboard. Each player’s best completed score is shown, with correct answers first and faster time breaking ties. Entry/retry and answer operations use private permanent receipts to prevent duplicate charges or duplicate answer processing.
 
