@@ -23,7 +23,8 @@ export function validateEventQuestionIds(questionIds) {
 export function buildGemEventQuestionStart({ event, attempt, uid, eventId, attemptId, now = Date.now() }) {
   validateGemEventConfig(event, now);
   const questionIds = validateEventQuestionIds(event.questionIds);
-  if (!attempt || attempt.uid !== uid || attempt.eventId !== eventId || attemptId === "") {
+  if (!attempt || attempt.uid !== uid || attempt.eventId !== eventId
+      || !attemptId || attempt.attemptId !== attemptId) {
     fail("EVENT_ATTEMPT_NOT_FOUND");
   }
   if (!["ready", "in_progress"].includes(attempt.status)) fail("EVENT_ATTEMPT_NOT_PLAYABLE");
@@ -61,6 +62,7 @@ export function buildGemEventAnswerResult({
   validateGemEventConfig(event, now);
   const questionIds = validateEventQuestionIds(event.questionIds);
   if (!attempt || attempt.uid !== uid || attempt.eventId !== eventId
+      || !attemptId || attempt.attemptId !== attemptId
       || attempt.status !== "in_progress") fail("EVENT_ATTEMPT_NOT_PLAYABLE");
   if (typeof operationId !== "string"
       || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId)) {
