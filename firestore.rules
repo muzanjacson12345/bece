@@ -775,6 +775,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Per-answer event replay receipts stay private and Worker-only.
+    match /gemEventAnswerOperations/{operationId} {
+      allow read, write: if false;
+    }
+
     match /gemMarketplace/{itemId} {
       allow read: if signedIn()
         && (resource.data.get('active', false) == true || isStaff());
