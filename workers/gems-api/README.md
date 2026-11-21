@@ -36,6 +36,8 @@ All POST endpoints require a Firebase ID token in the `Authorization: Bearer <to
 | `POST /events/configure` | Owner-only operation that creates or edits an event's draft pricing/entry/retry configuration. It never activates an event and locks the fee/limit settings after the first paid entry. |
 | `POST /events/enter` | Charges the event's configured entry Coin fee, enforces the player's entry allowance, creates a private attempt and records a permanent receipt. |
 | `POST /events/retry` | Charges the event's configured retry Coin fee, enforces the per-entry retry cap, marks the previous attempt replaced and creates a new attempt. |
+| `POST /events/next` | Starts or resumes the next question in a participant's paid attempt without resetting an existing server start time. |
+| `POST /events/answer` | Verifies the answer with the private question-key module, advances the attempt, and updates the player's best leaderboard score when complete. |
 | `POST /gems` | Performs an authenticated Gem earn/spend operation. Spending affects only the signed-in player's balance; granting Gems requires a valid Owner session. |
 
 ## Idempotency and server-owned records
@@ -48,6 +50,7 @@ The Worker uses permanent, private Firestore receipts so a network retry cannot 
 - `duelProgress/{duelCode}_{uid}` for each participant's trusted answer history and timing.
 - `duelSettlements/{duelCode}` for the final Duel settlement.
 - `gemEventOperations/{uid}_{operationId}` for event entry and retry payments.
+- `gemEventAnswerOperations/{uid}_{operationId}` for individual event answer submissions.
 - `gemTransactions/{uid}_{operationId}` for manual Gem balance changes.
 
 Client Firestore rules deny access to private receipts and server-owned Duel progress. The Worker remains responsible for validating the participant, answer order, balances, daily Duel reward cap and duplicate-operation IDs.
@@ -79,7 +82,9 @@ Required event fields:
 
 The backend has technical safety ceilings of 100 entries per user and 20 retries per entry; an event's configured limits may be lower. Entry and retry charges are atomic with the participant/attempt updates and a permanent `gemEventOperations` receipt. Reusing an operation ID cannot charge twice. A retry creates a new attempt under the same paid entry and marks the previous attempt as replaced. Entry and retry payments only deduct Coins; they do not award Gems or achievements.
 
-**Still not complete:** there is no event screen in the website yet, no event question-serving or answer-submission flow, no leaderboard calculation or event prize/Gem distribution, and no Owner activation control or event gameplay management screen. The Owner panel can create or edit inactive pricing drafts, but cannot activate an event. These endpoints are the payment/attempt foundation only. The event gameplay and prize rules need to be completed before the feature is enabled for players. Do not treat achievement Gem rules as event prize rules.
+The draft website now includes an Events screen. Signed-in players can view active events, enter with the configured Coin fee, resume an attempt, submit answers, pay for a capped retry after completing an attempt, and read the public leaderboard. The Worker chooses each question from the Owner-configured question list and verifies every answer against the private BECE answer-key module. Answer submissions use permanent receipts, and the leaderboard retains each player's best score (correct answers first, fastest time as the tie-breaker). A lost network response can be retried with the same answer operation ID. A player cannot pay for another entry while their latest attempt is still ready or in progress.
+
+**Still not complete:** no Owner activation control or event gameplay management screen exists yet. No Gem prize tiers or winner payout rules have been configured, so the event flow does not distribute Gems or award achievements. The Owner panel can create or edit inactive pricing/question drafts, but cannot activate an event. Keep events inactive until the prize/tie policy and Owner activation controls are completed. Do not treat achievement Gem rules as event prize rules.
 
 ## Related services
 
