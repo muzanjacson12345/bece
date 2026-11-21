@@ -8,6 +8,7 @@ on:
       - "firestore.rules"
       - "firestore-tests/**"
       - ".github/workflows/firestore-rules-tests.yml"
+      - ".github/scripts/economy-write-audit.cjs"
       - "workers/gems-api/src/**"
       - "workers/gems-api/test/**"
       - "workers/gems-api/package.json"
