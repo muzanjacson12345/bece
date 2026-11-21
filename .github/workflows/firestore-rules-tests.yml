@@ -65,6 +65,17 @@ jobs:
         run: npm --prefix workers/gems-api test
       - name: Install Firestore test dependencies
         run: npm install --prefix firestore-tests
+      - name: Commit Firestore test dependency lockfile
+        if: github.ref == 'refs/heads/draft/firestore-rules-gems-foundation-2026-11-21'
+        run: |
+          if ! git diff --quiet -- firestore-tests/package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add firestore-tests/package-lock.json
+            git commit -m "Lock Firestore test dependencies"
+            git pull --rebase origin "$GITHUB_REF_NAME"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
       - name: Report Firestore test dependency security advisories
         run: |
           npm audit --prefix firestore-tests --json > "$RUNNER_TEMP/firestore-dependency-audit.json" || true
@@ -83,8 +94,16 @@ jobs:
               name: v.name, title: v.title, url: v.url, range: v.range, cwe: v.cwe
             }))
           }));
-          console.log('Firestore test dependency audit:', JSON.stringify(report.metadata?.vulnerabilities || {}));
+          const counts = report.metadata?.vulnerabilities;
+          if (!counts) throw new Error('npm audit did not return a valid dependency report.');
+          console.log('Firestore test dependency audit:', JSON.stringify(counts));
           for (const row of rows) console.log(JSON.stringify(row));
+          const high = Number(counts.high || 0);
+          const critical = Number(counts.critical || 0);
+          if (high > 0 || critical > 0) {
+            console.error('Blocked: resolve all high and critical dependency advisories before continuing.');
+            process.exitCode = 1;
+          }
           NODE
       - name: Run Firestore Emulator rules tests
         run: npx --yes firebase-tools emulators:exec --project demo-bece-hub-rules --only firestore "npm --prefix firestore-tests test"
