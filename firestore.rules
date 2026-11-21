@@ -8,8 +8,8 @@ service cloud.firestore {
     // Owner secrets remain config/owner.pw1 and config/owner.pw2.
     // Admin PIN remains config/admin.pin.
     // Owner session: 30 minutes. Admin session: 2 hours.
-    // The Gems Worker uses its service account; normal clients cannot
-    // change players.gems or players.gemOps.
+    // Gems balances and transaction records are server-managed. The current
+    // Worker still maintains protected legacy players.gems/gemOps during migration.
     // ================================================================
 
     function signedIn() {
@@ -34,6 +34,9 @@ service cloud.firestore {
     function badgePath(id) {
       return /databases/$(database)/documents/adminBadges/$(id);
     }
+    function banPath(id) {
+      return /databases/$(database)/documents/bans/$(id);
+    }
 
     function isAppointed(id) {
       return exists(rosterPath(id))
@@ -53,8 +56,24 @@ service cloud.firestore {
              == get(ownerConfigPath()).data.get('pw2', '');
     }
 
+    // Ban expiry is stored as Unix milliseconds. A missing/null/zero
+    // expiry is treated as a legacy permanent ban, matching the existing UI.
+    // A valid future integer timestamp is a temporary ban; past timestamps expire.
+    function isBanned() {
+      return signedIn()
+        && exists(banPath(request.auth.uid))
+        && (
+          !('until' in get(banPath(request.auth.uid)).data)
+          || get(banPath(request.auth.uid)).data.until == null
+          || get(banPath(request.auth.uid)).data.until == 0
+          || (get(banPath(request.auth.uid)).data.until is int
+              && get(banPath(request.auth.uid)).data.until > request.time.toMillis())
+        );
+    }
+
     function isAdmin() {
       return signedIn()
+        && !isBanned()
         && exists(adminSessionPath(request.auth.uid))
         && get(adminSessionPath(request.auth.uid)).data.get('at', null) is timestamp
         && get(adminSessionPath(request.auth.uid)).data.at + duration.value(2, 'h') > request.time
@@ -93,13 +112,6 @@ service cloud.firestore {
             && get(badgePath(id)).data.get('role', 'admin') == 'owner');
     }
 
-    function isBanned() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/bans/$(request.auth.uid))
-        && (get(/databases/$(database)/documents/bans/$(request.auth.uid)).data.get('until', 0) == 0
-            || get(/databases/$(database)/documents/bans/$(request.auth.uid)).data.get('until', 0) > request.time.toMillis());
-    }
-
     function duelsPaused() {
       return exists(/databases/$(database)/documents/settings/app)
         && get(/databases/$(database)/documents/settings/app).data.get('duelsPaused', false) == true;
@@ -112,7 +124,8 @@ service cloud.firestore {
     }
 
     function validOwnDuelResult() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['res'])
+      return resource.data.state == 'playing'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['res'])
         && request.resource.data.get('res', {}) is map
         && resource.data.get('res', {}) is map
         && request.resource.data.get('res', {}).diff(resource.data.get('res', {}))
@@ -122,16 +135,28 @@ service cloud.firestore {
              .hasOnly(['c', 'n', 'ms', 'done'])
         && request.resource.data.get('res', {}).get(request.auth.uid, {}).keys()
              .hasAll(['c', 'n', 'ms', 'done'])
+        && resource.data.get('res', {}).get(request.auth.uid, {}).get('done', false) != true
         && request.resource.data.get('res', {}).get(request.auth.uid, {}).c is int
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).c >= 0
         && request.resource.data.get('res', {}).get(request.auth.uid, {}).n is int
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).n >= 0
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).n <= resource.data.qids.size()
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).c
+             <= request.resource.data.get('res', {}).get(request.auth.uid, {}).n
         && request.resource.data.get('res', {}).get(request.auth.uid, {}).ms is number
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).ms >= 0
+        && request.resource.data.get('res', {}).get(request.auth.uid, {}).ms
+             <= request.resource.data.get('res', {}).get(request.auth.uid, {}).n
+                * resource.data.secs * 1000
         && request.resource.data.get('res', {}).get(request.auth.uid, {}).done is bool;
     }
 
     function validOwnDuelRecord() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rec'])
+      return resource.data.state == 'playing'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rec'])
         && request.resource.data.get('rec', {}) is map
         && resource.data.get('rec', {}) is map
+        && resource.data.get('rec', {}).get(request.auth.uid, false) != true
         && request.resource.data.get('rec', {}).diff(resource.data.get('rec', {}))
              .affectedKeys().hasOnly([request.auth.uid])
         && request.resource.data.get('rec', {}).get(request.auth.uid, false) == true;
@@ -543,16 +568,28 @@ service cloud.firestore {
         && !isBanned()
         && (!duelsPaused() || isOwner())
         && request.resource.data.keys().hasOnly([
-          'host', 'hostName', 'guest', 'guestName', 'subject',
+          'host', 'hostName', 'guest', 'guestName', 'subject', 'subjects',
           'secs', 'vis', 'qids', 'state', 'created', 'hb', 'res'
         ])
         && request.resource.data.keys().hasAll([
-          'host', 'hostName', 'guest', 'guestName', 'subject',
+          'host', 'hostName', 'guest', 'guestName', 'subject', 'subjects',
           'secs', 'vis', 'qids', 'state', 'created', 'hb', 'res'
         ])
         && request.resource.data.host == request.auth.uid
         && request.resource.data.hostName is string
+        && request.resource.data.hostName.size() >= 1
         && request.resource.data.hostName.size() <= 40
+        && request.resource.data.subjects is list
+        && request.resource.data.subjects.size() >= 1
+        && request.resource.data.subjects.size() <= 8
+        && request.resource.data.subjects.hasOnly([
+          'social', 'arts', 'maths', 'computing', 'rme',
+          'integratedScience', 'french', 'careerTechnology'
+        ])
+        && request.resource.data.subject
+             == (request.resource.data.subjects.size() == 1
+                  ? request.resource.data.subjects[0]
+                  : 'mixed')
         && request.resource.data.guest == null
         && request.resource.data.guestName == ''
         && request.resource.data.subject is string
@@ -565,7 +602,11 @@ service cloud.firestore {
         && request.resource.data.qids.size() <= 50
         && request.resource.data.state == 'waiting'
         && request.resource.data.created is int
+        && request.resource.data.created >= 0
+        && request.resource.data.created <= request.time.toMillis() + 15000
         && request.resource.data.hb is int
+        && request.resource.data.hb >= 0
+        && request.resource.data.hb <= request.time.toMillis() + 15000
         && request.resource.data.res is map;
 
       allow update: if signedIn() && !isBanned()
@@ -575,7 +616,8 @@ service cloud.firestore {
             && resource.data.state == 'waiting'
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hb'])
             && request.resource.data.hb is int
-            && request.resource.data.hb >= resource.data.hb)
+            && request.resource.data.hb >= resource.data.hb
+            && request.resource.data.hb <= request.time.toMillis() + 15000)
           ||
           // A second player can join a waiting duel once.
           (resource.data.state == 'waiting'
@@ -588,7 +630,9 @@ service cloud.firestore {
             && request.resource.data.guestName is string
             && request.resource.data.guestName.size() <= 40
             && request.resource.data.state == 'playing'
-            && request.resource.data.startAt is int)
+            && request.resource.data.startAt is int
+            && request.resource.data.startAt >= request.time.toMillis() - 5000
+            && request.resource.data.startAt <= request.time.toMillis() + 15000)
           ||
           // Each participant can update only their own result entry.
           (isDuelParticipant() && validOwnDuelResult())
@@ -599,8 +643,97 @@ service cloud.firestore {
 
       // The host can cancel a waiting duel. The Owner can remove any duel.
       allow delete: if isOwner()
-        || (signedIn() && resource.data.host == request.auth.uid
+        || (signedIn() && !isBanned()
+            && resource.data.host == request.auth.uid
             && resource.data.state == 'waiting');
+    }
+
+
+    // ---------- Gems and currency data (server-managed) ----------
+    // The trusted backend is the only writer. Firebase Admin SDK requests bypass
+    // these client rules, so the Worker/functions must still validate bans,
+    // balances, reward eligibility, limits and duplicate-operation IDs itself.
+    //
+    // wallets/{uid} is the planned canonical balance document:
+    // { coins: integer, gems: integer, updatedAt: timestamp }.
+    // The legacy players.coins and players.gems fields remain during migration;
+    // do not populate both wallet locations until the backend is migrated.
+    match /wallets/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isOwner());
+      allow create, update, delete: if false;
+    }
+
+    match /gemTransactions/{transactionId} {
+      allow read: if signedIn()
+        && (resource.data.get('uid', '') == request.auth.uid || isOwner());
+      allow create, update, delete: if false;
+    }
+
+    match /coinTransactions/{transactionId} {
+      allow read: if signedIn()
+        && (resource.data.get('uid', '') == request.auth.uid || isOwner());
+      allow create, update, delete: if false;
+    }
+
+    match /gemRewardClaims/{claimId} {
+      allow read: if signedIn()
+        && (resource.data.get('uid', '') == request.auth.uid || isOwner());
+      allow create, update, delete: if false;
+    }
+
+    match /gemEvents/{eventId} {
+      allow read: if signedIn()
+        && (resource.data.get('status', '') == 'active' || isStaff());
+      allow create, update, delete: if false;
+
+      match /questions/{questionId} {
+        allow read, write: if false;
+      }
+
+      match /participants/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+        allow create, update, delete: if false;
+
+        match /attempts/{attemptId} {
+          allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+          allow create, update, delete: if false;
+        }
+      }
+
+      match /leaderboard/{uid} {
+        allow read: if signedIn();
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /gemEventAnswerKeys/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /gemMarketplace/{itemId} {
+      allow read: if signedIn()
+        && (resource.data.get('active', false) == true || isStaff());
+      allow create, update, delete: if false;
+    }
+
+    match /gemInventories/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+      allow create, update, delete: if false;
+
+      match /items/{itemId} {
+        allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /gemCommunityGoals/{goalId} {
+      allow read: if signedIn();
+      allow create, update, delete: if false;
+
+      match /contributions/{uid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+        allow create, update, delete: if false;
+      }
     }
 
     // All other documents are denied by default because no broader wildcard
