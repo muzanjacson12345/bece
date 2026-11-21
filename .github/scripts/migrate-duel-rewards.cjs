@@ -8,7 +8,7 @@ if (process.env.GITHUB_REF_NAME && process.env.GITHUB_REF_NAME !== EXPECTED_BRAN
 const file = "index.html";
 let source = fs.readFileSync(file, "utf8");
 
-const doubleCountedStreak = "    D.streak = ok ? (D.streak || 0) + 1 : 0; if (D.streak > (D.best || 0)) D.best = D.streak;\\n";
+const doubleCountedStreak = "    D.streak = ok ? (D.streak || 0) + 1 : 0; if (D.streak > (D.best || 0)) D.best = D.streak;\n";
 if (source.includes(doubleCountedStreak)) {
   source = source.replace(doubleCountedStreak, "");
   fs.writeFileSync(file, source, "utf8");
