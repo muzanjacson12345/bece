@@ -11,6 +11,7 @@
   let apiBase = gemsUrl;
   if (apiBase.endsWith("/gems")) apiBase = apiBase.slice(0, -5);
   while (apiBase.endsWith("/")) apiBase = apiBase.slice(0, -1);
+  const EVENT_FINISH_GRACE_MS = 24 * 60 * 60 * 1000;
 
   const state = {
     loading: false,
@@ -96,7 +97,7 @@
     try {
       const db = database();
       const [eventSnapshot, playerSnapshot] = await Promise.all([
-        db.collection("gemEvents").where("status", "==", "active").limit(100).get(),
+        db.collection("gemEvents").where("status", "in", ["active", "settled"]).limit(100).get(),
         db.collection("players").doc(user.uid).get().catch(() => null)
       ]);
       const events = eventSnapshot.docs
@@ -110,6 +111,20 @@
         });
       state.coins = playerSnapshot && playerSnapshot.exists
         ? Number(playerSnapshot.data().coins) : null;
+
+      // The first signed-in visit after the 24-hour finish grace triggers
+      // settlement. The Worker makes the payout atomic and idempotent.
+      for (const event of events) {
+        if (event.status === "active" && Number.isSafeInteger(event.closesAt)
+            && Date.now() >= event.closesAt + EVENT_FINISH_GRACE_MS) {
+          try {
+            const settled = await callWorker("/events/settle", { eventId: event.eventId });
+            if (settled && settled.result) Object.assign(event, settled.result);
+          } catch (settlementError) {
+            event.settlementError = (settlementError && settlementError.message) || "Prize settlement is not available yet.";
+          }
+        }
+      }
 
       const enriched = await Promise.all(events.map(async event => {
         try {
@@ -165,7 +180,7 @@
     const card = make("article", "card");
     const heading = make("div", "page-intro");
     heading.append(
-      make("p", "eyebrow", "Gem event"),
+      make("p", "eyebrow", event.status === "settled" ? "Event completed" : "Gem event"),
       make("h3", "", event.title || "Event"),
       make("p", "muted", event.description || "Take part in this event.")
     );
@@ -175,7 +190,10 @@
       make("p", "", "Allowed entries: " + (event.maxEntriesPerUser || "—")),
       make("p", "", "Questions: " + (event.questionCount || (Array.isArray(event.questionIds) ? event.questionIds.length : "—"))),
       make("p", "", "Opens: " + formatTime(event.opensAt)),
-      make("p", "", "Closes: " + formatTime(event.closesAt))
+      make("p", "", "Closes: " + formatTime(event.closesAt)),
+      make("p", "", "Gem prizes — 1st: " + formatCoins(event.prizeGems && event.prizeGems.first)
+        + " · 2nd: " + formatCoins(event.prizeGems && event.prizeGems.second)
+        + " · 3rd: " + formatCoins(event.prizeGems && event.prizeGems.third))
     );
     if (event.retryEnabled) {
       metadata.append(make("p", "", "Retry: " + formatCoins(event.retryCostCoins) + " Coins · up to " + event.maxRetriesPerEntry + " per entry"));
@@ -191,29 +209,40 @@
     const now = Date.now();
     const upcoming = Number.isSafeInteger(event.opensAt) && event.opensAt > now;
     const closed = Number.isSafeInteger(event.closesAt) && event.closesAt <= now;
+    const finishWindowExpired = event.status === "settled"
+      || (Number.isSafeInteger(event.closesAt) && now >= event.closesAt + EVENT_FINISH_GRACE_MS);
     const activeAttempt = attempt && ["ready", "in_progress"].includes(attempt.status);
+
     card.append(make("p", "muted", "Your paid entries used: " + entriesUsed + " · remaining: " + entriesLeft));
+    if (event.status === "settled") {
+      card.append(make("p", "muted", "Prizes settled: " + formatCoins(event.totalGemsAwarded || 0) + " Gems awarded."));
+    } else if (event.settlementError) {
+      card.append(make("p", "muted", "Prize settlement could not be completed yet: " + event.settlementError));
+    }
 
     if (upcoming) {
       card.append(make("p", "muted", "This event has not opened yet."));
     } else if (closed) {
-      card.append(make("p", "muted", "This event has closed."));
+      card.append(make("p", "muted", "Entry and paid retries are closed. Previously paid attempts have a 24-hour finish window."));
     }
 
-    if (attempt && attempt.status === "in_progress") {
+    if (attempt && ["ready", "in_progress"].includes(attempt.status) && finishWindowExpired) {
+      card.append(make("p", "muted", "Your unfinished attempt has expired. It is not eligible for a leaderboard prize."));
+    } else if (attempt && attempt.status === "in_progress") {
       card.append(actionButton("Resume attempt", () => startAttempt(event, attempt.attemptId)));
     } else if (attempt && attempt.status === "ready") {
       card.append(actionButton("Start attempt", () => startAttempt(event, attempt.attemptId)));
     } else if (attempt && attempt.status === "completed") {
       card.append(make("p", "muted", "Last result: " + (attempt.correctCount || 0) + "/" + (attempt.questionIndex || 0) + " correct"));
-      if (event.retryEnabled && (attempt.retriesUsed || 0) < event.maxRetriesPerEntry && !upcoming && !closed) {
+      if (event.status !== "settled" && event.retryEnabled
+          && (attempt.retriesUsed || 0) < event.maxRetriesPerEntry && !upcoming && !closed) {
         card.append(actionButton("Retry this entry · " + formatCoins(event.retryCostCoins) + " Coins", () => retryAttempt(event, attempt)));
       }
     }
 
-    if (entriesLeft > 0 && !activeAttempt && !upcoming && !closed) {
+    if (event.status !== "settled" && entriesLeft > 0 && !activeAttempt && !upcoming && !closed) {
       card.append(actionButton("Enter event · " + formatCoins(event.entryCostCoins) + " Coins", () => enterEvent(event), true));
-    } else if (activeAttempt) {
+    } else if (activeAttempt && !finishWindowExpired) {
       card.append(make("p", "muted", "Finish or resume your current attempt before paying for another entry."));
     }
     card.append(actionButton("View leaderboard", () => showLeaderboard(event), true));
@@ -376,19 +405,32 @@
       const rows = snapshot.docs.map(doc => doc.data()).sort((a, b) =>
         (Number(b.correctCount) || 0) - (Number(a.correctCount) || 0)
         || (Number(a.elapsedMs) || 0) - (Number(b.elapsedMs) || 0)
+        || (Number(a.completedAt) || Number.MAX_SAFE_INTEGER) - (Number(b.completedAt) || Number.MAX_SAFE_INTEGER)
+        || String(a.uid || "").localeCompare(String(b.uid || ""))
       ).slice(0, 20);
+      const prizeByUid = new Map((Array.isArray(event.winners) ? event.winners : [])
+        .map(winner => [winner.uid, winner.prizeGems]));
       host.replaceChildren();
       const card = make("article", "card");
       card.append(make("p", "eyebrow", event.title || "Gem event"), make("h2", "", "Leaderboard"));
-      if (!rows.length) card.append(make("p", "muted", "No completed attempts yet."));
+      if (!rows.length) card.append(make("p", "muted", "No completed attempts qualified for the leaderboard."));
       else {
         const list = make("ol", "adm-list");
-        rows.forEach((row, index) => {
+        rows.forEach(row => {
+          const rank = list.children.length + 1;
           const elapsed = Math.round((Number(row.elapsedMs) || 0) / 1000);
-          list.append(make("li", "adm-row", (index + 1) + ". " + (row.displayName || "Student") +
-            " — " + row.correctCount + "/" + row.totalQuestions + " correct · " + elapsed + "s"));
+          const prize = prizeByUid.get(row.uid);
+          const prizeText = event.status === "settled" && Number(prize) > 0
+            ? " · +" + prize + " Gems" : "";
+          list.append(make("li", "adm-row", rank + ". " + (row.displayName || "Student") +
+            " — " + row.correctCount + "/" + row.totalQuestions + " correct · " + elapsed + "s" + prizeText));
         });
         card.append(list);
+      }
+      if (event.status === "settled") {
+        card.append(make("p", "muted", "This event is settled. " + formatCoins(event.totalGemsAwarded || 0) + " Gems were awarded."));
+      } else if (event.closesAt) {
+        card.append(make("p", "muted", "Prizes settle after the event closes and the 24-hour finish window ends."));
       }
       card.append(actionButton("Back to events", loadEventCards));
       host.append(card);
