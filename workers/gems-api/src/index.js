@@ -3,7 +3,7 @@ import { hasValidOwnerSession } from "./owner-utils.mjs";
 import { buildPracticeRewardResult } from "./practice-utils.mjs";
 import { isKnownQuestionId } from "./question-keys.mjs";
 import { getShopItem } from "./shop-utils.mjs";
-import { getPowerupUse } from "./powerup-utils.mjs";
+import { getPowerupUse, validatePowerupUseReceiptRetry } from "./powerup-utils.mjs";
 import {
   buildDuelAnswerResult,
   buildDuelForfeitProgress,
@@ -334,20 +334,12 @@ async function applyPracticeRewardChange(uid, operationId, questionIds, answers,
 
     if (operationDoc) {
       const stored = decodeFirestoreFields(operationDoc.fields || {});
-      if (stored.uid !== uid || stored.itemId !== itemId || stored.duelCode !== duelCode) {
-        throw new Error('IDEMPOTENCY_KEY_REUSED');
-      }
       if (!duelDoc || !progressDoc) throw new Error('DUEL_NOT_STARTED');
       const duel = decodeFirestoreFields(duelDoc.fields || {});
       const progress = decodeFirestoreFields(progressDoc.fields || {});
-      const storedIndex = Number(stored.questionIndex);
-      const usedIndexes = Array.isArray(progress.secondChanceIndexes) ? progress.secondChanceIndexes : [];
-      if (duel.settled === true || duel.state !== 'playing'
-          || !Number.isSafeInteger(storedIndex)
-          || storedIndex !== Number(progress.nextIndex)
-          || !usedIndexes.includes(storedIndex)) {
-        throw new Error('IDEMPOTENCY_KEY_REUSED');
-      }
+      validatePowerupUseReceiptRetry({
+        stored, uid, itemId, duelCode, duel, progress
+      });
       await firestoreRequest(
         'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
         accessToken,
