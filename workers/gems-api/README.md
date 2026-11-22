@@ -31,6 +31,21 @@ All POST endpoints require a Firebase ID token in the `Authorization: Bearer <to
 | `POST /gem-shop/purchase` | Purchases a cosmetic unlock or useful consumable with Gems. Prices and item effects are fixed on the Worker; the balance, inventory, permanent receipt and Gem transaction history are written atomically. |
 | `POST /gem-shop/equip` | Equips or unequips a cosmetic already owned by the signed-in player. The Worker checks ownership and writes the equipped slot and a private idempotency receipt. |
 
+### First Gem Marketplace catalogue
+
+The first release has fixed, server-controlled prices. The browser cannot submit or change an item price.
+
+| Item | Type | Price |
+|---|---|---:|
+| Sapphire Frame | Permanent cosmetic | 40 Gems |
+| Royal Frame | Permanent cosmetic | 70 Gems |
+| Aurora Frame | Permanent cosmetic | 100 Gems |
+| Streak Freeze | Useful consumable | 25 Gems |
+| XP Boost | Useful consumable | 30 Gems |
+| Second Chance | Useful consumable | 20 Gems |
+
+Cosmetic frames are bought once, remain in the player's private inventory and can be equipped or unequipped. Useful items increment the same player counters already consumed by verified practice or Duel flows: `sfreezes`, `xpBoost` and `p50`. The existing Coin Shop is separate; these Gem prices do not alter Coin Shop prices.
+
 ### First-release Gem Marketplace catalogue
 
 **Permanent cosmetics**
@@ -80,6 +95,8 @@ The Worker uses permanent, private Firestore receipts so a network retry cannot 
 - `gemTransactions/{transactionId}` for manual Owner adjustments, first-time achievement awards and event prize payouts. These records are read-only to clients and readable only by the recipient (or Owner).
 - `gemShopOperations/{uid}_{operationId}` and `gemShopEquipOperations/{uid}_{operationId}` for private, permanent marketplace purchase/equipment receipts.
 - `gemRewardClaims/{uid}_{achievementId}` for each first-time achievement Gem claim. Each claim is created in the same transaction as the balance update.
+- `gemInventories/{uid}/items/{itemId}` for each permanent cosmetic unlock and `gemInventories/{uid}.equipped` for the player's equipped cosmetic slots. The matching `players/{uid}.eq.frame` value drives the avatar-frame display used by the existing profile and friends-board UI.
+- `gemShopOperations/{uid}_{operationId}` for permanent marketplace purchase receipts and `gemShopEquipOperations/{uid}_{operationId}` for idempotent cosmetic equipment changes. These records are private and Worker-only.
 - Achievement and event Gem history records are written atomically with the matching balance change and permanent receipt. This gives the future wallet-history screen one consistent, server-managed source to read without changing the current Gem reward amounts.
 
 Client Firestore rules deny access to private receipts and server-owned Duel progress. The Worker remains responsible for validating the participant, answer order, balances, daily Duel reward cap and duplicate-operation IDs.
