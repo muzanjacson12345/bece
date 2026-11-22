@@ -247,3 +247,37 @@ test("manual Owner Gem changes keep a normalized transaction-history record", ()
   assert.ok(manual.includes("balanceBefore: before"));
   assert.ok(manual.includes("balanceAfter: after"));
 });
+
+
+test("Gem Marketplace catalog, purchase and equip routes are authenticated Worker endpoints", () => {
+  assert.ok(source.includes("'/gem-shop/catalog'"));
+  assert.ok(source.includes("'/gem-shop/purchase'"));
+  assert.ok(source.includes("'/gem-shop/equip'"));
+  assert.ok(source.includes("listGemMarketplaceItems()"));
+  assert.ok(source.includes("applyGemMarketplacePurchase(identity.uid, itemId, operationId, accessToken)"));
+  assert.ok(source.includes("applyGemMarketplaceEquip(identity.uid, itemId, operationId, shouldEquip, accessToken)"));
+});
+
+test("Gem Marketplace purchase updates Gems, owned cosmetics, purchase receipt and history atomically", () => {
+  const start = source.indexOf("async function applyGemMarketplacePurchase(");
+  const end = source.indexOf("\\nasync function applyGemMarketplaceEquip", start);
+  assert.ok(start >= 0 && end > start, "Gem Marketplace purchase function boundaries must be found");
+  const purchase = source.slice(start, end);
+  for (const required of [
+    "gemInventories/", "gemShopOperations/", "gemTransactions/",
+    "buildGemMarketplacePurchase(", "currentDocument: { exists: false }",
+    "body: { transaction, writes }"
+  ]) assert.ok(purchase.includes(required), "purchase transaction must include " + required);
+});
+
+test("Gem Marketplace equipment can only be changed for a cosmetic already owned by the same player", () => {
+  const start = source.indexOf("async function applyGemMarketplaceEquip(");
+  const end = source.indexOf("\\nasync function applyPowerupUse", start);
+  assert.ok(start >= 0 && end > start, "Gem Marketplace equip function boundaries must be found");
+  const equip = source.slice(start, end);
+  assert.ok(equip.includes("GEM_ITEM_NOT_OWNED"));
+  assert.ok(equip.includes("ownedItem.owned !== true"));
+  assert.ok(equip.includes("gemShopEquipOperations/"));
+  assert.ok(equip.includes("inventory.equipped"));
+  assert.ok(equip.includes("body: { transaction, writes }"));
+});
