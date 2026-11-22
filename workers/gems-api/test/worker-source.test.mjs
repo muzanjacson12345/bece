@@ -281,3 +281,9 @@ test("Gem Marketplace equipment can only be changed for a cosmetic already owned
   assert.ok(equip.includes("inventory.equipped"));
   assert.ok(equip.includes("body: { transaction, writes }"));
 });
+
+
+test("Gem Marketplace purchase and equipment retries reject an operation ID reused for another action", () => {
+  assert.ok(source.includes("if (stored.itemId !== itemId) throw new Error('IDEMPOTENCY_KEY_REUSED')"));
+  assert.ok(source.includes("stored.action !== (shouldEquip ? 'equip' : 'unequip')"));
+});
