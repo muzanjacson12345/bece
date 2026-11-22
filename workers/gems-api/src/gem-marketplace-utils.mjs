@@ -51,7 +51,6 @@ export function buildGemMarketplacePurchase({
   itemId,
   balanceBefore,
   inventoryItem = null,
-  quantityBefore = 0,
   now = Date.now()
 }) {
   const safeUid = requireText(uid, "INVALID_GEM_SHOP_UID");
