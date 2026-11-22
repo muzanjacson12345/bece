@@ -1357,7 +1357,9 @@ html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(-
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 
 .av { position: relative; }
-.av[data-gem-ring='gold'] {
+.av[data-gem-ring='gold'],
+.pc-head .av[data-gem-ring='gold'],
+.board-list li.is-me .av[data-gem-ring='gold'] {
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--av),
     0 0 0 7px #b77d16, 0 0 0 9px #f6d875, 0 0 13px 9px rgb(214 163 45 / 28%);
 }
@@ -1375,7 +1377,9 @@ html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(-
   .gem-item-preview { width: 68px; height: 68px; }
   .gem-item > .btn { grid-column: 1 / -1; width: 100%; }
 }
-.av[data-gem-ring='gold'] {
+.av[data-gem-ring='gold'],
+.pc-head .av[data-gem-ring='gold'],
+.board-list li.is-me .av[data-gem-ring='gold'] {
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--av),
     0 0 0 7px #b77d16, 0 0 0 9px #f6d875, 0 0 13px 9px rgb(214 163 45 / 28%);
 }
