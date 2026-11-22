@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'gem-rewards-mobile-achievements-2026-11-22-r4';
+const EXPECTED_BUILD = 'all-achievements-gems-app-icons-mobile-layout-2026-11-22-r5';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -68,7 +68,7 @@ async function main() {
     ['Renew button uses the in-place handler', "btn('Renew', 'btn-ghost btn-sm', renewCurrentSession)"],
   ];
   const gemFeatures = [
-    ['Gems balance appears in account', '💎 ${Math.max(0, Number(S.doc.gems) || 0)}'],
+    ['Gems balance shortcut uses the app icon set', "const gemShortcut = iconLabel('gem',String(Math.max(0, Number(S.doc.gems) || 0))"],
     ['Quiz saves preserve existing Gems fields without creating missing ones', "preserveGemFields.gems = currentData.gems"],
     ['Quiz saves preserve Gem cosmetic ownership', "preserveGemFields.gemCosmetics = currentData.gemCosmetics"],
     ['The Gem Shop displays the one approved profile ring', "name: 'Golden Profile Ring'"],
@@ -84,9 +84,13 @@ async function main() {
     ['Gems API remains available to app features', 'window.Gems = Gems;'],
     ['Achievements display one-time Gem reward claim controls', 'Gems.claimAchievement(a.id)'],
     ['Daily Gem rewards require a completed practice quiz', "Number(progressData.quizzes || 0) >= 1"],
-    ['Daily Gem reward panel includes a seven-day track', "n===7?'+6 💎':'+1 💎'"],
+    ['Daily Gem reward panel includes a seven-day track', "n===7?'+6 Gems':'+1 Gem'"],
     ['High-score achievement tracks 90 percent quiz results', "achievementStats.highScore = (achievementStats.highScore || 0) + 1"],
     ['Mobile achievement descriptions can wrap without clipping', '.achievement-copy small{line-height:1.55;word-break:normal}'],
+    ['Mobile daily Gem days use a four-column layout', '.daily-gem-days{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}'],
+    ['Quick access Duels uses a matching SVG app icon', '<use href="#i-swords"/>'],
+    ['Quick access Shop uses a matching SVG app icon', '<use href="#i-shopping-bag"/>'],
+    ['Every achievement has a fixed Gem reward', "GEM_ACHIEVEMENT_REWARDS).length !== ACHIEVEMENTS.length"],
   ];
   const gemsWorkerSource = fs.readFileSync(path.join(process.cwd(), 'workers/gems-api/src/index.js'), 'utf8');
   const gemWorkerFeatures = [
@@ -113,6 +117,14 @@ async function main() {
     ...gemWorkerFeatures.map(([label, token]) => ({ label, passed: gemsWorkerSource.includes(token) })),
     ...gemRulesFeatures.map(([label, token]) => ({ label, passed: firestoreRulesSource.includes(token) })),
   ];
+  const clientRewardBlock = source.match(/const GEM_ACHIEVEMENT_REWARDS = Object.freeze\\(\\{([\\s\\S]*?)\\n\\}\\);/);
+  const workerRewardBlock = gemsWorkerSource.match(/const GEM_ACHIEVEMENT_REWARDS = Object.freeze\\(\\{([\\s\\S]*?)\\n\\}\\);/);
+  const clientRewardIds = clientRewardBlock ? [...clientRewardBlock[1].matchAll(/'([^']+)'\\s*:\\s*\\d+/g)].map(match => match[1]) : [];
+  const workerRewardIds = workerRewardBlock ? [...workerRewardBlock[1].matchAll(/'([^']+)'\\s*:\\s*Object\\.freeze\\(\\{ amount:/g)].map(match => match[1]) : [];
+  sourceChecks.push(
+    { label: 'Client lists Gem rewards for every achievement', passed: clientRewardIds.length === 47 && new Set(clientRewardIds).size === 47 },
+    { label: 'Worker validates one-time Gem rewards for all 47 achievements', passed: workerRewardIds.length === 47 && new Set(workerRewardIds).size === 47 && clientRewardIds.every(id => workerRewardIds.includes(id)) }
+  );
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
 
   const browser = await chromium.launch({ headless: true });
