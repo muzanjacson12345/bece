@@ -6,13 +6,13 @@ import {
   listGemMarketplaceItems
 } from "../src/gem-marketplace-utils.mjs";
 
-test("catalog contains separate cosmetic and useful Gem items with server prices", () => {
+test("catalog contains only permanent cosmetic Gem items with server prices", () => {
   const items = listGemMarketplaceItems();
-  assert.equal(items.length, 6);
+  assert.equal(items.length, 3);
   assert.equal(items.filter(item => item.category === "cosmetic").length, 3);
-  assert.equal(items.filter(item => item.category === "useful").length, 3);
+  assert.equal(items.every(item => item.category === "cosmetic"), true);
   assert.equal(getGemMarketplaceItem("frame_sapphire").price, 40);
-  assert.equal(getGemMarketplaceItem("streak_freeze").field, "sfreezes");
+  assert.equal(getGemMarketplaceItem("streak_freeze"), null);
   assert.equal(getGemMarketplaceItem("client_invented_item"), null);
 });
 
@@ -65,9 +65,9 @@ test("marketplace purchase rejects insufficient Gems and repeat cosmetic ownersh
 test("marketplace purchase rejects invalid balances, quantities and item IDs", () => {
   const base = {
     uid: "student-1", operationId: "operation-5",
-    itemId: "second_chance", balanceBefore: 100, now: 1000
+    itemId: "frame_sapphire", balanceBefore: 100, now: 1000
   };
   assert.throws(() => buildGemMarketplacePurchase({ ...base, balanceBefore: -1 }), /INVALID_GEM_SHOP_BALANCE/);
   assert.throws(() => buildGemMarketplacePurchase({ ...base, itemId: "fake_item" }), /INVALID_GEM_SHOP_ITEM/);
-  assert.throws(() => buildGemMarketplacePurchase({ ...base, quantityBefore: -1 }), /INVALID_GEM_SHOP_QUANTITY/);
+  assert.throws(() => buildGemMarketplacePurchase({ ...base, itemId: "xp_boost" }), /INVALID_GEM_SHOP_ITEM/);
 });
