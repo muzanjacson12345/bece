@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'gem-rewards-all-achievements-icons-2026-11-22-r5';
+const EXPECTED_BUILD = 'daily-challenge-coins-mobile-gem-layout-2026-11-22-r6';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -85,6 +85,12 @@ async function main() {
     ['Achievements display one-time Gem reward claim controls', 'Gems.claimAchievement(a.id)'],
     ['Daily Gem rewards require a completed practice quiz', "Number(progressData.quizzes || 0) >= 1"],
     ['Daily Gem reward panel includes a seven-day track', "n===7?'+6 💎':'+1 💎'"],
+    ['Mobile Daily Gem cards use a four-column layout', '.daily-gem-days{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}'],
+    ['Claimed Gem day labels stay within their cards', '.daily-gem-day small{font-size:9px}'],
+    ['Daily challenge EXP is awarded automatically', 'EXP added automatically'],
+    ['Three completed daily missions unlock a separate coin claim', 'claimDailyChallengeCoins(day, challengeCoinAmount)'],
+    ['Daily challenge coin claims are saved once per day', 'state.coinClaimed === true'],
+    ['Daily challenge coin claim checks all three selected missions', 'tasks.every(task => state.claimed.includes(task.id))'],
     ['High-score achievement tracks 90 percent quiz results', "achievementStats.highScore = (achievementStats.highScore || 0) + 1"],
     ['Mobile achievement descriptions can wrap without clipping', '.achievement-copy small{line-height:1.55;word-break:normal}'],
     ['Achievement descriptions have a dedicated mobile layout row', '.achievement-main {'],

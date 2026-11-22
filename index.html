@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="gem-rewards-all-achievements-icons-2026-11-22-r5">
+<meta name="bece-build" content="daily-challenge-coins-mobile-gem-layout-2026-11-22-r6">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -534,20 +534,45 @@ html[data-theme='dark'] #theme-toggle .icon-moon { display: none; }
 .achievement-reward-row{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;min-width:0}
 .achievement-gem-reward{font-size:12px;font-weight:800;color:var(--accent)}
 .achievement-claim{flex:0 0 auto;min-height:34px}
-.daily-gem-rewards{padding:16px;margin:0 0 18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
-.daily-gem-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
-.daily-gem-head h3{margin:2px 0 5px;font-size:18px}
-.daily-gem-head p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
-.daily-gem-balance{flex:0 0 auto;font-weight:800;white-space:nowrap}
-.daily-gem-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
-.daily-gem-day{display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 3px;border:1px solid var(--line);border-radius:11px;background:var(--surface2);text-align:center}
-.daily-gem-day strong{font-size:11px;color:var(--muted)}
-.daily-gem-day span{font-size:13px;font-weight:800;white-space:nowrap}
+.daily-gem-rewards{padding:18px;margin:0 0 18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.daily-gem-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
+.daily-gem-head > div{flex:1;min-width:0}
+.daily-gem-head h3{margin:3px 0 7px;font-size:20px;line-height:1.25}
+.daily-gem-head p{max-width:520px;margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.daily-gem-balance{flex:0 0 auto;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface2);font-size:14px;font-weight:800;white-space:nowrap}
+.daily-gem-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.daily-gem-day{display:flex;min-width:0;min-height:76px;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:9px 5px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);text-align:center}
+.daily-gem-day strong{font-size:12px;color:var(--muted)}
+.daily-gem-day span{font-size:14px;font-weight:800;white-space:nowrap}
+.daily-gem-day small{display:block;max-width:100%;padding:2px 5px;border-radius:999px;background:var(--good-soft);color:var(--good);font-size:9px;font-weight:800;line-height:1.15;white-space:normal;overflow-wrap:anywhere}
 .daily-gem-day.is-done{border-color:var(--accent);background:var(--accent-soft)}
 .daily-gem-day.is-current{outline:2px solid var(--accent);outline-offset:1px}
-.daily-gem-action{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px}
-.daily-gem-action p{flex:1;min-width:180px;margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.daily-gem-action{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px}
+.daily-gem-action p{flex:1;min-width:180px;margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.daily-challenge-bonus{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface)}
+.daily-challenge-bonus-copy{display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0}
+.daily-challenge-bonus-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:12px;background:var(--accent-soft);font-size:23px}
+.daily-challenge-bonus-copy strong,.daily-challenge-bonus-copy small{display:block}
+.daily-challenge-bonus-copy strong{font-size:15px;line-height:1.35}
+.daily-challenge-bonus-copy small{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.5}
+.daily-challenge-bonus-status{display:block;margin-top:5px;color:var(--accent);font-size:12px;font-weight:800}
+.daily-challenge-bonus .btn{flex:0 0 auto;min-height:42px}
 @media(max-width:760px){.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.achievement-launch{padding:16px}.achievement-group{margin-bottom:28px}}
+@media(max-width:600px){
+  .daily-gem-days{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .daily-gem-day{min-height:74px;padding:9px 5px}
+  .daily-gem-day strong{font-size:12px}
+  .daily-gem-day span{font-size:14px}
+  .daily-gem-day small{font-size:9px}
+  .daily-gem-head{gap:10px}
+  .daily-gem-head h3{font-size:19px}
+  .daily-gem-balance{font-size:13px}
+  .daily-gem-action{align-items:stretch;flex-direction:column}
+  .daily-gem-action p{min-width:0;width:100%}
+  .daily-gem-action .btn{width:100%;min-height:44px}
+  .daily-challenge-bonus{align-items:stretch;flex-direction:column}
+  .daily-challenge-bonus .btn{width:100%}
+}
 @media(max-width:420px){
   .achievement-grid{grid-template-columns:1fr}
   .achievement-item{grid-template-columns:44px minmax(0,1fr);align-items:start;gap:9px 12px;padding:14px}
@@ -10098,6 +10123,7 @@ function challengeHash(value) {
   for (let i = 0; i < value.length; i++) { h ^= value.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
 }
+const DAILY_CHALLENGE_COIN_REWARD = 20;
 function dailyChallengeSet(day) {
   const pool = CHALLENGE_POOL.slice();
   let seed = challengeHash('bece-challenges-' + day);
@@ -10285,6 +10311,44 @@ function renderAchievements() {
 }
 globalThis.renderAchievements = renderAchievements;
 
+async function claimDailyChallengeCoins(day, amount) {
+  if (!S.db || !S.uid) throw new Error('SIGN_IN_REQUIRED');
+  if (day !== today()) throw new Error('CHALLENGE_DAY_CHANGED');
+  if (!Number.isSafeInteger(amount) || amount < 1) throw new Error('INVALID_CHALLENGE_COIN_REWARD');
+  const tasks = dailyChallengeSet(day);
+  if (tasks.length !== 3) throw new Error('INVALID_DAILY_CHALLENGES');
+  const playerRef = S.db.doc('players/' + S.uid);
+  let outcome = null;
+  await S.db.runTransaction(async transaction => {
+    const snapshot = await transaction.get(playerRef);
+    if (!snapshot.exists) throw new Error('PLAYER_PROFILE_NOT_READY');
+    const profile = snapshot.data() || {};
+    const state = profile.challengeState;
+    if (!state || state.day !== day || !Array.isArray(state.claimed)
+        || !tasks.every(task => state.claimed.includes(task.id))) {
+      throw new Error('DAILY_CHALLENGES_NOT_COMPLETE');
+    }
+    const currentCoins = Number(profile.coins || 0);
+    if (!Number.isSafeInteger(currentCoins) || currentCoins < 0) throw new Error('INVALID_COIN_BALANCE');
+    if (state.coinClaimed === true) {
+      outcome = { balance: currentCoins, added: 0, duplicate: true, state };
+      return;
+    }
+    const balance = currentCoins + amount;
+    if (!Number.isSafeInteger(balance)) throw new Error('COIN_BALANCE_LIMIT');
+    const nextState = { ...state, coinClaimed: true };
+    transaction.update(playerRef, { coins: balance, challengeState: nextState });
+    outcome = { balance, added: amount, duplicate: false, state: nextState };
+  });
+  if (!outcome) throw new Error('CHALLENGE_COIN_CLAIM_FAILED');
+  S.doc = { ...(S.doc || {}), coins: outcome.balance, challengeState: outcome.state };
+  const mine = (S.players || []).find(player => player.id === S.uid);
+  if (mine) { mine.coins = outcome.balance; mine.challengeState = outcome.state; }
+  renderAccount();
+  renderDaily();
+  return outcome;
+}
+
 function renderDaily() {
   const e = $('daily-card'); if (!e) return; e.replaceChildren();
   const d = S.doc || {}, day = today();
@@ -10293,7 +10357,7 @@ function renderDaily() {
   const done = tasks.filter(t => claimed.includes(t.id)).length;
   const head = o('div', 'challenge-heading'), info = o('div', 'daily-info');
   info.append(o('p', 'eyebrow', '3 fresh missions every day'), o('h2', '', 'Daily Challenges'));
-  info.append(o('p', 'muted', CHALLENGE_POOL.length + ' possible missions. Your three are randomly selected each day, with changing targets and bonus EXP.'));
+  info.append(o('p', 'muted', CHALLENGE_POOL.length + ' possible missions. Your three are randomly selected each day. EXP is added automatically as you complete each mission.'));
   const summary = o('div', 'challenge-summary'); summary.append(o('strong', '', done + '/3'), o('span', '', 'completed'));
   head.append(info, summary);
   const list = o('div', 'challenge-list');
@@ -10302,11 +10366,12 @@ function renderDaily() {
     const card = o('article', 'challenge-item' + (complete ? ' is-complete' : ''));
     const top = o('div', 'challenge-top'), name = o('div', 'challenge-name'), copy = o('div');
     name.append(o('span', 'challenge-icon', t.icon)); copy.append(o('strong', '', t.title), o('small', '', t.detail)); name.append(copy);
-    top.append(name, o('span', 'challenge-reward', complete ? '✓ Completed' : '+' + t.reward + ' EXP'));
+    top.append(name, o('span', 'challenge-reward', complete ? '✓ EXP earned' : '+' + t.reward + ' EXP'));
     const track = o('div', 'challenge-track'), fill = o('span', 'challenge-fill'); fill.style.width = (progress / t.target * 100) + '%'; track.append(fill);
-    const foot = o('div', 'challenge-foot'); foot.append(o('span', '', complete ? 'Reward earned' : progress + ' / ' + t.target), o('span', '', 'Resets daily'));
+    const foot = o('div', 'challenge-foot'); foot.append(o('span', '', complete ? 'EXP added automatically' : progress + ' / ' + t.target), o('span', '', 'Resets daily'));
     card.append(top, track, foot); list.append(card);
   });
+
   const gemOps = Array.isArray(d.gemOps) ? d.gemOps : [];
   const todayClaim = gemOps.find(op => typeof op === 'string' && op.startsWith('daily:' + day + ':'));
   const claimedToday = !!todayClaim;
@@ -10347,7 +10412,44 @@ function renderDaily() {
   };
   action.append(claimDaily);
   rewardPanel.append(rewardHead,days,action);
-  e.append(rewardPanel,head,list,o('p','challenge-note',!S.db||!S.uid?'Sign in to the Friends board to save progress and bonus EXP.':'Only normal practice sessions count. Your missions refresh tomorrow.'));
+
+  const coinRate = Math.min(3, Math.max(0.5, Number(S.settings.coinMultiplier) || 1));
+  const challengeCoinAmount = Math.floor(DAILY_CHALLENGE_COIN_REWARD * coinRate);
+  const coinClaimed = state.coinClaimed === true;
+  const allChallengesComplete = tasks.length === 3 && done === 3;
+  const coinPanel = o('section', 'daily-challenge-bonus');
+  const coinCopy = o('div', 'daily-challenge-bonus-copy');
+  coinCopy.append(o('span', 'daily-challenge-bonus-icon', '💰'));
+  const coinText = o('div');
+  coinText.append(o('strong', '', 'Daily completion reward'),
+    o('small', '', 'Complete all three missions to unlock bonus coins. Your challenge EXP is added automatically as each mission is completed.'));
+  coinText.append(o('span', 'daily-challenge-bonus-status',
+    coinClaimed ? '✓ Today’s coins have been claimed' : allChallengesComplete ? 'Ready to claim' : done + '/3 missions completed'));
+  coinCopy.append(coinText);
+  const claimCoins = o('button', 'btn btn-primary btn-sm', coinClaimed ? '✓ Coins claimed' : 'Claim +' + challengeCoinAmount + ' 💰');
+  claimCoins.type = 'button';
+  claimCoins.disabled = coinClaimed || !allChallengesComplete || !S.db || !S.uid;
+  claimCoins.onclick = async () => {
+    claimCoins.disabled = true;
+    claimCoins.textContent = 'Claiming…';
+    try {
+      const result = await claimDailyChallengeCoins(day, challengeCoinAmount);
+      App.toast(result.duplicate ? 'You have already claimed today’s challenge coins.' : 'You claimed +' + result.added + ' coins!', 'good');
+    } catch (error) {
+      const message = error && error.message;
+      App.toast(message === 'DAILY_CHALLENGES_NOT_COMPLETE'
+        ? 'Complete all three daily challenges before claiming your coins.'
+        : message === 'SIGN_IN_REQUIRED'
+          ? 'Sign in before claiming your daily challenge coins.'
+          : 'Could not claim your daily challenge coins. Please try again.', 'warn');
+    }
+    renderDaily();
+  };
+  coinPanel.append(coinCopy, claimCoins);
+  e.append(rewardPanel, head, list, coinPanel,
+    o('p', 'challenge-note', !S.db || !S.uid
+      ? 'Sign in to the Friends board to save progress and claim daily rewards.'
+      : 'Only normal practice sessions count. Your missions refresh tomorrow.'));
 }
 App.on('quiz:finished', async ev => {
   const box = $('exp-result'); box.hidden = false;
