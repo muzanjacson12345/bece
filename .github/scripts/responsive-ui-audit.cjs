@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'gems-worker-2026-11-19-r2';
+const EXPECTED_BUILD = 'profile-ring-2026-11-22-r1';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -69,6 +69,10 @@ async function main() {
   const gemFeatures = [
     ['Gems balance appears in account', '💎 ${Math.max(0, Number(S.doc.gems) || 0)}'],
     ['Quiz saves preserve existing Gems fields without creating missing ones', "preserveGemFields.gems = currentData.gems"],
+    ['Quiz saves preserve Gem cosmetic ownership', "preserveGemFields.gemCosmetics = currentData.gemCosmetics"],
+    ['The Gem Shop displays the one approved profile ring', "name: 'Golden Profile Ring'"],
+    ['Profile ring styling is applied to equipped avatars', "b.dataset.gemRing = p.gemCosmetics"],
+    ['The client requests a server-verified cosmetic purchase', "purchaseCosmetic: (itemId, operationId) => applyGemChange('purchase', null, operationId, itemId)"],
     ['Client Gems API calls the trusted Worker', 'fetch(GEMS_API_URL, {'],
     ['Gems API remains available to app features', 'window.Gems = Gems;'],
   ];
@@ -79,11 +83,19 @@ async function main() {
     ['Worker deduplicates recent operation IDs', 'const MAX_RECENT_OPS = 100;'],
     ['Only the Owner role can mint Gems', "role !== 'owner'"],
     ['Worker uses a Firestore transaction commit', 'documents:commit'],
+    ['Profile ring purchase saves Gems and ownership atomically', "fieldPaths: ['gems', 'gemOps', 'gemCosmetics', 'equippedGemCosmetic']"],
+    ['Worker defines a fixed price for the approved Gem cosmetic', "'profile-ring-gold': Object.freeze({ price: 50 })"],
+  ];
+  const firestoreRulesSource = fs.readFileSync(path.join(process.cwd(), 'firestore.rules'), 'utf8');
+  const gemRulesFeatures = [
+    ['Players cannot create their own Gem cosmetic ownership', "!('gemCosmetics' in request.resource.data)"],
+    ['Players can equip the ring only after server-recorded ownership', "resource.data.get('gemCosmetics', {}).get('profile-ring-gold', false) == true"],
   ];
   const sourceChecks = [
     ...ownerFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
     ...gemFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
     ...gemWorkerFeatures.map(([label, token]) => ({ label, passed: gemsWorkerSource.includes(token) })),
+    ...gemRulesFeatures.map(([label, token]) => ({ label, passed: firestoreRulesSource.includes(token) })),
   ];
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
 
