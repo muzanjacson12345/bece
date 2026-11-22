@@ -30,6 +30,25 @@ All POST endpoints require a Firebase ID token in the `Authorization: Bearer <to
 | `POST /gem-shop/catalog` | Returns the server-authoritative Gem Marketplace catalogue after Firebase authentication. |
 | `POST /gem-shop/purchase` | Purchases a cosmetic unlock or useful consumable with Gems. Prices and item effects are fixed on the Worker; the balance, inventory, permanent receipt and Gem transaction history are written atomically. |
 | `POST /gem-shop/equip` | Equips or unequips a cosmetic already owned by the signed-in player. The Worker checks ownership and writes the equipped slot and a private idempotency receipt. |
+
+### First-release Gem Marketplace catalogue
+
+**Permanent cosmetics**
+- Sapphire Frame — 40 Gems
+- Royal Frame — 70 Gems
+- Aurora Frame — 100 Gems
+
+These are stored under `gemInventories/{uid}/items/{itemId}`. A player can buy each cosmetic only once and can equip or unequip an owned frame. The selected frame is stored on `gemInventories/{uid}.equipped.frame`.
+
+**Useful consumables**
+- Streak Freeze — 25 Gems; adds one to the existing `players.sfreezes` count.
+- XP Boost — 30 Gems; adds one to the existing `players.xpBoost` count.
+- Second Chance — 20 Gems; adds one to the existing `players.p50` count.
+
+Useful items add to the same player inventory fields used by the existing Coin Shop and Duel systems. The Gem Marketplace does not create a second consumable balance or replace the Coin Shop.
+
+The catalogue is fixed in the Worker for this first release. A browser-supplied price, quantity, user ID or inventory update is never trusted. Purchases use a UUID and atomically deduct Gems, grant the item, create a private receipt and append a debit entry to `gemTransactions`. Cosmetic equipment changes require an existing owned-item record and are idempotent.
+
 | `POST /powerups/use` | Consumes one supported power-up. Current use is Second Chance (`p50`) inside an active Duel. The server records the question index and validates idempotent retries. |
 | `POST /duels/start` | Starts or resumes the signed-in participant's private Duel progress session. |
 | `POST /duels/next` | Opens the server-timed clock for the expected question in the Duel sequence. |
