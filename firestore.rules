@@ -518,15 +518,22 @@ service cloud.firestore {
       allow create: if isOwner()
         || (signedIn() && request.auth.uid == id && !isBanned()
             && !('gems' in request.resource.data)
-            && !('gemOps' in request.resource.data));
+            && !('gemOps' in request.resource.data)
+            && !('gemCosmetics' in request.resource.data)
+            && !('equippedGemCosmetic' in request.resource.data));
 
       allow update: if isOwner()
         || (signedIn() && request.auth.uid == id && !isBanned()
             && !request.resource.data.diff(resource.data).affectedKeys()
-                 .hasAny(['gems', 'gemOps']))
+                 .hasAny(['gems', 'gemOps', 'gemCosmetics'])
+            && (!request.resource.data.diff(resource.data).affectedKeys()
+                   .hasAny(['equippedGemCosmetic'])
+                || request.resource.data.get('equippedGemCosmetic', '') == ''
+                || (request.resource.data.get('equippedGemCosmetic', '') == 'profile-ring-gold'
+                    && resource.data.get('gemCosmetics', {}).get('profile-ring-gold', false) == true)))
         || (isAdmin() && !targetIsStaff(id)
             && !request.resource.data.diff(resource.data).affectedKeys()
-                 .hasAny(['gems', 'gemOps']));
+                 .hasAny(['gems', 'gemOps', 'gemCosmetics', 'equippedGemCosmetic']));
 
       // The staff UI explicitly prevents self-deletion. Owner may remove
       // players/admins but not another Owner; Admin may remove ordinary players.

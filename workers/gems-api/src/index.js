@@ -7,6 +7,9 @@ const FIRESTORE_ROOT = 'https://firestore.googleapis.com/v1/projects/' + PROJECT
 const MAX_BALANCE = 1000000000;
 const MAX_OPERATION_AMOUNT = 1000000;
 const MAX_RECENT_OPS = 100;
+const GEM_COSMETICS = Object.freeze({
+  'profile-ring-gold': Object.freeze({ price: 50 })
+});
 
 let jwksCache = { keys: null, expiresAt: 0 };
 let accessTokenCache = { token: '', expiresAt: 0 };
@@ -237,6 +240,88 @@ async function userRole(uid, accessToken) {
     ? doc.fields.role.stringValue : null;
 }
 
+async function applyGemCosmeticPurchase(uid, itemId, operationId, accessToken) {
+  const item = GEM_COSMETICS[itemId];
+  if (!item) throw new Error('INVALID_GEM_ITEM');
+  const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken,
+    { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const player = await getDocument('players/' + encodeURIComponent(uid), accessToken, transaction);
+    if (!player) throw new Error('PLAYER_PROFILE_NOT_READY');
+    const fields = player.fields || {};
+    const before = fields.gems ? parseIntegerField(fields.gems, 0) : 0;
+    if (!Number.isSafeInteger(before) || before < 0 || before > MAX_BALANCE) throw new Error('INVALID_GEM_BALANCE');
+    const recentOps = parseStringArray(fields.gemOps);
+    const cosmeticFields = fields.gemCosmetics && fields.gemCosmetics.mapValue
+      && fields.gemCosmetics.mapValue.fields ? fields.gemCosmetics.mapValue.fields : {};
+    const ownedCosmetics = Object.fromEntries(Object.entries(cosmeticFields)
+      .filter(([, value]) => value && value.booleanValue === true)
+      .map(([key]) => [key, true]));
+    const equippedGemCosmetic = fields.equippedGemCosmetic && typeof fields.equippedGemCosmetic.stringValue === 'string'
+      ? fields.equippedGemCosmetic.stringValue : '';
+    const finishWithoutWrite = async () => {
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken,
+        { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return {
+        previous: before, balance: before, change: 0, duplicate: true,
+        operations: recentOps, gemCosmetics: ownedCosmetics, equippedGemCosmetic
+      };
+    };
+    if (ownedCosmetics[itemId]) return await finishWithoutWrite();
+    if (recentOps.includes(operationId)) return await finishWithoutWrite();
+    if (before < item.price) {
+      const error = new Error('INSUFFICIENT_GEMS');
+      error.code = 'INSUFFICIENT_GEMS';
+      throw error;
+    }
+    const after = before - item.price;
+    if (!Number.isSafeInteger(after) || after < 0 || after > MAX_BALANCE) throw new Error('GEM_BALANCE_LIMIT');
+    const operations = [...recentOps, operationId].slice(-MAX_RECENT_OPS);
+    const nextCosmetics = { ...cosmeticFields, [itemId]: { booleanValue: true } };
+    const nextOwnedCosmetics = { ...ownedCosmetics, [itemId]: true };
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          writes: [{
+            update: {
+              name: documentName,
+              fields: {
+                gems: { integerValue: String(after) },
+                gemOps: { arrayValue: { values: operations.map(value => ({ stringValue: value })) } },
+                gemCosmetics: { mapValue: { fields: nextCosmetics } },
+                equippedGemCosmetic: { stringValue: itemId }
+              }
+            },
+            updateMask: { fieldPaths: ['gems', 'gemOps', 'gemCosmetics', 'equippedGemCosmetic'] }
+          }]
+        }
+      }
+    );
+    finished = true;
+    return {
+      previous: before, balance: after, change: -item.price, duplicate: false,
+      operations, gemCosmetics: nextOwnedCosmetics, equippedGemCosmetic: itemId
+    };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
   const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
   const transactionResult = await firestoreRequest(
@@ -327,8 +412,11 @@ export default {
       const action = payload && payload.action;
       const amount = payload && payload.amount;
       const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
-      if (!['earn', 'spend'].includes(action)) return json({ ok: false, error: 'INVALID_ACTION' }, 400, origin);
-      if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_OPERATION_AMOUNT) {
+      if (!['earn', 'spend', 'purchase'].includes(action)) return json({ ok: false, error: 'INVALID_ACTION' }, 400, origin);
+      if (action === 'purchase' && (typeof (payload && payload.itemId) !== 'string' || !GEM_COSMETICS[payload.itemId])) {
+        return json({ ok: false, error: 'INVALID_GEM_ITEM' }, 400, origin);
+      }
+      if (action !== 'purchase' && (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_OPERATION_AMOUNT)) {
         return json({ ok: false, error: 'INVALID_GEM_AMOUNT' }, 400, origin);
       }
       if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(operationId)) {
@@ -340,7 +428,9 @@ export default {
         const role = await userRole(identity.uid, accessToken);
         if (role !== 'owner') return json({ ok: false, code: 'EARN_REQUIRES_OWNER', error: 'Gems can only be granted by the Owner until approved reward rules are added.' }, 403, origin);
       }
-      const outcome = await applyGemChange(identity.uid, action, amount, operationId, accessToken);
+      const outcome = action === 'purchase'
+        ? await applyGemCosmeticPurchase(identity.uid, payload.itemId, operationId, accessToken)
+        : await applyGemChange(identity.uid, action, amount, operationId, accessToken);
       return json({ ok: true, ...outcome }, 200, origin);
     } catch (error) {
       if (error && error.message === 'INSUFFICIENT_GEMS') {

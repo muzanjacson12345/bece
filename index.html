@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="gems-worker-2026-11-19-r2">
+<meta name="bece-build" content="profile-ring-2026-11-22-r1">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -1357,6 +1357,27 @@ html[data-theme='dark'] .av { --av: var(--av-d, var(--accent)); --av-soft: var(-
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 
 .av { position: relative; }
+.av[data-gem-ring='gold'],
+.pc-head .av[data-gem-ring='gold'],
+.board-list li.is-me .av[data-gem-ring='gold'] {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--av),
+    0 0 0 7px #b77d16, 0 0 0 9px #f6d875, 0 0 13px 9px rgb(214 163 45 / 28%);
+}
+.gem-store { margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line); }
+.gem-store-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.gem-store-head h3 { margin: 0; }
+.gem-store-balance { display: inline-flex; align-items: center; padding: 7px 12px; border-radius: 99px; background: var(--surface-2); color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+.gem-item { display: grid; grid-template-columns: 82px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-2); }
+.gem-item-preview { width: 78px; height: 78px; display: grid; place-items: center; border-radius: 14px; background: var(--surface); }
+.gem-item-copy { min-width: 0; display: grid; gap: 4px; }
+.gem-item-copy strong { overflow-wrap: anywhere; }
+.gem-item-copy .muted { font-size: .9rem; }
+@media (max-width: 480px) {
+  .gem-item { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; padding: 12px; }
+  .gem-item-preview { width: 68px; height: 68px; }
+  .gem-item > .btn { grid-column: 1 / -1; width: 100%; }
+}
+
 .av-badge { position: absolute; top: -4px; right: -6px; width: 1.5em; height: 1.5em; display: grid; place-items: center; font-size: max(13px, calc(var(--s) * .3)); line-height: 1; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 1.5px var(--av), 0 1px 3px rgba(0,0,0,.25); }
 .account-ph { position: relative; display: inline-flex; flex: none; }
 .account-badge { position: absolute; top: -6px; right: -7px; width: 15px; height: 15px; display: grid; place-items: center; font-size: 10px; line-height: 1; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 1px var(--line-strong); }
@@ -3990,7 +4011,7 @@ pre, code { overflow-wrap: anywhere; }
 </section>
 <section id="screen-shop" class="screen" data-screen="shop" hidden>
   <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
-    <div class="page-intro"><p class="eyebrow">Spend your rewards</p><h1>Coin shop</h1><p class="muted">Use coins earned through practice to unlock profile items and useful power-ups.</p></div>
+    <div class="page-intro"><p class="eyebrow">Spend your rewards</p><h1>Shops</h1><p class="muted">Use coins for power-ups and board titles, or Gems for profile cosmetics.</p></div>
     <div id="shop-body"></div>
   </div>
 </section>
@@ -10213,6 +10234,8 @@ App.on('quiz:finished', async ev => {
       preserveGemFields = {};
       if (Object.prototype.hasOwnProperty.call(currentData, 'gems')) preserveGemFields.gems = currentData.gems;
       if (Object.prototype.hasOwnProperty.call(currentData, 'gemOps')) preserveGemFields.gemOps = currentData.gemOps;
+      if (Object.prototype.hasOwnProperty.call(currentData, 'gemCosmetics')) preserveGemFields.gemCosmetics = currentData.gemCosmetics;
+      if (Object.prototype.hasOwnProperty.call(currentData, 'equippedGemCosmetic')) preserveGemFields.equippedGemCosmetic = currentData.equippedGemCosmetic;
       transaction.set(playerRef, { ...next, ...preserveGemFields });
     });
     S.doc = { ...next, ...preserveGemFields };
@@ -10298,6 +10321,8 @@ const me = () => ({ id: S.uid, ...(S.doc || {}) });
 function paintBubble(b, p) {
   const pal = PF.palette(p.color);
   b.dataset.frame = (p.eq && p.eq.frame) || '';
+  b.dataset.gemRing = p.gemCosmetics && p.gemCosmetics['profile-ring-gold'] === true
+    && p.equippedGemCosmetic === 'profile-ring-gold' ? 'gold' : '';
   const oldBadge = b.querySelector('.av-badge'); if (oldBadge) oldBadge.remove();
   if (p.photo) {
     if (!b.querySelector('img.av-photo')) b.textContent = '';
@@ -10820,6 +10845,9 @@ const SHOP = {
   p50:     { id: 'p50',     name: 'Second Chance',  price: 15 },
 };
 const SHOP_TITLES = Object.fromEntries((SHOP.titles || []).map(t => [t.id, t]));
+const GEM_SHOP = Object.freeze({
+  profileRing: Object.freeze({ id: 'profile-ring-gold', name: 'Golden Profile Ring', price: 50 })
+});
 function tint(el, p) { /* name colours removed — kept for compat */ return el; }
 function adminBadge(id) { const owner = id ? !!(S.owners && S.owners.has(id)) : !!S.isOwner, b = document.createElement('span'); b.className = 'board-title ' + (owner ? 'board-owner' : 'board-admin'); b.textContent = owner ? '\u{1F451} Owner' : '\u{1F6E1}\uFE0F Admin'; return b; }
 function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge(p.id)); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name; container.append(badge); } }
@@ -10866,6 +10894,65 @@ const Shop = (() => {
     });
     return g;
   }
+  async function equipGemCosmetic(id) {
+    const d = S.doc || {}, owned = d.gemCosmetics || {};
+    if (!owned[id]) return warn('You need to own this cosmetic before equipping it.');
+    if (!S.db || !S.uid) return warn('Connect to the internet before changing cosmetics.');
+    const next = d.equippedGemCosmetic === id ? '' : id;
+    try {
+      await S.db.doc('players/' + S.uid).set({ equippedGemCosmetic: next }, { merge: true });
+      S.doc = { ...d, equippedGemCosmetic: next };
+      App.toast(next ? 'Profile ring equipped!' : 'Profile ring removed.', 'good');
+      render(); renderFriends();
+    } catch (error) {
+      warn('Could not update your profile ring. Please try again.');
+    }
+  }
+  async function buyGemCosmetic(it, button) {
+    const d = S.doc || {};
+    if (S.settings.shopPaused && !S.isOwner) return warn('Shop purchases are temporarily paused.');
+    if (!S.db || !S.uid) return warn('You need to be online to buy.');
+    if ((d.gemCosmetics || {})[it.id]) return render();
+    button.disabled = true;
+    button.textContent = 'Purchasing…';
+    const operationId = 'purchase.' + it.id + '.' + Date.now() + '.' + Math.random().toString(36).slice(2, 8);
+    try {
+      await Gems.purchaseCosmetic(it.id, operationId);
+      if (!S.doc || !S.doc.gemCosmetics || S.doc.gemCosmetics[it.id] !== true) {
+        const error = new Error('PURCHASE_NOT_CONFIRMED');
+        error.code = 'PURCHASE_NOT_CONFIRMED';
+        throw error;
+      }
+      App.toast('Bought ' + it.name + '! It is now equipped.', 'good');
+      render(); renderFriends();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = 'Buy 💎 ' + it.price;
+      warn(error && error.code === 'INSUFFICIENT_GEMS'
+        ? 'Not enough Gems yet. Keep practising.'
+        : 'Could not complete that purchase. Please try again.');
+    }
+  }
+  function gemStore(d) {
+    const it = GEM_SHOP.profileRing, owned = (d.gemCosmetics || {})[it.id] === true;
+    const equipped = owned && d.equippedGemCosmetic === it.id;
+    const section = o('section', 'gem-store');
+    const head = o('div', 'gem-store-head');
+    head.append(o('h3', '', 'Gem Shop'), o('span', 'gem-store-balance', '💎 ' + Gems.getBalance()));
+    const card = o('div', 'gem-item'), previewBox = o('div', 'gem-item-preview');
+    const preview = bubble({ id: S.uid, avatar: '⭐', color: d.color || '', gemCosmetics: {}, equippedGemCosmetic: '' }, 54);
+    preview.dataset.gemRing = 'gold';
+    previewBox.append(preview);
+    const copy = o('div', 'gem-item-copy');
+    copy.append(o('strong', '', it.name), o('span', 'muted', 'A decorative ring around your profile picture.'));
+    copy.append(o('span', 'muted', 'One cosmetic for now. More items can be added later.'));
+    let action;
+    if (!owned) action = btn('Buy 💎 ' + it.price, 'btn-primary btn-sm', () => buyGemCosmetic(it, action));
+    else action = btn(equipped ? 'Equipped ✓' : 'Equip', equipped ? 'btn-ghost btn-sm' : 'btn-primary btn-sm', () => equipGemCosmetic(it.id));
+    card.append(previewBox, copy, action);
+    section.append(head, card);
+    return section;
+  }
   function render() {
     if (!el) return;
     const d = S.doc || {}, eq = d.eq || {};
@@ -10898,7 +10985,7 @@ const Shop = (() => {
     }
     const content = [];
     if (paused) content.push(o('div', 'shop-paused-notice', o('strong', '', '🛍️ Shop purchases paused'), o('p', '', 'The owner has temporarily paused new purchases. Your owned items are still available.')));
-    content.push(cons, titlesGroup);
+    content.push(cons, titlesGroup, gemStore(d));
     body.replaceChildren(...content);
   }
   function build() {
@@ -12601,10 +12688,17 @@ const Gems = (() => {
     const value = S.doc && S.doc.gems;
     return Number.isSafeInteger(value) && value >= 0 ? value : 0;
   };
-  async function applyGemChange(action, amount, operationId) {
+  async function applyGemChange(action, amount, operationId, itemId) {
     if (!S.db || !S.uid) throw new Error('SIGN_IN_REQUIRED');
     if (!GEMS_API_URL) throw new Error('GEMS_SERVICE_NOT_CONFIGURED');
-    if (!Number.isSafeInteger(amount) || amount <= 0 || amount > 1000000) throw new Error('INVALID_GEM_AMOUNT');
+    const purchase = action === 'purchase';
+    if (purchase) {
+      if (itemId !== 'profile-ring-gold') throw new Error('INVALID_GEM_ITEM');
+      amount = 50;
+    } else if (!['earn', 'spend'].includes(action)
+        || !Number.isSafeInteger(amount) || amount <= 0 || amount > 1000000) {
+      throw new Error('INVALID_GEM_AMOUNT');
+    }
     const opId = String(operationId || '').trim();
     if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(opId)) throw new Error('INVALID_GEM_OPERATION_ID');
     const user = firebase.auth().currentUser;
@@ -12613,7 +12707,7 @@ const Gems = (() => {
     const response = await fetch(GEMS_API_URL, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, amount, operationId: opId })
+      body: JSON.stringify({ action, ...(purchase ? { itemId } : { amount }), operationId: opId })
     });
     let data = {};
     try { data = await response.json(); } catch {}
@@ -12626,15 +12720,23 @@ const Gems = (() => {
       throw new Error('INVALID_GEMS_SERVICE_RESPONSE');
     }
     const operations = Array.isArray(data.operations) ? data.operations.slice(-100) : [];
-    S.doc = { ...(S.doc || {}), gems: data.balance, gemOps: operations };
+    const nextDoc = { ...(S.doc || {}), gems: data.balance, gemOps: operations };
+    if (data.gemCosmetics && typeof data.gemCosmetics === 'object') nextDoc.gemCosmetics = data.gemCosmetics;
+    if (typeof data.equippedGemCosmetic === 'string') nextDoc.equippedGemCosmetic = data.equippedGemCosmetic;
+    S.doc = nextDoc;
     const mine = (S.players || []).find(player => player.id === S.uid);
-    if (mine) { mine.gems = data.balance; mine.gemOps = operations; }
+    if (mine) {
+      mine.gems = data.balance; mine.gemOps = operations;
+      if (data.gemCosmetics && typeof data.gemCosmetics === 'object') mine.gemCosmetics = data.gemCosmetics;
+      if (typeof data.equippedGemCosmetic === 'string') mine.equippedGemCosmetic = data.equippedGemCosmetic;
+    }
     renderAccount();
     renderFriends();
     return { previous: data.previous, balance: data.balance, change: data.change, duplicate: !!data.duplicate };
   }
   return Object.freeze({
     getBalance: currentBalance,
+    purchaseCosmetic: (itemId, operationId) => applyGemChange('purchase', null, operationId, itemId),
     earn: (amount, operationId) => applyGemChange('earn', amount, operationId),
     spend: (amount, operationId) => applyGemChange('spend', amount, operationId)
   });
