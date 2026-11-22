@@ -53,7 +53,7 @@ Cosmetic frames are bought once, remain in the player's private inventory and ca
 - Royal Frame — 70 Gems
 - Aurora Frame — 100 Gems
 
-These are stored under `gemInventories/{uid}/items/{itemId}`. A player can buy each cosmetic only once and can equip or unequip an owned frame. The selected frame is stored on `gemInventories/{uid}.equipped.frame`.
+These are stored under `gemInventories/{uid}/items/{itemId}`. A player can buy each cosmetic only once and can equip or unequip an owned frame. The selected frame is stored on `gemInventories/{uid}.equipped.frame`. Firestore also checks the player's private inventory before accepting a Gem frame ID in `players/{uid}.eq.frame`; clients cannot equip a frame by simply editing their profile. Existing free frame IDs continue to work.
 
 **Useful consumables**
 - Streak Freeze — 25 Gems; adds one to the existing `players.sfreezes` count.
