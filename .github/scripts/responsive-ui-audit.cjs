@@ -73,6 +73,9 @@ async function main() {
     ['Duels use a proper VS icon', 'id="i-versus"'],
     ['French and Ghana subjects have custom flag icons', 'id="i-flag-france"'],
     ['Built-in avatars use the custom SVG renderer', 'function setAvatarGlyph(node, value, extraClass)'],
+    ['Ninja avatars keep their own custom SVG identity', 'const safeAv = a => a;'],
+    ['Disk and storage emoji use custom SVG drawings', '<symbol id="i-disc"'],
+    ['Static footer arrow uses the SVG icon family', 'href="#i-external-link"'],
     ['Avatar picker shows SVG drawings', "setAvatarGlyph(b, a, 'avatar-choice-icon')"],
     ['Player avatar badges use the common SVG renderer', 'setAvatarGlyph(bd, PF.safeAv(p.avatar))'],
     ['Avatar picker tracks saved keys instead of SVG text', 'b.dataset.avatar === cur'],
@@ -149,10 +152,16 @@ async function main() {
       const avatarGlyphs = [...avatarText.matchAll(/'([^']+)'/g)].map(match => match[1])
         .filter(value => /\p{Extended_Pictographic}/u.test(value));
       const mappedGlyphs = new Set(glyphPairs.map(pair => pair[0]));
+      const iconMetadataGlyphs = [...source.matchAll(/(?:\\bicon\\s*:\\s*'([^']+)'|"icon"\\s*:\\s*"([^"]+)")/g)]
+        .map(match => match[1] || match[2])
+        .filter(glyph => /\\p{Extended_Pictographic}/u.test(glyph) || /\\p{Regional_Indicator}/u.test(glyph));
+      const unmappedIconMetadata = [...new Set(iconMetadataGlyphs.filter(glyph => !mappedGlyphs.has(glyph)))];
       allUiGlyphsResolve = glyphPairs.length > 0
         && glyphPairs.every(pair => pair[1] && symbolIds.has(pair[1].name))
         && avatarGlyphs.length > 0
-        && avatarGlyphs.every(glyph => mappedGlyphs.has(glyph));
+        && avatarGlyphs.every(glyph => mappedGlyphs.has(glyph))
+        && unmappedIconMetadata.length === 0
+        && source.includes('href="#i-external-link"');
     } catch {}
   }
   const achievementStart = source.indexOf('const ACHIEVEMENTS = [');
