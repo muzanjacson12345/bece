@@ -16,9 +16,12 @@ The Worker deliberately refuses all Gems earnings except requests authenticated 
 ## Endpoints
 
 - `GET /health`: reports whether the service account secret has been configured.
-- `POST /gems`: accepts a Firebase ID token and `{ action, amount, operationId }`.
+- `POST /gems`: accepts a Firebase ID token and an operation payload.
+  - `earn`: Owner-only Gem grants, with `{ action, amount, operationId }`.
+  - `spend`: player-initiated deductions, with `{ action, amount, operationId }`.
+  - `purchase`: server-priced cosmetic purchases, with `{ action: 'purchase', itemId: 'profile-ring-gold', operationId }`. The Worker sets the 50-Gem price itself and atomically deducts Gems, records ownership, and equips the ring.
 
-The Worker caps a single operation at 1,000,000 Gems, caps a balance at 1,000,000,000 Gems, keeps the last 100 operation IDs for replay protection, and rejects banned accounts.
+The Worker caps ordinary operations at 1,000,000 Gems, caps a balance at 1,000,000,000 Gems, keeps the last 100 operation IDs for replay protection, and rejects banned accounts. Cosmetic item IDs and prices are defined on the Worker; the client cannot choose a purchase price.
 
 ## Deployment
 
