@@ -129,6 +129,7 @@
       const actions = make("div", "button-row");
       actions.append(
         button("Refresh", () => renderGems(), true),
+        button("Gem Marketplace", () => App.navigate("gem-marketplace")),
         button("Browse Gem events", () => App.navigate("events"))
       );
       summary.append(actions);
