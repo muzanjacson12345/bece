@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'daily-challenge-coins-mobile-gem-layout-2026-11-22-r6';
+const EXPECTED_BUILD = 'bece-custom-svg-icon-system-2026-11-22-r7';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -97,6 +97,11 @@ async function main() {
     ['Overview Duels uses the app SVG icon family', 'href="#i-swords"'],
     ['Overview Shop uses the app SVG icon family', 'href="#i-shopping-bag"'],
     ['Mobile Admin uses the app SVG icon family', 'href="#i-shield"'],
+    ['Duels uses a clear VS symbol', 'href="#i-versus"'],
+    ['Coin and Gem currency have dedicated SVG artwork', '<symbol id="i-coin"'],
+    ['Quiz streak uses a custom flame SVG', 'href="#i-flame"'],
+    ['UI label glyphs are resolved through the shared SVG map', 'const UI_GLYPH_MAP = new Map('],
+    ['UI icons have theme-aware currency and status colours', '.ui-icon--gem{color:#4d9ec9}'],
     ['Admin panel tabs use app SVG icons', 'icon(iconName)'],
   ];
   const gemsWorkerSource = fs.readFileSync(path.join(process.cwd(), 'workers/gems-api/src/index.js'), 'utf8');
