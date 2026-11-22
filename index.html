@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="gem-rewards-mobile-achievements-2026-11-22-r4">
+<meta name="bece-build" content="all-achievements-gems-app-icons-mobile-layout-2026-11-22-r5">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -3577,6 +3577,61 @@ pre, code { overflow-wrap: anywhere; }
  .adm-inventory-actions .btn { flex:1 1 90px; }
 }
 </style>
+<style id="gem-achievement-icons-polish">
+.icon-label{display:inline-flex;align-items:center;gap:.42em;min-width:0;vertical-align:middle}
+.icon-label>.icon{width:1.05em;height:1.05em;flex:0 0 auto}
+.tool-card>.tool-icon{width:34px;height:34px}
+.shop-tabs .shop-tab{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.shop-item-heading{display:flex;align-items:center;gap:9px;font-weight:700}
+.shop-item-heading>.icon{width:1.25em;height:1.25em}
+.board-title.icon-label{gap:5px}
+.achievement-icon>.icon{width:25px;height:25px;stroke-width:1.85}
+.challenge-icon>.icon{width:22px;height:22px}
+.achievement-gem-reward{display:inline-flex;align-items:center;gap:5px}
+.daily-gem-balance,.gem-store-balance{display:inline-flex;align-items:center;gap:6px}
+.daily-gem-day{box-sizing:border-box;min-height:72px;overflow:hidden}
+.daily-gem-day strong,.daily-gem-day span{display:block;max-width:100%;white-space:nowrap;line-height:1.25}
+.daily-gem-day strong{font-size:12px}
+.daily-gem-day span{font-size:12px}
+.daily-gem-day small{display:block;position:static;width:100%;max-width:100%;margin-top:2px;font-size:10px;line-height:1.2;white-space:normal;overflow-wrap:anywhere;color:var(--muted)}
+.daily-gem-action{align-items:flex-start}
+.daily-gem-action p{min-width:0}
+.challenge-heading{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}
+.challenge-heading .daily-info{min-width:0}
+.challenge-heading .daily-info .muted{line-height:1.55;overflow-wrap:anywhere}
+.challenge-list{grid-template-columns:repeat(3,minmax(0,1fr))}
+.challenge-item,.challenge-name,.challenge-name>div{min-width:0}
+.challenge-name small{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+.adm-icon-label{display:inline-flex;align-items:center;gap:.48em;min-width:0}
+.adm-icon-label>.icon{width:1em;height:1em}
+.adm-tab-label{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.adm-tab-label>.icon{width:1em;height:1em}
+.adm-log-ic>.icon{width:18px;height:18px}
+@media(max-width:760px){
+ .daily-gem-rewards{padding:14px;margin-bottom:16px}
+ .daily-gem-days{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+ .daily-gem-day{min-height:76px;padding:10px 5px}
+ .daily-gem-action{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ .daily-gem-action p{min-width:0}
+ .daily-gem-action .btn{width:100%;min-height:44px}
+ .challenge-heading{grid-template-columns:minmax(0,1fr);gap:12px}
+ .challenge-summary{justify-self:start;min-width:0;min-height:0;flex-direction:row;gap:8px;padding:10px 14px}
+ .challenge-summary strong{font-size:22px}
+ .challenge-list{grid-template-columns:minmax(0,1fr);gap:10px}
+ .challenge-item{padding:14px}
+ .achievement-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:420px){
+ .daily-gem-rewards{padding:12px}
+ .daily-gem-days{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+ .daily-gem-day{min-height:72px;padding:8px 3px}
+ .daily-gem-head{gap:8px}
+ .daily-gem-head p{font-size:13px;line-height:1.55}
+ .daily-gem-balance{font-size:14px}
+ .challenge-heading .daily-info>p.muted{font-size:14px;line-height:1.55}
+ .challenge-icon{flex:0 0 38px}
+}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -3596,6 +3651,55 @@ pre, code { overflow-wrap: anywhere; }
   <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+<symbol id="i-swords" viewBox="0 0 24 24"><path d="m4 4 12 12M10 4 4 10M14 14l6 6M14 4l6 6M20 4l-6 6M10 14l-6 6"/></symbol>
+<symbol id="i-shopping-bag" viewBox="0 0 24 24"><path d="M5 8h14l1 13H4L5 8zM9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6z"/></symbol>
+<symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 7v10"/></symbol>
+<symbol id="i-gem" viewBox="0 0 24 24"><path d="m3 9 4-5h10l4 5-9 11zM3 9h18M7 4l5 16 5-16"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v2a4 4 0 0 0 4 4M16 6h4v2a4 4 0 0 1-4 4M12 13v5M8 21h8M9 18h6"/></symbol>
+<symbol id="i-book-open" viewBox="0 0 24 24"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H11v17H5.5A2.5 2.5 0 0 0 3 22zM21 5.5A2.5 2.5 0 0 0 18.5 3H13v17h5.5a2.5 2.5 0 0 1 2.5 2z"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+<symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.6 2.6L16.5 9"/></symbol>
+<symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.5 9.2A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.8L14 9V3M8 15h8"/></symbol>
+<symbol id="i-languages" viewBox="0 0 24 24"><path d="M3 5h12M9 3v2M5 5c.5 4 3 7 7 9M12 5c-.5 4-3 7-7 9M3 14l5-5M13 21l4-10 4 10M14.5 18h5"/></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M3 12h18M10 12v2h4v-2"/></symbol>
+<symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="m8 12-1 9 5-3 5 3-1-9"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-4-3-6-4-11-1 3-2 4-4 6-1-3-2-4-3-5 0 4-4 6-4 10a8 8 0 0 0 8 7zM12 22a4 4 0 0 0 4-4c0-2-1-3-2-4-.5 2-2 2.5-3 4a3 3 0 0 0 1 4z"/></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><path d="m3 7 5 4 4-7 4 7 5-4-2 12H5zM5 21h14"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h17M8 16l4-5 3 2 5-7"/></symbol>
+<symbol id="i-megaphone" viewBox="0 0 24 24"><path d="m3 11 16-6v14L3 13zM19 10h2v4h-2M6 14l2 6h4l-3-5"/></symbol>
+<symbol id="i-bug" viewBox="0 0 24 24"><path d="M9 8h6a3 3 0 0 1 3 3v6a6 6 0 0 1-12 0v-6a3 3 0 0 1 3-3zM9 8l-2-3M15 8l2-3M3 12h4M17 12h4M3 17h4M17 17h4M12 8V4"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6zM14 3v5h5M9 13h7M9 17h7"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
+<symbol id="i-backpack" viewBox="0 0 24 24"><path d="M8 5a4 4 0 0 1 8 0M6 8h12a2 2 0 0 1 2 2v10H4V10a2 2 0 0 1 2-2zM8 13h8v7H8z"/></symbol>
+<symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14 6a5 5 0 0 0 6 6l-9 9a2 2 0 0 1-3-3l9-9a5 5 0 0 1-6-6l3 3 3-3z"/></symbol>
+<symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h11a4 4 0 0 0 0-8h-.5A6 6 0 0 0 6 8.5 4.5 4.5 0 0 0 7 18z"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M13 10l3 3"/></symbol>
+<symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M5.5 9A7 7 0 0 1 18 6l2 1M4 17l2-1a7 7 0 0 0 12-3"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12z"/><circle cx="12" cy="9" r="2"/></symbol>
+<symbol id="i-zap" viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-13h-7z"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 12 7-12 7z"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5h3v14H8zM15 5h3v14h-3z"/></symbol>
+<symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5zM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7z"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5-8 9"/></symbol>
+<symbol id="i-message" viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4zM8 9h8M8 13h5"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+<symbol id="i-plus-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
+<symbol id="i-minus-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol>
+<symbol id="i-rocket" viewBox="0 0 24 24"><path d="M14 4c2-2 5-2 6-2 0 1 0 4-2 6l-7 7-4-4zM7 11l-3 1-2 5 5-2"/></symbol>
+<symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1.5a2 2 0 0 0 1.5-3.3 1.8 1.8 0 0 1 1.4-3h1.1A4.5 4.5 0 0 0 22 10.2C21 6 17 3 12 3zM7.5 11h.01M10 7.5h.01M15 7.5h.01M17.5 11h.01"/></symbol>
+<symbol id="i-calculator" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 6h8v4H8zM8 14h2M14 14h2M8 17h2M14 17h2"/></symbol>
+<symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="12" rx="1.5"/><path d="M2 20h20l-2-4H4z"/></symbol>
+<symbol id="i-handshake" viewBox="0 0 24 24"><path d="m3 12 4-4 4 1 2-1 8 4-6 7-5-3-3 1zM7 8l3-3 4 1 2 2M8 14l3 2M11 12l4 3"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 22 20H2zM12 9v5M12 17h.01"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></symbol>
 </svg>
 
 <a class="skip-link" href="#main">Skip to content</a>
@@ -7800,6 +7904,11 @@ function icon(name) {
   svg.append(use);
   return svg;
 }
+function iconLabel(name, label, className = 'icon-label') {
+  const node = document.createElement('span'); node.className = className;
+  node.append(icon(name), document.createTextNode(String(label ?? '')));
+  return node;
+}
 const store = {
   get(key, fallback) {
     try { const raw = localStorage.getItem(key); return raw === null ? fallback : JSON.parse(raw); } catch { return fallback; }
@@ -10025,21 +10134,21 @@ function renderAccount() {
 }
 const CHALLENGE_POOL = (() => {
   const groups = [
-    ['answered', [5,  8, 10, 12, 15, 20, 25], 'Question explorer', n => 'Answer ' + n + ' questions in your practice sessions', '✍️'],
-    ['correct', [3, 5, 8, 10, 12, 15, 20], 'Accuracy builder', n => 'Get ' + n + ' answers correct', '🎯'],
-    ['quizzes', [1, 2, 3, 4], 'Keep the momentum', n => 'Finish ' + n + ' practice ' + (n === 1 ? 'quiz' : 'quizzes'), '🏁'],
-    ['subjects', [2, 3, 4, 5], 'Subject explorer', n => 'Practise questions from ' + n + ' different subjects', '📚'],
-    ['perfect', [1, 2, 3], 'Flawless round', n => 'Complete ' + n + ' quiz' + (n === 1 ? '' : 'zes') + ' with every answer correct', '⭐'],
-    ['longQuiz', [1, 2, 3], 'Go the distance', n => 'Complete ' + n + ' quiz' + (n === 1 ? '' : 'zes') + ' with at least 10 questions', '🚀'],
-    ['mixed', [1, 2, 3], 'Mix it up', n => 'Complete ' + n + ' quiz' + (n === 1 ? '' : 'zes') + ' covering 3 or more subjects', '🌈'],
-    ['soc', [4, 6, 8, 10], 'Social Studies focus', n => 'Answer ' + n + ' Social Studies questions', '🌍'],
-    ['art', [3, 5, 7, 9], 'Creative mind', n => 'Answer ' + n + ' Creative Arts questions', '🎨'],
-    ['mat', [4, 6, 8, 10, 12], 'Maths practice', n => 'Answer ' + n + ' Mathematics questions', '➗'],
-    ['com', [3, 5, 7, 9], 'Computing practice', n => 'Answer ' + n + ' Computing questions', '💻'],
-    ['rme', [3, 5, 7, 9], 'Values in action', n => 'Answer ' + n + ' RME questions', '🤝'],
-    ['sci', [3, 5, 7, 9, 12], 'Science explorer', n => 'Answer ' + n + ' Integrated Science questions', '🔬'],
-    ['fre', [3, 5, 7, 9, 12], 'French basics', n => 'Answer ' + n + ' French questions', '🇫🇷'],
-        ['ct', [3, 5, 7, 9, 12], 'Career Technology practice', n => 'Answer ' + n + ' Career Technology questions', '🛠️']
+    ['answered', [5,  8, 10, 12, 15, 20, 25], 'Question explorer', n => 'Answer ' + n + ' questions in your practice sessions', 'book-open'],
+    ['correct', [3, 5, 8, 10, 12, 15, 20], 'Accuracy builder', n => 'Get ' + n + ' answers correct', 'target'],
+    ['quizzes', [1, 2, 3, 4], 'Keep the momentum', n => 'Finish ' + n + ' practice ' + (n === 1 ? 'quiz' : 'quizzes'), 'check-circle'],
+    ['subjects', [2, 3, 4, 5], 'Subject explorer', n => 'Practise questions from ' + n + ' different subjects', 'compass'],
+    ['perfect', [1, 2, 3], 'Flawless round', n => 'Complete ' + n + ' quiz' + (n === 1 ? '' : 'zes') + ' with every answer correct', 'award'],
+    ['longQuiz', [1, 2, 3], 'Go the distance', n => 'Complete ' + n + ' quiz' + (n === 1 ? '' : 'zes') + ' with at least 10 questions', 'rocket'],
+    ['mixed', [1, 2, 3], 'Mix it up', n => 'Complete ' + n + ' quiz' + (n === 1 ? '' : 'zes') + ' covering 3 or more subjects', 'globe'],
+    ['soc', [4, 6, 8, 10], 'Social Studies focus', n => 'Answer ' + n + ' Social Studies questions', 'globe'],
+    ['art', [3, 5, 7, 9], 'Creative mind', n => 'Answer ' + n + ' Creative Arts questions', 'palette'],
+    ['mat', [4, 6, 8, 10, 12], 'Maths practice', n => 'Answer ' + n + ' Mathematics questions', 'calculator'],
+    ['com', [3, 5, 7, 9], 'Computing practice', n => 'Answer ' + n + ' Computing questions', 'laptop'],
+    ['rme', [3, 5, 7, 9], 'Values in action', n => 'Answer ' + n + ' RME questions', 'handshake'],
+    ['sci', [3, 5, 7, 9, 12], 'Science explorer', n => 'Answer ' + n + ' Integrated Science questions', 'flask'],
+    ['fre', [3, 5, 7, 9, 12], 'French basics', n => 'Answer ' + n + ' French questions', 'languages'],
+        ['ct', [3, 5, 7, 9, 12], 'Career Technology practice', n => 'Answer ' + n + ' Career Technology questions', 'briefcase']
   ];
   const out = [];
   groups.forEach(([metric, targets, title, detail, icon]) => targets.forEach(target => {
@@ -10063,68 +10172,112 @@ function dailyChallengeSet(day) {
 }
 const ACHIEVEMENTS = [
   // Question milestones
-  { id:'first-answer',icon:'🌱',title:'First Step',detail:'Answer your first question',metric:'answered',target:1,group:'Question milestones' },
-  { id:'curious-mind',icon:'📖',title:'Curious Mind',detail:'Answer 25 questions',metric:'answered',target:25,group:'Question milestones' },
-  { id:'question-pro',icon:'🧠',title:'Question Pro',detail:'Answer 100 questions',metric:'answered',target:100,group:'Question milestones' },
-  { id:'question-veteran',icon:'📚',title:'Bookworm',detail:'Answer 250 questions',metric:'answered',target:250,group:'Question milestones' },
-  { id:'question-master',icon:'🎓',title:'Knowledge Seeker',detail:'Answer 500 questions',metric:'answered',target:500,group:'Question milestones' },
-  { id:'question-legend',icon:'🚀',title:'Question Legend',detail:'Answer 1,000 questions',metric:'answered',target:1000,group:'Question milestones' },
-  { id:'question-1500',icon:'🌠',title:'Unstoppable Learner',detail:'Answer 1,500 questions',metric:'answered',target:1500,group:'Question milestones' },
-  { id:'question-2500',icon:'🏛️',title:'Hall of Knowledge',detail:'Answer 2,500 questions',metric:'answered',target:2500,group:'Question milestones' },
+  { id:'first-answer',icon:'book-open',title:'First Step',detail:'Answer your first question',metric:'answered',target:1,group:'Question milestones' },
+  { id:'curious-mind',icon:'book-open',title:'Curious Mind',detail:'Answer 25 questions',metric:'answered',target:25,group:'Question milestones' },
+  { id:'question-pro',icon:'book-open',title:'Question Pro',detail:'Answer 100 questions',metric:'answered',target:100,group:'Question milestones' },
+  { id:'question-veteran',icon:'book-open',title:'Bookworm',detail:'Answer 250 questions',metric:'answered',target:250,group:'Question milestones' },
+  { id:'question-master',icon:'book-open',title:'Knowledge Seeker',detail:'Answer 500 questions',metric:'answered',target:500,group:'Question milestones' },
+  { id:'question-legend',icon:'book-open',title:'Question Legend',detail:'Answer 1,000 questions',metric:'answered',target:1000,group:'Question milestones' },
+  { id:'question-1500',icon:'book-open',title:'Unstoppable Learner',detail:'Answer 1,500 questions',metric:'answered',target:1500,group:'Question milestones' },
+  { id:'question-2500',icon:'book-open',title:'Hall of Knowledge',detail:'Answer 2,500 questions',metric:'answered',target:2500,group:'Question milestones' },
   // Accuracy milestones
-  { id:'getting-sharp',icon:'🎯',title:'Getting Sharp',detail:'Get 25 answers correct',metric:'correct',target:25,group:'Accuracy milestones' },
-  { id:'high-score-90',icon:'💯',title:'Sharp Performance',detail:'Score at least 90% in a quiz',metric:'highScore',target:1,group:'Accuracy milestones' },
-  { id:'accuracy-star',icon:'⭐',title:'Accuracy Star',detail:'Get 100 answers correct',metric:'correct',target:100,group:'Accuracy milestones' },
-  { id:'accuracy-250',icon:'🥉',title:'Bronze Brain',detail:'Get 250 answers correct',metric:'correct',target:250,group:'Accuracy milestones' },
-  { id:'accuracy-500',icon:'🥈',title:'Silver Scholar',detail:'Get 500 answers correct',metric:'correct',target:500,group:'Accuracy milestones' },
-  { id:'accuracy-1000',icon:'🥇',title:'Golden Genius',detail:'Get 1,000 answers correct',metric:'correct',target:1000,group:'Accuracy milestones' },
-  { id:'accuracy-2000',icon:'💡',title:'Bright Mind',detail:'Get 2,000 answers correct',metric:'correct',target:2000,group:'Accuracy milestones' },
+  { id:'getting-sharp',icon:'target',title:'Getting Sharp',detail:'Get 25 answers correct',metric:'correct',target:25,group:'Accuracy milestones' },
+  { id:'high-score-90',icon:'target',title:'Sharp Performance',detail:'Score at least 90% in a quiz',metric:'highScore',target:1,group:'Accuracy milestones' },
+  { id:'accuracy-star',icon:'target',title:'Accuracy Star',detail:'Get 100 answers correct',metric:'correct',target:100,group:'Accuracy milestones' },
+  { id:'accuracy-250',icon:'target',title:'Bronze Brain',detail:'Get 250 answers correct',metric:'correct',target:250,group:'Accuracy milestones' },
+  { id:'accuracy-500',icon:'target',title:'Silver Scholar',detail:'Get 500 answers correct',metric:'correct',target:500,group:'Accuracy milestones' },
+  { id:'accuracy-1000',icon:'target',title:'Golden Genius',detail:'Get 1,000 answers correct',metric:'correct',target:1000,group:'Accuracy milestones' },
+  { id:'accuracy-2000',icon:'target',title:'Bright Mind',detail:'Get 2,000 answers correct',metric:'correct',target:2000,group:'Accuracy milestones' },
   // Quiz milestones
-  { id:'quiz-beginner',icon:'🏁',title:'Quiz Starter',detail:'Complete your first quiz',metric:'quizzes',target:1,group:'Quiz milestones' },
-  { id:'quiz-five',icon:'📘',title:'Five Quizzes',detail:'Complete 5 quizzes',metric:'quizzes',target:5,group:'Quiz milestones' },
-  { id:'quiz-regular',icon:'🔥',title:'Quiz Regular',detail:'Complete 10 quizzes',metric:'quizzes',target:10,group:'Quiz milestones' },
-  { id:'quiz-25',icon:'🗓️',title:'Practice Habit',detail:'Complete 25 quizzes',metric:'quizzes',target:25,group:'Quiz milestones' },
-  { id:'quiz-50',icon:'🎖️',title:'Dedicated Student',detail:'Complete 50 quizzes',metric:'quizzes',target:50,group:'Quiz milestones' },
-  { id:'quiz-100',icon:'🏅',title:'Century Club',detail:'Complete 100 quizzes',metric:'quizzes',target:100,group:'Quiz milestones' },
-  { id:'quiz-250',icon:'👑',title:'Quiz Champion',detail:'Complete 250 quizzes',metric:'quizzes',target:250,group:'Quiz milestones' },
+  { id:'quiz-beginner',icon:'check-circle',title:'Quiz Starter',detail:'Complete your first quiz',metric:'quizzes',target:1,group:'Quiz milestones' },
+  { id:'quiz-five',icon:'check-circle',title:'Five Quizzes',detail:'Complete 5 quizzes',metric:'quizzes',target:5,group:'Quiz milestones' },
+  { id:'quiz-regular',icon:'check-circle',title:'Quiz Regular',detail:'Complete 10 quizzes',metric:'quizzes',target:10,group:'Quiz milestones' },
+  { id:'quiz-25',icon:'check-circle',title:'Practice Habit',detail:'Complete 25 quizzes',metric:'quizzes',target:25,group:'Quiz milestones' },
+  { id:'quiz-50',icon:'check-circle',title:'Dedicated Student',detail:'Complete 50 quizzes',metric:'quizzes',target:50,group:'Quiz milestones' },
+  { id:'quiz-100',icon:'check-circle',title:'Century Club',detail:'Complete 100 quizzes',metric:'quizzes',target:100,group:'Quiz milestones' },
+  { id:'quiz-250',icon:'check-circle',title:'Quiz Champion',detail:'Complete 250 quizzes',metric:'quizzes',target:250,group:'Quiz milestones' },
   // Subject exploration
-  { id:'subject-explorer',icon:'🧭',title:'Subject Explorer',detail:'Practise 3 different subjects',metric:'subjects',target:3,group:'Subject explorer' },
-  { id:'all-rounder',icon:'🌍',title:'All-Rounder',detail:'Practise 5 different subjects',metric:'subjects',target:5,group:'Subject explorer' },
-  { id:'all-six-subjects',icon:'🌐',title:'Complete Explorer',detail:'Practise six different subjects',metric:'subjects',target:6,group:'Subject explorer' },
-  { id:'science-starter',icon:'🔬',title:'Science Starter',detail:'Answer 10 Integrated Science questions',metric:'sci',target:10,group:'Subject explorer' },
-  { id:'science-scholar',icon:'🧪',title:'Science Scholar',detail:'Answer 50 Integrated Science questions',metric:'sci',target:50,group:'Subject explorer' },
-  { id:'science-master',icon:'⚗️',title:'Science Master',detail:'Answer 100 Integrated Science questions',metric:'sci',target:100,group:'Subject explorer' },
-  { id:'all-seven-subjects',icon:'🌍',title:'Seven-Subject Explorer',detail:'Practise all 7 available subjects',metric:'subjects',target:7,group:'Subject explorer' },
-  { id:'french-starter',icon:'🇫🇷',title:'Bonjour!',detail:'Answer 10 French questions',metric:'fre',target:10,group:'Subject explorer' },
-  { id:'french-learner',icon:'🗣️',title:'French Learner',detail:'Answer 50 French questions',metric:'fre',target:50,group:'Subject explorer' },
-  { id:'french-confident',icon:'📘',title:'French Confidence',detail:'Answer 100 French questions',metric:'fre',target:100,group:'Subject explorer' },
-  { id:'career-starter',icon:'🛠️',title:'Career Technology Starter',detail:'Answer 10 Career Technology questions',metric:'ct',target:10,group:'Subject explorer' },
-  { id:'career-learner',icon:'📐',title:'Career Technology Learner',detail:'Answer 50 Career Technology questions',metric:'ct',target:50,group:'Subject explorer' },
-  { id:'career-master',icon:'🏅',title:'Career Technology Master',detail:'Answer 100 Career Technology questions',metric:'ct',target:100,group:'Subject explorer' },
-  { id:'all-nine-subjects',icon:'🌐',title:'Eight-Subject Explorer',detail:'Practise all 8 available subjects',metric:'subjects',target:8,group:'Subject explorer' },
+  { id:'subject-explorer',icon:'compass',title:'Subject Explorer',detail:'Practise 3 different subjects',metric:'subjects',target:3,group:'Subject explorer' },
+  { id:'all-rounder',icon:'globe',title:'All-Rounder',detail:'Practise 5 different subjects',metric:'subjects',target:5,group:'Subject explorer' },
+  { id:'all-six-subjects',icon:'globe',title:'Complete Explorer',detail:'Practise six different subjects',metric:'subjects',target:6,group:'Subject explorer' },
+  { id:'science-starter',icon:'flask',title:'Science Starter',detail:'Answer 10 Integrated Science questions',metric:'sci',target:10,group:'Subject explorer' },
+  { id:'science-scholar',icon:'flask',title:'Science Scholar',detail:'Answer 50 Integrated Science questions',metric:'sci',target:50,group:'Subject explorer' },
+  { id:'science-master',icon:'flask',title:'Science Master',detail:'Answer 100 Integrated Science questions',metric:'sci',target:100,group:'Subject explorer' },
+  { id:'all-seven-subjects',icon:'globe',title:'Seven-Subject Explorer',detail:'Practise all 7 available subjects',metric:'subjects',target:7,group:'Subject explorer' },
+  { id:'french-starter',icon:'languages',title:'Bonjour!',detail:'Answer 10 French questions',metric:'fre',target:10,group:'Subject explorer' },
+  { id:'french-learner',icon:'languages',title:'French Learner',detail:'Answer 50 French questions',metric:'fre',target:50,group:'Subject explorer' },
+  { id:'french-confident',icon:'languages',title:'French Confidence',detail:'Answer 100 French questions',metric:'fre',target:100,group:'Subject explorer' },
+  { id:'career-starter',icon:'briefcase',title:'Career Technology Starter',detail:'Answer 10 Career Technology questions',metric:'ct',target:10,group:'Subject explorer' },
+  { id:'career-learner',icon:'briefcase',title:'Career Technology Learner',detail:'Answer 50 Career Technology questions',metric:'ct',target:50,group:'Subject explorer' },
+  { id:'career-master',icon:'briefcase',title:'Career Technology Master',detail:'Answer 100 Career Technology questions',metric:'ct',target:100,group:'Subject explorer' },
+  { id:'all-nine-subjects',icon:'globe',title:'Eight-Subject Explorer',detail:'Practise all 8 available subjects',metric:'subjects',target:8,group:'Subject explorer' },
   // Perfect quizzes
-  { id:'perfect-round',icon:'💎',title:'Perfect Round',detail:'Finish a quiz with every answer correct',metric:'perfect',target:1,group:'Perfect quizzes' },
-  { id:'perfect-5',icon:'✨',title:'Flawless Five',detail:'Complete 5 perfect quizzes',metric:'perfect',target:5,group:'Perfect quizzes' },
-  { id:'perfect-10',icon:'💠',title:'Perfectionist',detail:'Complete 10 perfect quizzes',metric:'perfect',target:10,group:'Perfect quizzes' },
-  { id:'perfect-25',icon:'🌟',title:'Perfect Performer',detail:'Complete 25 perfect quizzes',metric:'perfect',target:25,group:'Perfect quizzes' },
+  { id:'perfect-round',icon:'award',title:'Perfect Round',detail:'Finish a quiz with every answer correct',metric:'perfect',target:1,group:'Perfect quizzes' },
+  { id:'perfect-5',icon:'award',title:'Flawless Five',detail:'Complete 5 perfect quizzes',metric:'perfect',target:5,group:'Perfect quizzes' },
+  { id:'perfect-10',icon:'award',title:'Perfectionist',detail:'Complete 10 perfect quizzes',metric:'perfect',target:10,group:'Perfect quizzes' },
+  { id:'perfect-25',icon:'award',title:'Perfect Performer',detail:'Complete 25 perfect quizzes',metric:'perfect',target:25,group:'Perfect quizzes' },
   // Study streaks
-  { id:'three-day-streak',icon:'🔥',title:'On a Roll',detail:'Build a 3-day study streak',metric:'streak',target:3,group:'Study streaks' },
-  { id:'week-streak',icon:'🏆',title:'A Full Week',detail:'Build a 7-day study streak',metric:'streak',target:7,group:'Study streaks' },
-  { id:'streak-14',icon:'🌤️',title:'Two-Week Trail',detail:'Build a 14-day study streak',metric:'streak',target:14,group:'Study streaks' },
-  { id:'streak-30',icon:'🌙',title:'Monthly Momentum',detail:'Build a 30-day study streak',metric:'streak',target:30,group:'Study streaks' },
-  { id:'streak-60',icon:'☀️',title:'Consistency Star',detail:'Build a 60-day study streak',metric:'streak',target:60,group:'Study streaks' },
-  { id:'streak-100',icon:'💫',title:'100-Day Legend',detail:'Build a 100-day study streak',metric:'streak',target:100,group:'Study streaks' },
-  { id:'achievement-ten',icon:'🏆',title:'Achievement Collector',detail:'Earn 10 different achievements',metric:'achievementCount',target:10,group:'Special milestones' },
+  { id:'three-day-streak',icon:'flame',title:'On a Roll',detail:'Build a 3-day study streak',metric:'streak',target:3,group:'Study streaks' },
+  { id:'week-streak',icon:'flame',title:'A Full Week',detail:'Build a 7-day study streak',metric:'streak',target:7,group:'Study streaks' },
+  { id:'streak-14',icon:'flame',title:'Two-Week Trail',detail:'Build a 14-day study streak',metric:'streak',target:14,group:'Study streaks' },
+  { id:'streak-30',icon:'flame',title:'Monthly Momentum',detail:'Build a 30-day study streak',metric:'streak',target:30,group:'Study streaks' },
+  { id:'streak-60',icon:'flame',title:'Consistency Star',detail:'Build a 60-day study streak',metric:'streak',target:60,group:'Study streaks' },
+  { id:'streak-100',icon:'flame',title:'100-Day Legend',detail:'Build a 100-day study streak',metric:'streak',target:100,group:'Study streaks' },
+  { id:'achievement-ten',icon:'trophy',title:'Achievement Collector',detail:'Earn 10 different achievements',metric:'achievementCount',target:10,group:'Special milestones' },
 ];
 const GEM_ACHIEVEMENT_REWARDS = Object.freeze({
+  'first-answer': 1,
+  'curious-mind': 2,
+  'question-pro': 3,
+  'question-veteran': 4,
+  'question-master': 5,
+  'question-legend': 8,
+  'question-1500': 10,
+  'question-2500': 15,
+  'getting-sharp': 1,
+  'high-score-90': 3,
+  'accuracy-star': 2,
+  'accuracy-250': 3,
+  'accuracy-500': 4,
+  'accuracy-1000': 6,
+  'accuracy-2000': 8,
   'quiz-beginner': 2,
   'quiz-five': 5,
   'quiz-regular': 8,
   'quiz-25': 15,
-  'high-score-90': 3,
+  'quiz-50': 5,
+  'quiz-100': 8,
+  'quiz-250': 12,
   'subject-explorer': 5,
-  'achievement-ten': 10
+  'all-rounder': 3,
+  'all-six-subjects': 4,
+  'science-starter': 1,
+  'science-scholar': 2,
+  'science-master': 4,
+  'all-seven-subjects': 5,
+  'french-starter': 1,
+  'french-learner': 2,
+  'french-confident': 4,
+  'career-starter': 1,
+  'career-learner': 2,
+  'career-master': 4,
+  'all-nine-subjects': 6,
+  'perfect-round': 2,
+  'perfect-5': 4,
+  'perfect-10': 6,
+  'perfect-25': 10,
+  'three-day-streak': 2,
+  'week-streak': 5,
+  'streak-14': 6,
+  'streak-30': 10,
+  'streak-60': 15,
+  'streak-100': 20,
+  'achievement-ten': 10,
 });
+if (Object.keys(GEM_ACHIEVEMENT_REWARDS).length !== ACHIEVEMENTS.length
+    || ACHIEVEMENTS.some(achievement => !Object.prototype.hasOwnProperty.call(GEM_ACHIEVEMENT_REWARDS, achievement.id))) {
+  throw new Error('Every achievement must have a fixed Gem reward.');
+}
 function achievementValue(a, data, stats) {
   if (a.metric === 'subjects') return (Array.isArray(data.subjects) ? data.subjects.length : 0);
   if (a.metric === 'streak') return Number(S.doc && S.doc.streak || 0);
@@ -10157,18 +10310,18 @@ function renderAchievements() {
     items.forEach(a=>{
       const value=achievementValue(a,data,stats), earned=unlocked.includes(a.id);
       const card=o('article','achievement-item'+(earned?' is-earned':''));
-      const icon=o('span','achievement-icon',a.icon);
+      const iconBox=o('span','achievement-icon'); iconBox.append(icon(a.icon));
       const copy=o('div','achievement-copy');
       copy.append(o('strong','',a.title),o('small','',a.detail));
       const status=o('span','achievement-status',earned?'✓ Earned':Math.min(value,a.target)+' / '+a.target);
       const track=o('div','achievement-track'),bar=o('span','achievement-fill');
       bar.style.width=(Math.min(value,a.target)/a.target*100)+'%';
       track.append(bar);
-      card.append(icon,copy,status,track);
+      card.append(iconBox,copy,status,track);
       const gemReward = GEM_ACHIEVEMENT_REWARDS[a.id];
       if (gemReward) {
         const rewardRow = o('div','achievement-reward-row');
-        rewardRow.append(o('span','achievement-gem-reward','💎 ' + gemReward + ' Gems'));
+        rewardRow.append(iconLabel('gem',gemReward + ' Gems','achievement-gem-reward'));
         if (earned) {
           const claimed = gemOps.includes('achievement:' + a.id);
           if (claimed) rewardRow.append(o('span','achievement-status','✓ Gems claimed'));
@@ -10213,7 +10366,8 @@ function renderDaily() {
     const complete = claimed.includes(t.id), current = Number(progressData[t.metric] || 0), progress = Math.min(t.target, current);
     const card = o('article', 'challenge-item' + (complete ? ' is-complete' : ''));
     const top = o('div', 'challenge-top'), name = o('div', 'challenge-name'), copy = o('div');
-    name.append(o('span', 'challenge-icon', t.icon)); copy.append(o('strong', '', t.title), o('small', '', t.detail)); name.append(copy);
+    const taskIcon=o('span','challenge-icon'); taskIcon.append(icon(t.icon));
+    name.append(taskIcon); copy.append(o('strong', '', t.title), o('small', '', t.detail)); name.append(copy);
     top.append(name, o('span', 'challenge-reward', complete ? '✓ Completed' : '+' + t.reward + ' EXP'));
     const track = o('div', 'challenge-track'), fill = o('span', 'challenge-fill'); fill.style.width = (progress / t.target * 100) + '%'; track.append(fill);
     const foot = o('div', 'challenge-foot'); foot.append(o('span', '', complete ? 'Reward earned' : progress + ' / ' + t.target), o('span', '', 'Resets daily'));
@@ -10232,11 +10386,11 @@ function renderDaily() {
   const rewardHead = o('div','daily-gem-head'), rewardTitle = o('div');
   rewardTitle.append(o('p','eyebrow','A little reward for learning'),o('h3','','Daily Gem Rewards'),
     o('p','','Complete at least one normal practice quiz today to unlock your Gems. Missed days never take away Gems you have already earned.'));
-  rewardHead.append(rewardTitle,o('strong','daily-gem-balance','💎 ' + Math.max(0,Number(d.gems)||0)));
+  rewardHead.append(rewardTitle,iconLabel('gem',String(Math.max(0,Number(d.gems)||0)),'daily-gem-balance'));
   const days = o('div','daily-gem-days');
   for(let n=1;n<=7;n++){
     const tile=o('div','daily-gem-day'+(n<rewardDay || (claimedToday && n<=claimedDayNumber) ? ' is-done' : '')+(n===rewardDay && !claimedToday ? ' is-current' : ''));
-    tile.append(o('strong','', 'Day '+n),o('span','',n===7?'+6 💎':'+1 💎'));
+    tile.append(o('strong','', 'Day '+n),o('span','',n===7?'+6 Gems':'+1 Gem'));
     if(claimedToday && n===claimedDayNumber) tile.append(o('small','','Claimed'));
     days.append(tile);
   }
@@ -10245,7 +10399,7 @@ function renderDaily() {
     canClaimGem ? (rewardDay===7 ? 'Day 7 includes a 1-Gem reward plus a 5-Gem bonus.' : 'Your practice quiz is complete. Your daily Gem reward is ready.') :
     (!S.db || !S.uid ? 'Sign in to save your daily Gem rewards.' : 'Complete one normal practice quiz today to unlock your daily Gem reward.');
   action.append(o('p','',actionText));
-  const claimDaily = o('button','btn btn-primary btn-sm','Claim '+(rewardDay===7?'+6':' +1')+' 💎');
+  const claimDaily = o('button','btn btn-primary btn-sm','Claim '+(rewardDay===7?'+6':' +1')+' Gems');
   claimDaily.type='button'; claimDaily.disabled=claimedToday || !canClaimGem;
   claimDaily.onclick=async()=>{
     claimDaily.disabled=true; claimDaily.textContent='Claiming…';
