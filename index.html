@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="profile-ring-2026-11-22-r1">
+<meta name="bece-build" content="separate-gem-shop-2026-11-22-r2">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -2932,6 +2932,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
 <style id="overview-and-social-pages-refresh">
 .account-coins{font-size:13px;font-weight:800;color:var(--accent);white-space:nowrap;padding:3px 7px;border-radius:999px;background:var(--accent-soft)}
+.account-gems{cursor:pointer;user-select:none;touch-action:manipulation;outline-offset:3px}
+.account-gems:focus-visible{outline:2px solid var(--accent)}
+#screen-shop .shop-destination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 auto 12px;max-width:900px}
+#screen-gemshop .gem-shop-card{max-width:900px;margin:8px auto 0;padding:20px 16px}
 #screen-duels .duel-card,#screen-shop .shop,#screen-me .profile-card{margin-top:8px}
 #screen-duels .duel-card,#screen-shop .shop{max-width:900px;margin-left:auto;margin-right:auto}
 #screen-me .profile-card{max-width:900px;margin-left:auto;margin-right:auto}
@@ -4011,8 +4015,15 @@ pre, code { overflow-wrap: anywhere; }
 </section>
 <section id="screen-shop" class="screen" data-screen="shop" hidden>
   <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
-    <div class="page-intro"><p class="eyebrow">Spend your rewards</p><h1>Shops</h1><p class="muted">Use coins for power-ups and board titles, or Gems for profile cosmetics.</p></div>
+    <div class="page-intro"><p class="eyebrow">Spend your coins</p><h1>Coin Shop</h1><p class="muted">Use your earned coins for power-ups and board titles.</p></div>
+    <div class="shop-destination"><span class="muted">Looking for profile cosmetics?</span><a class="btn btn-primary btn-sm" href="#/gemshop">Open Gem Shop 💎</a></div>
     <div id="shop-body"></div>
+  </div>
+</section>
+<section id="screen-gemshop" class="screen" data-screen="gemshop" hidden>
+  <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
+    <div class="page-intro"><p class="eyebrow">Profile cosmetics</p><h1>Gem Shop</h1><p class="muted">Spend Gems on cosmetic items for your profile. More items can be added later.</p></div>
+    <div id="gemshop-body"></div>
   </div>
 </section>
 <section id="screen-me" class="screen" data-screen="me" hidden>
@@ -8423,8 +8434,8 @@ function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
 }
 
 /* ======================= Router ======================= */
-const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'shop', 'me'];
-const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', shop: 'shop', me: 'me' };
+const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'shop', 'gemshop', 'me'];
+const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', shop: 'shop', gemshop: 'gemshop', me: 'me' };
 const PATH_FOR = { home: '', setup: 'practice' };
 let currentScreen = null;
 
@@ -8486,6 +8497,7 @@ function render(screen) {
     else Notes.enter();
   }
   if (screen === 'setup') Setup.enter();
+  if (screen === 'gemshop') GemShop.render();
   if (screen === 'admin') { window.renderFriends?.(); window.Adm?.sync?.(); }
   if (screen === 'achievements') window.renderAchievements?.();
   if (changed) {
@@ -9960,7 +9972,12 @@ function renderAccount() {
     if (S.doc.avatar) w.append(o('span', 'account-badge', BeceProfile.safeAv(S.doc.avatar)));
     e.append(w);
   } else if (S.doc && S.doc.avatar) e.append(o('span', 'account-avatar', BeceProfile.safeAv(S.doc.avatar)));
-  e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), o('span', 'account-coins', `💰 ${S.doc.coins || 0}`), o('span', 'account-coins', `💎 ${Math.max(0, Number(S.doc.gems) || 0)}`), o('span', 'account-exp', `${m.totalExp} EXP`));
+  const gemShortcut = o('span', 'account-coins account-gems', `💎 ${Math.max(0, Number(S.doc.gems) || 0)}`);
+  gemShortcut.setAttribute('role', 'link'); gemShortcut.tabIndex = 0; gemShortcut.title = 'Open Gem Shop'; gemShortcut.setAttribute('aria-label', 'Open Gem Shop');
+  const openGemShop = event => { event.preventDefault(); event.stopPropagation(); App.navigate('gemshop'); };
+  gemShortcut.addEventListener('click', openGemShop);
+  gemShortcut.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') openGemShop(event); });
+  e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), o('span', 'account-coins', `💰 ${S.doc.coins || 0}`), gemShortcut, o('span', 'account-exp', `${m.totalExp} EXP`));
   if (m.streak) e.append(o('span', 'account-streak', `\u{1F525} ${m.streak}`));
   e.setAttribute('aria-label', `${m.displayName}, level ${lv(m.totalExp).level}, ${m.totalExp} EXP, ${S.doc.coins || 0} coins, ${Math.max(0, Number(S.doc.gems) || 0)} Gems. Open your profile`);
   e.onclick = () => App.navigate('me');
@@ -10903,7 +10920,7 @@ const Shop = (() => {
       await S.db.doc('players/' + S.uid).set({ equippedGemCosmetic: next }, { merge: true });
       S.doc = { ...d, equippedGemCosmetic: next };
       App.toast(next ? 'Profile ring equipped!' : 'Profile ring removed.', 'good');
-      render(); renderFriends();
+      render(); GemShop.render(); renderFriends();
     } catch (error) {
       warn('Could not update your profile ring. Please try again.');
     }
@@ -10924,7 +10941,7 @@ const Shop = (() => {
         throw error;
       }
       App.toast('Bought ' + it.name + '! It is now equipped.', 'good');
-      render(); renderFriends();
+      render(); GemShop.render(); renderFriends();
     } catch (error) {
       button.disabled = false;
       button.textContent = 'Buy 💎 ' + it.price;
@@ -10985,7 +11002,7 @@ const Shop = (() => {
     }
     const content = [];
     if (paused) content.push(o('div', 'shop-paused-notice', o('strong', '', '🛍️ Shop purchases paused'), o('p', '', 'The owner has temporarily paused new purchases. Your owned items are still available.')));
-    content.push(cons, titlesGroup, gemStore(d));
+    content.push(cons, titlesGroup);
     body.replaceChildren(...content);
   }
   function build() {
@@ -10994,7 +11011,18 @@ const Shop = (() => {
       o('p', 'muted', 'Earn coins: 1 per new correct answer, bonus coins from daily challenges and streaks, and from duels (win 5, draw 2, played 1; up to 10 duels a day).'));
     el.append(head, body); render(); return el;
   }
-  return { el: () => el || build(), render };
+  return { el: () => el || build(), render, gemStore };
+})();
+
+const GemShop = (() => {
+  let el = null;
+  function render() {
+    const host = $('gemshop-body');
+    if (!el) el = o('section', 'card gem-shop-card');
+    el.replaceChildren(Shop.gemStore(S.doc || {}));
+    if (host && !host.contains(el)) host.replaceChildren(el);
+  }
+  return { el: () => { render(); return el; }, render };
 })();
 
 /* ===== 1v1 Duel (Firestore collection "duels") ===== */

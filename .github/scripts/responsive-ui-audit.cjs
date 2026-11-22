@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'profile-ring-2026-11-22-r1';
+const EXPECTED_BUILD = 'separate-gem-shop-2026-11-22-r2';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -16,6 +16,7 @@ const ROUTES = [
   { name: 'essays', hash: '#/notes?view=essays', screen: 'notes' },
   { name: 'achievements', hash: '#/achievements', screen: 'achievements' },
   { name: 'shop', hash: '#/shop', screen: 'shop' },
+  { name: 'gemshop', hash: '#/gemshop', screen: 'gemshop' },
   { name: 'profile', hash: '#/me', screen: 'me' },
   { name: 'admin', hash: '#/admin', screen: 'admin' },
 ];
@@ -71,6 +72,8 @@ async function main() {
     ['Quiz saves preserve existing Gems fields without creating missing ones', "preserveGemFields.gems = currentData.gems"],
     ['Quiz saves preserve Gem cosmetic ownership', "preserveGemFields.gemCosmetics = currentData.gemCosmetics"],
     ['The Gem Shop displays the one approved profile ring', "name: 'Golden Profile Ring'"],
+    ['Gem balance shortcut navigates to its own page', "App.navigate('gemshop')"],
+    ['Coin Shop no longer renders Gem Shop contents', "content.push(cons, titlesGroup);"],
     ['Profile ring styling is applied to equipped avatars', "b.dataset.gemRing = p.gemCosmetics"],
     ['The client requests a server-verified cosmetic purchase', "purchaseCosmetic: (itemId, operationId) => applyGemChange('purchase', null, operationId, itemId)"],
     ['Client Gems API calls the trusted Worker', 'fetch(GEMS_API_URL, {'],
