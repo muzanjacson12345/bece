@@ -97,6 +97,9 @@ jobs:
         run: node --check gems.js
       - name: Check Gem Marketplace browser module syntax
         run: node --check gem-marketplace.js
+      - name: Check Gem Marketplace utility module syntax
+        run: node --check workers/gems-api/src/gem-marketplace-utils.mjs
+
       - name: Validate Firestore composite index JSON
         run: node -e "JSON.parse(require('node:fs').readFileSync('firestore.indexes.json', 'utf8'))"
       - name: Check event-screen migration script syntax
