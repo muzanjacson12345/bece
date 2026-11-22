@@ -2,9 +2,9 @@
   "use strict";
 
   const App = window.App;
-  const firebaseApi = window.firebase;
+  const firebaseApi = () => window.firebase;
   const host = document.getElementById("events-body");
-  if (!App || !firebaseApi || !host) return;
+  if (!App || !host) return;
 
   const meta = document.querySelector('meta[name="bece-gems-api"]');
   const gemsUrl = meta && meta.content ? meta.content.trim() : "";
@@ -39,8 +39,15 @@
   const toast = (message, tone = "info") => {
     if (typeof App.toast === "function") App.toast(message, tone);
   };
-  const signedInUser = () => firebaseApi.auth && firebaseApi.auth().currentUser;
-  const database = () => firebaseApi.firestore();
+  const signedInUser = () => {
+    const fb = firebaseApi();
+    return fb && fb.auth ? fb.auth().currentUser : null;
+  };
+  const database = () => {
+    const fb = firebaseApi();
+    if (!fb || !fb.firestore) throw new Error("The BECE Hub account service is still connecting. Please try again.");
+    return fb.firestore();
+  };
   const id = () => crypto.randomUUID();
   const formatCoins = value => Number.isSafeInteger(value) ? value.toLocaleString() : "—";
   const formatTime = value => {
