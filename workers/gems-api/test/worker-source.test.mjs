@@ -215,7 +215,7 @@ test("early event close is Owner-only and leaves paid attempt grace intact", () 
 test("first-time achievement Gems write a private claim and readable history record atomically", () => {
   assert.ok(source.includes('buildAchievementGemHistory({'));
   const start = source.indexOf("async function applyPracticeRewardChange(");
-  const end = source.indexOf("\\nasync function isUserBanned", start);
+  const end = source.indexOf("\nasync function isUserBanned", start);
   assert.ok(start >= 0 && end > start);
   const practice = source.slice(start, end);
   assert.ok(practice.includes("result.gemsEarned > 0"));
@@ -228,7 +228,7 @@ test("first-time achievement Gems write a private claim and readable history rec
 test("event Gem prize payouts also create readable history records in the settlement transaction", () => {
   assert.ok(source.includes("buildEventGemPrizeHistory({"));
   const start = source.indexOf("async function applyGemEventSettlement(");
-  const end = source.indexOf("\\nasync function startGemEventQuestion", start);
+  const end = source.indexOf("\nasync function startGemEventQuestion", start);
   assert.ok(start >= 0 && end > start, "event settlement function boundaries must be found");
   const settlement = source.slice(start, end);
   assert.ok(settlement.includes("gemTransactions/"));
@@ -239,7 +239,7 @@ test("event Gem prize payouts also create readable history records in the settle
 
 test("manual Owner Gem changes keep a normalized transaction-history record", () => {
   const start = source.indexOf("async function applyGemChange(");
-  const end = source.indexOf("\\nasync function settleDueGemEvents", start);
+  const end = source.indexOf("\nasync function settleDueGemEvents", start);
   assert.ok(start >= 0 && end > start, "manual Gem function boundaries must be found");
   const manual = source.slice(start, end);
   assert.ok(manual.includes("currency: 'gems'"));
@@ -260,7 +260,7 @@ test("Gem Marketplace catalog, purchase and equip routes are authenticated Worke
 
 test("Gem Marketplace purchase updates Gems, owned cosmetics, purchase receipt and history atomically", () => {
   const start = source.indexOf("async function applyGemMarketplacePurchase(");
-  const end = source.indexOf("\\nasync function applyGemMarketplaceEquip", start);
+  const end = source.indexOf("\nasync function applyGemMarketplaceEquip", start);
   assert.ok(start >= 0 && end > start, "Gem Marketplace purchase function boundaries must be found");
   const purchase = source.slice(start, end);
   for (const required of [
@@ -272,7 +272,7 @@ test("Gem Marketplace purchase updates Gems, owned cosmetics, purchase receipt a
 
 test("Gem Marketplace equipment can only be changed for a cosmetic already owned by the same player", () => {
   const start = source.indexOf("async function applyGemMarketplaceEquip(");
-  const end = source.indexOf("\\nasync function applyPowerupUse", start);
+  const end = source.indexOf("\nasync function applyPowerupUse", start);
   assert.ok(start >= 0 && end > start, "Gem Marketplace equip function boundaries must be found");
   const equip = source.slice(start, end);
   assert.ok(equip.includes("GEM_ITEM_NOT_OWNED"));
