@@ -738,6 +738,7 @@ async function applyGemMarketplaceEquip(uid, itemId, operationId, shouldEquip, a
 
   const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
   const inventoryPath = 'gemInventories/' + encodeURIComponent(uid);
+  const playerPath = 'players/' + encodeURIComponent(uid);
   const inventoryItemPath = inventoryPath + '/items/' + encodeURIComponent(itemId);
   const operationPath = 'gemShopEquipOperations/' + encodeURIComponent(uid + '_' + operationId);
 
@@ -750,10 +751,11 @@ async function applyGemMarketplaceEquip(uid, itemId, operationId, shouldEquip, a
   if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
   let finished = false;
   try {
-    const [inventoryDoc, itemDoc, operationDoc] = await Promise.all([
+    const [inventoryDoc, itemDoc, operationDoc, playerDoc] = await Promise.all([
       getDocument(inventoryPath, accessToken, transaction),
       getDocument(inventoryItemPath, accessToken, transaction),
-      getDocument(operationPath, accessToken, transaction)
+      getDocument(operationPath, accessToken, transaction),
+      getDocument(playerPath, accessToken, transaction)
     ]);
     if (operationDoc) {
       const stored = decodeFirestoreFields(operationDoc.fields || {});
@@ -769,21 +771,35 @@ async function applyGemMarketplaceEquip(uid, itemId, operationId, shouldEquip, a
       return { duplicate: true, result: stored.result || null };
     }
     if (!itemDoc) throw new Error('GEM_ITEM_NOT_OWNED');
+    if (!playerDoc) throw new Error('PLAYER_PROFILE_NOT_READY');
     const ownedItem = decodeFirestoreFields(itemDoc.fields || {});
     if (ownedItem.owned !== true || ownedItem.slot !== item.slot) {
       throw new Error('GEM_ITEM_NOT_OWNED');
     }
 
     const inventory = decodeFirestoreFields(inventoryDoc && inventoryDoc.fields);
+    const player = decodeFirestoreFields(playerDoc.fields || {});
     const equipped = inventory.equipped && typeof inventory.equipped === 'object'
       ? { ...inventory.equipped } : {};
-    if (shouldEquip) equipped[item.slot] = itemId;
-    else if (equipped[item.slot] === itemId) delete equipped[item.slot];
+    const profileEquipment = player.eq && typeof player.eq === 'object' ? { ...player.eq } : {};
+    if (shouldEquip) {
+      equipped[item.slot] = itemId;
+      profileEquipment[item.slot] = itemId;
+    } else if (equipped[item.slot] === itemId) {
+      delete equipped[item.slot];
+      if (profileEquipment[item.slot] === itemId) delete profileEquipment[item.slot];
+    }
 
     const result = { itemId, slot: item.slot, equipped: equipped[item.slot] === itemId, equippedItems: equipped };
     const operationRecord = { uid, operationId, itemId, action: shouldEquip ? 'equip' : 'unequip', createdAt: Date.now(), result };
     const inventoryUpdate = { uid, equipped, updatedAt: operationRecord.createdAt };
+    const playerUpdate = { eq: profileEquipment };
     const writes = [
+      {
+        update: { name: base + playerPath, fields: encodeFirestoreFields(playerUpdate) },
+        updateMask: { fieldPaths: ['eq'] },
+        currentDocument: { exists: true }
+      },
       {
         update: { name: base + inventoryPath, fields: encodeFirestoreFields(inventoryUpdate) },
         updateMask: { fieldPaths: Object.keys(inventoryUpdate) },
