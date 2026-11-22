@@ -25,3 +25,12 @@ test("Gem Marketplace browser module does not write Gems or inventory directly",
   assert.equal(source.includes(".collection(\"gemTransactions\").add("), false);
   assert.equal(source.includes("payload.price"), false);
 });
+
+
+test("Gem Marketplace route and screen are connected to the main application", async () => {
+  const html = await readFile(fileURLToPath(new URL("../../../index.html", import.meta.url)), "utf8");
+  assert.match(html, /'gem-marketplace'/);
+  assert.match(html, /id="screen-gem-marketplace"/);
+  assert.match(html, /src="\.\/gem-marketplace\.js"/);
+  assert.match(html, /window\.renderGemMarketplace\?\.\(\)/);
+});
