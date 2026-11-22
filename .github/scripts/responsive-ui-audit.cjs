@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'unified-shops-2026-11-22-r3';
+const EXPECTED_BUILD = 'gem-rewards-mobile-achievements-2026-11-22-r4';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -82,6 +82,11 @@ async function main() {
     ['The client requests a server-verified cosmetic purchase', "purchaseCosmetic: (itemId, operationId) => applyGemChange('purchase', null, operationId, itemId)"],
     ['Client Gems API calls the trusted Worker', 'fetch(GEMS_API_URL, {'],
     ['Gems API remains available to app features', 'window.Gems = Gems;'],
+    ['Achievements display one-time Gem reward claim controls', 'Gems.claimAchievement(a.id)'],
+    ['Daily Gem rewards require a completed practice quiz', "Number(progressData.quizzes || 0) >= 1"],
+    ['Daily Gem reward panel includes a seven-day track', "n===7?'+6 💎':'+1 💎'"],
+    ['High-score achievement tracks 90 percent quiz results', "achievementStats.highScore = (achievementStats.highScore || 0) + 1"],
+    ['Mobile achievement descriptions can wrap without clipping', '.achievement-copy small{line-height:1.55;word-break:normal}'],
   ];
   const gemsWorkerSource = fs.readFileSync(path.join(process.cwd(), 'workers/gems-api/src/index.js'), 'utf8');
   const gemWorkerFeatures = [
@@ -92,6 +97,10 @@ async function main() {
     ['Worker uses a Firestore transaction commit', 'documents:commit'],
     ['Profile ring purchase saves Gems and ownership atomically', "fieldPaths: ['gems', 'gemOps', 'gemCosmetics', 'equippedGemCosmetic']"],
     ['Worker defines a fixed price for the approved Gem cosmetic', "'profile-ring-gold': Object.freeze({ price: 50 })"],
+    ['Worker has fixed one-time achievement reward amounts', "'quiz-beginner': Object.freeze({ amount: 2"],
+    ['Worker verifies saved achievement progress before claiming', "throw new Error('ACHIEVEMENT_NOT_READY')"],
+    ['Worker requires a normal practice quiz for daily Gems', "throw new Error('DAILY_ACTIVITY_REQUIRED')"],
+    ['Worker stores daily claims with a consecutive-day reward index', "storedOperationId = 'daily:' + day + ':' + rewardDay"],
   ];
   const firestoreRulesSource = fs.readFileSync(path.join(process.cwd(), 'firestore.rules'), 'utf8');
   const gemRulesFeatures = [

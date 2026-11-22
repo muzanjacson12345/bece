@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="unified-shops-2026-11-22-r3">
+<meta name="bece-build" content="gem-rewards-mobile-achievements-2026-11-22-r4">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -531,8 +531,41 @@ html[data-theme='dark'] #theme-toggle .icon-moon { display: none; }
 .achievement-item.is-earned .achievement-status{color:var(--accent)}
 .achievement-item.is-earned .achievement-fill{background:var(--accent);opacity:1}
 .achievement-item:not(.is-earned) .achievement-copy strong{color:var(--muted)}
+.achievement-reward-row{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;min-width:0}
+.achievement-gem-reward{font-size:12px;font-weight:800;color:var(--accent)}
+.achievement-claim{flex:0 0 auto;min-height:34px}
+.daily-gem-rewards{padding:16px;margin:0 0 18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.daily-gem-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.daily-gem-head h3{margin:2px 0 5px;font-size:18px}
+.daily-gem-head p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.daily-gem-balance{flex:0 0 auto;font-weight:800;white-space:nowrap}
+.daily-gem-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+.daily-gem-day{display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 3px;border:1px solid var(--line);border-radius:11px;background:var(--surface2);text-align:center}
+.daily-gem-day strong{font-size:11px;color:var(--muted)}
+.daily-gem-day span{font-size:13px;font-weight:800;white-space:nowrap}
+.daily-gem-day.is-done{border-color:var(--accent);background:var(--accent-soft)}
+.daily-gem-day.is-current{outline:2px solid var(--accent);outline-offset:1px}
+.daily-gem-action{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px}
+.daily-gem-action p{flex:1;min-width:180px;margin:0;color:var(--muted);font-size:12px;line-height:1.5}
 @media(max-width:760px){.achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.achievement-launch{padding:16px}.achievement-group{margin-bottom:28px}}
-@media(max-width:420px){.achievement-grid{grid-template-columns:1fr}.achievement-item{grid-template-columns:48px minmax(0,1fr) auto;padding:14px}.achievement-status{grid-column:auto;grid-row:1}.achievement-track{grid-column:1/-1}.achievement-group-heading h2{font-size:17px}}
+@media(max-width:420px){
+  .achievement-grid{grid-template-columns:1fr}
+  .achievement-item{grid-template-columns:44px minmax(0,1fr);align-items:start;gap:9px 12px;padding:14px}
+  .achievement-icon{grid-column:1;grid-row:1 / span 2;width:44px;height:44px}
+  .achievement-copy{grid-column:2;grid-row:1 / span 2;min-width:0;overflow-wrap:anywhere}
+  .achievement-copy strong,.achievement-copy small{display:block;max-width:100%;overflow-wrap:anywhere}
+  .achievement-copy small{line-height:1.55;word-break:normal}
+  .achievement-status{grid-column:2;grid-row:auto}
+  .achievement-track,.achievement-reward-row{grid-column:1/-1}
+  .achievement-group-heading h2{font-size:17px}
+  .daily-gem-rewards{padding:13px}
+  .daily-gem-days{gap:4px}
+  .daily-gem-day{padding:8px 1px}
+  .daily-gem-day strong{font-size:10px}
+  .daily-gem-day span{font-size:11px}
+  .daily-gem-head{gap:8px}
+  .daily-gem-balance{font-size:13px}
+}
 
 .daily-card h2 { font: 600 clamp(22px, 2.8vw, 28px)/1.25 var(--sans); letter-spacing: -.02em; margin-bottom: 8px; }
 .daily-card .muted { max-width: 580px; }
@@ -10040,6 +10073,7 @@ const ACHIEVEMENTS = [
   { id:'question-2500',icon:'🏛️',title:'Hall of Knowledge',detail:'Answer 2,500 questions',metric:'answered',target:2500,group:'Question milestones' },
   // Accuracy milestones
   { id:'getting-sharp',icon:'🎯',title:'Getting Sharp',detail:'Get 25 answers correct',metric:'correct',target:25,group:'Accuracy milestones' },
+  { id:'high-score-90',icon:'💯',title:'Sharp Performance',detail:'Score at least 90% in a quiz',metric:'highScore',target:1,group:'Accuracy milestones' },
   { id:'accuracy-star',icon:'⭐',title:'Accuracy Star',detail:'Get 100 answers correct',metric:'correct',target:100,group:'Accuracy milestones' },
   { id:'accuracy-250',icon:'🥉',title:'Bronze Brain',detail:'Get 250 answers correct',metric:'correct',target:250,group:'Accuracy milestones' },
   { id:'accuracy-500',icon:'🥈',title:'Silver Scholar',detail:'Get 500 answers correct',metric:'correct',target:500,group:'Accuracy milestones' },
@@ -10047,6 +10081,7 @@ const ACHIEVEMENTS = [
   { id:'accuracy-2000',icon:'💡',title:'Bright Mind',detail:'Get 2,000 answers correct',metric:'correct',target:2000,group:'Accuracy milestones' },
   // Quiz milestones
   { id:'quiz-beginner',icon:'🏁',title:'Quiz Starter',detail:'Complete your first quiz',metric:'quizzes',target:1,group:'Quiz milestones' },
+  { id:'quiz-five',icon:'📘',title:'Five Quizzes',detail:'Complete 5 quizzes',metric:'quizzes',target:5,group:'Quiz milestones' },
   { id:'quiz-regular',icon:'🔥',title:'Quiz Regular',detail:'Complete 10 quizzes',metric:'quizzes',target:10,group:'Quiz milestones' },
   { id:'quiz-25',icon:'🗓️',title:'Practice Habit',detail:'Complete 25 quizzes',metric:'quizzes',target:25,group:'Quiz milestones' },
   { id:'quiz-50',icon:'🎖️',title:'Dedicated Student',detail:'Complete 50 quizzes',metric:'quizzes',target:50,group:'Quiz milestones' },
@@ -10079,17 +10114,28 @@ const ACHIEVEMENTS = [
   { id:'streak-30',icon:'🌙',title:'Monthly Momentum',detail:'Build a 30-day study streak',metric:'streak',target:30,group:'Study streaks' },
   { id:'streak-60',icon:'☀️',title:'Consistency Star',detail:'Build a 60-day study streak',metric:'streak',target:60,group:'Study streaks' },
   { id:'streak-100',icon:'💫',title:'100-Day Legend',detail:'Build a 100-day study streak',metric:'streak',target:100,group:'Study streaks' },
+  { id:'achievement-ten',icon:'🏆',title:'Achievement Collector',detail:'Earn 10 different achievements',metric:'achievementCount',target:10,group:'Special milestones' },
 ];
+const GEM_ACHIEVEMENT_REWARDS = Object.freeze({
+  'quiz-beginner': 2,
+  'quiz-five': 5,
+  'quiz-regular': 8,
+  'quiz-25': 15,
+  'high-score-90': 3,
+  'subject-explorer': 5,
+  'achievement-ten': 10
+});
 function achievementValue(a, data, stats) {
   if (a.metric === 'subjects') return (Array.isArray(data.subjects) ? data.subjects.length : 0);
   if (a.metric === 'streak') return Number(S.doc && S.doc.streak || 0);
+  if (a.metric === 'achievementCount') return Array.isArray(data.unlocked) ? data.unlocked.length : 0;
   return Number(stats[a.metric] || 0);
 }
 function renderAchievements() {
   const e = $('achievement-card'); if (!e) return;
   const data = S.doc && S.doc.achievements || {}, stats = data.stats || {};
   const unlocked = Array.isArray(data.unlocked) ? data.unlocked : [];
-  const earnedCount = ACHIEVEMENTS.filter(a => unlocked.includes(a.id)).length;
+  const gemOps = Array.isArray(S.doc && S.doc.gemOps) ? S.doc.gemOps : [];
   const total = ACHIEVEMENTS.length;
   const overall = ACHIEVEMENTS.reduce((n,a) => n + (unlocked.includes(a.id) ? 1 : 0),0);
   e.replaceChildren();
@@ -10118,7 +10164,33 @@ function renderAchievements() {
       const track=o('div','achievement-track'),bar=o('span','achievement-fill');
       bar.style.width=(Math.min(value,a.target)/a.target*100)+'%';
       track.append(bar);
-      card.append(icon,copy,status,track);grid.append(card);
+      card.append(icon,copy,status,track);
+      const gemReward = GEM_ACHIEVEMENT_REWARDS[a.id];
+      if (gemReward) {
+        const rewardRow = o('div','achievement-reward-row');
+        rewardRow.append(o('span','achievement-gem-reward','💎 ' + gemReward + ' Gems'));
+        if (earned) {
+          const claimed = gemOps.includes('achievement:' + a.id);
+          if (claimed) rewardRow.append(o('span','achievement-status','✓ Gems claimed'));
+          else {
+            const claim = o('button','btn btn-primary btn-sm achievement-claim','Claim Gems');
+            claim.type = 'button';
+            claim.onclick = async () => {
+              claim.disabled = true; claim.textContent = 'Claiming…';
+              try {
+                const result = await Gems.claimAchievement(a.id);
+                App.toast(result.duplicate ? 'This Gem reward was already claimed.' : 'You earned ' + gemReward + ' Gems!', 'good');
+              } catch (error) {
+                App.toast(error && error.code === 'ACHIEVEMENT_NOT_READY' ? 'Complete this achievement first.' : 'Could not claim the Gem reward. Please try again.', 'warn');
+              }
+              renderAchievements();
+            };
+            rewardRow.append(claim);
+          }
+        } else rewardRow.append(o('span','achievement-status','Unlock to claim'));
+        card.append(rewardRow);
+      }
+      grid.append(card);
     });
     section.append(heading,grid);e.append(section);
   });
@@ -10147,7 +10219,47 @@ function renderDaily() {
     const foot = o('div', 'challenge-foot'); foot.append(o('span', '', complete ? 'Reward earned' : progress + ' / ' + t.target), o('span', '', 'Resets daily'));
     card.append(top, track, foot); list.append(card);
   });
-  e.append(head, list, o('p', 'challenge-note', !S.db || !S.uid ? 'Sign in to the Friends board to save progress and bonus EXP.' : 'Only normal practice sessions count. Your missions refresh tomorrow.'));
+  const gemOps = Array.isArray(d.gemOps) ? d.gemOps : [];
+  const todayClaim = gemOps.find(op => typeof op === 'string' && op.startsWith('daily:' + day + ':'));
+  const claimedToday = !!todayClaim;
+  const claimedDayNumber = claimedToday ? Number(todayClaim.split(':')[2]) || 1 : 0;
+  const yesterdayDate = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+  const yesterdayClaim = gemOps.find(op => typeof op === 'string' && op.startsWith('daily:' + yesterdayDate + ':'));
+  const previousDayNumber = yesterdayClaim ? Number(yesterdayClaim.split(':')[2]) || 0 : 0;
+  const rewardDay = claimedToday ? claimedDayNumber : (previousDayNumber >= 1 && previousDayNumber < 7 ? previousDayNumber + 1 : 1);
+  const canClaimGem = !!(S.db && S.uid && state.day === day && Number(progressData.quizzes || 0) >= 1);
+  const rewardPanel = o('section','daily-gem-rewards');
+  const rewardHead = o('div','daily-gem-head'), rewardTitle = o('div');
+  rewardTitle.append(o('p','eyebrow','A little reward for learning'),o('h3','','Daily Gem Rewards'),
+    o('p','','Complete at least one normal practice quiz today to unlock your Gems. Missed days never take away Gems you have already earned.'));
+  rewardHead.append(rewardTitle,o('strong','daily-gem-balance','💎 ' + Math.max(0,Number(d.gems)||0)));
+  const days = o('div','daily-gem-days');
+  for(let n=1;n<=7;n++){
+    const tile=o('div','daily-gem-day'+(n<rewardDay || (claimedToday && n<=claimedDayNumber) ? ' is-done' : '')+(n===rewardDay && !claimedToday ? ' is-current' : ''));
+    tile.append(o('strong','', 'Day '+n),o('span','',n===7?'+6 💎':'+1 💎'));
+    if(claimedToday && n===claimedDayNumber) tile.append(o('small','','Claimed'));
+    days.append(tile);
+  }
+  const action = o('div','daily-gem-action');
+  const actionText = claimedToday ? 'You have claimed today’s reward. Come back tomorrow for the next day.' :
+    canClaimGem ? (rewardDay===7 ? 'Day 7 includes a 1-Gem reward plus a 5-Gem bonus.' : 'Your practice quiz is complete. Your daily Gem reward is ready.') :
+    (!S.db || !S.uid ? 'Sign in to save your daily Gem rewards.' : 'Complete one normal practice quiz today to unlock your daily Gem reward.');
+  action.append(o('p','',actionText));
+  const claimDaily = o('button','btn btn-primary btn-sm','Claim '+(rewardDay===7?'+6':' +1')+' 💎');
+  claimDaily.type='button'; claimDaily.disabled=claimedToday || !canClaimGem;
+  claimDaily.onclick=async()=>{
+    claimDaily.disabled=true; claimDaily.textContent='Claiming…';
+    try{
+      const result=await Gems.claimDaily();
+      App.toast(result.duplicate?'Today’s Gem reward has already been claimed.':'You earned '+result.change+' Gems for Day '+result.rewardDay+'!', 'good');
+    }catch(error){
+      App.toast(error&&error.code==='DAILY_ACTIVITY_REQUIRED'?'Complete a normal practice quiz before claiming.':'Could not claim your daily Gems. Please try again.','warn');
+    }
+    renderDaily();
+  };
+  action.append(claimDaily);
+  rewardPanel.append(rewardHead,days,action);
+  e.append(rewardPanel,head,list,o('p','challenge-note',!S.db||!S.uid?'Sign in to the Friends board to save progress and bonus EXP.':'Only normal practice sessions count. Your missions refresh tomorrow.'));
 }
 App.on('quiz:finished', async ev => {
   const box = $('exp-result'); box.hidden = false;
@@ -10173,6 +10285,7 @@ App.on('quiz:finished', async ev => {
     achievementStats.correct = (achievementStats.correct || 0) + (ev.correct || 0);
     achievementStats.quizzes = (achievementStats.quizzes || 0) + 1;
     if (Object.keys(ev.answers || {}).length > 0 && ev.correct === Object.keys(ev.answers || {}).length) achievementStats.perfect = (achievementStats.perfect || 0) + 1;
+    if (Object.keys(ev.answers || {}).length > 0 && ev.correct / Object.keys(ev.answers || {}).length >= 0.9) achievementStats.highScore = (achievementStats.highScore || 0) + 1;
     const subjectMetrics = {};
     ev.questionIds.forEach(id => {
       const q = App.questionById(id);
@@ -10185,7 +10298,7 @@ App.on('quiz:finished', async ev => {
     });
     const achievementUnlocked = [...(previousAchievements.unlocked || [])];
     ACHIEVEMENTS.forEach(a => {
-      const value = a.metric === 'subjects' ? achievementSubjects.length : a.metric === 'streak' ? streak : Number(achievementStats[a.metric] || 0);
+      const value = a.metric === 'subjects' ? achievementSubjects.length : a.metric === 'streak' ? streak : a.metric === 'achievementCount' ? achievementUnlocked.length : Number(achievementStats[a.metric] || 0);
       if (value >= a.target && !achievementUnlocked.includes(a.id)) achievementUnlocked.push(a.id);
     });
     const achievements = { stats: achievementStats, subjects: achievementSubjects, unlocked: achievementUnlocked };
@@ -12747,13 +12860,17 @@ const Gems = (() => {
     const value = S.doc && S.doc.gems;
     return Number.isSafeInteger(value) && value >= 0 ? value : 0;
   };
-  async function applyGemChange(action, amount, operationId, itemId) {
+  async function applyGemChange(action, amount, operationId, itemId, achievementId) {
     if (!S.db || !S.uid) throw new Error('SIGN_IN_REQUIRED');
     if (!GEMS_API_URL) throw new Error('GEMS_SERVICE_NOT_CONFIGURED');
     const purchase = action === 'purchase';
+    const reward = action === 'achievement' || action === 'daily';
     if (purchase) {
       if (itemId !== 'profile-ring-gold') throw new Error('INVALID_GEM_ITEM');
       amount = 50;
+    } else if (reward) {
+      amount = null;
+      if (action === 'achievement' && !Object.prototype.hasOwnProperty.call(GEM_ACHIEVEMENT_REWARDS, achievementId)) throw new Error('INVALID_ACHIEVEMENT_REWARD');
     } else if (!['earn', 'spend'].includes(action)
         || !Number.isSafeInteger(amount) || amount <= 0 || amount > 1000000) {
       throw new Error('INVALID_GEM_AMOUNT');
@@ -12766,7 +12883,7 @@ const Gems = (() => {
     const response = await fetch(GEMS_API_URL, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...(purchase ? { itemId } : { amount }), operationId: opId })
+      body: JSON.stringify({ action, ...(purchase ? { itemId } : reward ? (action === 'achievement' ? { achievementId } : {}) : { amount }), operationId: opId })
     });
     let data = {};
     try { data = await response.json(); } catch {}
@@ -12791,13 +12908,16 @@ const Gems = (() => {
     }
     renderAccount();
     renderFriends();
-    return { previous: data.previous, balance: data.balance, change: data.change, duplicate: !!data.duplicate };
+    renderDaily(); renderAchievements();
+    return { previous: data.previous, balance: data.balance, change: data.change, duplicate: !!data.duplicate, rewardDay: data.rewardDay, bonusAmount: data.bonusAmount };
   }
   return Object.freeze({
     getBalance: currentBalance,
     purchaseCosmetic: (itemId, operationId) => applyGemChange('purchase', null, operationId, itemId),
     earn: (amount, operationId) => applyGemChange('earn', amount, operationId),
-    spend: (amount, operationId) => applyGemChange('spend', amount, operationId)
+    spend: (amount, operationId) => applyGemChange('spend', amount, operationId),
+    claimAchievement: id => applyGemChange('achievement', null, 'achievement:' + id, null, id),
+    claimDaily: () => applyGemChange('daily', null, 'daily:' + today())
   });
 })();
 window.Gems = Gems;
