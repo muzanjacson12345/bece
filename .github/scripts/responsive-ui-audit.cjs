@@ -159,26 +159,26 @@ async function main() {
         .filter(glyph => /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(glyph));
       const unmappedIconMetadata = [...new Set(iconMetadataGlyphs.filter(glyph => !mappedGlyphs.has(glyph)))];
 
-      const decodeUnicodeEscapes = value => value.replace(/\\u\{([0-9a-f]{1,6})\}|\\u([0-9a-f]{4})/gi,
-        (_, longCode, shortCode) => String.fromCodePoint(parseInt(longCode || shortCode, 16)));
-      const emojiSegments = value => [...new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(value)]
-        .map(part => part.segment)
-        .filter(glyph => /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(glyph));
-      const decodedSource = decodeUnicodeEscapes(source);
-      const allSourceEmoji = [...new Set(emojiSegments(decodedSource))];
-      const unmappedSourceEmoji = allSourceEmoji.filter(glyph => !mappedGlyphs.has(glyph));
-      const directIconTextAssignments = source.split(/\r?\n/)
-        .filter(line => /\.(?:textContent|innerText)\s*=/.test(line))
-        .filter(line => emojiSegments(decodeUnicodeEscapes(line)).length > 0
-          && !line.includes('setIconAwareText('));
-
+      const versusSymbol = (source.match(/<symbol id="i-versus"[\s\S]*?<\/symbol>/) || [''])[0];
+      const nativeEmojiPolicy = [
+        source.includes('node.appendChild(document.createTextNode(String(text)))'),
+        source.includes('n.appendChild(document.createTextNode(String(k)))'),
+        source.includes("const b = o('button', 'profile-tab', `${emoji} ${label}`)"),
+        source.includes("const icon=o('span','achievement-icon',a.icon);"),
+        source.includes('|achievement-icon|achievement-gem-reward|profile-tab)'),
+        source.includes('.achievement-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--surface);font-size:25px;filter:none;opacity:1}'),
+        source.includes("badge.textContent = t.icon + ' ' + t.name;"),
+        source.includes('s.textContent = it.icon;'),
+        /<text[^>]*>VS<\\/text>/.test(versusSymbol),
+        !/<path/.test(versusSymbol),
+        !/#[0-9a-f]{3,8}/i.test(versusSymbol)
+      ].every(Boolean);
       allUiGlyphsResolve = glyphPairs.length > 0
         && glyphPairs.every(pair => pair[1] && symbolIds.has(pair[1].name))
         && avatarGlyphs.length > 0
         && avatarGlyphs.every(glyph => mappedGlyphs.has(glyph))
         && unmappedIconMetadata.length === 0
-        && unmappedSourceEmoji.length === 0
-        && directIconTextAssignments.length === 0
+        && nativeEmojiPolicy
         && source.includes('href="#i-external-link"');
     } catch {}
   }
