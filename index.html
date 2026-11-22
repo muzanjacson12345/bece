@@ -12887,7 +12887,7 @@ const Adm = (() => {
       part('Owner exports', () => card('\u{1F4C1} Owner exports', 'Download full player records, owned and equipped items, bug reports, staff roster and audit history for private backup or repair.', btn('Export full player records (JSON)', 'btn-primary btn-sm', exportPlayersJson), btn('Export bug reports (CSV)', 'btn-ghost btn-sm', bugCsv), btn('Export staff roster (CSV)', 'btn-ghost btn-sm', exportRosterCsv), btn('Export audit log (CSV)', 'btn-ghost btn-sm', downloadAuditCsv))),
       part('Staff control', () => card('\u{1F6E1}\uFE0F Staff control', 'Manage active staff sessions without changing the admin PIN or ending your own owner session.', btn('Sign out all admins…', 'btn-ghost btn-sm adm-danger', signOutAllAdmins), btn('Lock my owner session', 'btn-ghost btn-sm', () => ownerLock(false)))));
   }
-  const ACT_ICON = { unlock: '\u{1F513}', give: '\u2795', take: '\u2796', set: '\u{1F4DD}', message: '\u{1F4E9}', rename: '\u270F\uFE0F', 'clear-photo': '\u{1F5BC}\uFE0F', 'clear-bio': '\u{1F4C4}', reset: '\u267B\uFE0F', delete: '\u{1F5D1}\uFE0F', ban: '\u{1F6AB}', unban: '\u2705', note: '\u{1F4DD}', announce: '\u{1F4E3}', 'announce-clear': '\u{1F4E3}', export: '\u{1F4E4}', kick: '\u{1F6AA}', 'pin-change': '\u{1F510}', 'owner-pw-change': '\u{1F451}', 'gift-all': '\u{1F381}', 'weekly-reset': '\u{1F504}', 'clear-expired-bans': '\u{1F9F9}', 'audit-wipe': '\u{1F5D1}\uFE0F', 'bug-open': '\u{1F41E}', 'bug-fixing': '\u{1F6E0}\uFE0F', 'bug-done': '\u2705', 'bug-wontfix': '\u{1F4D5}', 'bug-reply': '\u{1F4AC}', 'bug-delete': '\u{1F5D1}\uFE0F', 'roster-remove': '\u{1F6AA}', 'duels-on': '\u25B6\uFE0F', 'duels-off': '\u23F8\uFE0F', 'reward-rates': '\u{1F4C8}', 'shop-paused': '\u{1F6D2}', 'shop-resumed': '\u{1F6D2}', 'audit-export': '\u{1F4C1}', appoint: '\u{1F6E1}\uFE0F' };
+  const ACT_ICON = { unlock:'lock', give:'plus-circle', take:'minus-circle', set:'file', message:'mail', rename:'pen', 'clear-photo':'image', 'clear-bio':'file', reset:'refresh', delete:'trash', ban:'ban', unban:'check-circle', note:'file', announce:'megaphone', 'announce-clear':'megaphone', export:'upload', kick:'log-out', 'pin-change':'lock', 'owner-pw-change':'crown', 'gift-all':'award', 'weekly-reset':'refresh', 'clear-expired-bans':'trash', 'audit-wipe':'trash', 'bug-open':'bug', 'bug-fixing':'wrench', 'bug-done':'check-circle', 'bug-wontfix':'x', 'bug-reply':'message', 'bug-delete':'trash', 'roster-remove':'log-out', 'duels-on':'play', 'duels-off':'pause', 'reward-rates':'chart', 'shop-paused':'shopping-bag', 'shop-resumed':'shopping-bag', 'audit-export':'folder', appoint:'shield' };
   function auditTab() {
     const w = elx('div'), q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Search the log\u2026'; q.value = st.alq; q.className = 'adm-search'; q.setAttribute('aria-label', 'Search audit log');
     const rs = document.createElement('select'); rs.className = 'adm-sel'; [['all', 'Everyone'], ['owner', 'Owner only'], ['admin', 'Admins only']].forEach(([v, t]) => rs.append(new Option(t, v))); rs.value = st.alr; rs.setAttribute('aria-label', 'Filter by role');
@@ -12895,14 +12895,14 @@ const Adm = (() => {
     function fill() {
       const es = S.audit.filter(e => (st.alr === 'all' || e.role === st.alr) && (!st.alq || `${e.byName} ${e.action} ${e.targetName} ${e.detail}`.toLowerCase().includes(st.alq)));
       info.textContent = `${es.length} of ${S.audit.length} entries (latest 300 are kept in view)`;
-      list.replaceChildren(...(es.length ? es.slice(0, 120).map(e => elx('div', 'adm-log', elx('span', 'adm-log-ic', ACT_ICON[e.action] || '\u2022'), elx('div', 'adm-log-t', elx('strong', '', e.byName || 'Someone', ' ', elx('em', e.role === 'owner' ? 'adm-role-o' : 'adm-role-a', e.role === 'owner' ? 'owner' : 'admin')), elx('span', '', `${e.action}${e.targetName ? ' \u2192 ' + e.targetName : ''}${e.detail ? ' \u00B7 ' + e.detail : ''}`), elx('small', '', fmtTime(e.at))))) : [elx('p', 'muted', 'Nothing logged yet.')]));
+      list.replaceChildren(...(es.length ? es.slice(0, 120).map(e => elx('div', 'adm-log', elx('span', 'adm-log-ic', icon(ACT_ICON[e.action] || 'grid')), elx('div', 'adm-log-t', elx('strong', '', e.byName || 'Someone', ' ', elx('em', e.role === 'owner' ? 'adm-role-o' : 'adm-role-a', e.role === 'owner' ? 'owner' : 'admin')), elx('span', '', `${e.action}${e.targetName ? ' \u2192 ' + e.targetName : ''}${e.detail ? ' \u00B7 ' + e.detail : ''}`), elx('small', '', fmtTime(e.at))))) : [elx('p', 'muted', 'Nothing logged yet.')]));
     }
     q.oninput = () => { st.alq = q.value.trim().toLowerCase(); fill(); }; rs.onchange = () => { st.alr = rs.value; fill(); };
     fill(); w.append(q, elx('div', 'adm-two', rs, info), list, S.isOwner && S.audit.length ? btn('Export audit log CSV', 'btn-ghost btn-sm', downloadAuditCsv) : null, S.audit.length ? btn('Wipe audit log\u2026', 'btn-ghost btn-sm adm-danger', wipeAudit) : null); return w;
   }
 
   /* ---------- shell ---------- */
-  const tabList = () => [['overview', '\u{1F3E0} Overview'], ['players', '\u{1F465} Players'], ['stats', '\u{1F4CA} Stats'], ['bans', `\u{1F6AB} Bans${S.bans.size ? ' ' + S.bans.size : ''}`], ['announce', '\u{1F4E3} Announce'], ['bugs', `\u{1F41E} Bugs${S.bugs.filter(b => (b.status || 'open') === 'open').length ? ' ' + S.bugs.filter(b => (b.status || 'open') === 'open').length : ''}`], ['tools', '\u{1F9F0} Tools'], ...(S.isOwner ? [['owner', '\u{1F451} Owner commands'], ['audit', '\u{1F4DC} Audit']] : [])];
+  const tabList = () => [['overview', 'Overview'], ['players', 'Players'], ['stats', 'Stats'], ['bans', `Bans${S.bans.size ? ' ' + S.bans.size : ''}`], ['announce', 'Announce'], ['bugs', `Bugs${S.bugs.filter(b => (b.status || 'open') === 'open').length ? ' ' + S.bugs.filter(b => (b.status || 'open') === 'open').length : ''}`], ['tools', 'Tools'], ...(S.isOwner ? [['owner', 'Owner commands'], ['audit', 'Audit']] : [])];
   const view = () => st.sub === 'overview' ? overview() : st.sub === 'players' ? players() : st.sub === 'stats' ? stats() : st.sub === 'bans' ? bansTab() : st.sub === 'announce' ? announce() : st.sub === 'tools' ? tools() : st.sub === 'bugs' ? bugsTab() : st.sub === 'owner' ? ownerTab() : auditTab();
   function paint(force) {
     if (!root || root.hidden && !force) return;
@@ -12913,7 +12913,8 @@ const Adm = (() => {
     if (key !== tabsKey) {
       tabsKey = key;
       tabs.replaceChildren(...t.map(([k, l]) => {
-        const b = elx('button', '', l); b.type = 'button'; b.dataset.k = k;
+        const tabIcons = { overview:'home', players:'users', stats:'chart', bans:'shield', announce:'megaphone', bugs:'bug', tools:'wrench', owner:'crown', audit:'clipboard' };
+        const b = elx('button', '', iconLabel(tabIcons[k] || 'grid', l, 'adm-tab-label')); b.type = 'button'; b.dataset.k = k;
         b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', 'adm-panel-body');
         return b;
       }));
@@ -12926,7 +12927,7 @@ const Adm = (() => {
     });
     root.classList.toggle('is-owner', S.isOwner);
     eyebrow.textContent = S.isOwner ? 'Owner console' : 'Overseer';
-    title.textContent = S.isOwner ? '\u{1F451} Owner panel' : 'Admin panel';
+    title.replaceChildren(S.isOwner ? iconLabel('crown','Owner panel','adm-icon-label') : document.createTextNode('Admin panel'));
     const activeTab = tabs.querySelector('[data-k="' + st.sub + '"]');
     if (activeTab && window.matchMedia && window.matchMedia('(max-width: 760px)').matches) {
       const tr = tabs.getBoundingClientRect(), ar = activeTab.getBoundingClientRect();
@@ -13011,7 +13012,7 @@ const Adm = (() => {
     const now = Date.now(), left = S.isOwner ? S.ownerAt + OWNER_MS - now : S.adminAt + ADMIN_MS - now;
     if (!(left > 0)) return;
     const m = Math.floor(left / 60000), s = Math.floor(left % 60000 / 1000);
-    timer.textContent = `${S.isOwner ? '\u{1F451}' : '\u23F3'} ${m >= 60 ? Math.floor(m / 60) + 'h ' + m % 60 + 'm' : m + 'm ' + String(s).padStart(2, '0') + 's'} left`;
+    timer.replaceChildren(icon(S.isOwner ? 'crown' : 'clock'), document.createTextNode((m >= 60 ? Math.floor(m / 60) + 'h ' + m % 60 + 'm' : m + 'm ' + String(s).padStart(2, '0') + 's') + ' left'));
     timer.classList.toggle('is-low', left < (S.isOwner ? 5 : 10) * 60000);
   }
   return { sync, paint, tick, go: k => { st.sub = k; } };
