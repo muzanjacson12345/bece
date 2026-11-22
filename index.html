@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="separate-gem-shop-2026-11-22-r2">
+<meta name="bece-build" content="unified-shops-2026-11-22-r3">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -2934,8 +2934,13 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 .account-coins{font-size:13px;font-weight:800;color:var(--accent);white-space:nowrap;padding:3px 7px;border-radius:999px;background:var(--accent-soft)}
 .account-gems{cursor:pointer;user-select:none;touch-action:manipulation;outline-offset:3px}
 .account-gems:focus-visible{outline:2px solid var(--accent)}
-#screen-shop .shop-destination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 auto 12px;max-width:900px}
-#screen-gemshop .gem-shop-card{max-width:900px;margin:8px auto 0;padding:20px 16px}
+#screen-shop .shop-tabs{display:flex;gap:8px;max-width:900px;margin:0 auto 16px;padding:5px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+#screen-shop .shop-tab{flex:1;min-width:0;border:0;border-radius:10px;padding:12px 16px;background:transparent;color:var(--muted);font:700 15px var(--sans);cursor:pointer;touch-action:manipulation}
+#screen-shop .shop-tab.is-active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm,0 1px 4px #00000012)}
+#screen-shop #shop-body[hidden],#screen-shop #gemshop-body[hidden]{display:none!important}
+#screen-shop #shop-body,#screen-shop #gemshop-body{max-width:900px;margin:0 auto}
+#screen-shop .gem-shop-card{max-width:900px;margin:8px auto 0;padding:20px 16px}
+@media(max-width:420px){#screen-shop .shop-tab{padding:11px 8px;font-size:14px}}
 #screen-duels .duel-card,#screen-shop .shop,#screen-me .profile-card{margin-top:8px}
 #screen-duels .duel-card,#screen-shop .shop{max-width:900px;margin-left:auto;margin-right:auto}
 #screen-me .profile-card{max-width:900px;margin-left:auto;margin-right:auto}
@@ -3661,7 +3666,7 @@ pre, code { overflow-wrap: anywhere; }
       <div class="tool-grid">
         <a class="tool-card tool-main" href="#/friends"><svg class="icon tool-icon"><use href="#i-users"/></svg><span><strong>Friends board</strong><small>Climb the leaderboard with your classmates</small></span></a>
         <a class="tool-card" href="#/duels"><span class="tool-icon" aria-hidden="true">⚔️</span><span><strong>Duels</strong><small>Challenge a classmate</small></span></a>
-        <a class="tool-card" href="#/shop"><span class="tool-icon" aria-hidden="true">🛍️</span><span><strong>Coin shop</strong><small>Spend your earned coins</small></span></a>
+        <a class="tool-card" href="#/shop"><span class="tool-icon" aria-hidden="true">🛍️</span><span><strong>Shop</strong><small>Browse the Coin and Gem Shops</small></span></a>
         <button class="tool-card" type="button" data-action="practise-saved" id="saved-tool"><svg class="icon tool-icon"><use href="#i-bookmark"/></svg><span><strong>Saved questions</strong><small id="saved-count">Bookmark tricky questions to revisit</small></span></button>
         <a class="tool-card" href="#flashcard-studio"><svg class="icon tool-icon"><use href="#i-cards"/></svg><span><strong>Flashcards</strong><small>Quick recall, one card at a time</small></span></a>
         <a class="tool-card tool-extra" href="#/notes"><svg class="icon tool-icon"><use href="#i-book"/></svg><span><strong>Revision library</strong><small>Extra: notes, key ideas &amp; quick checks</small></span></a>
@@ -4015,15 +4020,13 @@ pre, code { overflow-wrap: anywhere; }
 </section>
 <section id="screen-shop" class="screen" data-screen="shop" hidden>
   <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
-    <div class="page-intro"><p class="eyebrow">Spend your coins</p><h1>Coin Shop</h1><p class="muted">Use your earned coins for power-ups and board titles.</p></div>
-    <div class="shop-destination"><span class="muted">Looking for profile cosmetics?</span><a class="btn btn-primary btn-sm" href="#/gemshop">Open Gem Shop 💎</a></div>
-    <div id="shop-body"></div>
-  </div>
-</section>
-<section id="screen-gemshop" class="screen" data-screen="gemshop" hidden>
-  <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
-    <div class="page-intro"><p class="eyebrow">Profile cosmetics</p><h1>Gem Shop</h1><p class="muted">Spend Gems on cosmetic items for your profile. More items can be added later.</p></div>
-    <div id="gemshop-body"></div>
+    <div class="page-intro"><p class="eyebrow">Spend your rewards</p><h1>Shops</h1><p class="muted">Choose whether you want to spend Coins or Gems.</p></div>
+    <div class="shop-tabs" role="tablist" aria-label="Choose a shop">
+      <button class="shop-tab is-active" type="button" role="tab" aria-selected="true" data-shop-tab="coins">🪙 Coins</button>
+      <button class="shop-tab" type="button" role="tab" aria-selected="false" data-shop-tab="gems">💎 Gems</button>
+    </div>
+    <div id="shop-body" role="tabpanel" aria-label="Coin Shop"></div>
+    <div id="gemshop-body" role="tabpanel" aria-label="Gem Shop" hidden></div>
   </div>
 </section>
 <section id="screen-me" class="screen" data-screen="me" hidden>
@@ -8434,8 +8437,8 @@ function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
 }
 
 /* ======================= Router ======================= */
-const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'shop', 'gemshop', 'me'];
-const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', shop: 'shop', gemshop: 'gemshop', me: 'me' };
+const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'shop', 'me'];
+const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', shop: 'shop', gemshop: 'shop', me: 'me' };
 const PATH_FOR = { home: '', setup: 'practice' };
 let currentScreen = null;
 
@@ -8497,7 +8500,7 @@ function render(screen) {
     else Notes.enter();
   }
   if (screen === 'setup') Setup.enter();
-  if (screen === 'gemshop') GemShop.render();
+  if (screen === 'shop') window.Shop?.selectTab(currentHash().startsWith('#/gemshop') ? 'gems' : 'coins');
   if (screen === 'admin') { window.renderFriends?.(); window.Adm?.sync?.(); }
   if (screen === 'achievements') window.renderAchievements?.();
   if (changed) {
@@ -9972,12 +9975,17 @@ function renderAccount() {
     if (S.doc.avatar) w.append(o('span', 'account-badge', BeceProfile.safeAv(S.doc.avatar)));
     e.append(w);
   } else if (S.doc && S.doc.avatar) e.append(o('span', 'account-avatar', BeceProfile.safeAv(S.doc.avatar)));
-  const gemShortcut = o('span', 'account-coins account-gems', `💎 ${Math.max(0, Number(S.doc.gems) || 0)}`);
+  const coinShortcut = o('span', 'account-coins account-currency-shortcut', `💰 ${S.doc.coins || 0}`);
+  coinShortcut.setAttribute('role', 'link'); coinShortcut.tabIndex = 0; coinShortcut.title = 'Open Coin Shop'; coinShortcut.setAttribute('aria-label', 'Open Coin Shop');
+  const openCoinShop = event => { event.preventDefault(); event.stopPropagation(); App.navigate('shop'); };
+  coinShortcut.addEventListener('click', openCoinShop);
+  coinShortcut.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') openCoinShop(event); });
+  const gemShortcut = o('span', 'account-coins account-gems account-currency-shortcut', `💎 ${Math.max(0, Number(S.doc.gems) || 0)}`);
   gemShortcut.setAttribute('role', 'link'); gemShortcut.tabIndex = 0; gemShortcut.title = 'Open Gem Shop'; gemShortcut.setAttribute('aria-label', 'Open Gem Shop');
   const openGemShop = event => { event.preventDefault(); event.stopPropagation(); App.navigate('gemshop'); };
   gemShortcut.addEventListener('click', openGemShop);
   gemShortcut.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') openGemShop(event); });
-  e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), o('span', 'account-coins', `💰 ${S.doc.coins || 0}`), gemShortcut, o('span', 'account-exp', `${m.totalExp} EXP`));
+  e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), coinShortcut, gemShortcut, o('span', 'account-exp', `${m.totalExp} EXP`));
   if (m.streak) e.append(o('span', 'account-streak', `\u{1F525} ${m.streak}`));
   e.setAttribute('aria-label', `${m.displayName}, level ${lv(m.totalExp).level}, ${m.totalExp} EXP, ${S.doc.coins || 0} coins, ${Math.max(0, Number(S.doc.gems) || 0)} Gems. Open your profile`);
   e.onclick = () => App.navigate('me');
@@ -10869,7 +10877,7 @@ function tint(el, p) { /* name colours removed — kept for compat */ return el;
 function adminBadge(id) { const owner = id ? !!(S.owners && S.owners.has(id)) : !!S.isOwner, b = document.createElement('span'); b.className = 'board-title ' + (owner ? 'board-owner' : 'board-admin'); b.textContent = owner ? '\u{1F451} Owner' : '\u{1F6E1}\uFE0F Admin'; return b; }
 function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge(p.id)); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name; container.append(badge); } }
 const Shop = (() => {
-  let el = null, bal = null, body = null;
+  let el = null, bal = null, body = null, activeTab = 'coins';
   const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
   const warn = m => App.toast(m, 'warn');
   function equip(slot, id) {
@@ -11004,6 +11012,21 @@ const Shop = (() => {
     if (paused) content.push(o('div', 'shop-paused-notice', o('strong', '', '🛍️ Shop purchases paused'), o('p', '', 'The owner has temporarily paused new purchases. Your owned items are still available.')));
     content.push(cons, titlesGroup);
     body.replaceChildren(...content);
+    if (activeTab === 'gems') GemShop.render();
+  }
+  function selectTab(tab) {
+    activeTab = tab === 'gems' ? 'gems' : 'coins';
+    const coinHost = $('shop-body'), gemHost = $('gemshop-body');
+    if (coinHost && !coinHost.firstElementChild) coinHost.append(el || build());
+    if (coinHost) coinHost.hidden = activeTab !== 'coins';
+    if (gemHost) gemHost.hidden = activeTab !== 'gems';
+    document.querySelectorAll('[data-shop-tab]').forEach(button => {
+      const selected = button.dataset.shopTab === activeTab;
+      button.classList.toggle('is-active', selected);
+      button.setAttribute('aria-selected', String(selected));
+    });
+    if (activeTab === 'gems') GemShop.render();
+    else render();
   }
   function build() {
     el = o('section', 'card shop'); bal = o('strong', 'shop-bal'); body = o('div', 'shop-body');
@@ -11011,7 +11034,7 @@ const Shop = (() => {
       o('p', 'muted', 'Earn coins: 1 per new correct answer, bonus coins from daily challenges and streaks, and from duels (win 5, draw 2, played 1; up to 10 duels a day).'));
     el.append(head, body); render(); return el;
   }
-  return { el: () => el || build(), render, gemStore };
+  return { el: () => el || build(), render, gemStore, selectTab };
 })();
 
 const GemShop = (() => {
@@ -11024,6 +11047,14 @@ const GemShop = (() => {
   }
   return { el: () => { render(); return el; }, render };
 })();
+window.Shop = Shop;
+window.GemShop = GemShop;
+document.querySelectorAll('[data-shop-tab]').forEach(button => {
+  button.addEventListener('click', () => App.navigate(button.dataset.shopTab === 'gems' ? 'gemshop' : 'shop'));
+});
+if (location.hash.startsWith('#/shop') || location.hash.startsWith('#/gemshop')) {
+  Shop.selectTab(location.hash.startsWith('#/gemshop') ? 'gems' : 'coins');
+}
 
 /* ===== 1v1 Duel (Firestore collection "duels") ===== */
 const Duel = (() => {
