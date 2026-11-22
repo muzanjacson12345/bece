@@ -17,7 +17,11 @@ test("Gem Marketplace UI supports owned cosmetic equipment and existing useful i
   assert.match(source, /callWorker\("\/gem-shop\/equip"/);
   assert.match(source, /state\.equipped\[item\.slot\]/);
   assert.match(source, /state\.player\[item\.field\]/);
-  assert.match(source, /data-gem-frame/);
+  assert.match(source, /gem-frame-preview\\.sapphire/);
+  const html = await readFile(fileURLToPath(new URL("../../../index.html", import.meta.url)), "utf8");
+  assert.match(html, /\\.av\\[data-frame="frame_sapphire"\\]/);
+  assert.match(html, /\\.av\\[data-frame="frame_royal"\\]/);
+  assert.match(html, /\\.av\\[data-frame="frame_aurora"\\]/);
 });
 
 test("Gem Marketplace browser module does not write Gems or inventory directly", () => {
