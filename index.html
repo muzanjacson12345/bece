@@ -3633,6 +3633,7 @@ pre, code { overflow-wrap: anywhere; }
 }
 
 .daily-gem-day .daily-gem-day-reward{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.daily-gem-day-reward>.icon{width:12px;height:12px;flex:0 0 auto}
+.board-rank .icon{width:18px;height:18px;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -10559,17 +10560,17 @@ App.on('quiz:finished', async ev => {
 });
 // A "coins earned" card: animated total, a line for every reason, and your new balance
 function coinPanel(total, parts, balance) {
-  const w = o('div', 'coin-panel'), top = o('div', 'coin-top'), ic = o('span', 'coin-ic', '\u{1F4B0}'), num = o('strong', 'coin-num', '+0');
+  const w = o('div', 'coin-panel'), top = o('div', 'coin-top'), ic = icon('coin'), num = o('strong', 'coin-num', '+0'); ic.classList.add('coin-ic');
   top.append(ic, num, o('span', 'coin-lbl', total === 1 ? 'coin earned' : 'coins earned')); w.append(top);
   if (parts && parts.length) { const ul = o('ul', 'coin-list'); parts.forEach((p, i) => { const li = o('li'); li.style.animationDelay = (0.25 + i * 0.12) + 's'; li.append(o('span', '', p.label), o('strong', '', '+' + p.n)); ul.append(li); }); w.append(ul); }
-  if (balance != null) w.append(o('p', 'coin-bal', `Your balance: \u{1F4B0} ${balance}`));
+  if (balance != null) w.append(iconLabel('coin','Your balance: ' + balance,'coin-bal'));
   const t0 = performance.now(), step = t => { const k = Math.min(1, (t - t0) / 800); num.textContent = '+' + Math.round(total * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); else { num.classList.add('done'); coinShower(w); } };
   requestAnimationFrame(step);
   return w;
 }
 function coinShower(host) {
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  for (let i = 0; i < 10; i++) { const c = document.createElement('span'); c.className = 'coin-drop'; c.textContent = '\u{1F4B0}'; c.style.cssText = `left:${8 + Math.random() * 84}%;animation-delay:${(Math.random() * .5).toFixed(2)}s;font-size:${14 + Math.round(Math.random() * 10)}px`; host.append(c); setTimeout(() => c.remove(), 1800); }
+  for (let i = 0; i < 10; i++) { const c = icon('coin'); c.classList.add('coin-drop'); c.style.cssText = `left:${8 + Math.random() * 84}%;animation-delay:${(Math.random() * .5).toFixed(2)}s;width:18px;height:18px`; host.append(c); setTimeout(() => c.remove(), 1800); }
 }
 function showResult(e) {
   const t = $('exp-result'); t.hidden = false; t.replaceChildren(o('p', 'exp-headline', `+${e.earned + e.bonusExp} EXP`));
@@ -11063,7 +11064,7 @@ function renderFriends() {
   const tot = (a, b) => (b.totalExp || 0) - (a.totalExp || 0);
   const list = base.filter(p => (B === 'everyone' ? (p.displayName || p.totalExp) : val(p) > 0) || p.id === S.uid).sort((a, b) => val(b) - val(a) || tot(a, b));
   const allList = base.filter(p => (p.totalExp || 0) > 0 || p.id === S.uid).sort(tot);
-  const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'], actv = p => (p.lastDay === td ? 'active today' : p.lastDay === yesterday() ? 'active yesterday' : p.lastDay ? 'last seen ' + p.lastDay : 'new here');
+  const medals = ['award', 'award', 'award'], actv = p => (p.lastDay === td ? 'active today' : p.lastDay === yesterday() ? 'active yesterday' : p.lastDay ? 'last seen ' + p.lastDay : 'new here');
   const myRank = allList.findIndex(p => p.id === S.uid) + 1, ex = m ? m.totalExp : 0, { level, into } = lv(ex);
 
   // The profile card is permanent (so editing is never interrupted); only the board below is rebuilt.
@@ -11086,8 +11087,8 @@ function renderFriends() {
     if (p.id === S.uid) n.append(o('span', 'you-tag', 'you'));
     addTitleBadge(n, p);
     const live = p.lastDay === today() || p.lastDay === yesterday();
-    li.append(o('span', 'board-rank', i < 3 && B !== 'everyone' ? medals[i] : String(i + 1)), bubble(p, 36));
-    w.append(n, o('span', '', B === 'everyone' ? `${p.totalExp || 0} EXP \xB7 ${actv(p)}${p.duelW || p.duelL ? ` \xB7 \u2694\uFE0F ${p.duelW || 0}-${p.duelL || 0}` : ''}` : `Level ${lv(p.totalExp || 0).level}${live && p.streak ? ` \xB7 \u{1F525} ${p.streak}` : ''}${p.challengeState && p.challengeState.day === today() && (p.challengeState.claimed || []).length ? ' \xB7 challenges \u2713' : ''}`));
+    const rank = o('span', 'board-rank'); if (i < 3 && B !== 'everyone') rank.append(icon(medals[i])); else rank.textContent = String(i + 1); li.append(rank, bubble(p, 36));
+    w.append(n, o('span', '', B === 'everyone' ? `${p.totalExp || 0} EXP \xB7 ${actv(p)}${p.duelW || p.duelL ? ` \xB7 duels ${p.duelW || 0}-${p.duelL || 0}` : ''}` : `Level ${lv(p.totalExp || 0).level}${live && p.streak ? ` \xB7 streak ${p.streak}` : ''}${p.challengeState && p.challengeState.day === today() && (p.challengeState.claimed || []).length ? ' \xB7 challenges \u2713' : ''}`));
     if (p.bio) w.append(o('span', 'board-bio', p.bio));
     li.append(w, o('span', 'board-exp', B === 'everyone' ? `Lv ${lv(p.totalExp || 0).level}` : `${val(p)} EXP`));
     li.tabIndex = 0; li.setAttribute('role', 'button'); li.setAttribute('aria-label', `See ${nameOf(p.id)}\u2019s stats`);
@@ -12294,7 +12295,7 @@ const Adm = (() => {
     const live = p.lastDay === today() || p.lastDay === yesterday(), b = S.bans.get(p.id);
     const info = elx('p', 'adm-info', `ID ${p.id} · last active ${p.lastDay || 'never'} · streak ${live ? p.streak || 0 : 0} (best ${p.bestStreak || 0}) · duels ${p.duelW || 0}W-${p.duelL || 0}L-${p.duelD || 0}D · Second Chances ${p.p50 || 0}${b ? ` · ${banActive(b) ? 'BANNED' : 'ban expired'}${b.reason ? ' (' + b.reason + ')' : ''}` : ''}`);
     w.append(elx('label', 'adm-lbl', 'Amount'), inp, chips, g1, g2, g2b, inventoryTools(p), elx('label', 'adm-lbl', 'Moderation'), g3, g4, g5, elx('label', 'adm-lbl', 'Private note'), note, nb, nm, info);
-    if (!can) w.append(elx('p', 'adm-info adm-prot', rt === 'owner' ? '\u{1F451} The owner is protected from every action here.' : '\u{1F6E1}\uFE0F Admins are protected from other admins. Only the owner can act on them.'));
+    if (!can) w.append(elx('p', 'adm-info adm-prot', iconLabel(rt === 'owner' ? 'crown' : 'shield', rt === 'owner' ? 'The owner is protected from every action here.' : 'Admins are protected from other admins. Only the owner can act on them.', 'adm-icon-label')));
     else if (p.id === S.uid) w.append(elx('p', 'adm-info adm-prot', 'This is you. You can\u2019t ban, reset or delete yourself.'));
     return w;
   }
