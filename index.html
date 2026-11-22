@@ -11748,7 +11748,7 @@ const Duel = (() => {
 Object.assign(S, { roster: new Map(), rosterData: new Map(), noAuto: false, autoTry: 0, settings: {}, bugs: [], myBugs: [], owners: new Set(), badgeRole: new Map(), ownerAt: 0, ownFails: 0, isOwner: false, bansAll: new Map(), notes: new Map(), audit: [] });
 const ADMIN_MS = 2 * 3600 * 1000, OWNER_MS = 30 * 60 * 1000, OWNER_AWAY_MS = 5 * 60 * 1000;
 // o() only takes text, so the admin layer uses elx(), which also accepts child elements.
-const elx = (tag, cls, ...kids) => { const n = document.createElement(tag); if (cls) n.className = cls; kids.flat().forEach(k => { if (k === null || k === undefined || k === false) return; n.append(k && k.nodeType ? k : document.createTextNode(String(k))); }); return n; };
+const elx = (tag, cls, ...kids) => { const n = document.createElement(tag); if (cls) n.className = cls; kids.flat().forEach(k => { if (k === null || k === undefined || k === false) return; n.append(k && k.nodeType ? k : (typeof k === 'string' && ['button','h4'].includes(tag) ? iconizeLabel(k, 'adm-icon-label') : document.createTextNode(String(k)))); }); return n; };
 const fsv = () => firebase.firestore;
 const fmtTime = t => { try { return new Date(t).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); } catch { return String(t); } };
 const banActive = b => !!b && (!b.until || b.until > Date.now());
@@ -12104,7 +12104,7 @@ const Bugs = (() => {
 const Adm = (() => {
   const st = { sub: 'overview', q: '', f: 'all', sort: 'exp', open: null, amt: 10, kind: 'info', ttl: 86400000, limit: 40, alq: '', alr: 'all', bf: 'open', bq: '' };
   let root = null, body = null, tabs = null, timer = null, eyebrow = null, title = null, tabsKey = '';
-  const btn = (t, c, f, dis) => { const b = elx('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; if (dis) b.disabled = true; return b; };
+  const btn = (t, c, f, dis) => { const b = elx('button', 'btn ' + c, iconizeLabel(t, 'adm-icon-label')); b.type = 'button'; b.onclick = f; if (dis) b.disabled = true; return b; };
   const ok = m => App.toast(m, 'good');
   const fail = e => App.toast(e && e.code === 'permission-denied' ? 'Blocked by the Firestore rules. Publish the new firestore.rules and check that your role is allowed to do this.' : 'Failed: ' + ((e && e.message) || 'unknown error'), 'warn');
   const run = async (fn, msg) => { try { await fn(); if (msg) ok(msg); return true; } catch (e) { fail(e); return false; } };
@@ -12116,7 +12116,7 @@ const Adm = (() => {
   const canKill = p => p.id !== S.uid && canAct(p);
   const chunked = async fns => { for (let i = 0; i < fns.length; i += 200) { const b = S.db.batch(); fns.slice(i, i + 200).forEach(f => f(b)); await b.commit(); } };
   const tile = (a, b) => elx('div', 'stat-tile', elx('strong', '', String(a)), elx('span', '', b));
-  const roleTag = id => { const r = roleOf(id); if (!r) return null; if (S.admins.has(id) || S.owners.has(id)) return adminBadge(id); return elx('span', 'board-title ' + (r === 'owner' ? 'board-owner' : 'board-admin'), r === 'owner' ? '\u{1F451} Owner' : '\u{1F6E1}\uFE0F Admin'); };
+  const roleTag = id => { const r = roleOf(id); if (!r) return null; if (S.admins.has(id) || S.owners.has(id)) return adminBadge(id); return iconLabel(r === 'owner' ? 'crown' : 'shield', r === 'owner' ? 'Owner' : 'Admin', 'board-title ' + (r === 'owner' ? 'board-owner' : 'board-admin')); };
 
   /* ---------- player actions ---------- */
   async function adjust(p, field, delta, label) {
@@ -12124,7 +12124,7 @@ const Adm = (() => {
     if (await run(() => pdoc(p.id).set({ [field]: next }, { merge: true }), `${nameOf(p.id)}: ${label} ${cur} \u2192 ${next}`)) logAct(delta > 0 ? 'give' : 'take', p.id, `${label} ${cur} \u2192 ${next}`);
   }
   async function setExact(p) {
-    const v = await ask({ title: `Set a value for ${nameOf(p.id)}`, intro: 'This replaces the number. Use it to fix mistakes.', fields: [{ key: 'what', label: 'What to set', options: [['coins', '\u{1F4B0} Coins'], ['totalExp', 'Total EXP'], ['bestStreak', 'Best streak'], ['p50', 'Second Chances']] }, { key: 'n', label: 'New value', type: 'number', value: '0' }], ok: 'Set value', validate: x => (x.n === '' || +x.n < 0 || +x.n > 9999999) ? 'Enter a number from 0 to 9,999,999.' : '' });
+    const v = await ask({ title: `Set a value for ${nameOf(p.id)}`, intro: 'This replaces the number. Use it to fix mistakes.', fields: [{ key: 'what', label: 'What to set', options: [['coins', 'Coins'], ['totalExp', 'Total EXP'], ['bestStreak', 'Best streak'], ['p50', 'Second Chances']] }, { key: 'n', label: 'New value', type: 'number', value: '0' }], ok: 'Set value', validate: x => (x.n === '' || +x.n < 0 || +x.n > 9999999) ? 'Enter a number from 0 to 9,999,999.' : '' });
     if (!v) return; const n = Math.floor(+v.n), cur = Number(p[v.what]) || 0;
     if (await run(() => pdoc(p.id).set({ [v.what]: n }, { merge: true }), `${nameOf(p.id)}: ${v.what} ${cur} \u2192 ${n}`)) logAct('set', p.id, `${v.what} ${cur} \u2192 ${n}`);
   }
