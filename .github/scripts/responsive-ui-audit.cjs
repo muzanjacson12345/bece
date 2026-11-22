@@ -117,10 +117,18 @@ async function main() {
     ...gemWorkerFeatures.map(([label, token]) => ({ label, passed: gemsWorkerSource.includes(token) })),
     ...gemRulesFeatures.map(([label, token]) => ({ label, passed: firestoreRulesSource.includes(token) })),
   ];
-  const clientRewardBlock = source.match(/const GEM_ACHIEVEMENT_REWARDS = Object.freeze\\(\\{([\\s\\S]*?)\\n\\}\\);/);
-  const workerRewardBlock = gemsWorkerSource.match(/const GEM_ACHIEVEMENT_REWARDS = Object.freeze\\(\\{([\\s\\S]*?)\\n\\}\\);/);
-  const clientRewardIds = clientRewardBlock ? [...clientRewardBlock[1].matchAll(/'([^']+)'\\s*:\\s*\\d+/g)].map(match => match[1]) : [];
-  const workerRewardIds = workerRewardBlock ? [...workerRewardBlock[1].matchAll(/'([^']+)'\\s*:\\s*Object\\.freeze\\(\\{ amount:/g)].map(match => match[1]) : [];
+  function readRewardIds(text, marker) {
+    const start = text.indexOf(marker);
+    if (start < 0) return [];
+    const bodyStart = text.indexOf('{', start) + 1;
+    const end = text.indexOf('\n});', bodyStart);
+    if (bodyStart < 1 || end < 0) return [];
+    return text.slice(bodyStart, end).split('\n').map(line => line.trim())
+      .filter(line => line.startsWith("'"))
+      .map(line => line.slice(1, line.indexOf("':")));
+  }
+  const clientRewardIds = readRewardIds(source, 'const GEM_ACHIEVEMENT_REWARDS = Object.freeze({');
+  const workerRewardIds = readRewardIds(gemsWorkerSource, 'const GEM_ACHIEVEMENT_REWARDS = Object.freeze({');
   sourceChecks.push(
     { label: 'Client lists Gem rewards for every achievement', passed: clientRewardIds.length === 47 && new Set(clientRewardIds).size === 47 },
     { label: 'Worker validates one-time Gem rewards for all 47 achievements', passed: workerRewardIds.length === 47 && new Set(workerRewardIds).size === 47 && clientRewardIds.every(id => workerRewardIds.includes(id)) }
