@@ -2,9 +2,9 @@
   "use strict";
 
   const App = window.App;
-  const firebaseApi = window.firebase;
+  const firebaseApi = () => window.firebase;
   const host = document.getElementById("gem-marketplace-body");
-  if (!App || !firebaseApi || !host) return;
+  if (!App || !host) return;
 
   const meta = document.querySelector('meta[name="bece-gems-api"]');
   let apiBase = meta && meta.content ? meta.content.trim() : "";
@@ -23,7 +23,10 @@
     node.addEventListener("click", handler);
     return node;
   };
-  const user = () => firebaseApi.auth && firebaseApi.auth().currentUser;
+  const user = () => {
+    const fb = firebaseApi();
+    return fb && fb.auth ? fb.auth().currentUser : null;
+  };
   const format = value => Number.isSafeInteger(value) ? value.toLocaleString() : "—";
   const state = { loading: false, busy: false, catalog: [], player: {}, inventory: {}, equipped: {} };
 
@@ -83,7 +86,9 @@
   async function loadState() {
     const currentUser = user();
     if (!currentUser) throw new Error("Please sign in to use the Gem Marketplace.");
-    const db = firebaseApi.firestore();
+    const fb = firebaseApi();
+    if (!fb || !fb.firestore) throw new Error("The BECE Hub account service is still connecting. Please try again.");
+    const db = fb.firestore();
     const [catalogResponse, playerSnapshot, inventorySnapshot, itemsSnapshot] = await Promise.all([
       callWorker("/gem-shop/catalog"),
       db.collection("players").doc(currentUser.uid).get(),
