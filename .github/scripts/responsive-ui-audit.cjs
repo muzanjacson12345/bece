@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-custom-svg-icon-system-2026-11-22-r7';
+const EXPECTED_BUILD = 'bece-complete-icon-system-2026-11-22-r8';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -67,6 +67,19 @@ async function main() {
     ['Owner/Admin role-aware navigation', "label.textContent = S.isOwner ? 'Owner' : 'Admin'"],
     ['Renew button uses the in-place handler', "btn('Renew', 'btn-ghost btn-sm', renewCurrentSession)"],
   ];
+  const iconFeatures = [
+    ['Coin balance uses a custom coin drawing', 'id="i-coin"'],
+    ['Gem balance uses a custom faceted gem drawing', 'id="i-gem"'],
+    ['Duels use a proper VS icon', 'id="i-versus"'],
+    ['French and Ghana subjects have custom flag icons', 'id="i-flag-france"'],
+    ['Built-in avatars use the custom SVG renderer', 'function setAvatarGlyph(node, value, extraClass)'],
+    ['Avatar picker shows SVG drawings', "setAvatarGlyph(b, a, 'avatar-choice-icon')"],
+    ['Player avatar badges use the common SVG renderer', 'setAvatarGlyph(bd, PF.safeAv(p.avatar))'],
+    ['Avatar picker tracks saved keys instead of SVG text', 'b.dataset.avatar === cur'],
+    ['Lesson feedback icons use the shared SVG renderer', "setIconAwareText(fb, '✅ ' + why)"],
+    ['Coin celebration particles use the custom coin SVG', "o('span', 'coin-drop', '💰')"],
+    ['Semantic icons use coordinated subject colour families', '.ui-icon--science{color:#368D9D}']
+  ];
   const gemFeatures = [
     ['Gems balance appears in account', '💎 ${Math.max(0, Number(S.doc.gems) || 0)}'],
     ['Quiz saves preserve existing Gems fields without creating missing ones', "preserveGemFields.gems = currentData.gems"],
@@ -122,6 +135,25 @@ async function main() {
     ['Worker stores daily claims with a consecutive-day reward index', "storedOperationId = 'daily:' + day + ':' + rewardDay"],
   ];
 
+  const glyphMapMatch = source.match(/const UI_GLYPH_MAP = new Map\((\[[\s\S]*?\])\);/);
+  let allUiGlyphsResolve = false;
+  if (glyphMapMatch) {
+    try {
+      const glyphPairs = JSON.parse(glyphMapMatch[1]);
+      const symbolIds = new Set([...source.matchAll(/<symbol id="i-([^"]+)"/g)].map(match => match[1]));
+      const avatarGroupStart = source.indexOf('const AVATAR_GROUPS = [');
+      const avatarGroupEnd = source.indexOf('  ];', avatarGroupStart);
+      const avatarText = avatarGroupStart >= 0 && avatarGroupEnd > avatarGroupStart
+        ? source.slice(avatarGroupStart, avatarGroupEnd) : '';
+      const avatarGlyphs = [...avatarText.matchAll(/'([^']+)'/g)].map(match => match[1])
+        .filter(value => /\p{Extended_Pictographic}/u.test(value));
+      const mappedGlyphs = new Set(glyphPairs.map(pair => pair[0]));
+      allUiGlyphsResolve = glyphPairs.length > 0
+        && glyphPairs.every(pair => pair[1] && symbolIds.has(pair[1].name))
+        && avatarGlyphs.length > 0
+        && avatarGlyphs.every(glyph => mappedGlyphs.has(glyph));
+    } catch {}
+  }
   const achievementStart = source.indexOf('const ACHIEVEMENTS = [');
   const clientRewardsStart = source.indexOf('const GEM_ACHIEVEMENT_REWARDS = Object.freeze({', achievementStart);
   const clientRewardsEnd = source.indexOf('});', clientRewardsStart);
@@ -150,10 +182,12 @@ async function main() {
   const sourceChecks = [
     ...ownerFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
     ...gemFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
+    ...iconFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
     ...gemWorkerFeatures.map(([label, token]) => ({ label, passed: gemsWorkerSource.includes(token) })),
     ...gemRulesFeatures.map(([label, token]) => ({ label, passed: firestoreRulesSource.includes(token) })),
   ];
   sourceChecks.push({ label: 'Every achievement has a one-time client and server Gem reward', passed: allAchievementRewardsPresent });
+  sourceChecks.push({ label: 'Every mapped UI glyph and built-in avatar resolves to a custom SVG', passed: allUiGlyphsResolve });
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
 
   const browser = await chromium.launch({ headless: true });
