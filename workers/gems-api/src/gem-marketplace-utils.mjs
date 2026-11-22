@@ -18,25 +18,9 @@ const GEM_ITEMS = Object.freeze({
     slot: "frame", style: "aurora", price: 100,
     description: "A bright multi-tone frame for your profile avatar."
   }),
-  streak_freeze: Object.freeze({
-    id: "streak_freeze", name: "Streak Freeze", category: "useful",
-    field: "sfreezes", price: 25,
-    description: "Protect your study streak for one missed day."
-  }),
-  xp_boost: Object.freeze({
-    id: "xp_boost", name: "XP Boost", category: "useful",
-    field: "xpBoost", price: 30,
-    description: "Doubles EXP on your next eligible quiz."
-  }),
-  second_chance: Object.freeze({
-    id: "second_chance", name: "Second Chance", category: "useful",
-    field: "p50", price: 20,
-    description: "Gives you another answer attempt in an eligible Duel."
-  })
 });
 
 const MAX_GEMS = 1_000_000_000;
-const MAX_ITEM_QUANTITY = 1_000_000;
 
 function requireText(value, code, maxLength = 128) {
   if (typeof value !== "string" || !value.trim() || value.length > maxLength || value.includes("/")) {
@@ -83,6 +67,7 @@ export function buildGemMarketplacePurchase({
   let inventoryRecord = null;
   let result;
 
+  if (item.category !== "cosmetic") throw new TypeError("INVALID_GEM_SHOP_ITEM");
   if (item.category === "cosmetic") {
     if (inventoryItem && inventoryItem.owned === true) throw new Error("GEM_ITEM_ALREADY_OWNED");
     inventoryRecord = {
@@ -100,21 +85,6 @@ export function buildGemMarketplacePurchase({
       price: item.price,
       gems: after,
       owned: true
-    };
-  } else {
-    const quantity = quantityBefore === undefined ? 0 : quantityBefore;
-    if (!Number.isSafeInteger(quantity) || quantity < 0 || quantity >= MAX_ITEM_QUANTITY) {
-      throw new TypeError("INVALID_GEM_SHOP_QUANTITY");
-    }
-    const nextQuantity = quantity + 1;
-    playerUpdates[item.field] = nextQuantity;
-    result = {
-      itemId: item.id,
-      category: "useful",
-      field: item.field,
-      price: item.price,
-      gems: after,
-      quantity: nextQuantity
     };
   }
 
