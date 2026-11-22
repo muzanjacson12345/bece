@@ -169,7 +169,7 @@ async function main() {
         source.includes('.achievement-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--surface);font-size:25px;filter:none;opacity:1}'),
         source.includes("badge.textContent = t.icon + ' ' + t.name;"),
         source.includes('s.textContent = it.icon;'),
-        /<text[^>]*>VS<\\/text>/.test(versusSymbol),
+        /<text[^>]*>VS<\/text>/.test(versusSymbol),
         !/<path/.test(versusSymbol),
         !/#[0-9a-f]{3,8}/i.test(versusSymbol)
       ].every(Boolean);
