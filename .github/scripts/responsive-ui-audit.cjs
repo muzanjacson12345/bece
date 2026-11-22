@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'gem-rewards-mobile-achievements-2026-11-22-r4';
+const EXPECTED_BUILD = 'gem-rewards-all-achievements-icons-2026-11-22-r5';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -87,6 +87,11 @@ async function main() {
     ['Daily Gem reward panel includes a seven-day track', "n===7?'+6 💎':'+1 💎'"],
     ['High-score achievement tracks 90 percent quiz results', "achievementStats.highScore = (achievementStats.highScore || 0) + 1"],
     ['Mobile achievement descriptions can wrap without clipping', '.achievement-copy small{line-height:1.55;word-break:normal}'],
+    ['Achievement descriptions have a dedicated mobile layout row', '.achievement-main {'],
+    ['Overview Duels uses the app SVG icon family', 'href="#i-swords"'],
+    ['Overview Shop uses the app SVG icon family', 'href="#i-shopping-bag"'],
+    ['Mobile Admin uses the app SVG icon family', 'href="#i-shield"'],
+    ['Admin panel tabs use app SVG icons', 'icon(iconName)'],
   ];
   const gemsWorkerSource = fs.readFileSync(path.join(process.cwd(), 'workers/gems-api/src/index.js'), 'utf8');
   const gemWorkerFeatures = [
@@ -99,9 +104,32 @@ async function main() {
     ['Worker defines a fixed price for the approved Gem cosmetic', "'profile-ring-gold': Object.freeze({ price: 50 })"],
     ['Worker has fixed one-time achievement reward amounts', "'quiz-beginner': Object.freeze({ amount: 2"],
     ['Worker verifies saved achievement progress before claiming', "throw new Error('ACHIEVEMENT_NOT_READY')"],
+    ['Worker verifies study-streak progress before claiming Gems', "reward.metric === 'streak'"],
+    ['Worker stores permanent achievement claims', 'gemAchievementClaims'],
     ['Worker requires a normal practice quiz for daily Gems', "throw new Error('DAILY_ACTIVITY_REQUIRED')"],
     ['Worker stores daily claims with a consecutive-day reward index', "storedOperationId = 'daily:' + day + ':' + rewardDay"],
   ];
+
+  const achievementStart = source.indexOf('const ACHIEVEMENTS = [');
+  const clientRewardsStart = source.indexOf('const GEM_ACHIEVEMENT_REWARDS = Object.freeze({', achievementStart);
+  const clientRewardsEnd = source.indexOf('});', clientRewardsStart);
+  const workerRewardsStart = gemsWorkerSource.indexOf('const GEM_ACHIEVEMENT_REWARDS = Object.freeze({');
+  const workerRewardsEnd = gemsWorkerSource.indexOf('});', workerRewardsStart);
+  const achievementText = achievementStart >= 0 && clientRewardsStart > achievementStart
+    ? source.slice(achievementStart, clientRewardsStart) : '';
+  const clientRewardText = clientRewardsStart >= 0 && clientRewardsEnd > clientRewardsStart
+    ? source.slice(clientRewardsStart, clientRewardsEnd) : '';
+  const workerRewardText = workerRewardsStart >= 0 && workerRewardsEnd > workerRewardsStart
+    ? gemsWorkerSource.slice(workerRewardsStart, workerRewardsEnd) : '';
+  const achievementIds = [...achievementText.matchAll(/id:'([^']+)'/g)].map(m => m[1]);
+  const clientRewardIds = [...clientRewardText.matchAll(/'([^']+)':\\s*[0-9]+/g)].map(m => m[1]);
+  const serverRewardIds = [...workerRewardText.matchAll(/'([^']+)':\\s*Object\\.freeze/g)].map(m => m[1]);
+  const allAchievementRewardsPresent = achievementIds.length > 0
+    && new Set(achievementIds).size === achievementIds.length
+    && achievementIds.every(id => clientRewardIds.includes(id) && serverRewardIds.includes(id))
+    && clientRewardIds.length === achievementIds.length
+    && serverRewardIds.length === achievementIds.length;
+
   const firestoreRulesSource = fs.readFileSync(path.join(process.cwd(), 'firestore.rules'), 'utf8');
   const gemRulesFeatures = [
     ['Players cannot create their own Gem cosmetic ownership', "!('gemCosmetics' in request.resource.data)"],
@@ -113,6 +141,7 @@ async function main() {
     ...gemWorkerFeatures.map(([label, token]) => ({ label, passed: gemsWorkerSource.includes(token) })),
     ...gemRulesFeatures.map(([label, token]) => ({ label, passed: firestoreRulesSource.includes(token) })),
   ];
+  sourceChecks.push({ label: 'Every achievement has a one-time client and server Gem reward', passed: allAchievementRewardsPresent });
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
 
   const browser = await chromium.launch({ headless: true });

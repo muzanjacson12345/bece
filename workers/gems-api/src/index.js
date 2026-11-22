@@ -11,12 +11,52 @@ const GEM_COSMETICS = Object.freeze({
   'profile-ring-gold': Object.freeze({ price: 50 })
 });
 const GEM_ACHIEVEMENT_REWARDS = Object.freeze({
-  'quiz-beginner': Object.freeze({ amount: 2, metric: 'quizzes', target: 1 }),
-  'quiz-five': Object.freeze({ amount: 5, metric: 'quizzes', target: 5 }),
-  'quiz-regular': Object.freeze({ amount: 8, metric: 'quizzes', target: 10 }),
-  'quiz-25': Object.freeze({ amount: 15, metric: 'quizzes', target: 25 }),
+  'first-answer': Object.freeze({ amount: 1, metric: 'answered', target: 1 }),
+  'curious-mind': Object.freeze({ amount: 2, metric: 'answered', target: 25 }),
+  'question-pro': Object.freeze({ amount: 3, metric: 'answered', target: 100 }),
+  'question-veteran': Object.freeze({ amount: 5, metric: 'answered', target: 250 }),
+  'question-master': Object.freeze({ amount: 7, metric: 'answered', target: 500 }),
+  'question-legend': Object.freeze({ amount: 10, metric: 'answered', target: 1000 }),
+  'question-1500': Object.freeze({ amount: 13, metric: 'answered', target: 1500 }),
+  'question-2500': Object.freeze({ amount: 17, metric: 'answered', target: 2500 }),
+  'getting-sharp': Object.freeze({ amount: 2, metric: 'correct', target: 25 }),
   'high-score-90': Object.freeze({ amount: 3, metric: 'highScore', target: 1 }),
-  'subject-explorer': Object.freeze({ amount: 5, metric: 'subjects', target: 3 }),
+  'accuracy-star': Object.freeze({ amount: 4, metric: 'correct', target: 100 }),
+  'accuracy-250': Object.freeze({ amount: 6, metric: 'correct', target: 250 }),
+  'accuracy-500': Object.freeze({ amount: 9, metric: 'correct', target: 500 }),
+  'accuracy-1000': Object.freeze({ amount: 13, metric: 'correct', target: 1000 }),
+  'accuracy-2000': Object.freeze({ amount: 18, metric: 'correct', target: 2000 }),
+  'quiz-beginner': Object.freeze({ amount: 2, metric: 'quizzes', target: 1 }),
+  'quiz-five': Object.freeze({ amount: 4, metric: 'quizzes', target: 5 }),
+  'quiz-regular': Object.freeze({ amount: 6, metric: 'quizzes', target: 10 }),
+  'quiz-25': Object.freeze({ amount: 9, metric: 'quizzes', target: 25 }),
+  'quiz-50': Object.freeze({ amount: 13, metric: 'quizzes', target: 50 }),
+  'quiz-100': Object.freeze({ amount: 17, metric: 'quizzes', target: 100 }),
+  'quiz-250': Object.freeze({ amount: 22, metric: 'quizzes', target: 250 }),
+  'subject-explorer': Object.freeze({ amount: 4, metric: 'subjects', target: 3 }),
+  'all-rounder': Object.freeze({ amount: 6, metric: 'subjects', target: 5 }),
+  'all-six-subjects': Object.freeze({ amount: 8, metric: 'subjects', target: 6 }),
+  'science-starter': Object.freeze({ amount: 3, metric: 'sci', target: 10 }),
+  'science-scholar': Object.freeze({ amount: 6, metric: 'sci', target: 50 }),
+  'science-master': Object.freeze({ amount: 10, metric: 'sci', target: 100 }),
+  'all-seven-subjects': Object.freeze({ amount: 11, metric: 'subjects', target: 7 }),
+  'french-starter': Object.freeze({ amount: 3, metric: 'fre', target: 10 }),
+  'french-learner': Object.freeze({ amount: 6, metric: 'fre', target: 50 }),
+  'french-confident': Object.freeze({ amount: 10, metric: 'fre', target: 100 }),
+  'career-starter': Object.freeze({ amount: 3, metric: 'ct', target: 10 }),
+  'career-learner': Object.freeze({ amount: 6, metric: 'ct', target: 50 }),
+  'career-master': Object.freeze({ amount: 10, metric: 'ct', target: 100 }),
+  'all-nine-subjects': Object.freeze({ amount: 13, metric: 'subjects', target: 8 }),
+  'perfect-round': Object.freeze({ amount: 4, metric: 'perfect', target: 1 }),
+  'perfect-5': Object.freeze({ amount: 7, metric: 'perfect', target: 5 }),
+  'perfect-10': Object.freeze({ amount: 11, metric: 'perfect', target: 10 }),
+  'perfect-25': Object.freeze({ amount: 16, metric: 'perfect', target: 25 }),
+  'three-day-streak': Object.freeze({ amount: 4, metric: 'streak', target: 3 }),
+  'week-streak': Object.freeze({ amount: 8, metric: 'streak', target: 7 }),
+  'streak-14': Object.freeze({ amount: 13, metric: 'streak', target: 14 }),
+  'streak-30': Object.freeze({ amount: 22, metric: 'streak', target: 30 }),
+  'streak-60': Object.freeze({ amount: 35, metric: 'streak', target: 60 }),
+  'streak-100': Object.freeze({ amount: 50, metric: 'streak', target: 100 }),
   'achievement-ten': Object.freeze({ amount: 10, metric: 'achievementCount', target: 10 })
 });
 
@@ -238,6 +278,15 @@ function parseStringArray(field) {
     .filter(Boolean).slice(-MAX_RECENT_OPS);
 }
 
+function parseAchievementClaims(field) {
+  const values = field && field.arrayValue && Array.isArray(field.arrayValue.values)
+    ? field.arrayValue.values : [];
+  const valid = values
+    .map(item => item && typeof item.stringValue === 'string' ? item.stringValue : '')
+    .filter(id => Object.prototype.hasOwnProperty.call(GEM_ACHIEVEMENT_REWARDS, id));
+  return [...new Set(valid)];
+}
+
 async function isUserBanned(uid, accessToken) {
   const doc = await getDocument('bans/' + encodeURIComponent(uid), accessToken);
   return !!(doc && doc.fields && doc.fields.active && doc.fields.active.booleanValue === true);
@@ -348,6 +397,7 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
     const before = fields.gems ? parseIntegerField(fields.gems, 0) : 0;
     if (!Number.isSafeInteger(before) || before < 0 || before > MAX_BALANCE) throw new Error('INVALID_GEM_BALANCE');
     const recentOps = parseStringArray(fields.gemOps);
+    const claimedAchievements = parseAchievementClaims(fields.gemAchievementClaims);
     const day = new Date().toISOString().slice(0, 10);
     const finish = async (extra) => {
       await firestoreRequest(
@@ -356,14 +406,14 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
         { method: 'POST', body: { transaction, writes: [] } }
       );
       finished = true;
-      return { previous: before, balance: before, change: 0, duplicate: true, operations: recentOps, ...(extra || {}) };
+      return { previous: before, balance: before, change: 0, duplicate: true, operations: recentOps, gemAchievementClaims: claimedAchievements, ...(extra || {}) };
     };
 
     let amount = 0, storedOperationId = operationId, rewardDay = null, bonusAmount = 0;
     if (action === 'achievement') {
       const reward = GEM_ACHIEVEMENT_REWARDS[achievementId];
       if (!reward || operationId !== 'achievement:' + achievementId) throw new Error('INVALID_ACHIEVEMENT_REWARD');
-      if (recentOps.includes(operationId)) return await finish();
+      if (claimedAchievements.includes(achievementId) || recentOps.includes(operationId)) return await finish();
       const achievementFields = fields.achievements && fields.achievements.mapValue
         && fields.achievements.mapValue.fields ? fields.achievements.mapValue.fields : {};
       const unlocked = parseStringArray(achievementFields.unlocked);
@@ -372,6 +422,7 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
       let progress = 0;
       if (reward.metric === 'subjects') progress = parseStringArray(achievementFields.subjects).length;
       else if (reward.metric === 'achievementCount') progress = unlocked.length;
+      else if (reward.metric === 'streak') progress = parseIntegerField(fields.streak, 0);
       else progress = parseIntegerField(stats[reward.metric], 0);
       if (!unlocked.includes(achievementId) || !Number.isSafeInteger(progress) || progress < reward.target) {
         throw new Error('ACHIEVEMENT_NOT_READY');
@@ -404,6 +455,7 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
     const after = before + amount;
     if (!Number.isSafeInteger(after) || after < 0 || after > MAX_BALANCE) throw new Error('GEM_BALANCE_LIMIT');
     const operations = [...recentOps, storedOperationId].slice(-MAX_RECENT_OPS);
+    const nextAchievementClaims = action === 'achievement' ? [...claimedAchievements, achievementId] : claimedAchievements;
     await firestoreRequest(
       'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
       accessToken,
@@ -416,10 +468,13 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
               name: documentName,
               fields: {
                 gems: { integerValue: String(after) },
-                gemOps: { arrayValue: { values: operations.map(value => ({ stringValue: value })) } }
+                gemOps: { arrayValue: { values: operations.map(value => ({ stringValue: value })) } },
+                ...(action === 'achievement' ? {
+                  gemAchievementClaims: { arrayValue: { values: nextAchievementClaims.map(value => ({ stringValue: value })) } }
+                } : {})
               }
             },
-            updateMask: { fieldPaths: ['gems', 'gemOps'] }
+            updateMask: { fieldPaths: action === 'achievement' ? ['gems', 'gemOps', 'gemAchievementClaims'] : ['gems', 'gemOps'] }
           }]
         }
       }
@@ -427,6 +482,7 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
     finished = true;
     return {
       previous: before, balance: after, change: amount, duplicate: false, operations,
+      ...(action === 'achievement' ? { gemAchievementClaims: nextAchievementClaims } : {}),
       ...(rewardDay ? { rewardDay, bonusAmount } : {})
     };
   } finally {
