@@ -279,6 +279,8 @@ test("Gem Marketplace equipment can only be changed for a cosmetic already owned
   assert.ok(equip.includes("ownedItem.owned !== true"));
   assert.ok(equip.includes("gemShopEquipOperations/"));
   assert.ok(equip.includes("inventory.equipped"));
+  assert.ok(equip.includes("profileEquipment[item.slot] = itemId"));
+  assert.ok(equip.includes("updateMask: { fieldPaths: ['eq'] }"));
   assert.ok(equip.includes("body: { transaction, writes }"));
 });
 
