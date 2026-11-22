@@ -76,7 +76,7 @@ async function main() {
     ['Coin balance shortcut opens the Coins tab in Shops', "App.navigate('shop')"],
     ['Overview shortcut is labelled Shop', '<strong>Shop</strong>'],
     ['Shops has switchable Coins and Gems tabs', 'data-shop-tab="gems"'],
-    ['Gem Shop is rendered in the shared Shops screen', "const gemHost = $('gemshop-body')"],
+    ['Gem Shop is rendered in the shared Shops screen', "const coinHost = $('shop-body'), gemHost = $('gemshop-body')"],
     ['Coin Shop contains only coin items', "content.push(cons, titlesGroup);"],
     ['Profile ring styling is applied to equipped avatars', "b.dataset.gemRing = p.gemCosmetics"],
     ['The client requests a server-verified cosmetic purchase', "purchaseCosmetic: (itemId, operationId) => applyGemChange('purchase', null, operationId, itemId)"],
@@ -122,8 +122,8 @@ async function main() {
   const workerRewardText = workerRewardsStart >= 0 && workerRewardsEnd > workerRewardsStart
     ? gemsWorkerSource.slice(workerRewardsStart, workerRewardsEnd) : '';
   const achievementIds = [...achievementText.matchAll(/id:'([^']+)'/g)].map(m => m[1]);
-  const clientRewardIds = [...clientRewardText.matchAll(/'([^']+)':\\s*[0-9]+/g)].map(m => m[1]);
-  const serverRewardIds = [...workerRewardText.matchAll(/'([^']+)':\\s*Object\\.freeze/g)].map(m => m[1]);
+  const clientRewardIds = [...clientRewardText.matchAll(/'([^']+)':\s*[0-9]+/g)].map(m => m[1]);
+  const serverRewardIds = [...workerRewardText.matchAll(/'([^']+)':\s*Object\.freeze/g)].map(m => m[1]);
   const allAchievementRewardsPresent = achievementIds.length > 0
     && new Set(achievementIds).size === achievementIds.length
     && achievementIds.every(id => clientRewardIds.includes(id) && serverRewardIds.includes(id))
@@ -236,6 +236,9 @@ async function main() {
                 outOfBounds.push({
                   tag: node.tagName.toLowerCase(),
                   className: String(node.className || '').slice(0, 90),
+                  text: String(node.textContent || '').trim().slice(0, 120),
+                  outerHTML: node.outerHTML.slice(0, 500),
+                  parentHTML: node.parentElement ? node.parentElement.outerHTML.slice(0, 700) : '',
                   left: Math.round(rect.left), right: Math.round(rect.right),
                   width: Math.round(rect.width),
                 });
