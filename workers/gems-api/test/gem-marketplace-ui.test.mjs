@@ -13,10 +13,10 @@ test("Gem Marketplace UI fetches its catalogue and purchases only through the tr
   assert.match(source, /db\.collection\("players"\)\.doc\(currentUser\.uid\)/);
 });
 
-test("Gem Marketplace UI supports owned cosmetic equipment and existing useful item counters", async () => {
+test("Gem Marketplace UI supports permanent cosmetic equipment and excludes useful items", async () => {
   assert.match(source, /callWorker\("\/gem-shop\/equip"/);
   assert.match(source, /state\.equipped\[item\.slot\]/);
-  assert.match(source, /state\.player\[item\.field\]/);
+  assert.doesNotMatch(source, /Useful items/);
   assert.match(source, /gem-frame-preview\.sapphire/);
   const html = await readFile(fileURLToPath(new URL("../../../index.html", import.meta.url)), "utf8");
   assert.match(html, /\.av\[data-frame="frame_sapphire"\]/);
