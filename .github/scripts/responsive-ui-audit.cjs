@@ -150,17 +150,33 @@ async function main() {
       const avatarText = avatarGroupStart >= 0 && avatarGroupEnd > avatarGroupStart
         ? source.slice(avatarGroupStart, avatarGroupEnd) : '';
       const avatarGlyphs = [...avatarText.matchAll(/'([^']+)'/g)].map(match => match[1])
-        .filter(value => /\p{Extended_Pictographic}/u.test(value));
+        .filter(value => /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(value));
       const mappedGlyphs = new Set(glyphPairs.map(pair => pair[0]));
       const iconMetadataGlyphs = [...source.matchAll(/(?:\bicon\s*:\s*'([^']+)'|"icon"\s*:\s*"([^"]+)")/g)]
         .map(match => match[1] || match[2])
-        .filter(glyph => /\p{Extended_Pictographic}/u.test(glyph) || /\p{Regional_Indicator}/u.test(glyph));
+        .filter(glyph => /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(glyph));
       const unmappedIconMetadata = [...new Set(iconMetadataGlyphs.filter(glyph => !mappedGlyphs.has(glyph)))];
+
+      const decodeUnicodeEscapes = value => value.replace(/\\u\{([0-9a-f]{1,6})\}|\\u([0-9a-f]{4})/gi,
+        (_, longCode, shortCode) => String.fromCodePoint(parseInt(longCode || shortCode, 16)));
+      const emojiSegments = value => [...new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(value)]
+        .map(part => part.segment)
+        .filter(glyph => /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(glyph));
+      const decodedSource = decodeUnicodeEscapes(source);
+      const allSourceEmoji = [...new Set(emojiSegments(decodedSource))];
+      const unmappedSourceEmoji = allSourceEmoji.filter(glyph => !mappedGlyphs.has(glyph));
+      const directIconTextAssignments = source.split(/\r?\n/)
+        .filter(line => /\.(?:textContent|innerText)\s*=/.test(line))
+        .filter(line => emojiSegments(decodeUnicodeEscapes(line)).length > 0
+          && !line.includes('setIconAwareText('));
+
       allUiGlyphsResolve = glyphPairs.length > 0
         && glyphPairs.every(pair => pair[1] && symbolIds.has(pair[1].name))
         && avatarGlyphs.length > 0
         && avatarGlyphs.every(glyph => mappedGlyphs.has(glyph))
         && unmappedIconMetadata.length === 0
+        && unmappedSourceEmoji.length === 0
+        && directIconTextAssignments.length === 0
         && source.includes('href="#i-external-link"');
     } catch {}
   }
