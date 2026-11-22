@@ -791,6 +791,15 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Gem Marketplace purchase and equipment receipts are private and Worker-only.
+    match /gemShopOperations/{operationId} {
+      allow read, write: if false;
+    }
+
+    match /gemShopEquipOperations/{operationId} {
+      allow read, write: if false;
+    }
+
     match /gemInventories/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isStaff());
       allow create, update, delete: if false;
