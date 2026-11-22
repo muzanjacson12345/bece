@@ -27,6 +27,9 @@ All POST endpoints require a Firebase ID token in the `Authorization: Bearer <to
 | `GET /health` | Reports whether the Worker service-account secret is configured. It does not reveal the secret. |
 | `POST /practice` | Verifies submitted question IDs and answers, then computes practice/daily quiz EXP, Coins, Gems, streaks, achievements and challenge progress server-side. Requires a UUID operation ID. |
 | `POST /shop` | Purchases an allow-listed title or consumable at the fixed server catalog price. The browser cannot set the price, quantity or target UID. Uses a UUID purchase receipt. |
+| `POST /gem-shop/catalog` | Returns the server-authoritative Gem Marketplace catalogue after Firebase authentication. |
+| `POST /gem-shop/purchase` | Purchases a cosmetic unlock or useful consumable with Gems. Prices and item effects are fixed on the Worker; the balance, inventory, permanent receipt and Gem transaction history are written atomically. |
+| `POST /gem-shop/equip` | Equips or unequips a cosmetic already owned by the signed-in player. The Worker checks ownership and writes the equipped slot and a private idempotency receipt. |
 | `POST /powerups/use` | Consumes one supported power-up. Current use is Second Chance (`p50`) inside an active Duel. The server records the question index and validates idempotent retries. |
 | `POST /duels/start` | Starts or resumes the signed-in participant's private Duel progress session. |
 | `POST /duels/next` | Opens the server-timed clock for the expected question in the Duel sequence. |
@@ -56,6 +59,7 @@ The Worker uses permanent, private Firestore receipts so a network retry cannot 
 - `gemEventAnswerOperations/{uid}_{operationId}` for individual event answer submissions.
 - `gemEventPrizeOperations/{eventId}_{uid}` for each one-time event Gem payout.
 - `gemTransactions/{transactionId}` for manual Owner adjustments, first-time achievement awards and event prize payouts. These records are read-only to clients and readable only by the recipient (or Owner).
+- `gemShopOperations/{uid}_{operationId}` and `gemShopEquipOperations/{uid}_{operationId}` for private, permanent marketplace purchase/equipment receipts.
 - `gemRewardClaims/{uid}_{achievementId}` for each first-time achievement Gem claim. Each claim is created in the same transaction as the balance update.
 - Achievement and event Gem history records are written atomically with the matching balance change and permanent receipt. This gives the future wallet-history screen one consistent, server-managed source to read without changing the current Gem reward amounts.
 
