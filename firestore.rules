@@ -86,6 +86,42 @@ service cloud.firestore {
       return isOwner() || isAdmin();
     }
 
+    // Existing free frame IDs remain available. New Gem frames must be
+    // present in the signed-in player's private, server-written inventory.
+    function gemFrameItemPath(uid, itemId) {
+      return /databases/$(database)/documents/gemInventories/$(uid)/items/$(itemId);
+    }
+
+    function ownsGemFrame(uid, frameId) {
+      let path = gemFrameItemPath(uid, frameId);
+      return frameId in ['frame_sapphire', 'frame_royal', 'frame_aurora']
+        && exists(path)
+        && get(path).data.get('uid', '') == uid
+        && get(path).data.get('itemId', '') == frameId
+        && get(path).data.get('category', '') == 'cosmetic'
+        && get(path).data.get('slot', '') == 'frame'
+        && get(path).data.get('owned', false) == true;
+    }
+
+    function validGemFrameSelection(uid, previousFrame, nextFrame) {
+      return nextFrame == previousFrame
+        || nextFrame == ''
+        || nextFrame in ['f_gold', 'f_emerald', 'f_sunset', 'f_rainbow']
+        || ownsGemFrame(uid, nextFrame);
+    }
+
+    function validGemFrameUpdate(uid) {
+      let oldEq = resource.data.get('eq', {});
+      let newEq = request.resource.data.get('eq', {});
+      return oldEq is map
+        && newEq is map
+        && validGemFrameSelection(
+          uid,
+          oldEq.get('frame', ''),
+          newEq.get('frame', '')
+        );
+    }
+
     function rosterExists(id) {
       return exists(rosterPath(id));
     }
@@ -561,6 +597,10 @@ service cloud.firestore {
             && request.resource.data.get('dayExp', 0) == 0
             && request.resource.data.get('streak', 0) == 0
             && request.resource.data.get('bestStreak', 0) == 0
+            && request.resource.data.get('eq', {}) is map
+            && validGemFrameSelection(
+              id, '', request.resource.data.get('eq', {}).get('frame', '')
+            )
             && request.resource.data.get('duelW', 0) == 0
             && request.resource.data.get('duelL', 0) == 0
             && request.resource.data.get('duelD', 0) == 0
@@ -575,13 +615,17 @@ service cloud.firestore {
                    'totalExp', 'weekKey', 'weekExp', 'dayKey', 'dayExp',
                    'streak', 'bestStreak', 'lastDay', 'counted',
                    'challengeState', 'achievements', 'recent'
-                 ]))
+                 ])
+             && (!request.resource.data.diff(resource.data).affectedKeys()
+                    .hasAny(['eq']) || validGemFrameUpdate(id)))
         || (isAdmin() && !targetIsStaff(id)
             && !request.resource.data.diff(resource.data).affectedKeys()
                  .hasAny([
                    'gems', 'gemOps', 'owned', 'p50', 'sfreezes', 'xpBoost',
                    'coins', 'duelW', 'duelL', 'duelD', 'dcDay', 'dcN'
-                 ]));
+                 ])
+             && (!request.resource.data.diff(resource.data).affectedKeys()
+                    .hasAny(['eq']) || validGemFrameUpdate(id)));
 
       // The staff UI explicitly prevents self-deletion. Owner may remove
       // players/admins but not another Owner; Admin may remove ordinary players.
