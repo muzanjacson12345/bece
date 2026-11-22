@@ -10251,8 +10251,6 @@ App.on('quiz:finished', async ev => {
       if (Object.prototype.hasOwnProperty.call(currentData, 'gemOps')) preserveGemFields.gemOps = currentData.gemOps;
       if (Object.prototype.hasOwnProperty.call(currentData, 'gemCosmetics')) preserveGemFields.gemCosmetics = currentData.gemCosmetics;
       if (Object.prototype.hasOwnProperty.call(currentData, 'equippedGemCosmetic')) preserveGemFields.equippedGemCosmetic = currentData.equippedGemCosmetic;
-      if (Object.prototype.hasOwnProperty.call(currentData, 'gemCosmetics')) preserveGemFields.gemCosmetics = currentData.gemCosmetics;
-      if (Object.prototype.hasOwnProperty.call(currentData, 'equippedGemCosmetic')) preserveGemFields.equippedGemCosmetic = currentData.equippedGemCosmetic;
       transaction.set(playerRef, { ...next, ...preserveGemFields });
     });
     S.doc = { ...next, ...preserveGemFields };
@@ -10338,8 +10336,6 @@ const me = () => ({ id: S.uid, ...(S.doc || {}) });
 function paintBubble(b, p) {
   const pal = PF.palette(p.color);
   b.dataset.frame = (p.eq && p.eq.frame) || '';
-  b.dataset.gemRing = p.gemCosmetics && p.gemCosmetics['profile-ring-gold'] === true
-    && p.equippedGemCosmetic === 'profile-ring-gold' ? 'gold' : '';
   b.dataset.gemRing = p.gemCosmetics && p.gemCosmetics['profile-ring-gold'] === true
     && p.equippedGemCosmetic === 'profile-ring-gold' ? 'gold' : '';
   const oldBadge = b.querySelector('.av-badge'); if (oldBadge) oldBadge.remove();
