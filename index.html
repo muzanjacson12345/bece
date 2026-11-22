@@ -11017,15 +11017,12 @@ const Shop = (() => {
 const GemShop = (() => {
   let el = null;
   function render() {
-    if (!el) return;
+    const host = $('gemshop-body');
+    if (!el) el = o('section', 'card gem-shop-card');
     el.replaceChildren(Shop.gemStore(S.doc || {}));
+    if (host && !host.contains(el)) host.replaceChildren(el);
   }
-  function build() {
-    el = o('section', 'card gem-shop-card');
-    render();
-    return el;
-  }
-  return { el: () => el || build(), render };
+  return { el: () => { render(); return el; }, render };
 })();
 
 /* ===== 1v1 Duel (Firestore collection "duels") ===== */
