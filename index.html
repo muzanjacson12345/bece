@@ -11819,7 +11819,7 @@ function showNotice(n) {
   c.append(elx('h3', '', '\u{1F4E9} Message from the admin team'), elx('p', '', n.text), go); ov.append(c); document.body.append(ov);
 }
 
-const ANN_ICON = { info: '\u{1F4E2}', event: '\u{1F389}', warn: '\u26A0\uFE0F', critical: '\u{1F6A8}' };
+const ANN_ICON = { info: 'megaphone', event: 'sparkles', warn: 'alert', critical: 'alert' };
 const ANN_NAME = { info: 'Announcement', event: 'Event', warn: 'Important notice', critical: 'Urgent from the owner' };
 const annSeen = id => { try { return localStorage.getItem('ann-seen') === id; } catch { return false; } };
 const annPopped = id => { try { return localStorage.getItem('ann-popped') === id; } catch { return false; } };
@@ -11830,7 +11830,7 @@ function annPopup(a) {
   const c = elx('div', 'card pin-card ann-pop-card'), go = elx('button', 'btn btn-primary', 'Got it'); c.dataset.kind = a.kind || 'info'; go.type = 'button';
   const close = () => { try { localStorage.setItem('ann-popped', a.id); } catch {} ov.remove(); };
   go.onclick = close; ov.addEventListener('click', e => { if (e.target === ov) close(); });
-  c.append(elx('div', 'ann-pop-ic', ANN_ICON[a.kind] || ANN_ICON.info), elx('p', 'ann-pop-label', ANN_NAME[a.kind] || ANN_NAME.info), elx('p', 'ann-pop-text', a.text), a.by ? elx('small', 'muted', '\u2014 ' + a.by) : null, go);
+  c.append(elx('div', 'ann-pop-ic', icon(ANN_ICON[a.kind] || ANN_ICON.info)), elx('p', 'ann-pop-label', ANN_NAME[a.kind] || ANN_NAME.info), elx('p', 'ann-pop-text', a.text), a.by ? elx('small', 'muted', '\u2014 ' + a.by) : null, go);
   ov.append(c); document.body.append(ov); setTimeout(() => go.focus(), 60);
 }
 function showAnn() {
@@ -11839,7 +11839,7 @@ function showAnn() {
   if (!live) { if (bar) bar.remove(); return; }
   if (!bar) { bar = o('div', 'ann-bar'); bar.id = 'ann-bar'; bar.setAttribute('role', 'status'); const m = $('main'); m.parentNode.insertBefore(bar, m); }
   bar.dataset.kind = a.kind || 'info';
-  const kids = [o('span', 'ann-ic', ANN_ICON[a.kind] || ANN_ICON.info), elx('div', 'ann-body', elx('span', 'ann-label', ANN_NAME[a.kind] || ANN_NAME.info), elx('div', 'ann-txt', a.text))];
+  const kids = [elx('span', 'ann-ic', icon(ANN_ICON[a.kind] || ANN_ICON.info)), elx('div', 'ann-body', elx('span', 'ann-label', ANN_NAME[a.kind] || ANN_NAME.info), elx('div', 'ann-txt', a.text))];
   if (!critical) { const x = o('button', 'ann-x', '\u2715'); x.type = 'button'; x.setAttribute('aria-label', 'Dismiss announcement'); x.onclick = () => { try { localStorage.setItem('ann-seen', a.id); } catch {} showAnn(); }; kids.push(x); }
   bar.replaceChildren(...kids);
   const small = window.matchMedia && matchMedia('(max-width: 720px)').matches;
@@ -12402,11 +12402,11 @@ const Adm = (() => {
     const kind = document.createElement('select'), ttl = document.createElement('select'); kind.className = ttl.className = 'adm-sel';
     [['info', '\u{1F4E2} Info'], ['event', '\u{1F389} Event'], ['warn', '\u26A0\uFE0F Warning'], ...(S.isOwner ? [['critical', '\u{1F6A8} Urgent (owner only)']] : [])].forEach(([v, t]) => kind.append(new Option(t, v))); kind.value = st.kind; if (!kind.value) { kind.value = 'info'; st.kind = 'info'; }
     [[3600000, 'Disappears in 1 hour'], [86400000, 'Disappears in 24 hours'], [604800000, 'Disappears in 7 days'], [0, 'Stays until I clear it']].forEach(([v, t]) => ttl.append(new Option(t, v))); ttl.value = String(st.ttl); ttl.onchange = () => { st.ttl = +ttl.value; };
-    const upd = () => { cnt.textContent = `${ta.value.length} / 280`; prev.dataset.kind = kind.value; prev.replaceChildren(elx('span', 'ann-ic', ANN_ICON[kind.value]), elx('div', 'ann-txt', ta.value.trim() || 'Preview of your announcement')); };
+    const upd = () => { cnt.textContent = `${ta.value.length} / 280`; prev.dataset.kind = kind.value; prev.replaceChildren(elx('span', 'ann-ic', icon(ANN_ICON[kind.value])), elx('div', 'ann-txt', ta.value.trim() || 'Preview of your announcement')); };
     kind.onchange = () => { st.kind = kind.value; upd(); }; ta.oninput = upd; upd();
     const tpl = elx('div', 'adm-chips'); TEMPLATES.forEach(([l, t]) => { const c = elx('button', 'adm-chip', l); c.type = 'button'; c.onclick = () => { ta.value = t; upd(); ta.focus(); }; tpl.append(c); });
     const pinWrap = elx('div'), pinBox = document.createElement('input'); pinBox.type = 'checkbox'; pinBox.id = 'ann-pin';
-    if (S.isOwner) pinWrap.append(elx('label', 'adm-info', pinBox, ' \u{1F4CC} Pin it: admins can\u2019t edit or clear it'));
+        if (S.isOwner) pinWrap.append(elx('label', 'adm-info', pinBox, iconLabel('pin','Pin it: admins can’t edit or clear it')));
     const row = elx('div', 'adm-btns');
     row.append(btn('\u{1F4E3} Post to everyone', 'btn-primary btn-sm', async () => {
       const text = ta.value.trim(); if (text.length < 3) return App.toast('Write a message first.', 'warn');
