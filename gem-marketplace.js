@@ -27,19 +27,14 @@
   const format = value => Number.isSafeInteger(value) ? value.toLocaleString() : "—";
   const state = { loading: false, busy: false, catalog: [], player: {}, inventory: {}, equipped: {} };
 
-  const frameStyles = {
-    sapphire: "3px solid #3988e8",
-    royal: "3px solid #9b68df",
-    aurora: "3px solid #31b9a5"
-  };
   function installCosmeticStyles() {
     if (!document.getElementById("gem-marketplace-styles")) {
       const style = document.createElement("style");
       style.id = "gem-marketplace-styles";
       style.textContent = [
-        ':root[data-gem-frame="sapphire"] .av{border:3px solid #3988e8!important;box-shadow:0 0 0 2px #3988e833!important}',
-        ':root[data-gem-frame="royal"] .av{border:3px solid #9b68df!important;box-shadow:0 0 0 2px #9b68df33!important}',
-        ':root[data-gem-frame="aurora"] .av{border:3px solid #31b9a5!important;box-shadow:0 0 0 2px #31b9a533!important}',
+        '.av[data-frame="frame_sapphire"]{border:3px solid #3988e8!important;box-shadow:0 0 0 2px #3988e833!important}',
+        '.av[data-frame="frame_royal"]{border:3px solid #9b68df!important;box-shadow:0 0 0 2px #9b68df33!important}',
+        '.av[data-frame="frame_aurora"]{border:3px solid #31b9a5!important;box-shadow:0 0 0 2px #31b9a533!important}',
         '.gem-frame-preview{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2,#eef2f8);font-size:20px}',
         '.gem-frame-preview.sapphire{border:3px solid #3988e8;box-shadow:0 0 0 2px #3988e833}',
         '.gem-frame-preview.royal{border:3px solid #9b68df;box-shadow:0 0 0 2px #9b68df33}',
@@ -52,9 +47,7 @@
       ].join("");
       document.head.append(style);
     }
-    document.documentElement.dataset.gemFrame = state.equipped.frame
-      ? (state.inventory[state.equipped.frame] && state.inventory[state.equipped.frame].style) || ""
-      : "";
+    delete document.documentElement.dataset.gemFrame;
   }
 
   function showMessage(title, copy, retry) {
