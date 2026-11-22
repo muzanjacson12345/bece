@@ -664,6 +664,7 @@ async function applyGemMarketplacePurchase(uid, itemId, operationId, accessToken
 
     if (operationDoc) {
       const stored = decodeFirestoreFields(operationDoc.fields || {});
+      if (stored.itemId !== itemId) throw new Error('IDEMPOTENCY_KEY_REUSED');
       await firestoreRequest(
         'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
         accessToken,
@@ -756,6 +757,9 @@ async function applyGemMarketplaceEquip(uid, itemId, operationId, shouldEquip, a
     ]);
     if (operationDoc) {
       const stored = decodeFirestoreFields(operationDoc.fields || {});
+      if (stored.itemId !== itemId || stored.action !== (shouldEquip ? 'equip' : 'unequip')) {
+        throw new Error('IDEMPOTENCY_KEY_REUSED');
+      }
       await firestoreRequest(
         'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
         accessToken,
