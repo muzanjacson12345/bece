@@ -152,9 +152,9 @@ async function main() {
       const avatarGlyphs = [...avatarText.matchAll(/'([^']+)'/g)].map(match => match[1])
         .filter(value => /\p{Extended_Pictographic}/u.test(value));
       const mappedGlyphs = new Set(glyphPairs.map(pair => pair[0]));
-      const iconMetadataGlyphs = [...source.matchAll(/(?:\\bicon\\s*:\\s*'([^']+)'|"icon"\\s*:\\s*"([^"]+)")/g)]
+      const iconMetadataGlyphs = [...source.matchAll(/(?:\bicon\s*:\s*'([^']+)'|"icon"\s*:\s*"([^"]+)")/g)]
         .map(match => match[1] || match[2])
-        .filter(glyph => /\\p{Extended_Pictographic}/u.test(glyph) || /\\p{Regional_Indicator}/u.test(glyph));
+        .filter(glyph => /\p{Extended_Pictographic}/u.test(glyph) || /\p{Regional_Indicator}/u.test(glyph));
       const unmappedIconMetadata = [...new Set(iconMetadataGlyphs.filter(glyph => !mappedGlyphs.has(glyph)))];
       allUiGlyphsResolve = glyphPairs.length > 0
         && glyphPairs.every(pair => pair[1] && symbolIds.has(pair[1].name))
