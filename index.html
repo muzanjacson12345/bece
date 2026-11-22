@@ -3631,6 +3631,8 @@ pre, code { overflow-wrap: anywhere; }
  .challenge-heading .daily-info>p.muted{font-size:14px;line-height:1.55}
  .challenge-icon{flex:0 0 38px}
 }
+
+.daily-gem-day .daily-gem-day-reward{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.daily-gem-day-reward>.icon{width:12px;height:12px;flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -3754,7 +3756,7 @@ pre, code { overflow-wrap: anywhere; }
     <section id="daily-card" class="daily-card challenge-card" aria-label="Daily challenges" aria-live="polite"></section>
 
     <a class="achievement-launch" href="#/achievements" aria-label="Open your achievements">
-      <span class="achievement-launch-icon" aria-hidden="true">🏆</span>
+      <span class="achievement-launch-icon" aria-hidden="true"><svg class="icon"><use href="#i-trophy"/></svg></span>
       <span class="achievement-launch-copy"><strong>Achievements</strong><small>Track your badges, milestones and progress</small></span>
       <span class="achievement-launch-arrow" aria-hidden="true">→</span>
     </a>
@@ -10344,7 +10346,8 @@ function renderAchievements() {
           const claimed = gemOps.includes('achievement:' + a.id);
           if (claimed) rewardRow.append(o('span','achievement-status','✓ Gems claimed'));
           else {
-            const claim = o('button','btn btn-primary btn-sm achievement-claim','Claim Gems');
+            const claim = o('button','btn btn-primary btn-sm achievement-claim');
+            claim.append(iconLabel('gem','Claim Gems'));
             claim.type = 'button';
             claim.onclick = async () => {
               claim.disabled = true; claim.textContent = 'Claiming…';
@@ -10408,7 +10411,7 @@ function renderDaily() {
   const days = o('div','daily-gem-days');
   for(let n=1;n<=7;n++){
     const tile=o('div','daily-gem-day'+(n<rewardDay || (claimedToday && n<=claimedDayNumber) ? ' is-done' : '')+(n===rewardDay && !claimedToday ? ' is-current' : ''));
-    tile.append(o('strong','', 'Day '+n),o('span','',n===7?'+6 Gems':'+1 Gem'));
+    tile.append(o('strong','', 'Day '+n),iconLabel('gem',n===7?'+6 Gems':'+1 Gem','daily-gem-day-reward'));
     if(claimedToday && n===claimedDayNumber) tile.append(o('small','','Claimed'));
     days.append(tile);
   }
@@ -10417,7 +10420,8 @@ function renderDaily() {
     canClaimGem ? (rewardDay===7 ? 'Day 7 includes a 1-Gem reward plus a 5-Gem bonus.' : 'Your practice quiz is complete. Your daily Gem reward is ready.') :
     (!S.db || !S.uid ? 'Sign in to save your daily Gem rewards.' : 'Complete one normal practice quiz today to unlock your daily Gem reward.');
   action.append(o('p','',actionText));
-  const claimDaily = o('button','btn btn-primary btn-sm','Claim '+(rewardDay===7?'+6':' +1')+' Gems');
+  const claimDaily = o('button','btn btn-primary btn-sm');
+  claimDaily.append(iconLabel('gem','Claim '+(rewardDay===7?'+6':' +1')+' Gems'));
   claimDaily.type='button'; claimDaily.disabled=claimedToday || !canClaimGem;
   claimDaily.onclick=async()=>{
     claimDaily.disabled=true; claimDaily.textContent='Claiming…';
