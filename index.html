@@ -10222,7 +10222,6 @@ function renderAchievements() {
   const data = S.doc && S.doc.achievements || {}, stats = data.stats || {};
   const unlocked = Array.isArray(data.unlocked) ? data.unlocked : [];
   const gemOps = Array.isArray(S.doc && S.doc.gemOps) ? S.doc.gemOps : [];
-  const gemAchievementClaims = Array.isArray(S.doc && S.doc.gemAchievementClaims) ? S.doc.gemAchievementClaims : [];
   const total = ACHIEVEMENTS.length;
   const overall = ACHIEVEMENTS.reduce((n,a) => n + (unlocked.includes(a.id) ? 1 : 0),0);
   e.replaceChildren();
@@ -10259,7 +10258,7 @@ function renderAchievements() {
         const rewardRow = o('div','achievement-reward-row');
         rewardRow.append(o('span','achievement-gem-reward','💎 ' + gemReward + ' Gems'));
         if (earned) {
-          const claimed = gemAchievementClaims.includes(a.id) || gemOps.includes('achievement:' + a.id);
+          const claimed = gemOps.includes('achievement:' + a.id);
           if (claimed) rewardRow.append(o('span','achievement-status','✓ Gems claimed'));
           else {
             const claim = o('button','btn btn-primary btn-sm achievement-claim','Claim Gems');
@@ -10463,7 +10462,6 @@ App.on('quiz:finished', async ev => {
       if (Object.prototype.hasOwnProperty.call(currentData, 'gemOps')) preserveGemFields.gemOps = currentData.gemOps;
       if (Object.prototype.hasOwnProperty.call(currentData, 'gemCosmetics')) preserveGemFields.gemCosmetics = currentData.gemCosmetics;
       if (Object.prototype.hasOwnProperty.call(currentData, 'equippedGemCosmetic')) preserveGemFields.equippedGemCosmetic = currentData.equippedGemCosmetic;
-      if (Object.prototype.hasOwnProperty.call(currentData, 'gemAchievementClaims')) preserveGemFields.gemAchievementClaims = currentData.gemAchievementClaims;
       transaction.set(playerRef, { ...next, ...preserveGemFields });
     });
     S.doc = { ...next, ...preserveGemFields };
@@ -12994,16 +12992,14 @@ const Gems = (() => {
     if (!Number.isSafeInteger(data.balance) || data.balance < 0 || data.balance > MAX_BALANCE) {
       throw new Error('INVALID_GEMS_SERVICE_RESPONSE');
     }
-    const operations = Array.isArray(data.operations) ? data.operations.slice(-100) : [];
+    const operations = Array.isArray(data.operations) ? data.operations : [];
     const nextDoc = { ...(S.doc || {}), gems: data.balance, gemOps: operations };
-    if (Array.isArray(data.gemAchievementClaims)) nextDoc.gemAchievementClaims = data.gemAchievementClaims;
     if (data.gemCosmetics && typeof data.gemCosmetics === 'object') nextDoc.gemCosmetics = data.gemCosmetics;
     if (typeof data.equippedGemCosmetic === 'string') nextDoc.equippedGemCosmetic = data.equippedGemCosmetic;
     S.doc = nextDoc;
     const mine = (S.players || []).find(player => player.id === S.uid);
     if (mine) {
       mine.gems = data.balance; mine.gemOps = operations;
-      if (Array.isArray(data.gemAchievementClaims)) mine.gemAchievementClaims = data.gemAchievementClaims;
       if (data.gemCosmetics && typeof data.gemCosmetics === 'object') mine.gemCosmetics = data.gemCosmetics;
       if (typeof data.equippedGemCosmetic === 'string') mine.equippedGemCosmetic = data.equippedGemCosmetic;
     }

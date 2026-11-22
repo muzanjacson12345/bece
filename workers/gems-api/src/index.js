@@ -6,7 +6,6 @@ const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const FIRESTORE_ROOT = 'https://firestore.googleapis.com/v1/projects/' + PROJECT_ID + '/databases/(default)/documents';
 const MAX_BALANCE = 1000000000;
 const MAX_OPERATION_AMOUNT = 1000000;
-const MAX_RECENT_OPS = 100;
 const GEM_COSMETICS = Object.freeze({
   'profile-ring-gold': Object.freeze({ price: 50 })
 });
@@ -275,16 +274,7 @@ function parseStringArray(field) {
   const values = field && field.arrayValue && Array.isArray(field.arrayValue.values)
     ? field.arrayValue.values : [];
   return values.map(item => item && typeof item.stringValue === 'string' ? item.stringValue : '')
-    .filter(Boolean).slice(-MAX_RECENT_OPS);
-}
-
-function parseAchievementClaims(field) {
-  const values = field && field.arrayValue && Array.isArray(field.arrayValue.values)
-    ? field.arrayValue.values : [];
-  const valid = values
-    .map(item => item && typeof item.stringValue === 'string' ? item.stringValue : '')
-    .filter(id => Object.prototype.hasOwnProperty.call(GEM_ACHIEVEMENT_REWARDS, id));
-  return [...new Set(valid)];
+    .filter(Boolean);
 }
 
 async function isUserBanned(uid, accessToken) {
@@ -345,7 +335,7 @@ async function applyGemCosmeticPurchase(uid, itemId, operationId, accessToken) {
     }
     const after = before - item.price;
     if (!Number.isSafeInteger(after) || after < 0 || after > MAX_BALANCE) throw new Error('GEM_BALANCE_LIMIT');
-    const operations = [...recentOps, operationId].slice(-MAX_RECENT_OPS);
+    const operations = [...recentOps, operationId];
     const nextCosmetics = { ...cosmeticFields, [itemId]: { booleanValue: true } };
     const nextOwnedCosmetics = { ...ownedCosmetics, [itemId]: true };
     await firestoreRequest(
@@ -397,7 +387,6 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
     const before = fields.gems ? parseIntegerField(fields.gems, 0) : 0;
     if (!Number.isSafeInteger(before) || before < 0 || before > MAX_BALANCE) throw new Error('INVALID_GEM_BALANCE');
     const recentOps = parseStringArray(fields.gemOps);
-    const claimedAchievements = parseAchievementClaims(fields.gemAchievementClaims);
     const day = new Date().toISOString().slice(0, 10);
     const finish = async (extra) => {
       await firestoreRequest(
@@ -406,14 +395,14 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
         { method: 'POST', body: { transaction, writes: [] } }
       );
       finished = true;
-      return { previous: before, balance: before, change: 0, duplicate: true, operations: recentOps, gemAchievementClaims: claimedAchievements, ...(extra || {}) };
+      return { previous: before, balance: before, change: 0, duplicate: true, operations: recentOps, ...(extra || {}) };
     };
 
     let amount = 0, storedOperationId = operationId, rewardDay = null, bonusAmount = 0;
     if (action === 'achievement') {
       const reward = GEM_ACHIEVEMENT_REWARDS[achievementId];
       if (!reward || operationId !== 'achievement:' + achievementId) throw new Error('INVALID_ACHIEVEMENT_REWARD');
-      if (claimedAchievements.includes(achievementId) || recentOps.includes(operationId)) return await finish();
+      if (recentOps.includes(operationId)) return await finish();
       const achievementFields = fields.achievements && fields.achievements.mapValue
         && fields.achievements.mapValue.fields ? fields.achievements.mapValue.fields : {};
       const unlocked = parseStringArray(achievementFields.unlocked);
@@ -454,8 +443,8 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
 
     const after = before + amount;
     if (!Number.isSafeInteger(after) || after < 0 || after > MAX_BALANCE) throw new Error('GEM_BALANCE_LIMIT');
-    const operations = [...recentOps, storedOperationId].slice(-MAX_RECENT_OPS);
-    const nextAchievementClaims = action === 'achievement' ? [...claimedAchievements, achievementId] : claimedAchievements;
+    // The server-protected gemOps history is append-only so achievement:<id> claims remain permanent.
+    const operations = [...recentOps, storedOperationId];
     await firestoreRequest(
       'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
       accessToken,
@@ -468,13 +457,10 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
               name: documentName,
               fields: {
                 gems: { integerValue: String(after) },
-                gemOps: { arrayValue: { values: operations.map(value => ({ stringValue: value })) } },
-                ...(action === 'achievement' ? {
-                  gemAchievementClaims: { arrayValue: { values: nextAchievementClaims.map(value => ({ stringValue: value })) } }
-                } : {})
+                gemOps: { arrayValue: { values: operations.map(value => ({ stringValue: value })) } }
               }
             },
-            updateMask: { fieldPaths: action === 'achievement' ? ['gems', 'gemOps', 'gemAchievementClaims'] : ['gems', 'gemOps'] }
+            updateMask: { fieldPaths: ['gems', 'gemOps'] }
           }]
         }
       }
@@ -482,7 +468,6 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
     finished = true;
     return {
       previous: before, balance: after, change: amount, duplicate: false, operations,
-      ...(action === 'achievement' ? { gemAchievementClaims: nextAchievementClaims } : {}),
       ...(rewardDay ? { rewardDay, bonusAmount } : {})
     };
   } finally {
@@ -523,7 +508,7 @@ async function applyGemChange(uid, action, amount, operationId, accessToken) {
     }
     const after = action === 'earn' ? before + amount : before - amount;
     if (!Number.isSafeInteger(after) || after < 0 || after > MAX_BALANCE) throw new Error('GEM_BALANCE_LIMIT');
-    const operations = [...recentOps, operationId].slice(-MAX_RECENT_OPS);
+    const operations = [...recentOps, operationId];
     const fieldsToWrite = {
       gems: { integerValue: String(after) },
       gemOps: { arrayValue: { values: operations.map(value => ({ stringValue: value })) } }

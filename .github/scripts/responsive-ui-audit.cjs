@@ -97,7 +97,8 @@ async function main() {
   const gemWorkerFeatures = [
     ['Worker verifies Firebase ID tokens', 'securetoken@system.gserviceaccount.com'],
     ['Worker rejects spending without enough Gems', "error.code = 'INSUFFICIENT_GEMS'"],
-    ['Worker deduplicates recent operation IDs', 'const MAX_RECENT_OPS = 100;'],
+    ['Worker deduplicates recent operation IDs', 'recentOps.includes(operationId)'],
+    ['Worker keeps the full protected Gem operation history', 'const operations = [...recentOps, storedOperationId];'],
     ['Only the Owner role can mint Gems', "role !== 'owner'"],
     ['Worker uses a Firestore transaction commit', 'documents:commit'],
     ['Profile ring purchase saves Gems and ownership atomically', "fieldPaths: ['gems', 'gemOps', 'gemCosmetics', 'equippedGemCosmetic']"],
@@ -105,7 +106,7 @@ async function main() {
     ['Worker has fixed one-time achievement reward amounts', "'quiz-beginner': Object.freeze({ amount: 2"],
     ['Worker verifies saved achievement progress before claiming', "throw new Error('ACHIEVEMENT_NOT_READY')"],
     ['Worker verifies study-streak progress before claiming Gems', "reward.metric === 'streak'"],
-    ['Worker stores permanent achievement claims', 'gemAchievementClaims'],
+    ['Worker keeps achievement claims in the protected Gem history', "operationId !== 'achievement:' + achievementId"],
     ['Worker requires a normal practice quiz for daily Gems', "throw new Error('DAILY_ACTIVITY_REQUIRED')"],
     ['Worker stores daily claims with a consecutive-day reward index', "storedOperationId = 'daily:' + day + ':' + rewardDay"],
   ];
