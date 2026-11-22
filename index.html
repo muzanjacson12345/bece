@@ -11461,7 +11461,7 @@ const GEM_SHOP = Object.freeze({
 });
 function tint(el, p) { /* name colours removed — kept for compat */ return el; }
 function adminBadge(id) { const owner = id ? !!(S.owners && S.owners.has(id)) : !!S.isOwner, b = document.createElement('span'); b.className = 'board-title ' + (owner ? 'board-owner' : 'board-admin'); setIconAwareText(b, owner ? '\u{1F451} Owner' : '\u{1F6E1}\uFE0F Admin'); return b; }
-function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge(p.id)); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name); container.append(badge; } }
+function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge(p.id)); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name; container.append(badge); } }
 const Shop = (() => {
   let el = null, bal = null, body = null, activeTab = 'coins';
   const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
