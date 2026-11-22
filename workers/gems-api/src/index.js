@@ -11,12 +11,52 @@ const GEM_COSMETICS = Object.freeze({
   'profile-ring-gold': Object.freeze({ price: 50 })
 });
 const GEM_ACHIEVEMENT_REWARDS = Object.freeze({
+  'first-answer': Object.freeze({ amount: 1, metric: 'answered', target: 1 }),
+  'curious-mind': Object.freeze({ amount: 2, metric: 'answered', target: 25 }),
+  'question-pro': Object.freeze({ amount: 3, metric: 'answered', target: 100 }),
+  'question-veteran': Object.freeze({ amount: 4, metric: 'answered', target: 250 }),
+  'question-master': Object.freeze({ amount: 5, metric: 'answered', target: 500 }),
+  'question-legend': Object.freeze({ amount: 8, metric: 'answered', target: 1000 }),
+  'question-1500': Object.freeze({ amount: 10, metric: 'answered', target: 1500 }),
+  'question-2500': Object.freeze({ amount: 15, metric: 'answered', target: 2500 }),
+  'getting-sharp': Object.freeze({ amount: 1, metric: 'correct', target: 25 }),
+  'high-score-90': Object.freeze({ amount: 3, metric: 'highScore', target: 1 }),
+  'accuracy-star': Object.freeze({ amount: 2, metric: 'correct', target: 100 }),
+  'accuracy-250': Object.freeze({ amount: 3, metric: 'correct', target: 250 }),
+  'accuracy-500': Object.freeze({ amount: 4, metric: 'correct', target: 500 }),
+  'accuracy-1000': Object.freeze({ amount: 6, metric: 'correct', target: 1000 }),
+  'accuracy-2000': Object.freeze({ amount: 8, metric: 'correct', target: 2000 }),
   'quiz-beginner': Object.freeze({ amount: 2, metric: 'quizzes', target: 1 }),
   'quiz-five': Object.freeze({ amount: 5, metric: 'quizzes', target: 5 }),
   'quiz-regular': Object.freeze({ amount: 8, metric: 'quizzes', target: 10 }),
   'quiz-25': Object.freeze({ amount: 15, metric: 'quizzes', target: 25 }),
-  'high-score-90': Object.freeze({ amount: 3, metric: 'highScore', target: 1 }),
+  'quiz-50': Object.freeze({ amount: 5, metric: 'quizzes', target: 50 }),
+  'quiz-100': Object.freeze({ amount: 8, metric: 'quizzes', target: 100 }),
+  'quiz-250': Object.freeze({ amount: 12, metric: 'quizzes', target: 250 }),
   'subject-explorer': Object.freeze({ amount: 5, metric: 'subjects', target: 3 }),
+  'all-rounder': Object.freeze({ amount: 3, metric: 'subjects', target: 5 }),
+  'all-six-subjects': Object.freeze({ amount: 4, metric: 'subjects', target: 6 }),
+  'science-starter': Object.freeze({ amount: 1, metric: 'sci', target: 10 }),
+  'science-scholar': Object.freeze({ amount: 2, metric: 'sci', target: 50 }),
+  'science-master': Object.freeze({ amount: 4, metric: 'sci', target: 100 }),
+  'all-seven-subjects': Object.freeze({ amount: 5, metric: 'subjects', target: 7 }),
+  'french-starter': Object.freeze({ amount: 1, metric: 'fre', target: 10 }),
+  'french-learner': Object.freeze({ amount: 2, metric: 'fre', target: 50 }),
+  'french-confident': Object.freeze({ amount: 4, metric: 'fre', target: 100 }),
+  'career-starter': Object.freeze({ amount: 1, metric: 'ct', target: 10 }),
+  'career-learner': Object.freeze({ amount: 2, metric: 'ct', target: 50 }),
+  'career-master': Object.freeze({ amount: 4, metric: 'ct', target: 100 }),
+  'all-nine-subjects': Object.freeze({ amount: 6, metric: 'subjects', target: 8 }),
+  'perfect-round': Object.freeze({ amount: 2, metric: 'perfect', target: 1 }),
+  'perfect-5': Object.freeze({ amount: 4, metric: 'perfect', target: 5 }),
+  'perfect-10': Object.freeze({ amount: 6, metric: 'perfect', target: 10 }),
+  'perfect-25': Object.freeze({ amount: 10, metric: 'perfect', target: 25 }),
+  'three-day-streak': Object.freeze({ amount: 2, metric: 'streak', target: 3 }),
+  'week-streak': Object.freeze({ amount: 5, metric: 'streak', target: 7 }),
+  'streak-14': Object.freeze({ amount: 6, metric: 'streak', target: 14 }),
+  'streak-30': Object.freeze({ amount: 10, metric: 'streak', target: 30 }),
+  'streak-60': Object.freeze({ amount: 15, metric: 'streak', target: 60 }),
+  'streak-100': Object.freeze({ amount: 20, metric: 'streak', target: 100 }),
   'achievement-ten': Object.freeze({ amount: 10, metric: 'achievementCount', target: 10 })
 });
 
@@ -372,6 +412,7 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
       let progress = 0;
       if (reward.metric === 'subjects') progress = parseStringArray(achievementFields.subjects).length;
       else if (reward.metric === 'achievementCount') progress = unlocked.length;
+      else if (reward.metric === 'streak') progress = parseIntegerField(fields.streak, 0);
       else progress = parseIntegerField(stats[reward.metric], 0);
       if (!unlocked.includes(achievementId) || !Number.isSafeInteger(progress) || progress < reward.target) {
         throw new Error('ACHIEVEMENT_NOT_READY');
