@@ -12860,7 +12860,7 @@ const Gems = (() => {
     const value = S.doc && S.doc.gems;
     return Number.isSafeInteger(value) && value >= 0 ? value : 0;
   };
-  async function applyGemChange(action, amount, operationId, itemId) {
+  async function applyGemChange(action, amount, operationId, itemId, achievementId) {
     if (!S.db || !S.uid) throw new Error('SIGN_IN_REQUIRED');
     if (!GEMS_API_URL) throw new Error('GEMS_SERVICE_NOT_CONFIGURED');
     const purchase = action === 'purchase';
