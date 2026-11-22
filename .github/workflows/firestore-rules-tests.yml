@@ -21,6 +21,7 @@ on:
       - ".github/scripts/migrate-event-player-screen.cjs"
       - "events.js"
       - "gems.js"
+      - "gem-marketplace.js"
       - "firestore.indexes.json"
       - ".github/scripts/check-inline-scripts.cjs"
       - "workers/gems-api/src/**"
@@ -94,6 +95,8 @@ jobs:
         run: node --check events.js
       - name: Check Gem wallet browser module syntax
         run: node --check gems.js
+      - name: Check Gem Marketplace browser module syntax
+        run: node --check gem-marketplace.js
       - name: Validate Firestore composite index JSON
         run: node -e "JSON.parse(require('node:fs').readFileSync('firestore.indexes.json', 'utf8'))"
       - name: Check event-screen migration script syntax
