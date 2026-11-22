@@ -3802,8 +3802,8 @@ pre, code { overflow-wrap: anywhere; }
       <div class="section-heading home-tools-heading"><div><p class="eyebrow">Your study space</p><h2>Quick access</h2></div></div>
       <div class="tool-grid">
         <a class="tool-card tool-main" href="#/friends"><svg class="icon tool-icon"><use href="#i-users"/></svg><span><strong>Friends board</strong><small>Climb the leaderboard with your classmates</small></span></a>
-        <a class="tool-card" href="#/duels"><span class="tool-icon" aria-hidden="true">⚔️</span><span><strong>Duels</strong><small>Challenge a classmate</small></span></a>
-        <a class="tool-card" href="#/shop"><span class="tool-icon" aria-hidden="true">🛍️</span><span><strong>Shop</strong><small>Browse the Coin and Gem Shops</small></span></a>
+        <a class="tool-card" href="#/duels"><svg class="icon tool-icon"><use href="#i-swords"/></svg><span><strong>Duels</strong><small>Challenge a classmate</small></span></a>
+        <a class="tool-card" href="#/shop"><svg class="icon tool-icon"><use href="#i-shopping-bag"/></svg><span><strong>Shop</strong><small>Browse the Coin and Gem Shops</small></span></a>
         <button class="tool-card" type="button" data-action="practise-saved" id="saved-tool"><svg class="icon tool-icon"><use href="#i-bookmark"/></svg><span><strong>Saved questions</strong><small id="saved-count">Bookmark tricky questions to revisit</small></span></button>
         <a class="tool-card" href="#flashcard-studio"><svg class="icon tool-icon"><use href="#i-cards"/></svg><span><strong>Flashcards</strong><small>Quick recall, one card at a time</small></span></a>
         <a class="tool-card tool-extra" href="#/notes"><svg class="icon tool-icon"><use href="#i-book"/></svg><span><strong>Revision library</strong><small>Extra: notes, key ideas &amp; quick checks</small></span></a>
@@ -4159,8 +4159,8 @@ pre, code { overflow-wrap: anywhere; }
   <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
     <div class="page-intro"><p class="eyebrow">Spend your rewards</p><h1>Shops</h1><p class="muted">Choose whether you want to spend Coins or Gems.</p></div>
     <div class="shop-tabs" role="tablist" aria-label="Choose a shop">
-      <button class="shop-tab is-active" type="button" role="tab" aria-selected="true" data-shop-tab="coins">🪙 Coins</button>
-      <button class="shop-tab" type="button" role="tab" aria-selected="false" data-shop-tab="gems">💎 Gems</button>
+      <button class="shop-tab is-active" type="button" role="tab" aria-selected="true" data-shop-tab="coins"><svg class="icon"><use href="#i-coin"/></svg><span>Coins</span></button>
+      <button class="shop-tab" type="button" role="tab" aria-selected="false" data-shop-tab="gems"><svg class="icon"><use href="#i-gem"/></svg><span>Gems</span></button>
     </div>
     <div id="shop-body" role="tabpanel" aria-label="Coin Shop"></div>
     <div id="gemshop-body" role="tabpanel" aria-label="Gem Shop" hidden></div>
@@ -4178,8 +4178,8 @@ pre, code { overflow-wrap: anywhere; }
   <a href="#/" data-nav="home"><svg class="icon"><use href="#i-home"/></svg><span>Home</span></a>
   <a href="#/practice" data-nav="practice"><svg class="icon"><use href="#i-cards"/></svg><span>Quiz</span></a>
   <a href="#/friends" data-nav="friends"><svg class="icon"><use href="#i-users"/></svg><span>Friends</span></a>
-  <a href="#/admin" data-nav="admin" data-admin-nav hidden><span aria-hidden="true">🛡️</span><span>Admin</span></a>
-  <a href="#/duels" data-nav="duels"><span aria-hidden="true">⚔️</span><span>Duels</span></a>
+  <a href="#/admin" data-nav="admin" data-admin-nav hidden><svg class="icon"><use href="#i-shield"/></svg><span>Admin</span></a>
+  <a href="#/duels" data-nav="duels"><svg class="icon"><use href="#i-swords"/></svg><span>Duels</span></a>
   <a href="#/notes" data-nav="notes"><svg class="icon"><use href="#i-book"/></svg><span>Notes</span></a>
 </nav>
 
@@ -7909,6 +7909,24 @@ function iconLabel(name, label, className = 'icon-label') {
   node.append(icon(name), document.createTextNode(String(label ?? '')));
   return node;
 }
+const UI_EMOJI_ICONS = Object.freeze({
+ '💰':'coin','💎':'gem','🪙':'coin','⚔️':'swords','🛍️':'shopping-bag','🛡️':'shield','👑':'crown','🎒':'backpack','☁️':'cloud',
+ '🔒':'lock','🔓':'lock','🔑':'key','📌':'pin','⚡':'zap','📊':'chart','📈':'chart','📣':'megaphone','📢':'megaphone','📩':'mail',
+ '💬':'message','📝':'file','📄':'file','📁':'folder','📤':'upload','🗑️':'trash','🚫':'ban','✅':'check-circle','🐞':'bug',
+ '🛠️':'wrench','🧰':'wrench','🎁':'award','🔄':'refresh','♻️':'refresh','🚪':'log-out','🔔':'bell','🏠':'home','👥':'users',
+ '🎯':'target','⭐':'star','🏆':'trophy','🔥':'flame','🧪':'flask','🔬':'flask','🌍':'globe','🌐':'globe','🇫🇷':'languages',
+ '🖼️':'image','✏️':'pen','📋':'clipboard','🗓️':'calendar','🎉':'sparkles','⚠️':'alert','🚨':'alert','🧹':'refresh','🗂️':'folder',
+ '🗣️':'message','📕':'book-open','📚':'book-open','📘':'book-open','🧠':'bulb','🎓':'award','🥇':'award','🥈':'award','🥉':'award',
+ '✨':'sparkles','🌟':'star','🚀':'rocket','➕':'plus-circle','➖':'minus-circle','▶️':'play','⏸️':'pause','💡':'bulb','🔐':'lock','🔍':'search'
+});
+function iconizeLabel(value, className = 'icon-label') {
+ const text=String(value ?? '');
+ for(const [emoji,symbol] of Object.entries(UI_EMOJI_ICONS)){
+  const at=text.indexOf(emoji);
+  if(at>=0 && at<=24) return iconLabel(symbol,(text.slice(0,at)+' '+text.slice(at+emoji.length)).replace(/\s+/g,' ').trim(),className);
+ }
+ return document.createTextNode(text);
+}
 const store = {
   get(key, fallback) {
     try { const raw = localStorage.getItem(key); return raw === null ? fallback : JSON.parse(raw); } catch { return fallback; }
@@ -10117,18 +10135,18 @@ function renderAccount() {
     if (S.doc.avatar) w.append(o('span', 'account-badge', BeceProfile.safeAv(S.doc.avatar)));
     e.append(w);
   } else if (S.doc && S.doc.avatar) e.append(o('span', 'account-avatar', BeceProfile.safeAv(S.doc.avatar)));
-  const coinShortcut = o('span', 'account-coins account-currency-shortcut', `💰 ${S.doc.coins || 0}`);
+  const coinShortcut = iconLabel('coin',String(S.doc.coins || 0),'account-coins account-currency-shortcut');
   coinShortcut.setAttribute('role', 'link'); coinShortcut.tabIndex = 0; coinShortcut.title = 'Open Coin Shop'; coinShortcut.setAttribute('aria-label', 'Open Coin Shop');
   const openCoinShop = event => { event.preventDefault(); event.stopPropagation(); App.navigate('shop'); };
   coinShortcut.addEventListener('click', openCoinShop);
   coinShortcut.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') openCoinShop(event); });
-  const gemShortcut = o('span', 'account-coins account-gems account-currency-shortcut', `💎 ${Math.max(0, Number(S.doc.gems) || 0)}`);
+  const gemShortcut = iconLabel('gem',String(Math.max(0, Number(S.doc.gems) || 0)),'account-coins account-gems account-currency-shortcut');
   gemShortcut.setAttribute('role', 'link'); gemShortcut.tabIndex = 0; gemShortcut.title = 'Open Gem Shop'; gemShortcut.setAttribute('aria-label', 'Open Gem Shop');
   const openGemShop = event => { event.preventDefault(); event.stopPropagation(); App.navigate('gemshop'); };
   gemShortcut.addEventListener('click', openGemShop);
   gemShortcut.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') openGemShop(event); });
   e.append(o('span', 'account-level', `Lv ${lv(m.totalExp).level}`), o('span', 'account-name', m.displayName), coinShortcut, gemShortcut, o('span', 'account-exp', `${m.totalExp} EXP`));
-  if (m.streak) e.append(o('span', 'account-streak', `\u{1F525} ${m.streak}`));
+  if (m.streak) e.append(iconLabel('flame',String(m.streak),'account-streak'));
   e.setAttribute('aria-label', `${m.displayName}, level ${lv(m.totalExp).level}, ${m.totalExp} EXP, ${S.doc.coins || 0} coins, ${Math.max(0, Number(S.doc.gems) || 0)} Gems. Open your profile`);
   e.onclick = () => App.navigate('me');
 }
@@ -11127,10 +11145,10 @@ async function connectFirebase() {
 /* ===== Coin shop ===== */
 const SHOP = {
   titles: [
-    { id: 't_bookworm',  name: 'Bookworm',    icon: '📚', price: 80  },
-    { id: 't_scholar',   name: 'Scholar',      icon: '🧠', price: 120 },
-    { id: 't_champion',  name: 'Champion',     icon: '🏆', price: 160 },
-    { id: 't_legend',    name: 'Legend',       icon: '🌟', price: 300 },
+    { id: 't_bookworm',  name: 'Bookworm',    icon: 'book-open', price: 80  },
+    { id: 't_scholar',   name: 'Scholar',      icon: 'bulb', price: 120 },
+    { id: 't_champion',  name: 'Champion',    icon: 'trophy', price: 160 },
+    { id: 't_legend',    name: 'Legend',      icon: 'star', price: 300 },
   ],
   sfreeze: { id: 'sfreeze', name: 'Streak Freeze', price: 30 },
   xpboost: { id: 'xpboost', name: 'XP Boost',      price: 50 },
@@ -11141,11 +11159,11 @@ const GEM_SHOP = Object.freeze({
   profileRing: Object.freeze({ id: 'profile-ring-gold', name: 'Golden Profile Ring', price: 50 })
 });
 function tint(el, p) { /* name colours removed — kept for compat */ return el; }
-function adminBadge(id) { const owner = id ? !!(S.owners && S.owners.has(id)) : !!S.isOwner, b = document.createElement('span'); b.className = 'board-title ' + (owner ? 'board-owner' : 'board-admin'); b.textContent = owner ? '\u{1F451} Owner' : '\u{1F6E1}\uFE0F Admin'; return b; }
-function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge(p.id)); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name; container.append(badge); } }
+function adminBadge(id) { const owner = id ? !!(S.owners && S.owners.has(id)) : !!S.isOwner; return iconLabel(owner ? 'crown' : 'shield', owner ? 'Owner' : 'Admin', 'board-title ' + (owner ? 'board-owner' : 'board-admin')); }
+function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge(p.id)); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) container.append(iconLabel(t.icon,t.name,'board-title')); }
 const Shop = (() => {
   let el = null, bal = null, body = null, activeTab = 'coins';
-  const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
+  const btn = (t, c, f) => { const b = o('button', 'btn ' + c); b.append(iconizeLabel(t)); b.type = 'button'; b.onclick = f; return b; };
   const warn = m => App.toast(m, 'warn');
   function equip(slot, id) {
     const eq = (S.doc && S.doc.eq) || {};
@@ -11169,9 +11187,9 @@ const Shop = (() => {
       if (['p50', 'sfreeze', 'xpboost'].includes(slot)) render(); else equip(slot, it.id);
     } catch (e) { warn(`Couldn\u2019t buy that (${(e && e.code) || 'error'}).`); }
   }
-  function wideItem(icon, title, desc, btnEl) {
+  function wideItem(iconName, title, desc, btnEl) {
     const c = o('div', 'shop-item shop-wide');
-    c.append(o('strong', '', icon + ' ' + title), o('span', 'muted', desc), btnEl); return c;
+    c.append(iconLabel(iconName,title,'shop-item-heading'), o('span', 'muted', desc), btnEl); return c;
   }
   function group(title, items, preview, slot) {
     const d = S.doc || {}, owned = d.owned || {}, eq = d.eq || {}, g = o('section', 'shop-group'), grid = o('div', 'shop-grid');
@@ -11230,7 +11248,7 @@ const Shop = (() => {
     const equipped = owned && d.equippedGemCosmetic === it.id;
     const section = o('section', 'gem-store');
     const head = o('div', 'gem-store-head');
-    head.append(o('h3', '', 'Gem Shop'), o('span', 'gem-store-balance', '💎 ' + Gems.getBalance()));
+    head.append(o('h3', '', 'Gem Shop'), iconLabel('gem',String(Gems.getBalance()),'gem-store-balance'));
     const card = o('div', 'gem-item'), previewBox = o('div', 'gem-item-preview');
     const preview = bubble({ id: S.uid, avatar: '⭐', color: d.color || '', gemCosmetics: {}, equippedGemCosmetic: '' }, 54);
     preview.dataset.gemRing = 'gold';
@@ -11248,25 +11266,25 @@ const Shop = (() => {
   function render() {
     if (!el) return;
     const d = S.doc || {}, eq = d.eq || {};
-    bal.textContent = `\u{1F4B0} ${d.coins || 0}`;
+    bal.replaceChildren(icon('coin'),document.createTextNode(String(d.coins || 0)));
     const canAfford = price => (d.coins || 0) >= price ? 'btn-primary btn-sm' : 'btn-ghost btn-sm';
 
     // Consumables section
     const cons = o('section', 'shop-group');
     cons.append(o('h3', '', 'Power-ups'));
     cons.append(
-      wideItem('\u{1F6E1}\uFE0F', 'Streak Freeze', `Protects your streak for one missed day. You have ${d.sfreezes || 0}.`,
+      wideItem('shield', 'Streak Freeze', `Protects your streak for one missed day. You have ${d.sfreezes || 0}.`,
         btn(`Buy \u{1F4B0} ${SHOP.sfreeze.price}`, canAfford(SHOP.sfreeze.price), () => buy(SHOP.sfreeze, 'sfreeze'))),
-      wideItem('\u26A1', 'XP Boost', `Doubles EXP on your next quiz. You have ${d.xpBoost || 0}.`,
+      wideItem('zap', 'XP Boost', `Doubles EXP on your next quiz. You have ${d.xpBoost || 0}.`,
         btn(`Buy \u{1F4B0} ${SHOP.xpboost.price}`, canAfford(SHOP.xpboost.price), () => buy(SHOP.xpboost, 'xpboost'))),
-      wideItem('\u{1F3AF}', 'Second Chance', `Use in a duel: if you answer wrong, pick again (without hints). You have ${d.p50 || 0}.`,
+      wideItem('target', 'Second Chance', `Use in a duel: if you answer wrong, pick again (without hints). You have ${d.p50 || 0}.`,
         btn(`Buy \u{1F4B0} ${SHOP.p50.price}`, canAfford(SHOP.p50.price), () => buy(SHOP.p50, 'p50'))),
     );
 
     // Titles section
     const titlesGroup = group('Board titles', SHOP.titles, it => {
-      const s = o('div'); s.style.cssText = 'font-size:22px;padding:4px 0'; s.textContent = it.icon;
-      const badge = o('span', 'board-title', it.icon + ' ' + it.name); s.append(badge); return s;
+      const s = o('div'); s.style.cssText = 'font-size:22px;padding:4px 0'; s.append(icon(it.icon));
+      s.append(iconLabel(it.icon,it.name,'board-title')); return s;
     }, 'title');
 
     const paused = !!S.settings.shopPaused && !S.isOwner;
@@ -11276,7 +11294,7 @@ const Shop = (() => {
       });
     }
     const content = [];
-    if (paused) content.push(o('div', 'shop-paused-notice', o('strong', '', '🛍️ Shop purchases paused'), o('p', '', 'The owner has temporarily paused new purchases. Your owned items are still available.')));
+    if (paused) content.push(o('div', 'shop-paused-notice', iconLabel('shopping-bag','Shop purchases paused','shop-pause-heading'), o('p', '', 'The owner has temporarily paused new purchases. Your owned items are still available.')));
     content.push(cons, titlesGroup);
     body.replaceChildren(...content);
     if (activeTab === 'gems') GemShop.render();
