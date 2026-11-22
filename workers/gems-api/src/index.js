@@ -4,6 +4,11 @@ import { buildPracticeRewardResult } from "./practice-utils.mjs";
 import { buildAchievementGemHistory, buildEventGemPrizeHistory } from "./gem-history.mjs";
 import { isKnownQuestionId } from "./question-keys.mjs";
 import { getShopItem } from "./shop-utils.mjs";
+import {
+  buildGemMarketplacePurchase,
+  getGemMarketplaceItem,
+  listGemMarketplaceItems
+} from "./gem-marketplace-utils.mjs";
 import { getPowerupUse, validatePowerupUseReceiptRetry } from "./powerup-utils.mjs";
 import { EVENT_FINISH_GRACE_MS, buildGemEventActivation, buildGemEventDraftConfig, buildGemEventEntry, buildGemEventRetry, validateEventPrizeGems } from "./event-utils.mjs";
 import { buildGemEventAnswerResult, buildGemEventLeaderboardEntry, buildGemEventQuestionStart, buildGemEventSettlement } from "./event-game-utils.mjs";
@@ -613,6 +618,175 @@ async function applyShopPurchase(uid, itemId, operationId, accessToken) {
       },
       {
         update: { name: operationName, fields: encodeFirestoreFields(operationRecord) },
+        updateMask: { fieldPaths: Object.keys(operationRecord) },
+        currentDocument: { exists: false }
+      }
+    ];
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      { method: 'POST', body: { transaction, writes } }
+    );
+    finished = true;
+    return { duplicate: false, result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+async function applyGemMarketplacePurchase(uid, itemId, operationId, accessToken) {
+  const item = getGemMarketplaceItem(itemId);
+  if (!item) throw new Error('INVALID_GEM_SHOP_ITEM');
+
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const playerPath = 'players/' + encodeURIComponent(uid);
+  const inventoryItemPath = 'gemInventories/' + encodeURIComponent(uid) + '/items/' + encodeURIComponent(itemId);
+  const operationPath = 'gemShopOperations/' + encodeURIComponent(uid + '_' + operationId);
+  const transactionId = uid + '_gemshop_' + operationId;
+  const transactionPath = 'gemTransactions/' + encodeURIComponent(transactionId);
+
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken,
+    { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [playerDoc, operationDoc, inventoryDoc] = await Promise.all([
+      getDocument(playerPath, accessToken, transaction),
+      getDocument(operationPath, accessToken, transaction),
+      item.category === 'cosmetic'
+        ? getDocument(inventoryItemPath, accessToken, transaction)
+        : Promise.resolve(null)
+    ]);
+
+    if (operationDoc) {
+      const stored = decodeFirestoreFields(operationDoc.fields || {});
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken,
+        { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: stored.result || null };
+    }
+    if (!playerDoc) throw new Error('PLAYER_PROFILE_NOT_READY');
+
+    const player = decodeFirestoreFields(playerDoc.fields || {});
+    const inventoryItem = inventoryDoc ? decodeFirestoreFields(inventoryDoc.fields || {}) : null;
+    const purchase = buildGemMarketplacePurchase({
+      uid,
+      operationId,
+      itemId,
+      balanceBefore: player.gems === undefined ? 0 : Number(player.gems),
+      inventoryItem,
+      quantityBefore: player[item.field] === undefined ? 0 : Number(player[item.field]),
+      now: Date.now()
+    });
+
+    const operationRecord = {
+      uid,
+      operationId,
+      itemId,
+      price: item.price,
+      createdAt: purchase.transaction.createdAt,
+      result: purchase.result
+    };
+    const writes = [
+      {
+        update: { name: base + playerPath, fields: encodeFirestoreFields(purchase.playerUpdates) },
+        updateMask: { fieldPaths: Object.keys(purchase.playerUpdates) },
+        currentDocument: { exists: true }
+      },
+      {
+        update: { name: base + operationPath, fields: encodeFirestoreFields(operationRecord) },
+        updateMask: { fieldPaths: Object.keys(operationRecord) },
+        currentDocument: { exists: false }
+      },
+      {
+        update: { name: base + transactionPath, fields: encodeFirestoreFields(purchase.transaction) },
+        updateMask: { fieldPaths: Object.keys(purchase.transaction) },
+        currentDocument: { exists: false }
+      }
+    ];
+    if (purchase.inventoryRecord) {
+      writes.push({
+        update: { name: base + inventoryItemPath, fields: encodeFirestoreFields(purchase.inventoryRecord) },
+        updateMask: { fieldPaths: Object.keys(purchase.inventoryRecord) },
+        currentDocument: { exists: false }
+      });
+    }
+
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      { method: 'POST', body: { transaction, writes } }
+    );
+    finished = true;
+    return { duplicate: false, result: purchase.result };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
+async function applyGemMarketplaceEquip(uid, itemId, operationId, shouldEquip, accessToken) {
+  const item = getGemMarketplaceItem(itemId);
+  if (!item || item.category !== 'cosmetic') throw new Error('INVALID_GEM_SHOP_ITEM');
+
+  const base = 'projects/' + PROJECT_ID + '/databases/(default)/documents/';
+  const inventoryPath = 'gemInventories/' + encodeURIComponent(uid);
+  const inventoryItemPath = inventoryPath + '/items/' + encodeURIComponent(itemId);
+  const operationPath = 'gemShopEquipOperations/' + encodeURIComponent(uid + '_' + operationId);
+
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken,
+    { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const [inventoryDoc, itemDoc, operationDoc] = await Promise.all([
+      getDocument(inventoryPath, accessToken, transaction),
+      getDocument(inventoryItemPath, accessToken, transaction),
+      getDocument(operationPath, accessToken, transaction)
+    ]);
+    if (operationDoc) {
+      const stored = decodeFirestoreFields(operationDoc.fields || {});
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken,
+        { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { duplicate: true, result: stored.result || null };
+    }
+    if (!itemDoc) throw new Error('GEM_ITEM_NOT_OWNED');
+    const ownedItem = decodeFirestoreFields(itemDoc.fields || {});
+    if (ownedItem.owned !== true || ownedItem.slot !== item.slot) {
+      throw new Error('GEM_ITEM_NOT_OWNED');
+    }
+
+    const inventory = decodeFirestoreFields(inventoryDoc && inventoryDoc.fields);
+    const equipped = inventory.equipped && typeof inventory.equipped === 'object'
+      ? { ...inventory.equipped } : {};
+    if (shouldEquip) equipped[item.slot] = itemId;
+    else if (equipped[item.slot] === itemId) delete equipped[item.slot];
+
+    const result = { itemId, slot: item.slot, equipped: equipped[item.slot] === itemId, equippedItems: equipped };
+    const operationRecord = { uid, operationId, itemId, action: shouldEquip ? 'equip' : 'unequip', createdAt: Date.now(), result };
+    const inventoryUpdate = { uid, equipped, updatedAt: operationRecord.createdAt };
+    const writes = [
+      {
+        update: { name: base + inventoryPath, fields: encodeFirestoreFields(inventoryUpdate) },
+        updateMask: { fieldPaths: Object.keys(inventoryUpdate) },
+        currentDocument: { exists: !!inventoryDoc }
+      },
+      {
+        update: { name: base + operationPath, fields: encodeFirestoreFields(operationRecord) },
         updateMask: { fieldPaths: Object.keys(operationRecord) },
         currentDocument: { exists: false }
       }
@@ -2018,7 +2192,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/configure', '/events/activate', '/events/close', '/events/settle', '/events/enter', '/events/retry', '/events/next', '/events/answer'].includes(url.pathname)) {
+    if (request.method !== 'POST' || !['/gems', '/practice', '/shop', '/gem-shop/catalog', '/gem-shop/purchase', '/gem-shop/equip', '/powerups/use', '/duels/start', '/duels/next', '/duels/answer', '/duels/forfeit', '/duels/settle', '/events/configure', '/events/activate', '/events/close', '/events/settle', '/events/enter', '/events/retry', '/events/next', '/events/answer'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -2063,6 +2237,37 @@ export default {
           return json({ ok: false, code: 'INVALID_OPERATION_ID', error: 'A valid session ID is required.' }, 400, origin);
         }
         const outcome = await applyPracticeRewardChange(identity.uid, operationId, questionIds, answers, kind, accessToken);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+
+      if (url.pathname === '/gem-shop/catalog') {
+        return json({ ok: true, catalog: listGemMarketplaceItems() }, 200, origin);
+      }
+
+      if (url.pathname === '/gem-shop/purchase') {
+        const itemId = payload && typeof payload.itemId === 'string' ? payload.itemId.trim() : '';
+        const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
+        if (!getGemMarketplaceItem(itemId)) {
+          return json({ ok: false, code: 'INVALID_GEM_SHOP_ITEM', error: 'That Gem Shop item is not available.' }, 400, origin);
+        }
+        if (!validateOperationUuid(operationId)) {
+          return json({ ok: false, code: 'INVALID_OPERATION_ID', error: 'A valid Gem purchase ID is required.' }, 400, origin);
+        }
+        const outcome = await applyGemMarketplacePurchase(identity.uid, itemId, operationId, accessToken);
+        return json({ ok: true, ...outcome }, 200, origin);
+      }
+
+      if (url.pathname === '/gem-shop/equip') {
+        const itemId = payload && typeof payload.itemId === 'string' ? payload.itemId.trim() : '';
+        const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
+        const shouldEquip = payload && payload.equipped;
+        if (!getGemMarketplaceItem(itemId) || getGemMarketplaceItem(itemId).category !== 'cosmetic') {
+          return json({ ok: false, code: 'INVALID_GEM_SHOP_ITEM', error: 'That cosmetic is not available.' }, 400, origin);
+        }
+        if (!validateOperationUuid(operationId) || typeof shouldEquip !== 'boolean') {
+          return json({ ok: false, code: 'INVALID_GEM_SHOP_REQUEST', error: 'The equipment request is invalid.' }, 400, origin);
+        }
+        const outcome = await applyGemMarketplaceEquip(identity.uid, itemId, operationId, shouldEquip, accessToken);
         return json({ ok: true, ...outcome }, 200, origin);
       }
 
@@ -2230,6 +2435,20 @@ export default {
       const outcome = await applyGemChange(identity.uid, action, amount, operationId, accessToken);
       return json({ ok: true, ...outcome }, 200, origin);
     } catch (error) {
+      const gemShopErrors = {
+        INVALID_GEM_SHOP_ITEM: ['That Gem Shop item is not available.', 400],
+        INVALID_GEM_SHOP_BALANCE: ['Your Gem balance needs review before this purchase.', 409],
+        INSUFFICIENT_GEMS: ['You do not have enough Gems for this item.', 409],
+        GEM_ITEM_ALREADY_OWNED: ['You already own this cosmetic.', 409],
+        GEM_ITEM_NOT_OWNED: ['You must own this cosmetic before equipping it.', 403],
+        INVALID_GEM_SHOP_QUANTITY: ['Your item quantity needs review.', 409],
+        INVALID_GEM_SHOP_REQUEST: ['The equipment request is invalid.', 400]
+      };
+      if (error && gemShopErrors[error.message]) {
+        const [message, status] = gemShopErrors[error.message];
+        return json({ ok: false, code: error.message, error: message }, status, origin);
+      }
+
       const eventErrors = {
         EVENT_NOT_FOUND: ['That event could not be found.', 404],
         EVENT_OWNER_REQUIRED: ['Only the authenticated Owner can configure events.', 403],
