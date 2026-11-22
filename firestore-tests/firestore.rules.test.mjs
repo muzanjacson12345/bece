@@ -378,3 +378,46 @@ test("Duel creation accepts the app's subjects field and rejects duplicate subje
     ...base, subjects: ["maths", "maths"]
   }));
 });
+
+
+test("Gem Marketplace catalogue and owned inventory are readable but server-write-only", async () => {
+  await seed({
+    "gemMarketplace/frame_sapphire": { active: true, name: "Sapphire Frame", price: 40 },
+    "gemMarketplace/frame_hidden": { active: false, name: "Hidden Item", price: 1 },
+    "gemInventories/alice": { uid: "alice", equipped: { frame: "frame_sapphire" } },
+    "gemInventories/alice/items/frame_sapphire": {
+      uid: "alice", itemId: "frame_sapphire", category: "cosmetic",
+      slot: "frame", style: "sapphire", owned: true
+    },
+    "gemShopOperations/alice_purchase-1": {
+      uid: "alice", operationId: "purchase-1", itemId: "frame_sapphire"
+    },
+    "gemShopEquipOperations/alice_equip-1": {
+      uid: "alice", operationId: "equip-1", itemId: "frame_sapphire"
+    }
+  });
+  const alice = testEnv.authenticatedContext("alice").firestore();
+  const bob = testEnv.authenticatedContext("bob").firestore();
+
+  await assertSucceeds(getDoc(doc(alice, "gemMarketplace/frame_sapphire")));
+  await assertFails(getDoc(doc(alice, "gemMarketplace/frame_hidden")));
+  await assertSucceeds(getDoc(doc(alice, "gemInventories/alice")));
+  await assertSucceeds(getDoc(doc(alice, "gemInventories/alice/items/frame_sapphire")));
+  await assertFails(getDoc(doc(bob, "gemInventories/alice")));
+  await assertFails(getDoc(doc(bob, "gemInventories/alice/items/frame_sapphire")));
+
+  await assertFails(setDoc(doc(alice, "gemInventories/alice"), {
+    uid: "alice", equipped: { frame: "fake_frame" }
+  }));
+  await assertFails(setDoc(doc(alice, "gemInventories/alice/items/fake_frame"), {
+    uid: "alice", owned: true, slot: "frame", style: "fake"
+  }));
+  await assertFails(updateDoc(doc(alice, "gemInventories/alice/items/frame_sapphire"), {
+    owned: false
+  }));
+
+  await assertFails(getDoc(doc(alice, "gemShopOperations/alice_purchase-1")));
+  await assertFails(setDoc(doc(alice, "gemShopOperations/alice_fake"), { uid: "alice" }));
+  await assertFails(getDoc(doc(alice, "gemShopEquipOperations/alice_equip-1")));
+  await assertFails(setDoc(doc(alice, "gemShopEquipOperations/alice_fake"), { uid: "alice" }));
+});
