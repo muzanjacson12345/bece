@@ -113,33 +113,22 @@
     head.append(name, price);
     card.append(head);
 
-    if (item.category === "cosmetic") {
-      const preview = make("div", "gem-frame-preview " + item.style, "A");
-      card.append(preview);
-    } else {
-      const count = Number(state.player[item.field] || 0);
-      card.append(make("p", "eyebrow", "Your quantity: " + format(count)));
-    }
+    const preview = make("div", "gem-frame-preview " + item.style, "A");
+    card.append(preview);
     card.append(make("p", "muted", item.description || ""));
 
     const bottom = make("div", "gem-market-bottom");
-    if (item.category === "cosmetic") {
-      const owned = state.inventory[item.id] && state.inventory[item.id].owned === true;
-      const equipped = state.equipped[item.slot] === item.id;
-      if (!owned) {
-        const buy = button("Buy for " + format(item.price) + " Gems", () => purchase(item));
-        buy.disabled = state.busy || Number(state.player.gems || 0) < item.price;
-        bottom.append(buy);
-      } else {
-        bottom.append(
-          make("span", "muted", equipped ? "Equipped" : "Owned"),
-          button(equipped ? "Unequip" : "Equip", () => equip(item, !equipped), true)
-        );
-      }
-    } else {
+    const owned = state.inventory[item.id] && state.inventory[item.id].owned === true;
+    const equipped = state.equipped[item.slot] === item.id;
+    if (!owned) {
       const buy = button("Buy for " + format(item.price) + " Gems", () => purchase(item));
       buy.disabled = state.busy || Number(state.player.gems || 0) < item.price;
       bottom.append(buy);
+    } else {
+      bottom.append(
+        make("span", "muted", equipped ? "Equipped" : "Owned"),
+        button(equipped ? "Unequip" : "Equip", () => equip(item, !equipped), true)
+      );
     }
     card.append(bottom);
     return card;
@@ -152,7 +141,7 @@
     top.append(
       make("p", "eyebrow", "Your Gem balance"),
       make("div", "gem-market-balance", Number.isSafeInteger(balance) && balance >= 0 ? "💎 " + format(balance) + " Gems" : "Balance unavailable"),
-      make("p", "muted", "Cosmetics are permanent unlocks. Useful items are added to your existing game inventory. All prices are charged in Gems.")
+      make("p", "muted", "Every item is a permanent cosmetic. Buy it once, keep it forever, and equip or unequip it whenever you like.")
     );
     const actions = make("div", "button-row");
     actions.append(
@@ -163,26 +152,6 @@
     host.append(top);
 
     const cosmetics = state.catalog.filter(item => item.category === "cosmetic");
-    const useful = state.catalog.filter(item => item.category === "useful");
-    const cosmeticSection = make("section", "stack");
-    cosmeticSection.append(
-      make("h2", "", "Cosmetics"),
-      make("p", "muted", "Unlock profile avatar frames. Once purchased, they stay in your collection and can be equipped or changed at any time.")
-    );
-    const cosmeticGrid = make("div", "gem-market-grid");
-    cosmetics.forEach(item => cosmeticGrid.append(itemCard(item)));
-    cosmeticSection.append(cosmeticGrid);
-    host.append(cosmeticSection);
-
-    const usefulSection = make("section", "stack");
-    usefulSection.append(
-      make("h2", "", "Useful items"),
-      make("p", "muted", "These add to your existing Streak Freeze, XP Boost and Second Chance supplies.")
-    );
-    const usefulGrid = make("div", "gem-market-grid");
-    useful.forEach(item => usefulGrid.append(itemCard(item)));
-    usefulSection.append(usefulGrid);
-    host.append(usefulSection);
   }
 
   async function renderMarketplace() {
