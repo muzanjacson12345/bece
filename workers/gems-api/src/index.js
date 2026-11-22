@@ -10,6 +10,15 @@ const MAX_RECENT_OPS = 100;
 const GEM_COSMETICS = Object.freeze({
   'profile-ring-gold': Object.freeze({ price: 50 })
 });
+const GEM_ACHIEVEMENT_REWARDS = Object.freeze({
+  'quiz-beginner': Object.freeze({ amount: 2, metric: 'quizzes', target: 1 }),
+  'quiz-five': Object.freeze({ amount: 5, metric: 'quizzes', target: 5 }),
+  'quiz-regular': Object.freeze({ amount: 8, metric: 'quizzes', target: 10 }),
+  'quiz-25': Object.freeze({ amount: 15, metric: 'quizzes', target: 25 }),
+  'high-score-90': Object.freeze({ amount: 3, metric: 'highScore', target: 1 }),
+  'subject-explorer': Object.freeze({ amount: 5, metric: 'subjects', target: 3 }),
+  'achievement-ten': Object.freeze({ amount: 10, metric: 'achievementCount', target: 10 })
+});
 
 let jwksCache = { keys: null, expiresAt: 0 };
 let accessTokenCache = { token: '', expiresAt: 0 };
@@ -322,6 +331,109 @@ async function applyGemCosmeticPurchase(uid, itemId, operationId, accessToken) {
   }
 }
 
+async function applyGemReward(uid, action, achievementId, operationId, accessToken) {
+  const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken,
+    { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const player = await getDocument('players/' + encodeURIComponent(uid), accessToken, transaction);
+    if (!player) throw new Error('PLAYER_PROFILE_NOT_READY');
+    const fields = player.fields || {};
+    const before = fields.gems ? parseIntegerField(fields.gems, 0) : 0;
+    if (!Number.isSafeInteger(before) || before < 0 || before > MAX_BALANCE) throw new Error('INVALID_GEM_BALANCE');
+    const recentOps = parseStringArray(fields.gemOps);
+    const day = new Date().toISOString().slice(0, 10);
+    const finish = async (extra) => {
+      await firestoreRequest(
+        'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+        accessToken,
+        { method: 'POST', body: { transaction, writes: [] } }
+      );
+      finished = true;
+      return { previous: before, balance: before, change: 0, duplicate: true, operations: recentOps, ...(extra || {}) };
+    };
+
+    let amount = 0, storedOperationId = operationId, rewardDay = null, bonusAmount = 0;
+    if (action === 'achievement') {
+      const reward = GEM_ACHIEVEMENT_REWARDS[achievementId];
+      if (!reward || operationId !== 'achievement:' + achievementId) throw new Error('INVALID_ACHIEVEMENT_REWARD');
+      if (recentOps.includes(operationId)) return await finish();
+      const achievementFields = fields.achievements && fields.achievements.mapValue
+        && fields.achievements.mapValue.fields ? fields.achievements.mapValue.fields : {};
+      const unlocked = parseStringArray(achievementFields.unlocked);
+      const stats = achievementFields.stats && achievementFields.stats.mapValue
+        && achievementFields.stats.mapValue.fields ? achievementFields.stats.mapValue.fields : {};
+      let progress = 0;
+      if (reward.metric === 'subjects') progress = parseStringArray(achievementFields.subjects).length;
+      else if (reward.metric === 'achievementCount') progress = unlocked.length;
+      else progress = parseIntegerField(stats[reward.metric], 0);
+      if (!unlocked.includes(achievementId) || !Number.isSafeInteger(progress) || progress < reward.target) {
+        throw new Error('ACHIEVEMENT_NOT_READY');
+      }
+      amount = reward.amount;
+    } else if (action === 'daily') {
+      if (operationId !== 'daily:' + day) throw new Error('INVALID_DAILY_OPERATION_ID');
+      const sameDay = recentOps.find(value => value.startsWith('daily:' + day + ':'));
+      if (sameDay) return await finish({ rewardDay: Number(sameDay.split(':')[2]) || 1 });
+      const challengeFields = fields.challengeState && fields.challengeState.mapValue
+        && fields.challengeState.mapValue.fields ? fields.challengeState.mapValue.fields : {};
+      const progressFields = challengeFields.progress && challengeFields.progress.mapValue
+        && challengeFields.progress.mapValue.fields ? challengeFields.progress.mapValue.fields : {};
+      const quizzesToday = parseIntegerField(progressFields.quizzes, 0);
+      if (!challengeFields.day || challengeFields.day.stringValue !== day
+          || !Number.isSafeInteger(quizzesToday) || quizzesToday < 1) {
+        throw new Error('DAILY_ACTIVITY_REQUIRED');
+      }
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      const previousClaim = recentOps.find(value => value.startsWith('daily:' + yesterday + ':'));
+      const previousDayNumber = previousClaim ? Number(previousClaim.split(':')[2]) || 0 : 0;
+      rewardDay = previousDayNumber >= 1 && previousDayNumber < 7 ? previousDayNumber + 1 : 1;
+      amount = rewardDay === 7 ? 6 : 1;
+      bonusAmount = rewardDay === 7 ? 5 : 0;
+      storedOperationId = 'daily:' + day + ':' + rewardDay;
+    } else {
+      throw new Error('INVALID_REWARD_ACTION');
+    }
+
+    const after = before + amount;
+    if (!Number.isSafeInteger(after) || after < 0 || after > MAX_BALANCE) throw new Error('GEM_BALANCE_LIMIT');
+    const operations = [...recentOps, storedOperationId].slice(-MAX_RECENT_OPS);
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      {
+        method: 'POST',
+        body: {
+          transaction,
+          writes: [{
+            update: {
+              name: documentName,
+              fields: {
+                gems: { integerValue: String(after) },
+                gemOps: { arrayValue: { values: operations.map(value => ({ stringValue: value })) } }
+              }
+            },
+            updateMask: { fieldPaths: ['gems', 'gemOps'] }
+          }]
+        }
+      }
+    );
+    finished = true;
+    return {
+      previous: before, balance: after, change: amount, duplicate: false, operations,
+      ...(rewardDay ? { rewardDay, bonusAmount } : {})
+    };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
   const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
   const transactionResult = await firestoreRequest(
@@ -412,12 +524,22 @@ export default {
       const action = payload && payload.action;
       const amount = payload && payload.amount;
       const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
-      if (!['earn', 'spend', 'purchase'].includes(action)) return json({ ok: false, error: 'INVALID_ACTION' }, 400, origin);
+      if (!['earn', 'spend', 'purchase', 'achievement', 'daily'].includes(action)) return json({ ok: false, error: 'INVALID_ACTION' }, 400, origin);
       if (action === 'purchase' && (typeof (payload && payload.itemId) !== 'string' || !GEM_COSMETICS[payload.itemId])) {
         return json({ ok: false, error: 'INVALID_GEM_ITEM' }, 400, origin);
       }
-      if (action !== 'purchase' && (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_OPERATION_AMOUNT)) {
+      const achievementId = payload && typeof payload.achievementId === 'string' ? payload.achievementId : '';
+      if (action === 'achievement' && !Object.prototype.hasOwnProperty.call(GEM_ACHIEVEMENT_REWARDS, achievementId)) {
+        return json({ ok: false, error: 'INVALID_ACHIEVEMENT_REWARD' }, 400, origin);
+      }
+      if (['earn', 'spend'].includes(action) && (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_OPERATION_AMOUNT)) {
         return json({ ok: false, error: 'INVALID_GEM_AMOUNT' }, 400, origin);
+      }
+      if (action === 'daily' && operationId !== 'daily:' + new Date().toISOString().slice(0, 10)) {
+        return json({ ok: false, error: 'INVALID_DAILY_OPERATION_ID' }, 400, origin);
+      }
+      if (action === 'achievement' && operationId !== 'achievement:' + achievementId) {
+        return json({ ok: false, error: 'INVALID_ACHIEVEMENT_OPERATION_ID' }, 400, origin);
       }
       if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(operationId)) {
         return json({ ok: false, error: 'INVALID_GEM_OPERATION_ID' }, 400, origin);
@@ -430,7 +552,9 @@ export default {
       }
       const outcome = action === 'purchase'
         ? await applyGemCosmeticPurchase(identity.uid, payload.itemId, operationId, accessToken)
-        : await applyGemChange(identity.uid, action, amount, operationId, accessToken);
+        : (action === 'achievement' || action === 'daily')
+          ? await applyGemReward(identity.uid, action, achievementId, operationId, accessToken)
+          : await applyGemChange(identity.uid, action, amount, operationId, accessToken);
       return json({ ok: true, ...outcome }, 200, origin);
     } catch (error) {
       if (error && error.message === 'INSUFFICIENT_GEMS') {
@@ -444,6 +568,12 @@ export default {
       }
       if (error && error.message === 'INVALID_GEM_BALANCE') {
         return json({ ok: false, code: 'INVALID_GEM_BALANCE', error: 'Your Gems balance needs Owner review.' }, 409, origin);
+      }
+      if (error && error.message === 'ACHIEVEMENT_NOT_READY') {
+        return json({ ok: false, code: 'ACHIEVEMENT_NOT_READY', error: 'This achievement is not ready to claim.' }, 409, origin);
+      }
+      if (error && error.message === 'DAILY_ACTIVITY_REQUIRED') {
+        return json({ ok: false, code: 'DAILY_ACTIVITY_REQUIRED', error: 'Complete a normal practice quiz before claiming today’s Gems.' }, 409, origin);
       }
       console.error('Gems API request failed:', error && error.message ? error.message : 'unknown error');
       return json({ ok: false, code: 'GEMS_SERVICE_ERROR', error: 'The secure Gems service could not complete this request.' }, 502, origin);
