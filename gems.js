@@ -2,9 +2,9 @@
   "use strict";
 
   const App = window.App;
-  const firebaseApi = window.firebase;
+  const firebaseApi = () => window.firebase;
   const host = document.getElementById("gems-body");
-  if (!App || !firebaseApi || !host) return;
+  if (!App || !host) return;
 
   const make = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -18,7 +18,10 @@
     node.addEventListener("click", handler);
     return node;
   };
-  const signedInUser = () => firebaseApi.auth && firebaseApi.auth().currentUser;
+  const signedInUser = () => {
+    const fb = firebaseApi();
+    return fb && fb.auth ? fb.auth().currentUser : null;
+  };
   const formatGems = value => Number.isSafeInteger(value) ? value.toLocaleString() : "—";
   const formatDate = value => {
     const timestamp = Number(value);
@@ -102,7 +105,9 @@
     loading = true;
     showMessage("Your Gem wallet", "Loading your balance and recent activity…");
     try {
-      const db = firebaseApi.firestore();
+      const fb = firebaseApi();
+      if (!fb || !fb.firestore) throw new Error("The BECE Hub account service is still connecting. Please try again.");
+      const db = fb.firestore();
       const [playerSnapshot, historySnapshot] = await Promise.all([
         db.collection("players").doc(user.uid).get(),
         db.collection("gemTransactions")
