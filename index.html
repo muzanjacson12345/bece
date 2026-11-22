@@ -520,7 +520,7 @@ html[data-theme='dark'] #theme-toggle .icon-moon { display: none; }
 .achievement-group-heading h2{font-size:19px;margin:0}.achievement-group-heading span{font-size:12px;color:var(--muted);white-space:nowrap}
 .achievement-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .achievement-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;min-width:0;padding:17px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface2)}
-.achievement-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--surface);font-size:25px;filter:grayscale(1);opacity:.45}
+.achievement-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--surface);font-size:25px;filter:none;opacity:1}
 .achievement-copy{min-width:0;display:flex;flex-direction:column;gap:4px}.achievement-copy strong{font-size:14px}.achievement-copy small{font-size:12px;line-height:1.45;color:var(--muted)}
 .achievement-status{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--muted)}
 .achievement-track{grid-column:1/-1;height:8px;overflow:hidden;border-radius:99px;background:var(--line)}
@@ -3719,10 +3719,7 @@ pre, code { overflow-wrap: anywhere; }
   <symbol id="i-coin" viewBox="0 0 24 24"><path d="M4 7v9.8c0 1.8 3.6 3.3 8 3.3s8-1.5 8-3.3V7" fill="#D99A2B" stroke="#956218" stroke-width="1.2"/><path d="M4 11.7c0 1.8 3.6 3.3 8 3.3s8-1.5 8-3.3M4 15.8c0 1.8 3.6 3.3 8 3.3s8-1.5 8-3.3" fill="none" stroke="#FBE3A0" stroke-width="1.1"/><ellipse cx="12" cy="7" rx="8" ry="3.3" fill="#FFD66B" stroke="#956218" stroke-width="1.2"/><path d="M9.3 7c.5-1.1 1.5-1.6 2.7-1.6s2.2.5 2.7 1.6c-.5 1.1-1.5 1.6-2.7 1.6S9.8 8.1 9.3 7Z" fill="#FFF0B8" stroke="#B37A1D" stroke-width=".8"/></symbol>
   <symbol id="i-gem" viewBox="0 0 24 24"><path d="M5.1 3.8h13.8L23 9.6 12 21 1 9.6z" fill="#56B8E8" stroke="#2679AC" stroke-width="1.2" stroke-linejoin="round"/><path d="M5.1 3.8 8 9.6 12 21 12 9.6 18.9 3.8" fill="#B8E9FC" opacity=".82"/><path d="M1 9.6h22M8 9.6l4-5.8 4 5.8" fill="none" stroke="#EAF9FF" stroke-width="1.2" stroke-linejoin="round"/><path d="M5.2 5.4 7 5.1" stroke="#FFF" stroke-width="1.5" stroke-linecap="round"/></symbol>
   <symbol id="i-versus" viewBox="0 0 24 24">
-  <path d="M2.5 3.5h6l3 3-3 3h-6z" fill="#DCEEFF" stroke="#4A85B7" stroke-width="1.25" stroke-linejoin="round"/>
-  <path d="M21.5 3.5h-6l-3 3 3 3h6z" fill="#FCE8DD" stroke="#C77C56" stroke-width="1.25" stroke-linejoin="round"/>
-  <path d="M5.5 13.2 7.3 19l1.9-5.8" fill="none" stroke="#4A6E91" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M18 13.5c-1.2-.9-3.9-.8-4.2.7-.3 1.3 3.7 1 3.8 2.5.1 1.5-2.4 2.4-4 1.3" fill="none" stroke="#B76B50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="12" y="16.2" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="800" letter-spacing=".2" fill="currentColor">VS</text>
 </symbol>
   <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2.5c.8 4-2.5 5.4-1.6 8.2.5 1.5 1.7 2 2.8 1.6 1.7-.7 1.7-2.6 1.4-4.1 3 2.3 5 5 4.4 8.1-.6 3.3-3.5 5.2-7 5.2-4.1 0-7.3-2.6-7.3-6.8 0-3.1 2-5.5 4.7-7.9-.2 2.2.1 3.2 1 3.8.4-3 1.1-5.2 1.6-8.1Z"/><path d="M12.3 14.1c1.6 1.3 2 2.4 1.4 3.6-.4.9-1.1 1.3-2 1.3-1.1 0-2-.8-2-2 0-1 .9-2 2.6-2.9Z" fill="#fff" fill-opacity=".55" stroke="none"/></symbol>
   <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v4.8a5 5 0 0 1-10 0zM7 6H3v2a4 4 0 0 0 4 4M17 6h4v2a4 4 0 0 1-4 4M12 14v4m-4 3h8m-6-3h4"/></symbol>
@@ -8063,7 +8060,7 @@ Object.assign(noteTakeaways, {"rme-jhs1-god": "Every religion teaches that one S
 
 /* ======================= Helpers ======================= */
 const $ = id => document.getElementById(id);
-const UI_GLYPH_MAP = new Map([["💰",{"name":"coin","cls":"ui-icon--coin"}],["🪙",{"name":"coin-token","cls":"ui-icon--coin"}],["💎",{"name":"gem","cls":"ui-icon--gem"}],["🔥",{"name":"flame","cls":"ui-icon--flame"}],["🏆",{"name":"trophy","cls":"ui-icon--gold"}],["🥇",{"name":"medal","cls":"ui-icon--gold"}],["🥈",{"name":"medal","cls":"ui-icon--gold"}],["🥉",{"name":"medal","cls":"ui-icon--gold"}],["🏅",{"name":"medal","cls":"ui-icon--gold"}],["🎖️",{"name":"medal","cls":"ui-icon--gold"}],["👑",{"name":"crown","cls":"ui-icon--gold"}],["🛡️",{"name":"shield-check","cls":"ui-icon--shield"}],["⚔️",{"name":"versus","cls":"ui-icon--versus"}],["🗡️",{"name":"versus","cls":"ui-icon--versus"}],["🌱",{"name":"sprout","cls":"ui-icon--nature"}],["📖",{"name":"book-open","cls":"ui-icon--study"}],["🧠",{"name":"brain","cls":"ui-icon--study"}],["🎓",{"name":"graduation","cls":"ui-icon--study"}],["📚",{"name":"books","cls":"ui-icon--study"}],["🎯",{"name":"target","cls":"ui-icon--target"}],["🚀",{"name":"rocket","cls":"ui-icon--avatar"}],["🌟",{"name":"star","cls":"ui-icon--gold"}],["⭐",{"name":"star","cls":"ui-icon--gold"}],["💡",{"name":"bulb","cls":"ui-icon--study"}],["📘",{"name":"book","cls":"ui-icon--study"}],["📗",{"name":"book","cls":"ui-icon--study"}],["🗓️",{"name":"calendar","cls":""}],["🧭",{"name":"search","cls":""}],["🌍",{"name":"globe","cls":"ui-icon--social"}],["🌐",{"name":"globe","cls":"ui-icon--social"}],["🔬",{"name":"microscope","cls":"ui-icon--science"}],["🧪",{"name":"flask","cls":"ui-icon--science"}],["⚗️",{"name":"flask","cls":"ui-icon--science"}],["📐",{"name":"ruler","cls":"ui-icon--math"}],["✍️",{"name":"pen","cls":"ui-icon--study"}],["✏️",{"name":"pencil","cls":"ui-icon--math"}],["🖊️",{"name":"pen","cls":"ui-icon--study"}],["📝",{"name":"notebook","cls":"ui-icon--study"}],["🔭",{"name":"telescope","cls":"ui-icon--avatar"}],["⏳",{"name":"hourglass","cls":"ui-icon--avatar"}],["🧮",{"name":"calculator","cls":"ui-icon--math"}],["➗",{"name":"calculator","cls":"ui-icon--math"}],["💻",{"name":"laptop","cls":"ui-icon--technology"}],["🤝",{"name":"handshake","cls":"ui-icon--peace"}],["🛠️",{"name":"wrench","cls":"ui-icon--technology"}],["🎨",{"name":"palette","cls":"ui-icon--arts"}],["🎭",{"name":"masks","cls":"ui-icon--arts"}],["🧩",{"name":"puzzle","cls":"ui-icon--avatar"}],["🎲",{"name":"dice","cls":"ui-icon--avatar"}],["🎮",{"name":"gamepad","cls":"ui-icon--avatar"}],["⚡",{"name":"bolt","cls":"ui-icon--avatar"}],["🎧",{"name":"headphones","cls":"ui-icon--avatar"}],["🎸",{"name":"guitar","cls":"ui-icon--avatar"}],["⚽",{"name":"football","cls":"ui-icon--avatar"}],["🏀",{"name":"basketball","cls":"ui-icon--avatar"}],["🛹",{"name":"skateboard","cls":"ui-icon--avatar"}],["🍕",{"name":"pizza","cls":"ui-icon--avatar"}],["🌈",{"name":"rainbow","cls":"ui-icon--avatar"}],["🍦",{"name":"icecream","cls":"ui-icon--avatar"}],["🎂",{"name":"cake","cls":"ui-icon--avatar"}],["🧬",{"name":"dna","cls":"ui-icon--science"}],["📡",{"name":"satellite","cls":"ui-icon--technology"}],["💬",{"name":"message","cls":""}],["📣",{"name":"megaphone","cls":""}],["📢",{"name":"megaphone","cls":""}],["📩",{"name":"mail","cls":""}],["📨",{"name":"mail","cls":""}],["📤",{"name":"upload","cls":""}],["📸",{"name":"camera","cls":""}],["📷",{"name":"camera","cls":""}],["📁",{"name":"drive","cls":""}],["📂",{"name":"drive","cls":""}],["📋",{"name":"notebook","cls":""}],["📌",{"name":"pin","cls":""}],["📆",{"name":"calendar","cls":""}],["📅",{"name":"calendar","cls":""}],["🔒",{"name":"lock","cls":""}],["🔓",{"name":"unlock","cls":""}],["🔐",{"name":"lock","cls":""}],["🚪",{"name":"door-open","cls":""}],["🔧",{"name":"wrench","cls":""}],["🔨",{"name":"wrench","cls":""}],["🧰",{"name":"toolbox","cls":"ui-icon--technology"}],["🛒",{"name":"shopping-bag","cls":""}],["🛍️",{"name":"shopping-bag","cls":""}],["🐞",{"name":"bug","cls":""}],["🪲",{"name":"bug","cls":""}],["🗑️",{"name":"trash","cls":""}],["🚫",{"name":"ban","cls":""}],["⛔",{"name":"ban","cls":""}],["✅",{"name":"check","cls":"ui-icon--good"}],["✔️",{"name":"check","cls":"ui-icon--good"}],["❌",{"name":"x","cls":"ui-icon--bad"}],["✖️",{"name":"x","cls":"ui-icon--bad"}],["⚠️",{"name":"ban","cls":"ui-icon--warning"}],["🚨",{"name":"ban","cls":"ui-icon--warning"}],["🎁",{"name":"gift","cls":""}],["🔄",{"name":"refresh","cls":""}],["♻️",{"name":"refresh","cls":""}],["📊",{"name":"chart-column","cls":""}],["📈",{"name":"chart-line","cls":""}],["📉",{"name":"chart-line","cls":""}],["🏛️",{"name":"landmark","cls":"ui-icon--history"}],["⚖️",{"name":"scale","cls":"ui-icon--social"}],["🗺️",{"name":"map","cls":"ui-icon--social"}],["🕌",{"name":"mosque","cls":""}],["🥁",{"name":"drum","cls":"ui-icon--arts"}],["✒️",{"name":"quill","cls":"ui-icon--study"}],["🗿",{"name":"statue","cls":"ui-icon--history"}],["🌾",{"name":"wheat","cls":"ui-icon--nature"}],["🌳",{"name":"tree","cls":"ui-icon--nature"}],["🧹",{"name":"broom","cls":"ui-icon--technology"}],["☁️",{"name":"cloud","cls":""}],["🌤️",{"name":"sun-cloud","cls":"ui-icon--weather"}],["☀️",{"name":"sun","cls":""}],["🌙",{"name":"moon","cls":""}],["🧑‍🎓",{"name":"student","cls":"ui-icon--avatar"}],["🧑‍🚀",{"name":"astronaut","cls":"ui-icon--avatar"}],["🤖",{"name":"robot","cls":"ui-icon--avatar"}],["👻",{"name":"ghost","cls":"ui-icon--avatar"}],["👽",{"name":"alien","cls":"ui-icon--avatar"}],["🧙",{"name":"wizard","cls":"ui-icon--avatar"}],["😎",{"name":"sunglasses","cls":"ui-icon--avatar"}],["🤓",{"name":"glasses","cls":"ui-icon--avatar"}],["🥳",{"name":"party","cls":"ui-icon--avatar"}],["🤩",{"name":"star-eyes","cls":"ui-icon--avatar"}],["🤠",{"name":"detective","cls":"ui-icon--avatar"}],["🕵️",{"name":"detective","cls":"ui-icon--avatar"}],["🦸",{"name":"superhero","cls":"ui-icon--avatar"}],["🦹",{"name":"villain","cls":"ui-icon--avatar"}],["🧞",{"name":"genie","cls":"ui-icon--avatar"}],["🧜",{"name":"mermaid","cls":"ui-icon--avatar"}],["🧛",{"name":"vampire","cls":"ui-icon--avatar"}],["🤴",{"name":"crown","cls":"ui-icon--avatar"}],["👸",{"name":"crown","cls":"ui-icon--avatar"}],["😄",{"name":"smile","cls":"ui-icon--avatar"}],["🇫🇷",{"name":"flag-france","cls":"ui-icon--french"}],["🌠",{"name":"comet","cls":"ui-icon--sparkle"}],["💯",{"name":"hundred","cls":"ui-icon--gold"}],["🏁",{"name":"flag-checkered","cls":"ui-icon--gold"}],["✨",{"name":"sparkle","cls":"ui-icon--sparkle"}],["💠",{"name":"diamond","cls":"ui-icon--gem"}],["💫",{"name":"comet","cls":"ui-icon--sparkle"}],["🇬🇭",{"name":"flag-ghana","cls":"ui-icon--ghana"}],["🦺",{"name":"safety-vest","cls":"ui-icon--technology"}],["🪵",{"name":"wood-log","cls":"ui-icon--arts"}],["🥗",{"name":"salad","cls":"ui-icon--arts"}],["🖥️",{"name":"desktop","cls":"ui-icon--technology"}],["🕊️",{"name":"dove","cls":"ui-icon--peace"}],["🧲",{"name":"magnet","cls":"ui-icon--science"}],["🏺",{"name":"amphora","cls":"ui-icon--history"}],["👨‍👩‍👧‍👦",{"name":"family","cls":"ui-icon--people"}],["🎉",{"name":"party","cls":"ui-icon--sparkle"}],["🤔",{"name":"thinking","cls":"ui-icon--thinking"}],["🎒",{"name":"backpack","cls":"ui-icon--study"}],["🍉",{"name":"watermelon","cls":"ui-icon--avatar"}],["🌴",{"name":"palm-tree","cls":"ui-icon--avatar"}],["🗣️",{"name":"speech","cls":"ui-icon--french"}],["🔢",{"name":"calculator","cls":"ui-icon--math"}],["🖥",{"name":"desktop","cls":"ui-icon--technology"}],["🕊",{"name":"dove","cls":"ui-icon--peace"}],["🦁",{"name":"lion","cls":"ui-icon--avatar"}],["🐯",{"name":"tiger","cls":"ui-icon--avatar"}],["🦊",{"name":"fox","cls":"ui-icon--avatar"}],["🐼",{"name":"panda","cls":"ui-icon--avatar"}],["🐸",{"name":"frog","cls":"ui-icon--avatar"}],["🦉",{"name":"owl","cls":"ui-icon--avatar"}],["🐙",{"name":"octopus","cls":"ui-icon--avatar"}],["🦄",{"name":"unicorn","cls":"ui-icon--avatar"}],["🐨",{"name":"koala","cls":"ui-icon--avatar"}],["🐧",{"name":"penguin","cls":"ui-icon--avatar"}],["🦈",{"name":"shark","cls":"ui-icon--avatar"}],["🐺",{"name":"wolf","cls":"ui-icon--avatar"}],["🦋",{"name":"butterfly","cls":"ui-icon--avatar"}],["🐢",{"name":"turtle","cls":"ui-icon--avatar"}],["🦖",{"name":"dinosaur","cls":"ui-icon--avatar"}],["🐬",{"name":"dolphin","cls":"ui-icon--avatar"}],["🐻",{"name":"bear","cls":"ui-icon--avatar"}],["🐰",{"name":"rabbit","cls":"ui-icon--avatar"}],["🦒",{"name":"giraffe","cls":"ui-icon--avatar"}],["🦅",{"name":"eagle","cls":"ui-icon--avatar"}],["🐝",{"name":"bee","cls":"ui-icon--avatar"}],["🦜",{"name":"parrot","cls":"ui-icon--avatar"}],["🐘",{"name":"elephant","cls":"ui-icon--avatar"}],["🦓",{"name":"zebra","cls":"ui-icon--avatar"}],["🎻",{"name":"violin","cls":"ui-icon--avatar"}],["⚛️",{"name":"atom","cls":"ui-icon--science"}],["↗",{"name":"external-link","cls":"ui-icon--link"}],["⌨️",{"name":"keyboard","cls":"ui-icon--technology"}],["🏠",{"name":"home","cls":"ui-icon--home"}],["💽",{"name":"disc","cls":"ui-icon--technology"}],["💾",{"name":"save","cls":"ui-icon--technology"}],["📏",{"name":"ruler","cls":"ui-icon--math"}],["🔎",{"name":"search","cls":""}],["🔤",{"name":"letters","cls":"ui-icon--math"}],["🥷",{"name":"ninja","cls":"ui-icon--avatar"}],["☕",{"name":"coffee","cls":"ui-icon--arts"}],["🐲",{"name":"dragon","cls":"ui-icon--avatar"}],["🙂",{"name":"smile","cls":"ui-icon--avatar"}],["❓",{"name":"help-circle","cls":"ui-icon--thinking"}],["⏱",{"name":"stopwatch","cls":"ui-icon--technology"}],["📱",{"name":"smartphone","cls":"ui-icon--technology"}],["📬",{"name":"mail-open","cls":""}],["👥",{"name":"users","cls":"ui-icon--social"}],["📕",{"name":"book","cls":"ui-icon--study"}],["⏸️",{"name":"pause","cls":""}],["➕",{"name":"plus","cls":"ui-icon--good"}],["➖",{"name":"minus","cls":"ui-icon--bad"}],["🖼️",{"name":"image","cls":""}],["📄",{"name":"file-text","cls":"ui-icon--study"}],["▶",{"name":"play","cls":""}],["▶️",{"name":"play","cls":""}],["✕",{"name":"x","cls":"ui-icon--bad"}],["✓",{"name":"check","cls":"ui-icon--good"}],["✗",{"name":"x","cls":"ui-icon--bad"}]]);
+const UI_GLYPH_MAP = new Map([["💰",{"name":"coin","cls":"ui-icon--coin"}],["🪙",{"name":"coin-token","cls":"ui-icon--coin"}],["💎",{"name":"gem","cls":"ui-icon--gem"}],["🔥",{"name":"flame","cls":"ui-icon--flame"}],["🏆",{"name":"trophy","cls":"ui-icon--gold"}],["🥇",{"name":"medal","cls":"ui-icon--gold"}],["🥈",{"name":"medal","cls":"ui-icon--gold"}],["🥉",{"name":"medal","cls":"ui-icon--gold"}],["🏅",{"name":"medal","cls":"ui-icon--gold"}],["🎖️",{"name":"medal","cls":"ui-icon--gold"}],["👑",{"name":"crown","cls":"ui-icon--gold"}],["🛡️",{"name":"shield-check","cls":"ui-icon--shield"}],["🌱",{"name":"sprout","cls":"ui-icon--nature"}],["📖",{"name":"book-open","cls":"ui-icon--study"}],["🧠",{"name":"brain","cls":"ui-icon--study"}],["🎓",{"name":"graduation","cls":"ui-icon--study"}],["📚",{"name":"books","cls":"ui-icon--study"}],["🎯",{"name":"target","cls":"ui-icon--target"}],["🚀",{"name":"rocket","cls":"ui-icon--avatar"}],["🌟",{"name":"star","cls":"ui-icon--gold"}],["⭐",{"name":"star","cls":"ui-icon--gold"}],["💡",{"name":"bulb","cls":"ui-icon--study"}],["📘",{"name":"book","cls":"ui-icon--study"}],["📗",{"name":"book","cls":"ui-icon--study"}],["🗓️",{"name":"calendar","cls":""}],["🧭",{"name":"search","cls":""}],["🌍",{"name":"globe","cls":"ui-icon--social"}],["🌐",{"name":"globe","cls":"ui-icon--social"}],["🔬",{"name":"microscope","cls":"ui-icon--science"}],["🧪",{"name":"flask","cls":"ui-icon--science"}],["⚗️",{"name":"flask","cls":"ui-icon--science"}],["📐",{"name":"ruler","cls":"ui-icon--math"}],["✍️",{"name":"pen","cls":"ui-icon--study"}],["✏️",{"name":"pencil","cls":"ui-icon--math"}],["🖊️",{"name":"pen","cls":"ui-icon--study"}],["📝",{"name":"notebook","cls":"ui-icon--study"}],["🔭",{"name":"telescope","cls":"ui-icon--avatar"}],["⏳",{"name":"hourglass","cls":"ui-icon--avatar"}],["🧮",{"name":"calculator","cls":"ui-icon--math"}],["➗",{"name":"calculator","cls":"ui-icon--math"}],["💻",{"name":"laptop","cls":"ui-icon--technology"}],["🤝",{"name":"handshake","cls":"ui-icon--peace"}],["🛠️",{"name":"wrench","cls":"ui-icon--technology"}],["🎨",{"name":"palette","cls":"ui-icon--arts"}],["🎭",{"name":"masks","cls":"ui-icon--arts"}],["🧩",{"name":"puzzle","cls":"ui-icon--avatar"}],["🎲",{"name":"dice","cls":"ui-icon--avatar"}],["🎮",{"name":"gamepad","cls":"ui-icon--avatar"}],["⚡",{"name":"bolt","cls":"ui-icon--avatar"}],["🎧",{"name":"headphones","cls":"ui-icon--avatar"}],["🎸",{"name":"guitar","cls":"ui-icon--avatar"}],["⚽",{"name":"football","cls":"ui-icon--avatar"}],["🏀",{"name":"basketball","cls":"ui-icon--avatar"}],["🛹",{"name":"skateboard","cls":"ui-icon--avatar"}],["🍕",{"name":"pizza","cls":"ui-icon--avatar"}],["🌈",{"name":"rainbow","cls":"ui-icon--avatar"}],["🍦",{"name":"icecream","cls":"ui-icon--avatar"}],["🎂",{"name":"cake","cls":"ui-icon--avatar"}],["🧬",{"name":"dna","cls":"ui-icon--science"}],["📡",{"name":"satellite","cls":"ui-icon--technology"}],["💬",{"name":"message","cls":""}],["📣",{"name":"megaphone","cls":""}],["📢",{"name":"megaphone","cls":""}],["📩",{"name":"mail","cls":""}],["📨",{"name":"mail","cls":""}],["📤",{"name":"upload","cls":""}],["📸",{"name":"camera","cls":""}],["📷",{"name":"camera","cls":""}],["📁",{"name":"drive","cls":""}],["📂",{"name":"drive","cls":""}],["📋",{"name":"notebook","cls":""}],["📌",{"name":"pin","cls":""}],["📆",{"name":"calendar","cls":""}],["📅",{"name":"calendar","cls":""}],["🔒",{"name":"lock","cls":""}],["🔓",{"name":"unlock","cls":""}],["🔐",{"name":"lock","cls":""}],["🚪",{"name":"door-open","cls":""}],["🔧",{"name":"wrench","cls":""}],["🔨",{"name":"wrench","cls":""}],["🧰",{"name":"toolbox","cls":"ui-icon--technology"}],["🛒",{"name":"shopping-bag","cls":""}],["🛍️",{"name":"shopping-bag","cls":""}],["🐞",{"name":"bug","cls":""}],["🪲",{"name":"bug","cls":""}],["🗑️",{"name":"trash","cls":""}],["🚫",{"name":"ban","cls":""}],["⛔",{"name":"ban","cls":""}],["✅",{"name":"check","cls":"ui-icon--good"}],["✔️",{"name":"check","cls":"ui-icon--good"}],["❌",{"name":"x","cls":"ui-icon--bad"}],["✖️",{"name":"x","cls":"ui-icon--bad"}],["⚠️",{"name":"ban","cls":"ui-icon--warning"}],["🚨",{"name":"ban","cls":"ui-icon--warning"}],["🎁",{"name":"gift","cls":""}],["🔄",{"name":"refresh","cls":""}],["♻️",{"name":"refresh","cls":""}],["📊",{"name":"chart-column","cls":""}],["📈",{"name":"chart-line","cls":""}],["📉",{"name":"chart-line","cls":""}],["🏛️",{"name":"landmark","cls":"ui-icon--history"}],["⚖️",{"name":"scale","cls":"ui-icon--social"}],["🗺️",{"name":"map","cls":"ui-icon--social"}],["🕌",{"name":"mosque","cls":""}],["🥁",{"name":"drum","cls":"ui-icon--arts"}],["✒️",{"name":"quill","cls":"ui-icon--study"}],["🗿",{"name":"statue","cls":"ui-icon--history"}],["🌾",{"name":"wheat","cls":"ui-icon--nature"}],["🌳",{"name":"tree","cls":"ui-icon--nature"}],["🧹",{"name":"broom","cls":"ui-icon--technology"}],["☁️",{"name":"cloud","cls":""}],["🌤️",{"name":"sun-cloud","cls":"ui-icon--weather"}],["☀️",{"name":"sun","cls":""}],["🌙",{"name":"moon","cls":""}],["🧑‍🎓",{"name":"student","cls":"ui-icon--avatar"}],["🧑‍🚀",{"name":"astronaut","cls":"ui-icon--avatar"}],["🤖",{"name":"robot","cls":"ui-icon--avatar"}],["👻",{"name":"ghost","cls":"ui-icon--avatar"}],["👽",{"name":"alien","cls":"ui-icon--avatar"}],["🧙",{"name":"wizard","cls":"ui-icon--avatar"}],["😎",{"name":"sunglasses","cls":"ui-icon--avatar"}],["🤓",{"name":"glasses","cls":"ui-icon--avatar"}],["🥳",{"name":"party","cls":"ui-icon--avatar"}],["🤩",{"name":"star-eyes","cls":"ui-icon--avatar"}],["🤠",{"name":"detective","cls":"ui-icon--avatar"}],["🕵️",{"name":"detective","cls":"ui-icon--avatar"}],["🦸",{"name":"superhero","cls":"ui-icon--avatar"}],["🦹",{"name":"villain","cls":"ui-icon--avatar"}],["🧞",{"name":"genie","cls":"ui-icon--avatar"}],["🧜",{"name":"mermaid","cls":"ui-icon--avatar"}],["🧛",{"name":"vampire","cls":"ui-icon--avatar"}],["🤴",{"name":"crown","cls":"ui-icon--avatar"}],["👸",{"name":"crown","cls":"ui-icon--avatar"}],["😄",{"name":"smile","cls":"ui-icon--avatar"}],["🇫🇷",{"name":"flag-france","cls":"ui-icon--french"}],["🌠",{"name":"comet","cls":"ui-icon--sparkle"}],["💯",{"name":"hundred","cls":"ui-icon--gold"}],["🏁",{"name":"flag-checkered","cls":"ui-icon--gold"}],["✨",{"name":"sparkle","cls":"ui-icon--sparkle"}],["💠",{"name":"diamond","cls":"ui-icon--gem"}],["💫",{"name":"comet","cls":"ui-icon--sparkle"}],["🇬🇭",{"name":"flag-ghana","cls":"ui-icon--ghana"}],["🦺",{"name":"safety-vest","cls":"ui-icon--technology"}],["🪵",{"name":"wood-log","cls":"ui-icon--arts"}],["🥗",{"name":"salad","cls":"ui-icon--arts"}],["🖥️",{"name":"desktop","cls":"ui-icon--technology"}],["🕊️",{"name":"dove","cls":"ui-icon--peace"}],["🧲",{"name":"magnet","cls":"ui-icon--science"}],["🏺",{"name":"amphora","cls":"ui-icon--history"}],["👨‍👩‍👧‍👦",{"name":"family","cls":"ui-icon--people"}],["🎉",{"name":"party","cls":"ui-icon--sparkle"}],["🤔",{"name":"thinking","cls":"ui-icon--thinking"}],["🎒",{"name":"backpack","cls":"ui-icon--study"}],["🍉",{"name":"watermelon","cls":"ui-icon--avatar"}],["🌴",{"name":"palm-tree","cls":"ui-icon--avatar"}],["🗣️",{"name":"speech","cls":"ui-icon--french"}],["🔢",{"name":"calculator","cls":"ui-icon--math"}],["🖥",{"name":"desktop","cls":"ui-icon--technology"}],["🕊",{"name":"dove","cls":"ui-icon--peace"}],["🦁",{"name":"lion","cls":"ui-icon--avatar"}],["🐯",{"name":"tiger","cls":"ui-icon--avatar"}],["🦊",{"name":"fox","cls":"ui-icon--avatar"}],["🐼",{"name":"panda","cls":"ui-icon--avatar"}],["🐸",{"name":"frog","cls":"ui-icon--avatar"}],["🦉",{"name":"owl","cls":"ui-icon--avatar"}],["🐙",{"name":"octopus","cls":"ui-icon--avatar"}],["🦄",{"name":"unicorn","cls":"ui-icon--avatar"}],["🐨",{"name":"koala","cls":"ui-icon--avatar"}],["🐧",{"name":"penguin","cls":"ui-icon--avatar"}],["🦈",{"name":"shark","cls":"ui-icon--avatar"}],["🐺",{"name":"wolf","cls":"ui-icon--avatar"}],["🦋",{"name":"butterfly","cls":"ui-icon--avatar"}],["🐢",{"name":"turtle","cls":"ui-icon--avatar"}],["🦖",{"name":"dinosaur","cls":"ui-icon--avatar"}],["🐬",{"name":"dolphin","cls":"ui-icon--avatar"}],["🐻",{"name":"bear","cls":"ui-icon--avatar"}],["🐰",{"name":"rabbit","cls":"ui-icon--avatar"}],["🦒",{"name":"giraffe","cls":"ui-icon--avatar"}],["🦅",{"name":"eagle","cls":"ui-icon--avatar"}],["🐝",{"name":"bee","cls":"ui-icon--avatar"}],["🦜",{"name":"parrot","cls":"ui-icon--avatar"}],["🐘",{"name":"elephant","cls":"ui-icon--avatar"}],["🦓",{"name":"zebra","cls":"ui-icon--avatar"}],["🎻",{"name":"violin","cls":"ui-icon--avatar"}],["⚛️",{"name":"atom","cls":"ui-icon--science"}],["↗",{"name":"external-link","cls":"ui-icon--link"}],["⌨️",{"name":"keyboard","cls":"ui-icon--technology"}],["🏠",{"name":"home","cls":"ui-icon--home"}],["💽",{"name":"disc","cls":"ui-icon--technology"}],["💾",{"name":"save","cls":"ui-icon--technology"}],["📏",{"name":"ruler","cls":"ui-icon--math"}],["🔎",{"name":"search","cls":""}],["🔤",{"name":"letters","cls":"ui-icon--math"}],["🥷",{"name":"ninja","cls":"ui-icon--avatar"}],["☕",{"name":"coffee","cls":"ui-icon--arts"}],["🐲",{"name":"dragon","cls":"ui-icon--avatar"}],["🙂",{"name":"smile","cls":"ui-icon--avatar"}],["❓",{"name":"help-circle","cls":"ui-icon--thinking"}],["⏱",{"name":"stopwatch","cls":"ui-icon--technology"}],["📱",{"name":"smartphone","cls":"ui-icon--technology"}],["📬",{"name":"mail-open","cls":""}],["👥",{"name":"users","cls":"ui-icon--social"}],["📕",{"name":"book","cls":"ui-icon--study"}],["⏸️",{"name":"pause","cls":""}],["➕",{"name":"plus","cls":"ui-icon--good"}],["➖",{"name":"minus","cls":"ui-icon--bad"}],["🖼️",{"name":"image","cls":""}],["📄",{"name":"file-text","cls":"ui-icon--study"}],["▶",{"name":"play","cls":""}],["▶️",{"name":"play","cls":""}],["✕",{"name":"x","cls":"ui-icon--bad"}],["✓",{"name":"check","cls":"ui-icon--good"}],["✗",{"name":"x","cls":"ui-icon--bad"}]]);
 const UI_GLYPH_KEYS = [...UI_GLYPH_MAP.keys()].sort((a,b)=>b.length-a.length);
 
 function appendIconAwareText(node, value) {
@@ -8072,7 +8069,7 @@ function appendIconAwareText(node, value) {
     node.appendChild(document.createTextNode(text)); return;
   }
   const className = typeof node.className === 'string' ? node.className : '';
-  if (/(^|\\s)(note-|essay-|lesson-|lab-|flow-|board-bio|account-name|ann-txt|adm-bug-text|note-body|note-explanation|note-key-ideas|note-takeaway|note-section|bio-text)(\\S*)?(\\s|$)/.test(className)) {
+  if (/(^|\\s)(note-|essay-|lesson-|lab-|flow-|board-bio|account-name|ann-txt|adm-bug-text|note-body|note-explanation|note-key-ideas|note-takeaway|note-section|bio-text|achievement-icon|achievement-gem-reward|profile-tab)(\\S*)?(\\s|$)/.test(className)) {
     node.appendChild(document.createTextNode(text)); return;
   }
   let buffer = '';
@@ -8095,7 +8092,8 @@ function setIconAwareText(node, value) {
 function el(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
-  if (text !== undefined && text !== null) appendIconAwareText(node, text);
+  // Regular text remains native: emoji are expressive content, not automatic icon replacements.
+  if (text !== undefined && text !== null) node.appendChild(document.createTextNode(String(text)));
   return node;
 }
 const o = el;
@@ -9390,7 +9388,7 @@ function noteRichText(tag, text, className = '') {
   String(text).split(/(\*\*.*?\*\*)/g).forEach(part => {
     if (!part) return;
     if (part.startsWith('**') && part.endsWith('**')) node.append(el('strong', '', part.slice(2, -2)));
-    else appendIconAwareText(node, part.replace(/\*([^*]+)\*/g, '$1'));
+    else node.appendChild(document.createTextNode(part.replace(/\*([^*]+)\*/g, '$1')));
   });
   return node;
 }
@@ -9525,14 +9523,14 @@ function LessonPlayer(steps) {
     stage.replaceChildren();
     const last = i === steps.length - 1;
     const next = btn('lesson-next', last ? 'Finish 🎉' : 'Continue →', () => { if (last) done(); else { i++; show(); } });
-    const win = why => { setIconAwareText(fb, '✅ ' + why); next.hidden = false; };
+    const win = why => { fb.textContent = '✅ ' + why; next.hidden = false; };
     if (s.t === 'say') stage.append(el('p', 'lesson-say', s.x), next);
     else if (s.t === 'lab') stage.append(el('p', 'lesson-say', 'Now play with it. Move the sliders and notice what changes.'), WIDGETS[s.k](), next);
     else if (s.t === 'pick') {
       stage.append(el('p', 'lesson-q', s.q));
       const opts = s.c.map((text, n) => btn('lesson-opt', text, () => {
         if (n === s.a) { opts.forEach(o => o.disabled = true); opts[n].classList.add('ok'); win(s.w); }
-        else { opts[n].classList.add('bad'); opts[n].disabled = true; setIconAwareText(fb, '🤔 Not quite. Think again and try another.'); }
+        else { opts[n].classList.add('bad'); opts[n].disabled = true; fb.textContent = '🤔 Not quite. Think again and try another.'; }
       }));
       stage.append(...opts, fb, next); next.hidden = true;
     } else {
@@ -9541,7 +9539,7 @@ function LessonPlayer(steps) {
       let tries = 0;
       const check = () => {
         if (Math.abs(parseFloat(inp.value) - s.a) < 0.05) { inp.disabled = true; win(s.w); }
-        else { tries++; setIconAwareText(fb, tries > 1 ? '💡 Hint: ' + s.w : '🤔 Not quite. Have another go.'); }
+        else { tries++; fb.textContent = tries > 1 ? '💡 Hint: ' + s.w : '🤔 Not quite. Have another go.'; }
       };
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
       stage.append(inp, btn('lesson-check', 'Check', check), fb, next); next.hidden = true;
@@ -9805,7 +9803,7 @@ function FlowBlock(b) {
     card.append(el('p', 'flow-tag', 'Think first'), el('p', 'lesson-q', b.ask));
     const opts = b.opts.map((t, n) => btn('lesson-opt', t, () => {
       if (n === b.ans) { opts.forEach(o => o.disabled = true); opts[n].classList.add('ok'); fb.replaceChildren(noteRichText('span', '✅ ' + b.reply)); }
-      else { opts[n].classList.add('bad'); opts[n].disabled = true; setIconAwareText(fb, '🤔 Not quite. Think about what is really happening and pick again.'); }
+      else { opts[n].classList.add('bad'); opts[n].disabled = true; fb.textContent = '🤔 Not quite. Think about what is really happening and pick again.'; }
     }));
     card.append(...opts, fb);
   } else if (b.try) {
@@ -9813,7 +9811,7 @@ function FlowBlock(b) {
     const inp = el('input', 'lesson-in'); inp.inputMode = 'decimal'; inp.placeholder = 'Answer'; let tries = 0;
     const check = () => {
       if (Math.abs(parseFloat(inp.value) - b.ans) < 0.05) { inp.disabled = true; fb.replaceChildren(noteRichText('span', '✅ ' + b.reply)); }
-      else { tries++; setIconAwareText(fb, tries > 1 ? '💡 Hint: ' + b.hint : '🤔 Not quite. Have another go.'); }
+      else { tries++; fb.textContent = tries > 1 ? '💡 Hint: ' + b.hint : '🤔 Not quite. Have another go.'; }
     };
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
     card.append(inp, btn('lesson-check', 'Check', check), fb);
@@ -11304,7 +11302,7 @@ function buildProfileCard() {
   const TABS = [['avatar', 'Avatar', '\u{1F642}'], ['theme', 'Theme', '\u{1F3A8}'], ['about', 'About me', '\u270D\uFE0F']];
   function renderTabs() {
     tabs.replaceChildren(...TABS.map(([id, label, emoji]) => {
-      const b = o('button', '', `${emoji} ${label}`); b.type = 'button'; b.setAttribute('role', 'tab'); b.id = 'cz-tab-' + id;
+      const b = o('button', 'profile-tab', `${emoji} ${label}`); b.type = 'button'; b.setAttribute('role', 'tab'); b.id = 'cz-tab-' + id;
       b.setAttribute('aria-selected', String(st.tab === id)); b.tabIndex = st.tab === id ? 0 : -1;
       b.onclick = () => { st.tab = id; renderTabs(); renderPanel(); }; return b;
     }));
@@ -11323,7 +11321,7 @@ function buildProfileCard() {
 
   function setOpen(v) {
     S.czOpen = v; cz.hidden = !v; toggle.setAttribute('aria-expanded', String(v));
-    toggle.className = 'btn btn-sm ' + (v ? 'btn-ghost' : 'btn-primary'); setIconAwareText(toggle, v ? 'Done' : '\u2728 Customise');
+    toggle.className = 'btn btn-sm ' + (v ? 'btn-ghost' : 'btn-primary'); toggle.textContent = v ? 'Done' : '\u2728 Customise';
   }
   toggle.onclick = () => { setOpen(cz.hidden); if (!cz.hidden) renderPanel(); };
   renderTabs(); renderPanel(); setOpen(S.czOpen !== false);
@@ -11463,7 +11461,7 @@ const GEM_SHOP = Object.freeze({
 });
 function tint(el, p) { /* name colours removed — kept for compat */ return el; }
 function adminBadge(id) { const owner = id ? !!(S.owners && S.owners.has(id)) : !!S.isOwner, b = document.createElement('span'); b.className = 'board-title ' + (owner ? 'board-owner' : 'board-admin'); setIconAwareText(b, owner ? '\u{1F451} Owner' : '\u{1F6E1}\uFE0F Admin'); return b; }
-function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge(p.id)); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; setIconAwareText(badge, t.icon + ' ' + t.name); container.append(badge); } }
+function addTitleBadge(container, p) { if (p && p.id && S.admins.has(p.id)) container.append(adminBadge(p.id)); const t = p && p.eq && SHOP_TITLES[p.eq.title]; if (t) { const badge = document.createElement('span'); badge.className = 'board-title'; badge.textContent = t.icon + ' ' + t.name); container.append(badge; } }
 const Shop = (() => {
   let el = null, bal = null, body = null, activeTab = 'coins';
   const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
@@ -11586,7 +11584,7 @@ const Shop = (() => {
 
     // Titles section
     const titlesGroup = group('Board titles', SHOP.titles, it => {
-      const s = o('div'); s.style.cssText = 'font-size:22px;padding:4px 0'; setIconAwareText(s, it.icon);
+      const s = o('div'); s.style.cssText = 'font-size:22px;padding:4px 0'; s.textContent = it.icon;
       const badge = o('span', 'board-title', it.icon + ' ' + it.name); s.append(badge); return s;
     }, 'title');
 
@@ -11797,19 +11795,19 @@ const Duel = (() => {
       const wrongBtn = box.querySelector(`.option[data-key="${key}"]`);
       if (wrongBtn) wrongBtn.classList.add('is-wrong');
       const WAIT = 20; let left = WAIT;
-      const msg = () => { setIconAwareText(D.fb, `\u2753 Wrong pick! Use a Second Chance or move on (${left}s)`); D.fb.className = 'duel-fb bad'; };
+      const msg = () => { D.fb.textContent = `\u2753 Wrong pick! Use a Second Chance or move on (${left}s)`; D.fb.className = 'duel-fb bad'; };
       msg(); box.classList.remove('flash-ok', 'flash-bad'); void box.offsetWidth; box.classList.add('flash-bad'); D.streak = 0;
       const choice = document.createElement('div'); choice.className = 'duel-choice';
       const bar = document.createElement('div'); bar.className = 'sc-bar'; const barIn = document.createElement('span'); barIn.style.animationDuration = WAIT + 's'; bar.append(barIn);
       const scBtn = document.createElement('button');
       scBtn.className = 'btn btn-primary btn-sm'; scBtn.type = 'button';
-      setIconAwareText(scBtn, `\u{1F3AF} Use Second Chance (${S.doc.p50} left)`);
+      scBtn.textContent = `\u{1F3AF} Use Second Chance (${S.doc.p50} left)`;
       scBtn.onclick = () => {
         clearInterval(D.scT);
         D.used++; S.doc = { ...S.doc, p50: S.doc.p50 - 1 };
         S.db && S.db.doc('players/' + S.uid).set({ p50: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(() => {});
         choice.remove(); bar.remove();
-        setIconAwareText(D.fb, '\u{1F3AF} Pick again \u2014 no hints, choose wisely!'); D.fb.className = 'duel-fb';
+        D.fb.textContent = '\u{1F3AF} Pick again \u2014 no hints, choose wisely!'; D.fb.className = 'duel-fb';
         box.querySelectorAll('.option').forEach(b => {
           if (b.dataset.key === key) return;             // the wrong one stays crossed out
           b.disabled = false; b.onclick = () => answer(b.dataset.key, true);
@@ -11835,7 +11833,7 @@ const Duel = (() => {
     box.classList.remove('flash-ok', 'flash-bad'); void box.offsetWidth; box.classList.add(ok ? 'flash-ok' : 'flash-bad');
     if (ok) { const pt = o('span', 'duel-plus' + (bonusHit ? ' big' : ''), bonusHit ? `\u{1F525} ${D.streak} in a row! +1 \u{1F4B0}` : D.streak > 1 ? `+1  \u{1F525}\u00D7${D.streak}` : '+1'); box.append(pt); setTimeout(() => pt.remove(), bonusHit ? 1500 : 1000); }
     D.fb.className = 'duel-fb ' + (ok ? 'good' : 'bad');
-    setIconAwareText(D.fb, ok ? '\u2713 Correct!' : key === null ? `\u23F1 Time\u2019s up. Answer: ${right}` : `\u2717 Not quite. Answer: ${right}`);
+    D.fb.textContent = ok ? '\u2713 Correct!' : key === null ? `\u23F1 Time\u2019s up. Answer: ${right}` : `\u2717 Not quite. Answer: ${right}`;
     buzz(ok ? 25 : [60, 40, 60]); paintScore(); push();
     setTimeout(() => { if (D.code === tok && box) box.classList.add('d-out'); }, 850);
     setTimeout(() => { if (D.code !== tok || !D.doc) return; D.idx++; ask(); }, 1100);
@@ -12051,7 +12049,7 @@ const Duel = (() => {
 Object.assign(S, { roster: new Map(), rosterData: new Map(), noAuto: false, autoTry: 0, settings: {}, bugs: [], myBugs: [], owners: new Set(), badgeRole: new Map(), ownerAt: 0, ownFails: 0, isOwner: false, bansAll: new Map(), notes: new Map(), audit: [] });
 const ADMIN_MS = 2 * 3600 * 1000, OWNER_MS = 30 * 60 * 1000, OWNER_AWAY_MS = 5 * 60 * 1000;
 // o() only takes text, so the admin layer uses elx(), which also accepts child elements.
-const elx = (tag, cls, ...kids) => { const n = document.createElement(tag); if (cls) n.className = cls; kids.flat().forEach(k => { if (k === null || k === undefined || k === false) return; if (k && k.nodeType) n.append(k); else appendIconAwareText(n, k); }); return n; };
+const elx = (tag, cls, ...kids) => { const n = document.createElement(tag); if (cls) n.className = cls; kids.flat().forEach(k => { if (k === null || k === undefined || k === false) return; if (k && k.nodeType) n.append(k); else n.appendChild(document.createTextNode(String(k))); }); return n; };
 const fsv = () => firebase.firestore;
 const fmtTime = t => { try { return new Date(t).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); } catch { return String(t); } };
 const banActive = b => !!b && (!b.until || b.until > Date.now());
