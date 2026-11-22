@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-complete-icon-system-2026-11-22-r9';
+const EXPECTED_BUILD = 'bece-complete-icon-system-2026-11-22-r10';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -78,6 +78,7 @@ async function main() {
     ['Avatar picker tracks saved keys instead of SVG text', 'b.dataset.avatar === cur'],
     ['Lesson feedback icons use the shared SVG renderer', "setIconAwareText(fb, '✅ ' + why)"],
     ['Coin celebration particles use the custom coin SVG', "o('span', 'coin-drop', '💰')"],
+    ['Gem Shop retry labels render Gems through the shared SVG helper', "setIconAwareText(button, 'Buy 💎 ' + it.price)"],
     ['Semantic icons use coordinated subject colour families', '.ui-icon--science{color:#368D9D}']
   ];
   const gemFeatures = [

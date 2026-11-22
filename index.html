@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="bece-complete-icon-system-2026-11-22-r9">
+<meta name="bece-build" content="bece-complete-icon-system-2026-11-22-r10">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -11523,7 +11523,7 @@ const Shop = (() => {
       render(); GemShop.render(); renderFriends();
     } catch (error) {
       button.disabled = false;
-      button.textContent = 'Buy 💎 ' + it.price;
+      setIconAwareText(button, 'Buy 💎 ' + it.price);
       warn(error && error.code === 'INSUFFICIENT_GEMS'
         ? 'Not enough Gems yet. Keep practising.'
         : 'Could not complete that purchase. Please try again.');
