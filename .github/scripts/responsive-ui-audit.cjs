@@ -76,6 +76,8 @@ async function main() {
     ['Ninja avatars keep their own custom SVG identity', 'const safeAv = a => a;'],
     ['Disk and storage emoji use custom SVG drawings', '<symbol id="i-disc"'],
     ['Static footer arrow uses the SVG icon family', 'href="#i-external-link"'],
+    ['Equipped title badges render their icons through the SVG helper', "setIconAwareText(badge, t.icon + ' ' + t.name)"],
+    ['Coin Shop item icons render through the SVG helper', 'setIconAwareText(s, it.icon)'],
     ['Avatar picker shows SVG drawings', "setAvatarGlyph(b, a, 'avatar-choice-icon')"],
     ['Player avatar badges use the common SVG renderer', 'setAvatarGlyph(bd, PF.safeAv(p.avatar))'],
     ['Avatar picker tracks saved keys instead of SVG text', 'b.dataset.avatar === cur'],
