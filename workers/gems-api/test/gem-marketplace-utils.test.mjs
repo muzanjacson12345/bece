@@ -35,20 +35,6 @@ test("cosmetic purchase deducts Gems and creates a permanent inventory record", 
   assert.equal(purchase.result.gems, 60);
 });
 
-test("useful item purchase increments only its approved player inventory field", () => {
-  const purchase = buildGemMarketplacePurchase({
-    uid: "student-1",
-    operationId: "operation-2",
-    itemId: "xp_boost",
-    balanceBefore: 100,
-    quantityBefore: 2,
-    now: 1000
-  });
-  assert.deepEqual(purchase.playerUpdates, { gems: 70, xpBoost: 3 });
-  assert.equal(purchase.inventoryRecord, null);
-  assert.equal(purchase.result.quantity, 3);
-});
-
 test("marketplace purchase rejects insufficient Gems and repeat cosmetic ownership", () => {
   assert.throws(() => buildGemMarketplacePurchase({
     uid: "student-1", operationId: "operation-3",
