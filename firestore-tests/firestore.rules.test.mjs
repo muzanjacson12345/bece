@@ -380,6 +380,46 @@ test("Duel creation accepts the app's subjects field and rejects duplicate subje
 });
 
 
+
+test("Players cannot equip a Gem avatar frame without its own private inventory record", async () => {
+  const alice = testEnv.authenticatedContext("alice").firestore();
+  const bob = testEnv.authenticatedContext("bob").firestore();
+  const profile = {
+    displayName: "Alice",
+    eq: { frame: "f_gold" },
+    coins: 0, totalExp: 0, weekExp: 0, dayExp: 0,
+    streak: 0, bestStreak: 0, duelW: 0, duelL: 0, duelD: 0, dcN: 0
+  };
+
+  await assertSucceeds(setDoc(doc(alice, "players/alice"), profile));
+  await assertFails(updateDoc(doc(alice, "players/alice"), {
+    eq: { frame: "frame_sapphire" }
+  }));
+  await assertFails(setDoc(doc(bob, "players/bob"), {
+    ...profile, eq: { frame: "frame_royal" }
+  }));
+
+  await seed({
+    "gemInventories/alice/items/frame_sapphire": {
+      uid: "alice", itemId: "frame_sapphire", category: "cosmetic",
+      slot: "frame", style: "sapphire", owned: true
+    }
+  });
+  await assertSucceeds(updateDoc(doc(alice, "players/alice"), {
+    eq: { frame: "frame_sapphire" }
+  }));
+
+  await assertFails(updateDoc(doc(alice, "players/alice"), {
+    eq: { frame: "frame_aurora" }
+  }));
+  await assertSucceeds(updateDoc(doc(alice, "players/alice"), {
+    eq: { frame: "f_rainbow" }
+  }));
+  await assertSucceeds(updateDoc(doc(alice, "players/alice"), {
+    eq: { frame: "" }
+  }));
+});
+
 test("Gem Marketplace catalogue and owned inventory are readable but server-write-only", async () => {
   await seed({
     "gemMarketplace/frame_sapphire": { active: true, name: "Sapphire Frame", price: 40 },
