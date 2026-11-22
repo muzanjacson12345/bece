@@ -4001,6 +4001,12 @@ pre, code { overflow-wrap: anywhere; }
     <div id="gems-body"></div>
   </div>
 </section>
+<section id="screen-gem-marketplace" class="screen" data-screen="gem-marketplace" hidden>
+  <div class="container container-wide"><a class="back-link" href="#/gems">← Back to Gem wallet</a>
+    <div class="page-intro"><p class="eyebrow">Spend your Gems</p><h1>Gem Marketplace</h1><p class="muted">Unlock permanent profile cosmetics and useful study-game items with Gems.</p></div>
+    <div id="gem-marketplace-body"></div>
+  </div>
+</section>
 <section id="screen-me" class="screen" data-screen="me" hidden>
   <div class="container container-wide"><a class="back-link" href="#/">← Back to overview</a>
     <div class="page-intro"><p class="eyebrow">Your account</p><h1>Me</h1><p class="muted">Your profile, progress and personalisation settings.</p></div>
@@ -8409,8 +8415,8 @@ function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
 }
 
 /* ======================= Router ======================= */
-const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'events', 'gems', 'shop', 'me'];
-const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', events: 'events', gems: 'gems', shop: 'shop', me: 'me' };
+const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'events', 'gems', 'gem-marketplace', 'shop', 'me'];
+const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', events: 'events', gems: 'gems', 'gem-marketplace': 'gem-marketplace', shop: 'shop', me: 'me' };
 const PATH_FOR = { home: '', setup: 'practice' };
 let currentScreen = null;
 
@@ -8475,6 +8481,7 @@ function render(screen) {
   if (screen === 'admin') { window.renderFriends?.(); window.Adm?.sync?.(); }
   if (screen === 'achievements') window.renderAchievements?.();
   if (screen === 'gems') window.renderGems?.();
+  if (screen === 'gem-marketplace') window.renderGemMarketplace?.();
   if (changed) {
     window.scrollTo({ top: 0, behavior: 'instant' });
     const heading = $(`screen-${screen}`).querySelector('h1, h2');
@@ -13268,7 +13275,8 @@ document.addEventListener("click", event => {
 }, true);
 </script>
 <script type="module" src="./events.js"></script>
-<script type="module" src="./gems.js"></script></body>
+<script type="module" src="./gems.js"></script>
+<script type="module" src="./gem-marketplace.js"></script></body>
 </html>
 
 <!-- GitHub Pages rebuild trigger: achievement section is included in the home page. -->
