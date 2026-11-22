@@ -107,7 +107,7 @@ async function main() {
     ['High-score achievement tracks 90 percent quiz results', "achievementStats.highScore = (achievementStats.highScore || 0) + 1"],
     ['Mobile achievement descriptions can wrap without clipping', '.achievement-copy small{line-height:1.55;word-break:normal}'],
     ['Achievement descriptions have a dedicated mobile layout row', '.achievement-main {'],
-    ['Overview Duels uses the app SVG icon family', 'href="#i-swords"'],
+    ['Overview Duels uses the custom VS badge icon', 'href="#i-versus"'],
     ['Overview Shop uses the app SVG icon family', 'href="#i-shopping-bag"'],
     ['Mobile Admin uses the app SVG icon family', 'href="#i-shield"'],
     ['Duels uses a clear VS symbol', 'href="#i-versus"'],
