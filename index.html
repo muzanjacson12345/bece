@@ -10824,7 +10824,7 @@ function buildProfileCard() {
   safetyActions.append(resetBtn, deleteBtn);
   safety.append(safetyHead, safetyActions, safetyNote);
   const staffRow = o('div', 'profile-staff-entry');
-  const staffBtn = o('button', 'btn btn-ghost', '🛡️ Open Admin / Owner Panel');
+  const staffBtn = o('button', 'btn btn-ghost'); staffBtn.append(iconLabel('shield','Open Admin / Owner Panel'));
   staffBtn.type = 'button'; staffBtn.onclick = () => App.navigate('admin');
   staffRow.append(staffBtn); staffRow.hidden = !S.isAdmin;
   el.append(safety, staffRow);
@@ -11633,7 +11633,7 @@ const Duel = (() => {
     const d = S.doc || {};
     [d.duelW, d.duelL, d.duelD].forEach((v, i) => { D.tiles[i].n.textContent = v || 0; });
     D.mb.open.textContent = D.open.length ? `Open (${D.open.length})` : 'Open';
-    const ft = document.querySelector('.f-tabs [data-k="duels"]'); if (ft) ft.textContent = '\u2694\uFE0F Duels' + (D.open.length ? ` (${D.open.length})` : '');
+    const ft = document.querySelector('.f-tabs [data-k="duels"]'); if (ft) ft.replaceChildren(iconLabel('swords','Duels' + (D.open.length ? ` (${D.open.length})` : '')));
     if (!D.picked && D.open.length && D.mode !== 'open') { D.mode = 'open'; mode(); }
     D.list.replaceChildren();
     if (D.err) { D.list.append(o('li', 'muted', `Open challenges unavailable (${D.err}). You can still use a code.`)); return; }
@@ -12247,7 +12247,7 @@ const Adm = (() => {
       const has = !!owned[item.id], equipped = eq.title === item.id;
       items.append(elx('div', 'adm-inventory-row',
         elx('div', 'adm-inventory-name',
-          elx('strong', '', item.icon + ' ' + item.name),
+          elx('strong', '', iconLabel(item.icon,item.name,'adm-icon-label')),
           elx('span', 'adm-sub', has ? (equipped ? 'In bag · equipped' : 'In bag · not equipped') : 'Not owned')),
         elx('div', 'adm-inventory-actions',
           btn(has ? 'Remove' : 'Add to bag', has ? 'btn-ghost btn-sm adm-danger' : 'btn-primary btn-sm', () => setBagItem(p, item.id, !has), !canAct(p)),
@@ -12288,7 +12288,7 @@ const Adm = (() => {
     const nb = btn('Save note', 'btn-ghost btn-sm', () => saveNote(p, note.value));
     const nmeta = S.notes.get(p.id); const nm = nmeta ? elx('p', 'adm-info', `Last edited by ${nmeta.by || 'staff'} \u00B7 ${fmtTime(nmeta.at)}`) : null;
     const live = p.lastDay === today() || p.lastDay === yesterday(), b = S.bans.get(p.id);
-    const info = elx('p', 'adm-info', `ID ${p.id} \u00B7 last active ${p.lastDay || 'never'} \u00B7 \u{1F525} ${live ? p.streak || 0 : 0} (best ${p.bestStreak || 0}) \u00B7 duels ${p.duelW || 0}W-${p.duelL || 0}L-${p.duelD || 0}D \u00B7 Second Chances ${p.p50 || 0}${b ? ` \u00B7 ${banActive(b) ? 'BANNED' : 'ban expired'}${b.reason ? ' (' + b.reason + ')' : ''}` : ''}`);
+    const info = elx('p', 'adm-info', `ID ${p.id} · last active ${p.lastDay || 'never'} · streak ${live ? p.streak || 0 : 0} (best ${p.bestStreak || 0}) · duels ${p.duelW || 0}W-${p.duelL || 0}L-${p.duelD || 0}D · Second Chances ${p.p50 || 0}${b ? ` · ${banActive(b) ? 'BANNED' : 'ban expired'}${b.reason ? ' (' + b.reason + ')' : ''}` : ''}`);
     w.append(elx('label', 'adm-lbl', 'Amount'), inp, chips, g1, g2, g2b, inventoryTools(p), elx('label', 'adm-lbl', 'Moderation'), g3, g4, g5, elx('label', 'adm-lbl', 'Private note'), note, nb, nm, info);
     if (!can) w.append(elx('p', 'adm-info adm-prot', rt === 'owner' ? '\u{1F451} The owner is protected from every action here.' : '\u{1F6E1}\uFE0F Admins are protected from other admins. Only the owner can act on them.'));
     else if (p.id === S.uid) w.append(elx('p', 'adm-info adm-prot', 'This is you. You can\u2019t ban, reset or delete yourself.'));
@@ -13004,7 +13004,7 @@ const Adm = (() => {
     if (root.parentNode !== host) host.replaceChildren(root);
     root.hidden = false;
     eyebrow.textContent = S.isOwner ? 'Owner console' : 'Admin workspace';
-    title.textContent = S.isOwner ? '👑 Owner panel' : 'Admin panel';
+    title.replaceChildren(S.isOwner ? iconLabel('crown','Owner panel','adm-icon-label') : document.createTextNode('Admin panel'));
     paint(true); tick();
   }
   function tick() {
