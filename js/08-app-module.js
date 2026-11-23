@@ -984,19 +984,48 @@ function buildProfileCard() {
   resetBtn.type = deleteBtn.type = 'button';
   const safetyNote = o('p', 'account-safety-note', 'Reset keeps this profile ID. Delete removes this profile and its anonymous sign-in. Existing shared duel records may remain.');
   resetBtn.onclick = async () => {
-    if (!S.db || !S.uid) return App.toast('Connect to the internet before resetting your profile.', 'warn');
-    if (!(await confirmDialog('Reset your progress?', 'This clears your cloud progress, EXP, coins, streak, achievements and profile customisation, plus this browser’s quiz history, bookmarks and notes-studied list. This cannot be undone.', 'Reset progress', 'Keep it'))) return;
+    if (!S.db || !S.uid || !firebase.auth().currentUser) return App.toast('Your profile service is not ready. Please try again online.', 'warn');
+    if (!(await confirmDialog('Reset your progress?', 'This clears your cloud progress, EXP, coins, streak, achievements, Duels record and profile customisation, plus this browser’s quiz history, bookmarks and notes-studied list. Your Gem balance and earned Gem cosmetics are kept. This cannot be undone.', 'Reset progress', 'Keep it'))) return;
     try {
       clearTimeout(S.saveT); S.saveT = 0; S.pend = null;
-      await S.db.doc('players/' + S.uid).delete();
-      S.doc = {};
+      const resetRef = S.db.doc('players/' + S.uid);
+      const snapshot = await resetRef.get();
+      const current = snapshot.exists ? (snapshot.data() || {}) : {};
+      const resetProfile = {
+        displayName: typeof current.displayName === 'string' ? current.displayName : '',
+        totalExp: 0, weekKey: '', weekExp: 0, dayKey: '', dayExp: 0,
+        streak: 0, bestStreak: 0, lastDay: '',
+        duelW: 0, duelL: 0, duelD: 0,
+        coins: 0, owned: {}, eq: {}, p50: 0, sfreezes: 0, xpBoost: 0,
+        dcDay: '', dcN: 0,
+        counted: { day: '', ids: [] },
+        challengeState: { day: today(), progress: {}, subjects: [], claimed: [], coinClaimed: false },
+        achievements: { stats: {}, subjects: [], unlocked: [] },
+        avatar: '', photo: '', color: '', bio: ''
+      };
+      // These fields are controlled by the trusted Gems service. Preserve them
+      // unchanged so a normal profile reset never alters a Gem balance/history.
+      ['gems', 'gemOps', 'gemCosmetics'].forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(current, key)) resetProfile[key] = current[key];
+      });
+      // Replacing the profile is allowed by the player's update rule; deleting
+      // the document is deliberately not allowed for a normal signed-in player.
+      await resetRef.set(resetProfile);
+      S.doc = { ...resetProfile };
+      S.players = (S.players || []).filter(player => player.id !== S.uid);
+      S.players.push({ id: S.uid, ...resetProfile });
       ['bece_history', 'bece_bookmarks', 'bece_studied'].forEach(k => store.remove(k));
       bookmarks = []; studied = new Set();
-      S.players = (S.players || []).filter(p => p.id !== S.uid);
       renderAccount(); Home.render(); renderDaily(); renderAchievements(); renderFriends();
-      App.toast('Your progress has been reset.', 'good');
+      App.toast('Your progress has been reset. Your Gems were kept.', 'good');
     } catch (err) {
-      App.toast('Could not reset your progress. Check your connection and try again.', 'warn');
+      console.error('Could not reset your progress:', err);
+      const code = String(err && err.code || 'unknown-error');
+      App.toast(code === 'permission-denied'
+        ? 'The server rejected the reset. Your progress has not been changed.'
+        : code === 'unavailable' || code === 'deadline-exceeded'
+          ? 'The profile service is temporarily unavailable. Please try again.'
+          : `Could not reset your progress (${code}). Please try again.`, 'warn');
     }
   };
   deleteBtn.onclick = async () => {
@@ -1629,10 +1658,14 @@ const Duel = (() => {
   }
   function watch(code) {
     D.code = code; D.started = false; D.cd = false; D.me = null;
+    const hostSubjects = D.doc && D.doc.host === S.uid && Array.isArray(D.doc.subjects)
+      ? D.doc.subjects.slice() : null;
     if (D.unsub) D.unsub();
     D.unsub = col().doc(code).onSnapshot(s => {
       if (!s.exists) { if (D.doc && D.doc.state === 'waiting') { App.toast('Duel cancelled.'); close(); } return; }
-      D.doc = s.data(); step();
+      const saved = s.data();
+      D.doc = hostSubjects ? { ...saved, subjects: hostSubjects } : saved;
+      step();
     }, e => { warn(`Lost connection to the duel (${(e && e.code) || 'error'}).`); close(); });
   }
   function step() { try { step2(); } catch (e) { console.error(e); close(); } }
@@ -1816,7 +1849,10 @@ const Duel = (() => {
     if (pool.length < c.len) return warn(`Only ${pool.length} questions available for that subject. Pick fewer.`);
     const code = Array.from({ length: 5 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join('');
     const doc = { host: S.uid, hostName: myName(), guest: null, guestName: '', subjects: selected, subject: selected.length === 1 ? selected[0] : 'mixed', secs: c.secs, vis: c.vis, qids: mix(pool).slice(0, c.len).map(q => q.id), state: 'waiting', created: Date.now(), hb: Date.now(), res: {} };
-    try { await col().doc(code).set(doc); } catch (e) { return warn(`Couldn\u2019t create the duel (${(e && (e.code || e.message)) || 'unknown error'}).`); }
+    // Keep selected subjects for the host UI, but send only Firestore-whitelisted fields.
+    const storedDoc = { ...doc };
+    delete storedDoc.subjects;
+    try { await col().doc(code).set(storedDoc); } catch (e) { return warn(`Couldn\u2019t create the duel (${(e && (e.code || e.message)) || 'unknown error'}).`); }
     D.doc = doc; watch(code); lobby();
     clearInterval(D.hbT);
     D.hbT = setInterval(() => { if (!D.doc || D.doc.state !== 'waiting') return clearInterval(D.hbT); col().doc(D.code).update({ hb: Date.now() }).catch(() => {}); }, 20000);
@@ -2359,7 +2395,9 @@ const Adm = (() => {
   }
   async function reset(p) {
     if (!await ask({ title: `Reset ${nameOf(p.id)}?`, intro: 'EXP, coins, streak, items and duel record go back to zero. Name and look stay.', ok: 'Reset progress', danger: true })) return;
-    const keep = {}; ['displayName', 'avatar', 'photo', 'color', 'bio'].forEach(k => { if (p[k]) keep[k] = p[k]; });
+    const keep = {};
+    ['displayName', 'avatar', 'photo', 'color', 'bio', 'gems', 'gemOps', 'gemCosmetics', 'equippedGemCosmetic']
+      .forEach(k => { if (Object.prototype.hasOwnProperty.call(p, k)) keep[k] = p[k]; });
     if (await run(() => pdoc(p.id).set(keep), `${nameOf(p.id)} was reset.`)) logAct('reset', p.id, 'progress wiped');
   }
   async function remove(p) {

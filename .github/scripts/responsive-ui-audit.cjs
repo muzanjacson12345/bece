@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r19';
+const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r20';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -252,6 +252,10 @@ async function main() {
     ['Reward counter and particle timing grows with the amount earned', source.includes('function rewardAnimationDuration(from, to)') && source.includes('Math.log10(delta + 1)') && source.includes('Math.min(5200') && source.includes('const delayBudget = Math.max(0, countDuration - flightDuration)')],
     ['XP headline, total EXP and level progress share one amount-based duration', source.includes('const xpDuration = rewardAnimationDuration(previousTotal, newTotal)') && source.includes('animateRewardNumber(xpHeadline, 0, xpReward') && source.includes('animateRewardNumber(totalCount, previousTotal, newTotal') && source.includes('fill.animate(frames')],
     ['Mobile coin and EXP reward sections use compact responsive layouts', source.includes('@media (max-width: 420px)') && source.includes('.coin-top {') && source.includes('grid-template-columns: auto auto') && source.includes('.exp-xp-top {') && source.includes('grid-template-columns: auto minmax(0, 1fr)')],
+    ['Duel creation stores only Firestore-whitelisted fields', source.includes('delete storedDoc.subjects;') && source.includes('await col().doc(code).set(storedDoc)') && source.includes('const hostSubjects =')],
+    ['Self-service progress reset updates instead of attempting forbidden self-delete', source.includes("const resetRef = S.db.doc('players/' + S.uid);") && source.includes('await resetRef.set(resetProfile);') && !source.includes("await S.db.doc('players/' + S.uid).delete();")],
+    ['Profile reset preserves trusted Gem balance and ownership history', source.includes("['gems', 'gemOps', 'gemCosmetics'].forEach(key =>") && source.includes('Your Gem balance and earned Gem cosmetics are kept.')],
+    ['Admin progress reset preserves protected Gem fields', source.includes("'gemCosmetics', 'equippedGemCosmetic']")],
   ];
   sourceChecks.push(...motionSourceChecks.map(([label, passed]) => ({ label, passed })));
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
