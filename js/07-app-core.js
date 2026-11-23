@@ -82,6 +82,13 @@ const SUBJECT_LABEL = { social: 'Social Studies', arts: 'Creative Arts', maths: 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const isTyping = target => /INPUT|TEXTAREA|SELECT/.test(target.tagName) || target.isContentEditable;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function replayMotion(node, className) {
+  if (!node || reducedMotion()) return;
+  node.classList.remove(className);
+  requestAnimationFrame(() => {
+    if (node.isConnected) node.classList.add(className);
+  });
+}
 
 /* ======================= Disclosure motion ======================= */
 // Delegate to include answers and review sections created after page load.
@@ -1006,6 +1013,7 @@ const Quiz = {
   timer: null,
   warned: false,
   reviewFilter: 'missed',
+  motionQuestion: false,
 
   start(opts) {
     if (!opts.pool || !opts.pool.length) { toast('There are no questions in this selection yet.'); return; }
@@ -1019,6 +1027,7 @@ const Quiz = {
     this.streak = 0;
     this.finished = false;
     this.active = true;
+    this.motionQuestion = true;
     this.warned = false;
     this.stopTimer();
     $('quiz-stage').hidden = false;
@@ -1120,6 +1129,10 @@ const Quiz = {
     nextBtn.classList.toggle('is-ready', Boolean(chosen));
     $('submit-check').hidden = true;
     this.renderMap();
+    if (this.motionQuestion) {
+      this.motionQuestion = false;
+      replayMotion($('qcard'), 'motion-question-enter');
+    }
   },
   renderFeedback(q, show) {
     const box = $('expl-box');
@@ -1162,6 +1175,7 @@ const Quiz = {
   go(index, focus = true) {
     if (index < 0 || index >= this.questions.length) return;
     this.idx = index;
+    this.motionQuestion = true;
     this.render();
     if (focus) $('qtxt').focus({ preventScroll: true });
     const card = $('qcard');
@@ -2178,6 +2192,7 @@ document.querySelector('[data-action="clear-essay"]').addEventListener('click', 
     get('correct').textContent = q.options.find(o => o.key === q.correct).text;
     get('explanation').textContent = q.explanation;
     get('flip').classList.remove('is-flipped');
+    replayMotion(get('flip'), 'motion-flash-card-enter');
     get('answer').hidden = true;
     get('rating').hidden = true;
     get('reveal').hidden = false;

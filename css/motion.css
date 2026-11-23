@@ -280,3 +280,199 @@ button:disabled,
   scroll-margin-block: 12px;
 }
 
+
+
+/* --------------------------------------------------------------------------
+   Stage 3 — Learning motion
+   Quiz feedback, revision reading, flashcards and results share one rhythm.
+   -------------------------------------------------------------------------- */
+
+@property --pct {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+:root {
+  --motion-learning-duration: 280ms;
+  --motion-question-duration: 260ms;
+  --motion-flashcard-duration: 450ms;
+  --motion-score-duration: 760ms;
+  --motion-learning-stagger: 42ms;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --motion-learning-duration: 230ms;
+    --motion-question-duration: 210ms;
+    --motion-flashcard-duration: 350ms;
+    --motion-score-duration: 640ms;
+    --motion-learning-stagger: 28ms;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-learning-duration: 300ms;
+    --motion-question-duration: 280ms;
+    --motion-flashcard-duration: 470ms;
+    --motion-score-duration: 820ms;
+    --motion-learning-stagger: 48ms;
+  }
+}
+
+@keyframes motion-learning-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 7px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes motion-question-arrive {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 9px, 0) scale(.994);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes motion-option-arrive {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 5px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes motion-answer-feedback {
+  0% { transform: scale(.99); }
+  58% { transform: scale(1.008); }
+  100% { transform: scale(1); }
+}
+
+@keyframes motion-score-arrive {
+  from {
+    opacity: 0;
+    transform: scale(.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* A new question should feel like the next step, not a page reload. */
+#qcard.motion-question-enter {
+  animation: motion-question-arrive var(--motion-question-duration) var(--motion-ease-enter) both;
+}
+
+/* Options appear in a short, restrained sequence. */
+#opts > .option {
+  animation: motion-option-arrive var(--motion-learning-duration) var(--motion-ease-enter) both;
+}
+#opts > .option:nth-child(2) { animation-delay: var(--motion-learning-stagger); }
+#opts > .option:nth-child(3) { animation-delay: calc(var(--motion-learning-stagger) * 2); }
+#opts > .option:nth-child(4) { animation-delay: calc(var(--motion-learning-stagger) * 3); }
+
+#opts > .option.is-correct,
+#opts > .option.is-wrong {
+  animation: motion-answer-feedback 260ms var(--motion-ease-standard) both;
+}
+
+#expl-box:not([hidden]),
+#quiz-hint:not([hidden]),
+#submit-check:not([hidden]) {
+  animation: motion-learning-rise var(--motion-learning-duration) var(--motion-ease-enter) both;
+}
+
+/* Keep the existing ring design and animate its numeric progress reliably. */
+.score-ring {
+  transition-property: --pct;
+  transition-duration: var(--motion-score-duration);
+  transition-timing-function: var(--motion-ease-enter);
+}
+#results:not([hidden]) {
+  animation: motion-learning-rise var(--motion-learning-duration) var(--motion-ease-enter) both;
+}
+#score-ring {
+  animation: motion-score-arrive 360ms var(--motion-ease-enter) both;
+}
+
+/* Notes enter in reading order, with a small stagger that stays short. */
+#note-body > .note-takeaway,
+#note-body > .note-section {
+  animation: motion-learning-rise var(--motion-learning-duration) var(--motion-ease-enter) both;
+}
+#note-body > .note-section:nth-child(2) { animation-delay: var(--motion-learning-stagger); }
+#note-body > .note-section:nth-child(3) { animation-delay: calc(var(--motion-learning-stagger) * 2); }
+#note-body > .note-section:nth-child(4) { animation-delay: calc(var(--motion-learning-stagger) * 3); }
+#note-body > .note-section:nth-child(5) { animation-delay: calc(var(--motion-learning-stagger) * 4); }
+
+.note-answer[open] > p,
+.note-extra[open] > p,
+.recall-prompt[open] > p,
+.review-item[open] .review-body,
+.essay-plan details[open] > :not(summary) {
+  animation: motion-learning-rise var(--motion-learning-duration) var(--motion-ease-enter) both;
+}
+
+.review-item[open] .review-body {
+  animation-duration: 200ms;
+}
+
+/* Flashcards keep their familiar 3D turn, with quicker touch timing. */
+.flash-card {
+  transition-duration: var(--motion-flashcard-duration);
+  transition-timing-function: var(--motion-ease-enter);
+}
+#flash-flip.motion-flash-card-enter {
+  animation: motion-learning-rise var(--motion-learning-duration) var(--motion-ease-enter) both;
+}
+#flash-summary:not([hidden]) {
+  animation: motion-learning-rise var(--motion-learning-duration) var(--motion-ease-enter) both;
+}
+
+/* Timed progress bars retain their existing geometry and only gain easing. */
+.quiz-track > span {
+  transition-duration: var(--motion-learning-duration);
+  transition-timing-function: var(--motion-ease-standard);
+}
+
+/* The same reduced-motion preference applies to every Stage 3 effect. */
+@media (prefers-reduced-motion: reduce) {
+  #qcard.motion-question-enter,
+  #opts > .option,
+  #opts > .option.is-correct,
+  #opts > .option.is-wrong,
+  #expl-box:not([hidden]),
+  #quiz-hint:not([hidden]),
+  #submit-check:not([hidden]),
+  #results:not([hidden]),
+  #score-ring,
+  #note-body > .note-takeaway,
+  #note-body > .note-section,
+  .note-answer[open] > p,
+  .note-extra[open] > p,
+  .recall-prompt[open] > p,
+  .review-item[open] .review-body,
+  .essay-plan details[open] > :not(summary),
+  #flash-flip.motion-flash-card-enter,
+  #flash-summary:not([hidden]) {
+    animation: none !important;
+  }
+  .flash-card,
+  .score-ring,
+  .quiz-track > span {
+    transition: none !important;
+  }
+}
