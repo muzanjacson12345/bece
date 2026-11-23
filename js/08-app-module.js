@@ -20,6 +20,96 @@ async function loadNames() {
   try { const ps = await S.user.profiles([...new Set([S.uid, ...S.players.map(p => p.id)])]); for (const id in ps) if (ps[id].name) S.names[id] = ps[id].name; } catch {}
 }
 
+function captureRewardRect(element) {
+  if (!element || typeof element.getBoundingClientRect !== 'function') return null;
+  const rect = element.getBoundingClientRect();
+  if (!rect || rect.width <= 0 || rect.height <= 0) return null;
+  return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+}
+function rewardMotionReduced() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+function rewardNumber(value) {
+  return Math.max(0, Math.round(Number(value) || 0)).toLocaleString('en-US');
+}
+function animateRewardNumber(element, from, to, formatter, duration = 850) {
+  if (!element) return;
+  const startValue = Number(from) || 0, endValue = Number(to) || 0;
+  const format = formatter || (value => rewardNumber(value));
+  if (rewardMotionReduced() || startValue === endValue) {
+    element.textContent = format(endValue);
+    return;
+  }
+  element.textContent = format(startValue);
+  element.classList.remove('reward-count-pop');
+  void element.offsetWidth;
+  const startedAt = performance.now();
+  const tick = now => {
+    if (!element.isConnected) return;
+    const progress = Math.min(1, (now - startedAt) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = Math.round(startValue + (endValue - startValue) * eased);
+    element.textContent = format(value);
+    if (progress < 1) requestAnimationFrame(tick);
+    else element.classList.add('reward-count-pop');
+  };
+  requestAnimationFrame(tick);
+}
+function animateRewardFlight(sourceRect, target, kind, count = 4) {
+  const targetRect = captureRewardRect(target);
+  if (rewardMotionReduced() || !sourceRect || !targetRect || typeof Element.prototype.animate !== 'function') return;
+  const glyph = kind === 'gems' ? '💎' : '💰';
+  const startX = sourceRect.left + sourceRect.width / 2;
+  const startY = sourceRect.top + sourceRect.height / 2;
+  const endX = targetRect.left + targetRect.width / 2;
+  const endY = targetRect.top + targetRect.height / 2;
+  const offsets = [[-10, 2], [9, -7], [-5, -12], [12, 10], [0, 0]];
+  for (let index = 0; index < count; index++) {
+    const [offsetX, offsetY] = offsets[index % offsets.length];
+    const token = o('span', 'reward-flight-token reward-flight-token-' + kind, glyph);
+    token.setAttribute('aria-hidden', 'true');
+    token.style.left = (startX - 15 + offsetX) + 'px';
+    token.style.top = (startY - 15 + offsetY) + 'px';
+    document.body.append(token);
+    const dx = endX - (startX + offsetX), dy = endY - (startY + offsetY);
+    const animation = token.animate([
+      { transform: 'translate3d(0,0,0) scale(.55)', opacity: 0 },
+      { transform: 'translate3d(0,-18px,0) scale(1.12)', opacity: 1, offset: .2 },
+      { transform: `translate3d(${dx}px,${dy}px,0) scale(.38) rotate(${index % 2 ? 300 : -300}deg)`, opacity: 0 }
+    ], {
+      duration: 780,
+      delay: index * 75,
+      easing: 'cubic-bezier(.2,.78,.2,1)',
+      fill: 'forwards'
+    });
+    animation.onfinish = () => token.remove();
+    animation.oncancel = () => token.remove();
+  }
+}
+function animateCurrencyReward(kind, previous, balance, sourceRect, preferredTarget) {
+  const isGem = kind === 'gems';
+  const glyph = isGem ? '💎' : '💰';
+  const from = Math.max(0, Number(previous) || 0);
+  const to = Math.max(0, Number(balance) || 0);
+  const selectors = isGem
+    ? '.account-gems, .daily-gem-balance, .gem-store-balance'
+    : '.account-coins:not(.account-gems), .coin-bal-value';
+  const targets = [...document.querySelectorAll(selectors)].filter(element => {
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  });
+  targets.forEach(element => {
+    const plainNumber = element.classList.contains('coin-bal-value');
+    animateRewardNumber(element, from, to, value => plainNumber ? rewardNumber(value) : glyph + ' ' + rewardNumber(value));
+  });
+  const preferredVisible = preferredTarget && captureRewardRect(preferredTarget) ? preferredTarget : null;
+  const balanceTarget = preferredVisible
+    || targets.find(element => isGem ? element.classList.contains('account-gems') : element.classList.contains('account-coins'))
+    || targets[0];
+  const origin = sourceRect || captureRewardRect(document.activeElement);
+  if (to > from && balanceTarget) animateRewardFlight(origin, balanceTarget, kind);
+}
+
 function renderAccount() {
   if (window.BeceProfile && S.doc && S.doc.color && BeceProfile.parse(S.doc.color).key !== BeceProfile.accent) BeceProfile.applyAccent(S.doc.color);
   const e = $('account-btn'); e.replaceChildren(); const m = view();
@@ -249,14 +339,15 @@ function renderAchievements() {
             const claim = o('button','btn btn-primary btn-sm achievement-claim','Claim Gems');
             claim.type = 'button';
             claim.onclick = async () => {
+              const sourceRect = captureRewardRect(claim);
               claim.disabled = true; claim.textContent = 'Claiming…';
               try {
-                const result = await Gems.claimAchievement(a.id);
+                const result = await Gems.claimAchievement(a.id, sourceRect);
                 App.toast(result.duplicate ? 'This Gem reward was already claimed.' : 'You earned ' + gemReward + ' Gems!', 'good');
               } catch (error) {
                 App.toast(error && error.code === 'ACHIEVEMENT_NOT_READY' ? 'Complete this achievement first.' : 'Could not claim the Gem reward. Please try again.', 'warn');
+                renderAchievements();
               }
-              renderAchievements();
             };
             rewardRow.append(claim);
           }
@@ -270,7 +361,7 @@ function renderAchievements() {
 }
 globalThis.renderAchievements = renderAchievements;
 
-async function claimDailyChallengeCoins(day, amount) {
+async function claimDailyChallengeCoins(day, amount, sourceRect) {
   if (!S.db || !S.uid) throw new Error('SIGN_IN_REQUIRED');
   if (day !== today()) throw new Error('CHALLENGE_DAY_CHANGED');
   if (!Number.isSafeInteger(amount) || amount < 1) throw new Error('INVALID_CHALLENGE_COIN_REWARD');
@@ -290,14 +381,14 @@ async function claimDailyChallengeCoins(day, amount) {
     const currentCoins = Number(profile.coins || 0);
     if (!Number.isSafeInteger(currentCoins) || currentCoins < 0) throw new Error('INVALID_COIN_BALANCE');
     if (state.coinClaimed === true) {
-      outcome = { balance: currentCoins, added: 0, duplicate: true, state };
+      outcome = { balance: currentCoins, previous: currentCoins, added: 0, duplicate: true, state };
       return;
     }
     const balance = currentCoins + amount;
     if (!Number.isSafeInteger(balance)) throw new Error('COIN_BALANCE_LIMIT');
     const nextState = { ...state, coinClaimed: true };
     transaction.update(playerRef, { coins: balance, challengeState: nextState });
-    outcome = { balance, added: amount, duplicate: false, state: nextState };
+    outcome = { balance, previous: currentCoins, added: amount, duplicate: false, state: nextState };
   });
   if (!outcome) throw new Error('CHALLENGE_COIN_CLAIM_FAILED');
   S.doc = { ...(S.doc || {}), coins: outcome.balance, challengeState: outcome.state };
@@ -305,6 +396,9 @@ async function claimDailyChallengeCoins(day, amount) {
   if (mine) { mine.coins = outcome.balance; mine.challengeState = outcome.state; }
   renderAccount();
   renderDaily();
+  if (outcome.added > 0 && !outcome.duplicate) {
+    animateCurrencyReward('coins', outcome.previous, outcome.balance, sourceRect);
+  }
   return outcome;
 }
 
@@ -360,14 +454,15 @@ function renderDaily() {
   const claimDaily = o('button','btn btn-primary btn-sm','Claim '+(rewardDay===7?'+6':' +1')+' 💎');
   claimDaily.type='button'; claimDaily.disabled=claimedToday || !canClaimGem;
   claimDaily.onclick=async()=>{
+    const sourceRect = captureRewardRect(claimDaily);
     claimDaily.disabled=true; claimDaily.textContent='Claiming…';
     try{
-      const result=await Gems.claimDaily();
+      const result=await Gems.claimDaily(sourceRect);
       App.toast(result.duplicate?'Today’s Gem reward has already been claimed.':'You earned '+result.change+' Gems for Day '+result.rewardDay+'!', 'good');
     }catch(error){
       App.toast(error&&error.code==='DAILY_ACTIVITY_REQUIRED'?'Complete a normal practice quiz before claiming.':'Could not claim your daily Gems. Please try again.','warn');
+      renderDaily();
     }
-    renderDaily();
   };
   action.append(claimDaily);
   rewardPanel.append(rewardHead,days,action);
@@ -389,10 +484,11 @@ function renderDaily() {
   claimCoins.type = 'button';
   claimCoins.disabled = coinClaimed || !allChallengesComplete || !S.db || !S.uid;
   claimCoins.onclick = async () => {
+    const sourceRect = captureRewardRect(claimCoins);
     claimCoins.disabled = true;
     claimCoins.textContent = 'Claiming…';
     try {
-      const result = await claimDailyChallengeCoins(day, challengeCoinAmount);
+      const result = await claimDailyChallengeCoins(day, challengeCoinAmount, sourceRect);
       App.toast(result.duplicate ? 'You have already claimed today’s challenge coins.' : 'You claimed +' + result.added + ' coins!', 'good');
     } catch (error) {
       const message = error && error.message;
@@ -401,8 +497,8 @@ function renderDaily() {
         : message === 'SIGN_IN_REQUIRED'
           ? 'Sign in before claiming your daily challenge coins.'
           : 'Could not claim your daily challenge coins. Please try again.', 'warn');
+      renderDaily();
     }
-    renderDaily();
   };
   coinPanel.append(coinCopy, claimCoins);
   e.append(rewardPanel, head, list, coinPanel,
@@ -527,41 +623,98 @@ App.on('quiz:finished', async ev => {
     });
     S.doc = { ...next, ...preserveGemFields };
     renderAccount(); renderDaily(); renderAchievements();
-    showResult({ coins: coinsEarned, coinParts: scaledCoinParts, balance: (next.coins || 0), earned: awardedEarned, bonusExp: awardedBonusExp, correct: ev.correct, already, parts: scaledParts, total: next.totalExp, streak, extended, usedFreeze, xpMult, expRate, coinRate });
+    showResult({ coins: coinsEarned, coinParts: scaledCoinParts, balance: (next.coins || 0), previousCoins: Number(d.coins) || 0, earned: awardedEarned, bonusExp: awardedBonusExp, correct: ev.correct, already, parts: scaledParts, total: next.totalExp, previousTotal: Number(d.totalExp) || 0, streak, extended, usedFreeze, xpMult, expRate, coinRate });
   } catch (err) { box.replaceChildren(o('p', 'exp-status', 'Couldn\u2019t save your EXP. ' + (err && err.message || ''))); }
 });
-// A "coins earned" card: animated total, a line for every reason, and your new balance
+// Reward card: count the earned amount, then send the coins into the new balance.
 function coinPanel(total, parts, balance) {
-  const w = o('div', 'coin-panel'), top = o('div', 'coin-top'), ic = o('span', 'coin-ic', '\u{1F4B0}'), num = o('strong', 'coin-num', '+0');
-  top.append(ic, num, o('span', 'coin-lbl', total === 1 ? 'coin earned' : 'coins earned')); w.append(top);
-  if (parts && parts.length) { const ul = o('ul', 'coin-list'); parts.forEach((p, i) => { const li = o('li'); li.style.animationDelay = (0.25 + i * 0.12) + 's'; li.append(o('span', '', p.label), o('strong', '', '+' + p.n)); ul.append(li); }); w.append(ul); }
-  if (balance != null) w.append(o('p', 'coin-bal', `Your balance: \u{1F4B0} ${balance}`));
-  const t0 = performance.now(), step = t => { const k = Math.min(1, (t - t0) / 800); num.textContent = '+' + Math.round(total * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); else { num.classList.add('done'); coinShower(w); } };
-  requestAnimationFrame(step);
-  return w;
-}
-function coinShower(host) {
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  for (let i = 0; i < 10; i++) {
-    const c = o('span', 'coin-drop', '💰');
-    c.style.cssText = `left:${8 + Math.random() * 84}%;animation-delay:${(Math.random() * .5).toFixed(2)}s;font-size:${14 + Math.round(Math.random() * 10)}px`;
-    host.append(c);
-    setTimeout(() => c.remove(), 1800);
+  const w = o('div', 'coin-panel'), top = o('div', 'coin-top');
+  const ic = o('span', 'coin-ic', '💰'), num = o('strong', 'coin-num', '+0');
+  top.append(ic, num, o('span', 'coin-lbl', total === 1 ? 'coin earned' : 'coins earned'));
+  w.append(top);
+  if (parts && parts.length) {
+    const ul = o('ul', 'coin-list');
+    parts.forEach((part, index) => {
+      const line = o('li');
+      line.style.animationDelay = (0.2 + index * 0.1) + 's';
+      line.append(o('span', '', part.label), o('strong', '', '+' + rewardNumber(part.n)));
+      ul.append(line);
+    });
+    w.append(ul);
   }
+  if (balance != null) {
+    const balanceLine = o('p', 'coin-bal');
+    balanceLine.append(document.createTextNode('Your balance: '), o('strong', 'coin-bal-value', rewardNumber(balance)));
+    w.append(balanceLine);
+  }
+  animateRewardNumber(num, 0, total, value => '+' + rewardNumber(value), 820);
+  return w;
 }
 
 function showResult(e) {
-  const t = $('exp-result'); t.hidden = false; t.replaceChildren(o('p', 'exp-headline', `+${e.earned + e.bonusExp} EXP`));
-  const ul = o('ul', 'exp-breakdown'), add = (a, b) => { const li = o('li'); li.append(o('span', '', a), o('strong', '', `+${b}`)); ul.append(li); };
-  add(`${plural(e.correct - e.already, 'new correct answer')} \xD7 10 base · ${e.xpMult || 1}× boost · ${e.expRate || 1}× owner rate`, e.earned); e.parts.forEach(p => add(p.label, p.exp)); t.append(ul);
-  if (e.coins) { const cp = coinPanel(e.coins, e.coinParts, e.balance); t.append(cp); }
-  if (e.already) t.append(o('p', 'exp-status', `${plural(e.already, 'answer')} already earned EXP earlier today, so ${e.already === 1 ? 'it isn\u2019t' : 'they aren\u2019t'} counted twice.`));
-  const { level, into } = lv(e.total), m = o('progress', 'meter'); m.max = LVL; m.value = into;
-  t.append(o('p', 'exp-status', `Level ${level} \xB7 ${e.total} EXP total \xB7 ${LVL - into} EXP to level ${level + 1}`), m);
-  if (e.usedFreeze) t.append(o('p', 'exp-status', '\u{1F6E1}\uFE0F Streak Freeze used! Your streak is safe.'));
-  if (e.xpMult > 1) t.append(o('p', 'exp-status', '\u26A1 XP Boost active \u2014 EXP doubled this quiz!'));
-  t.append(o('p', 'exp-streak', e.extended ? (e.streak > 1 ? `\u{1F525} Streak extended to ${e.streak} days!` : '\u{1F525} Streak started. Come back tomorrow to grow it.') : `\u{1F525} ${plural(e.streak, 'day')} streak \u2014 already counted today.`));
-  const b = o('button', 'link-button', 'See how your friends are doing \u2192'); b.type = 'button'; b.onclick = () => App.navigate('friends'); t.append(b);
+  const t = $('exp-result');
+  t.hidden = false;
+  const xpReward = Math.max(0, Number(e.earned || 0) + Number(e.bonusExp || 0));
+  const xpHeadline = o('p', 'exp-headline', '+0 EXP');
+  t.replaceChildren(xpHeadline);
+  animateRewardNumber(xpHeadline, 0, xpReward, value => '+' + rewardNumber(value) + ' EXP', 920);
+
+  const ul = o('ul', 'exp-breakdown');
+  const add = (label, amount) => {
+    const line = o('li');
+    line.append(o('span', '', label), o('strong', '', '+' + rewardNumber(amount)));
+    ul.append(line);
+  };
+  add(`${plural(e.correct - e.already, 'new correct answer')} × 10 base · ${e.xpMult || 1}× boost · ${e.expRate || 1}× owner rate`, e.earned);
+  (e.parts || []).forEach(part => add(part.label, part.exp));
+  t.append(ul);
+
+  if (e.coins > 0) {
+    const card = coinPanel(e.coins, e.coinParts, e.balance);
+    t.append(card);
+    const icon = card.querySelector('.coin-ic');
+    const balanceNode = card.querySelector('.coin-bal-value');
+    animateCurrencyReward('coins', e.previousCoins, e.balance, captureRewardRect(icon), balanceNode);
+  }
+
+  if (e.already) {
+    t.append(o('p', 'exp-status', `${plural(e.already, 'answer')} already earned EXP earlier today, so ${e.already === 1 ? 'it isn’t' : 'they aren’t'} counted twice.`));
+  }
+
+  const previousTotal = Math.max(0, Number(e.previousTotal) || 0);
+  const newTotal = Math.max(previousTotal, Number(e.total) || 0);
+  const previousLevel = lv(previousTotal);
+  const currentLevel = lv(newTotal);
+  const levelUp = currentLevel.level > previousLevel.level;
+  const xpProgress = o('section', 'exp-xp-progress');
+  const xpTop = o('div', 'exp-xp-top');
+  const levelBadge = o('strong', 'exp-level-badge', 'Level ' + currentLevel.level);
+  const totalCount = o('span', 'exp-total-count', rewardNumber(previousTotal) + ' total EXP');
+  xpTop.append(levelBadge, totalCount);
+  if (levelUp) xpTop.append(o('span', 'exp-level-up', 'LEVEL UP!'));
+  const track = o('div', 'exp-xp-track');
+  track.setAttribute('role', 'progressbar');
+  track.setAttribute('aria-label', 'Progress towards the next EXP level');
+  track.setAttribute('aria-valuemin', '0');
+  track.setAttribute('aria-valuemax', String(LVL));
+  track.setAttribute('aria-valuenow', String(currentLevel.into));
+  const fill = o('span', 'exp-xp-fill');
+  fill.style.transform = 'scaleX(' + (previousLevel.into / LVL) + ')';
+  track.append(fill);
+  const nextLabel = o('p', 'exp-xp-next', rewardNumber(LVL - currentLevel.into) + ' EXP to level ' + (currentLevel.level + 1));
+  xpProgress.append(xpTop, track, nextLabel);
+  t.append(xpProgress);
+  animateRewardNumber(totalCount, previousTotal, newTotal, value => rewardNumber(value) + ' total EXP', 1050);
+  if (!rewardMotionReduced()) requestAnimationFrame(() => { fill.style.transform = 'scaleX(' + (currentLevel.into / LVL) + ')'; });
+  if (levelUp && !rewardMotionReduced()) levelBadge.classList.add('reward-count-pop');
+
+  if (e.usedFreeze) t.append(o('p', 'exp-status', '🛡️ Streak Freeze used! Your streak is safe.'));
+  if (e.xpMult > 1) t.append(o('p', 'exp-status', '⚡ XP Boost active — EXP doubled this quiz!'));
+  t.append(o('p', 'exp-streak', e.extended ? (e.streak > 1 ? `🔥 Streak extended to ${e.streak} days!` : '🔥 Streak started. Come back tomorrow to grow it.') : `🔥 ${plural(e.streak, 'day')} streak — already counted today.`));
+  const b = o('button', 'link-button', 'See how your friends are doing →');
+  b.type = 'button';
+  b.onclick = () => App.navigate('friends');
+  t.append(b);
 }
 
 
@@ -3049,8 +3202,10 @@ const Gems = (() => {
     const value = S.doc && S.doc.gems;
     return Number.isSafeInteger(value) && value >= 0 ? value : 0;
   };
-  async function applyGemChange(action, amount, operationId, itemId, achievementId) {
+  async function applyGemChange(action, amount, operationId, itemId, achievementId, sourceRect) {
     if (!S.db || !S.uid) throw new Error('SIGN_IN_REQUIRED');
+    const rewardOrigin = sourceRect || captureRewardRect(document.activeElement);
+    const balanceBefore = currentBalance();
     if (!GEMS_API_URL) throw new Error('GEMS_SERVICE_NOT_CONFIGURED');
     const purchase = action === 'purchase';
     const reward = action === 'achievement' || action === 'daily';
@@ -3097,7 +3252,13 @@ const Gems = (() => {
     }
     renderAccount();
     renderFriends();
-    renderDaily(); renderAchievements();
+    renderDaily();
+    renderAchievements();
+    if (window.GemShop && typeof window.GemShop.render === 'function') window.GemShop.render();
+    if (!data.duplicate && Number(data.change) > 0) {
+      const previous = Number.isFinite(Number(data.previous)) ? Number(data.previous) : balanceBefore;
+      animateCurrencyReward('gems', previous, data.balance, rewardOrigin);
+    }
     return { previous: data.previous, balance: data.balance, change: data.change, duplicate: !!data.duplicate, rewardDay: data.rewardDay, bonusAmount: data.bonusAmount };
   }
   return Object.freeze({
@@ -3105,8 +3266,8 @@ const Gems = (() => {
     purchaseCosmetic: (itemId, operationId) => applyGemChange('purchase', null, operationId, itemId),
     earn: (amount, operationId) => applyGemChange('earn', amount, operationId),
     spend: (amount, operationId) => applyGemChange('spend', amount, operationId),
-    claimAchievement: id => applyGemChange('achievement', null, 'achievement:' + id, null, id),
-    claimDaily: () => applyGemChange('daily', null, 'daily:' + today())
+    claimAchievement: (id, sourceRect) => applyGemChange('achievement', null, 'achievement:' + id, null, id, sourceRect),
+    claimDaily: sourceRect => applyGemChange('daily', null, 'daily:' + today(), null, null, sourceRect)
   });
 })();
 window.Gems = Gems;
