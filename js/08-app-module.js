@@ -51,7 +51,12 @@ function animateRewardNumber(element, from, to, formatter, duration = 850) {
     const value = Math.round(startValue + (endValue - startValue) * eased);
     element.textContent = format(value);
     if (progress < 1) requestAnimationFrame(tick);
-    else element.classList.add('reward-count-pop');
+    else {
+      element.classList.add('reward-count-pop');
+      element.addEventListener('animationend', event => {
+        if (event.animationName === 'reward-count-pop') element.classList.remove('reward-count-pop');
+      }, { once: true });
+    }
   };
   requestAnimationFrame(tick);
 }
