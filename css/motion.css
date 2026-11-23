@@ -377,12 +377,12 @@ button:disabled,
 }
 
 /* Options appear in a short, restrained sequence. */
-#opts > .option {
+#opts > .option.motion-option-enter {
   animation: motion-option-arrive var(--motion-learning-duration) var(--motion-ease-enter) both;
 }
-#opts > .option:nth-child(2) { animation-delay: var(--motion-learning-stagger); }
-#opts > .option:nth-child(3) { animation-delay: calc(var(--motion-learning-stagger) * 2); }
-#opts > .option:nth-child(4) { animation-delay: calc(var(--motion-learning-stagger) * 3); }
+#opts > .option.motion-option-enter:nth-child(2) { animation-delay: var(--motion-learning-stagger); }
+#opts > .option.motion-option-enter:nth-child(3) { animation-delay: calc(var(--motion-learning-stagger) * 2); }
+#opts > .option.motion-option-enter:nth-child(4) { animation-delay: calc(var(--motion-learning-stagger) * 3); }
 
 #opts > .option.is-correct,
 #opts > .option.is-wrong {
@@ -451,7 +451,7 @@ button:disabled,
 /* The same reduced-motion preference applies to every Stage 3 effect. */
 @media (prefers-reduced-motion: reduce) {
   #qcard.motion-question-enter,
-  #opts > .option,
+  #opts > .option.motion-option-enter,
   #opts > .option.is-correct,
   #opts > .option.is-wrong,
   #expl-box:not([hidden]),
@@ -554,7 +554,9 @@ button:disabled,
 .achievement-track > span,
 .achievement-overall-track > span,
 .challenge-track > span {
-  transition: width 420ms var(--motion-ease-enter);
+  width: 100%;
+  transform-origin: left center;
+  transition: transform 360ms var(--motion-ease-enter);
 }
 .achievement-reward-row,
 .achievement-gem-reward {
@@ -738,6 +740,36 @@ button:disabled,
   .daily-challenge-bonus .btn,
   .duel-tile,
   .duel-score > div {
+    transition: none !important;
+  }
+}
+
+
+/* Stage 5 — compositor-friendly progress updates.
+   Keep progress geometry fixed and animate only the fill transform. */
+.quiz-track > span,
+.duel-track > span {
+  width: 100%;
+  transform-origin: left center;
+  transition-property: transform;
+}
+.duel-track > span {
+  transition-duration: 200ms;
+  transition-timing-function: linear;
+}
+.achievement-overall-fill,
+.achievement-fill,
+.challenge-fill {
+  width: 100%;
+  transform-origin: left center;
+  transition-property: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .achievement-overall-fill,
+  .achievement-fill,
+  .challenge-fill,
+  .quiz-track > span,
+  .duel-track > span {
     transition: none !important;
   }
 }

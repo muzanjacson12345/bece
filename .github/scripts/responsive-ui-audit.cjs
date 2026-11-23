@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-rewards-social-motion-2026-11-23-r15';
+const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r16';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -237,6 +237,14 @@ async function main() {
   ];
   sourceChecks.push({ label: 'Every achievement has a one-time client and server Gem reward', passed: allAchievementRewardsPresent });
   sourceChecks.push({ label: 'Mapped UI glyphs resolve to SVGs while expressive avatars retain native emoji', passed: allUiGlyphsResolve });
+  const motionSourceChecks = [
+    ['Reduced-motion preference is handled by the shared stylesheet', source.includes('@media (prefers-reduced-motion: reduce)') && source.includes('animation-duration: .01ms !important;')],
+    ['Touch devices use shorter learning and reward motion', source.includes('--motion-learning-duration: 230ms') && source.includes('--motion-reward-duration: 220ms')],
+    ['Quiz choices animate only when a new question is rendered', source.includes('.motion-option-enter') && source.includes("if (this.motionQuestion) button.classList.add('motion-option-enter')")],
+    ['Learning and reward progress fills use transform transitions', source.includes('transition-property: transform') && source.includes('fill.style.transform=') && source.includes('D.bar.style.transform')],
+    ['Stage 3 and Stage 4 effects include reduced-motion overrides', source.includes('Stage 3 — Learning motion') && source.includes('Stage 4 — Rewards and social motion') && source.includes('animation: none !important;')],
+  ];
+  sourceChecks.push(...motionSourceChecks.map(([label, passed]) => ({ label, passed })));
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
 
   const browser = await chromium.launch({ headless: true });
@@ -255,6 +263,7 @@ async function main() {
     loadingTimeouts: [],
     failedRequests: [],
     failures: [],
+    motionChecks: [],
   };
 
   try {
@@ -362,6 +371,7 @@ async function main() {
               viewportWidth: window.innerWidth,
               documentWidth: Math.max(root.scrollWidth, body.scrollWidth),
               horizontalOverflow,
+              reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
               viewportMeta,
               zoomDisabled: /user-scalable\s*=\s*no|max(?:imum)?-scale\s*=\s*1(?:\.0)?/i.test(viewportMeta),
               outOfBounds,
@@ -408,6 +418,9 @@ async function main() {
           }
           if (diagnostics.horizontalOverflow > 2) {
             report.failures.push(`${key}: document has ${diagnostics.horizontalOverflow}px horizontal overflow`);
+          }
+          if (!diagnostics.reducedMotion) {
+            report.failures.push(`${key}: reduced-motion audit context did not activate`);
           }
           if (diagnostics.zoomDisabled) report.failures.push(`${key}: mobile zoom is disabled by the viewport meta tag`);
           if (route.screen === 'home' && viewport.width <= 760) {
@@ -741,16 +754,81 @@ async function main() {
       }
       await context.close();
     }
+
+    // Exercise actual motion in normal-preference contexts at a phone and a desktop size.
+    const motionViewports = VIEWPORTS.filter(viewport => ['phone-390', 'desktop-1366'].includes(viewport.name));
+    for (const viewport of motionViewports) {
+      const motionContext = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height },
+        deviceScaleFactor: viewport.mobile ? 2 : 1,
+        isMobile: viewport.mobile,
+        hasTouch: viewport.mobile,
+        reducedMotion: 'no-preference',
+        serviceWorkers: 'block',
+      });
+      const motionPage = await motionContext.newPage();
+      const check = { viewport: viewport.name, reducedMotion: false, question: false, answerFeedback: false, notes: false, flashcard: false };
+      try {
+        await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'setup', null, { timeout: 30000 });
+        await motionPage.locator('#setup-start').click();
+        await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'quiz', null, { timeout: 30000 });
+        await motionPage.waitForTimeout(70);
+        const questionState = await motionPage.evaluate(() => ({
+          reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
+          card: getComputedStyle(document.querySelector('#qcard')).animationName,
+          option: getComputedStyle(document.querySelector('#opts .option')).animationName,
+        }));
+        check.reducedMotion = questionState.reduced === false;
+        check.question = questionState.card === 'motion-question-arrive' && questionState.option === 'motion-option-arrive';
+        await motionPage.locator('#opts .option').first().click();
+        await motionPage.waitForFunction(() => !document.querySelector('#expl-box')?.hidden, null, { timeout: 5000 });
+        const feedbackState = await motionPage.evaluate(() => ({
+          answer: getComputedStyle(document.querySelector('#opts .option.is-correct, #opts .option.is-wrong')).animationName,
+          explanation: getComputedStyle(document.querySelector('#expl-box')).animationName,
+        }));
+        check.answerFeedback = feedbackState.answer === 'motion-answer-feedback' && feedbackState.explanation === 'motion-learning-rise';
+
+        await motionPage.goto(`${BASE}/#/notes`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'notes', null, { timeout: 30000 });
+        await motionPage.waitForTimeout(50);
+        check.notes = await motionPage.evaluate(() => {
+          const section = document.querySelector('#note-body > .note-section');
+          return !!section && getComputedStyle(section).animationName === 'motion-learning-rise';
+        });
+
+        await motionPage.goto(`${BASE}/#/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'home', null, { timeout: 30000 });
+        await motionPage.locator('#flashcard-disclosure > summary').click();
+        await motionPage.locator('#flash-start').click();
+        await motionPage.waitForFunction(() => !document.querySelector('#flash-session')?.hidden, null, { timeout: 10000 });
+        await motionPage.waitForTimeout(50);
+        const flashState = await motionPage.evaluate(() => ({
+          entrance: getComputedStyle(document.querySelector('#flash-flip')).animationName,
+          transition: getComputedStyle(document.querySelector('#flash-card')).transitionProperty,
+        }));
+        await motionPage.locator('#flash-reveal').click();
+        await motionPage.waitForFunction(() => document.querySelector('#flash-flip')?.classList.contains('is-flipped'), null, { timeout: 5000 });
+        check.flashcard = flashState.entrance === 'motion-learning-rise' && flashState.transition.split(',').map(value => value.trim()).includes('transform');
+        check.reducedMotion = check.reducedMotion && flashState.entrance !== 'none';
+      } catch (error) {
+        check.error = String(error);
+      }
+      report.motionChecks.push(check);
+      for (const [key, passed] of Object.entries(check)) {
+        if (['viewport', 'error'].includes(key)) continue;
+        if (!passed) report.failures.push(`${viewport.name}/motion: ${key} check failed`);
+      }
+      if (check.error) report.failures.push(`${viewport.name}/motion: ${check.error}`);
+      await motionContext.close();
+      console.log(`Motion smoke check — ${viewport.name}: ${Object.entries(check).filter(([key, value]) => key !== 'viewport' && key !== 'error' && value).length}/5 passed`);
+    }
   } finally {
     await browser.close();
   }
 
   report.failures.push(...sourceFailures);
   for (const error of report.pageErrors) report.failures.push(`${error.viewport}: uncaught browser exception: ${error.message}`);
-  fs.writeFileSync('artifacts/ui-audit/report.json', JSON.stringify(report, null, 2));
-  console.log(`Saved ${report.screenshots.length} screenshots.`);
-  console.log(`Page errors: ${report.pageErrors.length}; console errors: ${report.consoleErrors.length}; failed requests: ${report.failedRequests.length}`);
-  console.log(`Audit failures: ${report.failures.length}`);
   for (const failure of report.httpErrors) {
     try {
       if (new URL(failure.url).origin === new URL(BASE).origin) {
@@ -759,6 +837,10 @@ async function main() {
     } catch {}
   }
   for (const timeout of report.loadingTimeouts) report.failures.push(timeout);
+  fs.writeFileSync('artifacts/ui-audit/report.json', JSON.stringify(report, null, 2));
+  console.log(`Saved ${report.screenshots.length} screenshots.`);
+  console.log(`Page errors: ${report.pageErrors.length}; console errors: ${report.consoleErrors.length}; failed requests: ${report.failedRequests.length}`);
+  console.log(`Audit failures: ${report.failures.length}`);
   if (report.failures.length) {
     for (const failure of report.failures) console.error(`FAIL: ${failure}`);
     process.exitCode = 1;

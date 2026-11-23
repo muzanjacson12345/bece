@@ -214,7 +214,7 @@ function renderAchievements() {
   const count = o('div','achievement-total');
   count.append(o('strong','',overall + ' / ' + total),o('span','','achievements earned'));
   const track=o('div','achievement-overall-track'),fill=o('span','achievement-overall-fill');
-  fill.style.width=(overall/total*100)+'%';track.append(fill);
+  fill.style.transform='scaleX('+(overall/total)+')';track.append(fill);
   top.append(count,track);
   const groups = [...new Set(ACHIEVEMENTS.map(a=>a.group))];
   e.append(top);
@@ -235,7 +235,7 @@ function renderAchievements() {
       main.append(icon,copy);
       const status=o('span','achievement-status',earned?'✓ Earned':Math.min(value,a.target)+' / '+a.target);
       const track=o('div','achievement-track'),bar=o('span','achievement-fill');
-      bar.style.width=(Math.min(value,a.target)/a.target*100)+'%';
+      bar.style.transform='scaleX('+(Math.min(value,a.target)/a.target)+')';
       track.append(bar);
       card.append(main,status,track);
       const gemReward = GEM_ACHIEVEMENT_REWARDS[a.id];
@@ -326,7 +326,7 @@ function renderDaily() {
     const top = o('div', 'challenge-top'), name = o('div', 'challenge-name'), copy = o('div');
     name.append(o('span', 'challenge-icon', t.icon)); copy.append(o('strong', '', t.title), o('small', '', t.detail)); name.append(copy);
     top.append(name, o('span', 'challenge-reward', complete ? '✓ EXP earned' : '+' + t.reward + ' EXP'));
-    const track = o('div', 'challenge-track'), fill = o('span', 'challenge-fill'); fill.style.width = (progress / t.target * 100) + '%'; track.append(fill);
+    const track = o('div', 'challenge-track'), fill = o('span', 'challenge-fill'); fill.style.transform = `scaleX(${progress / t.target})`; track.append(fill);
     const foot = o('div', 'challenge-foot'); foot.append(o('span', '', complete ? 'EXP added automatically' : progress + ' / ' + t.target), o('span', '', 'Resets daily'));
     card.append(top, track, foot); list.append(card);
   });
@@ -1487,7 +1487,7 @@ const Duel = (() => {
     put(vs, dots, tr, o('span', 'duel-topic', q.topic || ''), o('h3', 'duel-q', q.question), opts, D.fb); paintScore();
     D.timer = setInterval(() => {
       const left = secs() - (Date.now() - D.qStart) / 1000;
-      D.tm.textContent = Math.max(0, Math.ceil(left)); D.bar.style.width = Math.max(0, left / secs() * 100) + '%'; D.track.classList.toggle('is-low', left <= 5); D.tm.classList.toggle('is-low', left <= 5);
+      D.tm.textContent = Math.max(0, Math.ceil(left)); D.bar.style.transform = `scaleX(${Math.max(0, left / secs())})`; D.track.classList.toggle('is-low', left <= 5); D.tm.classList.toggle('is-low', left <= 5);
       if (left <= 0) answer(null);
     }, 200);
   }

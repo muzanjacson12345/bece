@@ -1079,7 +1079,7 @@ const Quiz = {
     const chosen = this.answers[q.id];
     $('qnum').textContent = this.idx + 1;
     $('qtotal').textContent = total;
-    $('pbar').style.width = `${(Object.keys(this.answers).length / total) * 100}%`;
+    $('pbar').style.transform = `scaleX(${Object.keys(this.answers).length / total})`;
     $('qtopic').textContent = q.topic;
     $('qtxt').textContent = q.question;
     document.querySelectorAll('.q-diagram').forEach(n => n.remove());
@@ -1098,6 +1098,7 @@ const Quiz = {
       const option = q.options.find(o => o.key === key);
       const button = el('button', 'option');
       button.type = 'button';
+      if (this.motionQuestion) button.classList.add('motion-option-enter');
       button.dataset.key = key;
       const letter = el('span', 'option-letter', LETTERS[position]);
       const text = el('span', 'option-text', option.text);
@@ -1244,7 +1245,7 @@ const Quiz = {
 
     $('quiz-stage').hidden = true;
     $('results').hidden = false;
-    $('pbar').style.width = '100%';
+    $('pbar').style.transform = 'scaleX(1)';
     $('score-ring').style.setProperty('--pct', pct);
     $('res-grade').textContent = `${pct}%`;
     $('res-score').textContent = `${correct} / ${total}`;
