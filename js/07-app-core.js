@@ -781,6 +781,20 @@ function render(screen) {
   if (screen === 'quiz' && !Quiz.active) screen = 'setup';
   if (screen !== 'quiz' && currentScreen === 'quiz') Quiz.abort();
   const changed = screen !== currentScreen;
+  const screenNode = $(`screen-${screen}`);
+  if (changed) {
+    screenNode.classList.remove('motion-screen-major');
+    void screenNode.offsetWidth;
+    screenNode.classList.add('motion-screen-major');
+    if (screen === 'home') {
+      const hero = screenNode.querySelector('.hero');
+      if (hero) {
+        hero.classList.remove('motion-home-hero-enter');
+        void hero.offsetWidth;
+        hero.classList.add('motion-home-hero-enter');
+      }
+    }
+  }
   SCREENS.forEach(name => { $(`screen-${name}`).hidden = name !== screen; });
   document.body.dataset.screen = screen;
   const navKey = screen === 'setup' || screen === 'quiz' ? 'practice' : screen;
@@ -1244,7 +1258,11 @@ const Quiz = {
     const pct = Math.round((correct / total) * 100);
 
     $('quiz-stage').hidden = true;
-    $('results').hidden = false;
+    const results = $('results');
+    results.classList.remove('motion-results-major');
+    void results.offsetWidth;
+    results.classList.add('motion-results-major');
+    results.hidden = false;
     $('pbar').style.transform = 'scaleX(1)';
     $('score-ring').style.setProperty('--pct', pct);
     $('res-grade').textContent = `${pct}%`;
