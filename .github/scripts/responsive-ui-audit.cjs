@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r17';
+const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r18';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -245,6 +245,10 @@ async function main() {
     ['Stage 3 and Stage 4 effects include reduced-motion overrides', source.includes('Stage 3 — Learning motion') && source.includes('Stage 4 — Rewards and social motion') && source.includes('animation: none !important;')],
     ['Stage 6 screen, home and results motion is wired to real app state changes', source.includes('Stage 6 — Signature motion') && source.includes("screenNode.classList.add('motion-screen-major')") && source.includes("hero.classList.add('motion-home-hero-enter')") && source.includes("results.classList.add('motion-results-major')")],
     ['Stage 6 includes touch timing, dialog motion and reduced-motion overrides', source.includes('--motion-major-screen-duration: 330ms') && source.includes('--motion-major-dialog-duration: 300ms') && source.includes('motion-home-ring-turn') && source.includes('animation: none !important;')],
+    ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
+    ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
+    ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
+    ['Reward counters, flights and XP bars respect reduced-motion settings', source.includes('function rewardMotionReduced()') && source.includes('if (rewardMotionReduced() || !sourceRect') && source.includes('.reward-flight-token') && source.includes('.exp-xp-fill') && source.includes('transition: none !important;')],
   ];
   sourceChecks.push(...motionSourceChecks.map(([label, passed]) => ({ label, passed })));
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
