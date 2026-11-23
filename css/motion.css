@@ -476,3 +476,268 @@ button:disabled,
     transition: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 4 — Rewards and social motion
+   Keep rewards satisfying and social updates clear, without changing artwork.
+   -------------------------------------------------------------------------- */
+
+:root {
+  --motion-reward-duration: 270ms;
+  --motion-reward-stagger: 38ms;
+  --motion-reward-pop-duration: 340ms;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --motion-reward-duration: 220ms;
+    --motion-reward-stagger: 26ms;
+    --motion-reward-pop-duration: 290ms;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-reward-duration: 290ms;
+    --motion-reward-stagger: 42ms;
+    --motion-reward-pop-duration: 360ms;
+  }
+}
+
+@keyframes motion-reward-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 7px, 0) scale(.995);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes motion-reward-pop {
+  0% { transform: scale(.9); }
+  62% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes motion-reward-current {
+  0% { transform: scale(.97); }
+  65% { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+
+@keyframes motion-social-backdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Achievements: let the reward cards settle in, then ease their progress bars. */
+.achievement-overview,
+.achievement-group {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+.achievement-group:nth-child(2) { animation-delay: var(--motion-reward-stagger); }
+.achievement-group:nth-child(3) { animation-delay: calc(var(--motion-reward-stagger) * 2); }
+
+.achievement-grid > .achievement-item:nth-child(-n+4) {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+.achievement-grid > .achievement-item:nth-child(2) { animation-delay: var(--motion-reward-stagger); }
+.achievement-grid > .achievement-item:nth-child(3) { animation-delay: calc(var(--motion-reward-stagger) * 2); }
+.achievement-grid > .achievement-item:nth-child(4) { animation-delay: calc(var(--motion-reward-stagger) * 3); }
+
+.achievement-item.is-earned .achievement-icon {
+  animation: motion-reward-pop var(--motion-reward-pop-duration) var(--motion-ease-enter) both;
+}
+.achievement-track > span,
+.achievement-overall-track > span,
+.challenge-track > span {
+  transition: width 420ms var(--motion-ease-enter);
+}
+.achievement-reward-row,
+.achievement-gem-reward {
+  transition: background-color var(--motion-control-duration) var(--motion-ease-standard),
+              color var(--motion-control-duration) var(--motion-ease-standard);
+}
+
+/* Daily missions and Gem streak: brief, ordered arrival rather than constant motion. */
+.challenge-item,
+.daily-gem-rewards,
+.daily-challenge-bonus {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+.challenge-list > .challenge-item:nth-child(2) { animation-delay: var(--motion-reward-stagger); }
+.challenge-list > .challenge-item:nth-child(3) { animation-delay: calc(var(--motion-reward-stagger) * 2); }
+
+.daily-gem-days > .daily-gem-day {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+.daily-gem-days > .daily-gem-day:nth-child(2) { animation-delay: var(--motion-reward-stagger); }
+.daily-gem-days > .daily-gem-day:nth-child(3) { animation-delay: calc(var(--motion-reward-stagger) * 2); }
+.daily-gem-days > .daily-gem-day:nth-child(4) { animation-delay: calc(var(--motion-reward-stagger) * 3); }
+.daily-gem-days > .daily-gem-day:nth-child(5) { animation-delay: calc(var(--motion-reward-stagger) * 4); }
+.daily-gem-days > .daily-gem-day:nth-child(6) { animation-delay: calc(var(--motion-reward-stagger) * 5); }
+.daily-gem-days > .daily-gem-day:nth-child(7) { animation-delay: calc(var(--motion-reward-stagger) * 6); }
+.daily-gem-day.is-current {
+  animation: motion-reward-current var(--motion-reward-pop-duration) var(--motion-ease-enter) both;
+  animation-delay: calc(var(--motion-reward-stagger) * 2);
+}
+.daily-gem-balance,
+.daily-challenge-bonus-status {
+  transition: color var(--motion-control-duration) var(--motion-ease-standard),
+              background-color var(--motion-control-duration) var(--motion-ease-standard);
+}
+
+/* Shops: preserve the existing product count and preview artwork. */
+.shop-group,
+.gem-store {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+.shop-group:nth-child(2) { animation-delay: var(--motion-reward-stagger); }
+.shop-group .shop-item:nth-child(-n+4),
+.shop-group .shop-wide:nth-of-type(-n+4) {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+.shop-grid > .shop-item:nth-child(2),
+.shop-wide:nth-of-type(2) { animation-delay: var(--motion-reward-stagger); }
+.shop-grid > .shop-item:nth-child(3),
+.shop-wide:nth-of-type(3) { animation-delay: calc(var(--motion-reward-stagger) * 2); }
+.shop-grid > .shop-item:nth-child(4) { animation-delay: calc(var(--motion-reward-stagger) * 3); }
+
+.gem-item {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+.gem-item-preview [data-gem-ring="gold"] {
+  animation: motion-reward-pop var(--motion-reward-pop-duration) var(--motion-ease-enter) both;
+}
+.shop-tab,
+.gem-item .btn,
+.achievement-claim,
+.daily-gem-action .btn,
+.daily-challenge-bonus .btn {
+  transition: transform var(--motion-control-duration) var(--motion-ease-standard),
+              background-color var(--motion-control-duration) var(--motion-ease-standard),
+              border-color var(--motion-control-duration) var(--motion-ease-standard);
+}
+
+/* Friends and duels: new activity is noticed without bouncing the whole screen. */
+.leaderboard,
+.activity,
+.duel-card,
+.profile-card {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+.podium > .pod:nth-child(-n+3),
+.board-list > li:nth-child(-n+5),
+.activity-list > li:nth-child(-n+5),
+.duel-open > .duel-item:nth-child(-n+5) {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+.podium > .pod:nth-child(2),
+.board-list > li:nth-child(2),
+.activity-list > li:nth-child(2),
+.duel-open > .duel-item:nth-child(2) {
+  animation-delay: var(--motion-reward-stagger);
+}
+.podium > .pod:nth-child(3),
+.board-list > li:nth-child(3),
+.activity-list > li:nth-child(3),
+.duel-open > .duel-item:nth-child(3) {
+  animation-delay: calc(var(--motion-reward-stagger) * 2);
+}
+.board-list > li:nth-child(4),
+.activity-list > li:nth-child(4),
+.duel-open > .duel-item:nth-child(4) {
+  animation-delay: calc(var(--motion-reward-stagger) * 3);
+}
+.board-list > li:nth-child(5),
+.activity-list > li:nth-child(5),
+.duel-open > .duel-item:nth-child(5) {
+  animation-delay: calc(var(--motion-reward-stagger) * 4);
+}
+
+.duel-pane:not([hidden]) {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+.duel-tile,
+.duel-score > div {
+  transition: transform var(--motion-control-duration) var(--motion-ease-standard),
+              border-color var(--motion-control-duration) var(--motion-ease-standard),
+              background-color var(--motion-control-duration) var(--motion-ease-standard);
+}
+.duel-opts > .option {
+  animation: motion-reward-rise 190ms var(--motion-ease-enter) both;
+}
+.duel-opts > .option:nth-child(2) { animation-delay: 24ms; }
+.duel-opts > .option:nth-child(3) { animation-delay: 48ms; }
+.duel-opts > .option:nth-child(4) { animation-delay: 72ms; }
+
+.friend-modal {
+  animation: motion-social-backdrop 160ms ease-out both;
+}
+.friend-box {
+  animation: motion-reward-rise var(--motion-reward-duration) var(--motion-ease-enter) both;
+}
+
+/* Touch devices get feedback from the same state changes, never hover-only motion. */
+@media (hover: hover) and (pointer: fine) {
+  .shop-item:hover,
+  .duel-tile:hover {
+    transform: translateY(-2px);
+  }
+}
+@media (hover: none), (pointer: coarse) {
+  .shop-item:hover,
+  .duel-tile:hover {
+    transform: none;
+  }
+}
+
+/* Accessibility: remove Stage 4 entrance and pop effects on request. */
+@media (prefers-reduced-motion: reduce) {
+  .achievement-overview,
+  .achievement-group,
+  .achievement-grid > .achievement-item,
+  .achievement-item.is-earned .achievement-icon,
+  .challenge-item,
+  .daily-gem-rewards,
+  .daily-challenge-bonus,
+  .daily-gem-days > .daily-gem-day,
+  .daily-gem-day.is-current,
+  .shop-group,
+  .gem-store,
+  .shop-group .shop-item,
+  .shop-group .shop-wide,
+  .gem-item,
+  .gem-item-preview [data-gem-ring="gold"],
+  .leaderboard,
+  .activity,
+  .duel-card,
+  .profile-card,
+  .podium > .pod,
+  .board-list > li,
+  .activity-list > li,
+  .duel-open > .duel-item,
+  .duel-pane:not([hidden]),
+  .duel-opts > .option,
+  .friend-modal,
+  .friend-box {
+    animation: none !important;
+  }
+  .achievement-track > span,
+  .achievement-overall-track > span,
+  .challenge-track > span,
+  .daily-gem-balance,
+  .daily-challenge-bonus-status,
+  .shop-tab,
+  .gem-item .btn,
+  .achievement-claim,
+  .daily-gem-action .btn,
+  .daily-challenge-bonus .btn,
+  .duel-tile,
+  .duel-score > div {
+    transition: none !important;
+  }
+}
