@@ -773,3 +773,243 @@ button:disabled,
     transition: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 6 — Signature motion
+   Larger, intentional moments for screen changes, the home hero and results.
+   Keep the existing illustration, colours and layouts exactly as they are.
+   -------------------------------------------------------------------------- */
+
+:root {
+  --motion-major-screen-duration: 420ms;
+  --motion-major-home-duration: 820ms;
+  --motion-major-results-duration: 650ms;
+  --motion-major-dialog-duration: 360ms;
+  --motion-major-stagger: 70ms;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --motion-major-screen-duration: 330ms;
+    --motion-major-home-duration: 680ms;
+    --motion-major-results-duration: 540ms;
+    --motion-major-dialog-duration: 300ms;
+    --motion-major-stagger: 48ms;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-major-screen-duration: 460ms;
+    --motion-major-home-duration: 900ms;
+    --motion-major-results-duration: 720ms;
+    --motion-major-dialog-duration: 380ms;
+    --motion-major-stagger: 76ms;
+  }
+}
+
+/* A page now arrives with a little more presence than the micro-transition. */
+@keyframes motion-screen-major-enter {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 26px, 0) scale(.985);
+  }
+  72% {
+    opacity: 1;
+    transform: translate3d(0, -2px, 0) scale(1.002);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.screen:not([hidden]).motion-screen-major {
+  animation: motion-screen-major-enter var(--motion-major-screen-duration) var(--motion-ease-enter) both;
+}
+
+/* The home introduction is a short sequence, not a permanently moving banner. */
+@keyframes motion-home-copy-enter {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes motion-home-art-enter {
+  0% {
+    opacity: 0;
+    transform: translate3d(28px, 18px, 0) scale(.86) rotate(3deg);
+  }
+  72% {
+    opacity: 1;
+    transform: translate3d(-2px, -2px, 0) scale(1.025) rotate(-.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(0);
+  }
+}
+
+@keyframes motion-home-disc-bloom {
+  from { opacity: 0; transform: scale(.72); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes motion-home-ring-turn {
+  from { opacity: 0; transform: rotate(-70deg) scale(.78); }
+  to { opacity: 1; transform: rotate(0) scale(1); }
+}
+
+@keyframes motion-home-book-rise {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes motion-home-leaf-open {
+  from { opacity: 0; transform: scale(.55) rotate(-18deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.motion-home-hero-enter .hero-copy > * {
+  animation: motion-home-copy-enter 540ms var(--motion-ease-enter) both;
+}
+.motion-home-hero-enter .hero-copy > :nth-child(2) { animation-delay: calc(var(--motion-major-stagger) * .55); }
+.motion-home-hero-enter .hero-copy > :nth-child(3) { animation-delay: calc(var(--motion-major-stagger) * 1.1); }
+.motion-home-hero-enter .hero-copy > :nth-child(4) { animation-delay: calc(var(--motion-major-stagger) * 1.65); }
+.motion-home-hero-enter .hero-copy > :nth-child(5) { animation-delay: calc(var(--motion-major-stagger) * 2.2); }
+.motion-home-hero-enter .hero-art {
+  animation: motion-home-art-enter var(--motion-major-home-duration) var(--motion-ease-enter) both;
+}
+.motion-home-hero-enter .art-disc {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: motion-home-disc-bloom 700ms var(--motion-ease-enter) both;
+}
+.motion-home-hero-enter .art-ring {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: motion-home-ring-turn 900ms var(--motion-ease-enter) both;
+}
+.motion-home-hero-enter .art-page,
+.motion-home-hero-enter .art-edge,
+.motion-home-hero-enter .art-book,
+.motion-home-hero-enter .art-side {
+  animation: motion-home-book-rise 680ms var(--motion-ease-enter) both;
+  animation-delay: 110ms;
+}
+.motion-home-hero-enter .art-leaf {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation: motion-home-leaf-open 620ms 260ms var(--motion-ease-enter) both;
+}
+.motion-home-hero-enter .art-leaf2 {
+  transform-box: fill-box;
+  transform-origin: bottom left;
+  animation: motion-home-leaf-open 620ms 340ms var(--motion-ease-enter) both;
+}
+.motion-home-hero-enter .art-note {
+  animation: motion-home-copy-enter 500ms 420ms var(--motion-ease-enter) both;
+}
+
+/* Results get a clear reveal, then the score ring and supporting content follow. */
+@keyframes motion-results-major-enter {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) scale(.965);
+  }
+  72% {
+    opacity: 1;
+    transform: translate3d(0, -2px, 0) scale(1.008);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes motion-score-ring-reveal {
+  0% { opacity: 0; transform: scale(.58) rotate(-32deg); }
+  70% { opacity: 1; transform: scale(1.09) rotate(7deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+#results.motion-results-major {
+  animation: motion-results-major-enter var(--motion-major-results-duration) var(--motion-ease-enter) both;
+}
+#results.motion-results-major #score-ring {
+  animation: motion-score-ring-reveal 780ms 100ms var(--motion-ease-enter) both;
+}
+#results.motion-results-major #results-title {
+  animation: motion-home-copy-enter 480ms 160ms var(--motion-ease-enter) both;
+}
+#results.motion-results-major .topic-breakdown,
+#results.motion-results-major .results-actions,
+#results.motion-results-major .review-heading,
+#results.motion-results-major .review-filter,
+#results.motion-results-major .review-list {
+  animation: motion-home-copy-enter 480ms var(--motion-ease-enter) both;
+}
+#results.motion-results-major .topic-breakdown { animation-delay: 180ms; }
+#results.motion-results-major .results-actions { animation-delay: 240ms; }
+#results.motion-results-major .review-heading { animation-delay: 290ms; }
+#results.motion-results-major .review-filter { animation-delay: 330ms; }
+#results.motion-results-major .review-list { animation-delay: 370ms; }
+#results.motion-results-major .exp-result:not([hidden]) {
+  animation: motion-results-major-enter 560ms 120ms var(--motion-ease-enter) both;
+}
+
+/* Dialogs use a fuller entrance while preserving native open/close behaviour. */
+@keyframes pop {
+  0% { opacity: 0; transform: translate3d(0, 22px, 0) scale(.94); }
+  72% { opacity: 1; transform: translate3d(0, -2px, 0) scale(1.012); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+.dialog[open] {
+  animation-duration: var(--motion-major-dialog-duration);
+  animation-timing-function: var(--motion-ease-enter);
+}
+
+@supports (transition-behavior: allow-discrete) {
+  .dialog {
+    transition-duration: var(--motion-major-dialog-duration);
+    transform: translateY(22px) scale(.94);
+  }
+  @starting-style {
+    .dialog[open] {
+      opacity: 0;
+      transform: translateY(22px) scale(.94);
+    }
+  }
+}
+
+/* Stage 6 respects the same reduced-motion preference as every earlier stage. */
+@media (prefers-reduced-motion: reduce) {
+  .screen:not([hidden]).motion-screen-major,
+  .motion-home-hero-enter .hero-copy > *,
+  .motion-home-hero-enter .hero-art,
+  .motion-home-hero-enter .art-disc,
+  .motion-home-hero-enter .art-ring,
+  .motion-home-hero-enter .art-page,
+  .motion-home-hero-enter .art-edge,
+  .motion-home-hero-enter .art-book,
+  .motion-home-hero-enter .art-side,
+  .motion-home-hero-enter .art-leaf,
+  .motion-home-hero-enter .art-leaf2,
+  .motion-home-hero-enter .art-note,
+  #results.motion-results-major,
+  #results.motion-results-major #score-ring,
+  #results.motion-results-major #results-title,
+  #results.motion-results-major .topic-breakdown,
+  #results.motion-results-major .results-actions,
+  #results.motion-results-major .review-heading,
+  #results.motion-results-major .review-filter,
+  #results.motion-results-major .review-list,
+  #results.motion-results-major .exp-result:not([hidden]) {
+    animation: none !important;
+  }
+  .dialog,
+  .dialog[open] {
+    animation: none !important;
+    transition: none !important;
+  }
+}
