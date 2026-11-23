@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-complete-icon-system-2026-11-23-r11';
+const EXPECTED_BUILD = 'bece-motion-foundation-2026-11-23-r12';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -55,7 +55,22 @@ async function main() {
   fs.mkdirSync('artifacts/ui-audit/screenshots', { recursive: true });
   await waitForLatestDeployment();
 
-  const source = fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8');
+  const htmlSource = fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8');
+  // The app is modular: inspect the linked local stylesheets and scripts,
+  // not just the HTML shell that loads them.
+  const localStyles = [...htmlSource.matchAll(/<link\b[^>]*>/g)]
+    .map(([tag]) => /\brel=["']stylesheet["']/.test(tag)
+      ? tag.match(/\bhref=["']([^"']+\.css)["']/)?.[1] : null)
+    .filter(Boolean)
+    .filter(asset => !/^(https?:)?\/\//i.test(asset));
+  const localScripts = [...htmlSource.matchAll(/<script\b[^>]*\bsrc=["']([^"']+\.js)["'][^>]*>/g)]
+    .map(match => match[1])
+    .filter(asset => !/^(https?:)?\/\//i.test(asset));
+  const source = [
+    htmlSource,
+    ...localStyles.map(asset => fs.readFileSync(path.join(process.cwd(), asset), 'utf8')),
+    ...localScripts.map(asset => fs.readFileSync(path.join(process.cwd(), asset), 'utf8')),
+  ].join('\n');
   const ownerFeatures = [
     ['global practice reward rates', 'async function setRewardRates()'],
     ['global shop pause', 'async function toggleShop()'],
@@ -171,8 +186,8 @@ async function main() {
         source.includes('emoji.textContent = glyph;'),
         source.includes("badge.textContent = t.icon + ' ' + t.name;"),
         source.includes('s.textContent = it.icon;'),
-        /<text[^>]*>VS<\/text>/.test(versusSymbol),
-        !/<path/.test(versusSymbol),
+        /<path\b[^>]*\bd=/.test(versusSymbol),
+        !/<text\b/.test(versusSymbol),
         !/#[0-9a-f]{3,8}/i.test(versusSymbol)
       ].every(Boolean);
       allUiGlyphsResolve = glyphPairs.length > 0
