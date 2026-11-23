@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-complete-icon-system-2026-11-22-r10';
+const EXPECTED_BUILD = 'bece-complete-icon-system-2026-11-23-r11';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -72,17 +72,17 @@ async function main() {
     ['Gem balance uses a custom faceted gem drawing', 'id="i-gem"'],
     ['Duels use a proper VS icon', 'id="i-versus"'],
     ['French and Ghana subjects have custom flag icons', 'id="i-flag-france"'],
-    ['Built-in avatars use the custom SVG renderer', 'function setAvatarGlyph(node, value, extraClass)'],
-    ['Ninja avatars keep their own custom SVG identity', 'const safeAv = a => a;'],
+    ['Built-in avatars preserve their native emoji characters', "emoji.textContent = glyph;"],
+    ['Saved avatar keys are kept intact', 'const safeAv = a => a;'],
     ['Disk and storage emoji use custom SVG drawings', '<symbol id="i-disc"'],
     ['Static footer arrow uses the SVG icon family', 'href="#i-external-link"'],
-    ['Equipped title badges render their icons through the SVG helper', "setIconAwareText(badge, t.icon + ' ' + t.name)"],
-    ['Coin Shop item icons render through the SVG helper', 'setIconAwareText(s, it.icon)'],
-    ['Avatar picker shows SVG drawings', "setAvatarGlyph(b, a, 'avatar-choice-icon')"],
-    ['Player avatar badges use the common SVG renderer', 'setAvatarGlyph(bd, PF.safeAv(p.avatar))'],
+    ['Equipped title badges preserve their native emoji', "badge.textContent = t.icon + ' ' + t.name;"],
+    ['Coin Shop title items preserve their emoji artwork', 's.textContent = it.icon;'],
+    ['Avatar picker preserves the selected native emoji', "setAvatarGlyph(b, a, 'avatar-choice-icon')"],
+    ['Player avatar badges preserve their selected emoji', 'setAvatarGlyph(bd, PF.safeAv(p.avatar))'],
     ['Avatar picker tracks saved keys instead of SVG text', 'b.dataset.avatar === cur'],
     ['Lesson feedback icons use the shared SVG renderer', "setIconAwareText(fb, '✅ ' + why)"],
-    ['Coin celebration particles use the custom coin SVG', "o('span', 'coin-drop', '💰')"],
+    ['Coin celebration particles retain their currency emoji', "o('span', 'coin-drop', '💰')"],
     ['Gem Shop retry labels render Gems through the shared SVG helper', "setIconAwareText(button, 'Buy 💎 ' + it.price)"],
     ['Semantic icons use coordinated subject colour families', '.ui-icon--science{color:#368D9D}']
   ];
@@ -167,6 +167,8 @@ async function main() {
         source.includes("const icon=o('span','achievement-icon',a.icon);"),
         source.includes('|achievement-icon|achievement-gem-reward|profile-tab)'),
         source.includes('.achievement-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--surface);font-size:25px;filter:none;opacity:1}'),
+        source.includes("emoji.className = 'avatar-glyph'"),
+        source.includes('emoji.textContent = glyph;'),
         source.includes("badge.textContent = t.icon + ' ' + t.name;"),
         source.includes('s.textContent = it.icon;'),
         /<text[^>]*>VS<\/text>/.test(versusSymbol),
@@ -175,8 +177,7 @@ async function main() {
       ].every(Boolean);
       allUiGlyphsResolve = glyphPairs.length > 0
         && glyphPairs.every(pair => pair[1] && symbolIds.has(pair[1].name))
-        && avatarGlyphs.length > 0
-        && avatarGlyphs.every(glyph => mappedGlyphs.has(glyph))
+        && source.includes('emoji.textContent = glyph;')
         && unmappedIconMetadata.length === 0
         && nativeEmojiPolicy
         && source.includes('href="#i-external-link"');
