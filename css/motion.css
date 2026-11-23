@@ -1282,3 +1282,26 @@ button:disabled,
     line-height: 1.4;
   }
 }
+
+
+/* Stage 9 — Separate reward stream and clear counter arrival */
+.reward-flight-token {
+  width: 28px;
+  height: 28px;
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 20%));
+}
+.reward-flight-token-coins { font-size: 23px; }
+.reward-flight-token-gems { font-size: 22px; }
+
+@keyframes reward-target-ping {
+  0% { filter: none; }
+  35% { filter: drop-shadow(0 0 7px var(--accent)); }
+  100% { filter: none; }
+}
+.reward-target-ping {
+  animation: reward-target-ping 520ms var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reward-target-ping { animation: none !important; }
+}

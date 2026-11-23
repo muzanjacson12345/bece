@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r20';
+const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r21';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -256,6 +256,12 @@ async function main() {
     ['Self-service progress reset updates instead of attempting forbidden self-delete', source.includes("const resetRef = S.db.doc('players/' + S.uid);") && source.includes('await resetRef.set(resetProfile);') && !source.includes("await S.db.doc('players/' + S.uid).delete();")],
     ['Profile reset preserves trusted Gem balance and ownership history', source.includes("['gems', 'gemOps', 'gemCosmetics'].forEach(key =>") && source.includes('Your Gem balance and earned Gem cosmetics are kept.')],
     ['Admin progress reset preserves protected Gem fields', source.includes("'gemCosmetics', 'equippedGemCosmetic']")],
+    ['Reward flights use a spaced five-token stream with separate travel lanes', source.includes('const particleCount = Math.min(5') && source.includes('Math.max(520, Math.round((countDuration - flightDuration)') && source.includes('perpendicularX * lane') && source.includes('duration: flightDuration')],
+    ['Achievement Gem claims have a visible local balance destination', source.includes('achievement-gem-balance-value') && source.includes('Your Gems') && source.includes("action === 'achievement'") && source.includes('achievementBalance')],
+    ['Achievement Gem particles begin at the reward chip', source.includes("captureRewardRect(rewardRow.querySelector('.achievement-gem-reward'))")],
+    ['Reward arrival highlights its destination counter', source.includes('function pulseRewardTarget(target)') && source.includes('reward-target-ping')],
+    ['Owner renewal re-verifies both passwords using the strict session fields', source.includes("openPin('owner', true);") && source.includes('Enter both Owner passwords to renew your 30-minute session.') && !source.includes('const patch = owner')],
+    ['Appointed Admin renewal writes only its allowed timestamp', source.includes('const appointedAdmin = !owner && typeof isAppointed') && source.includes("await ref.set({ at: fsv().FieldValue.serverTimestamp() });")],
   ];
   sourceChecks.push(...motionSourceChecks.map(([label, passed]) => ({ label, passed })));
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);

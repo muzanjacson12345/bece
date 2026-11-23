@@ -67,6 +67,15 @@ function animateRewardNumber(element, from, to, formatter, duration) {
   };
   requestAnimationFrame(tick);
 }
+function pulseRewardTarget(target) {
+  if (!target || !target.isConnected) return;
+  target.classList.remove('reward-target-ping');
+  void target.offsetWidth;
+  target.classList.add('reward-target-ping');
+  target.addEventListener('animationend', event => {
+    if (event.animationName === 'reward-target-ping') target.classList.remove('reward-target-ping');
+  }, { once: true });
+}
 function animateRewardFlight(sourceRect, target, kind, countDuration, amount) {
   const targetRect = captureRewardRect(target);
   if (rewardMotionReduced() || !sourceRect || !targetRect || typeof Element.prototype.animate !== 'function') return;
@@ -76,31 +85,43 @@ function animateRewardFlight(sourceRect, target, kind, countDuration, amount) {
   const endX = targetRect.left + targetRect.width / 2;
   const endY = targetRect.top + targetRect.height / 2;
   const rewardAmount = Math.max(0, Number(amount) || 0);
-  const particleCount = Math.min(8, Math.max(4, 4 + Math.floor(Math.log10(rewardAmount + 1))));
-  const flightDuration = Math.max(1650, Math.min(2400, Math.round((Number(countDuration) || 2600) * .58)));
-  const delayBudget = Math.max(0, countDuration - flightDuration);
-  const delayStep = particleCount > 1 ? delayBudget / (particleCount - 1) : 0;
-  const offsets = [[-10, 2], [9, -7], [-5, -12], [12, 10], [0, 0], [-12, -8], [8, 12], [2, -14]];
+  // A small stream is easier to follow than a cloud of identical particles.
+  const particleCount = Math.min(5, Math.max(3, 2 + Math.ceil(Math.log10(rewardAmount + 1))));
+  const flightDuration = Math.max(780, Math.min(1050, Math.round((Number(countDuration) || 2400) * .36)));
+  const delayStep = Math.min(900, Math.max(520, Math.round((countDuration - flightDuration) / Math.max(1, particleCount - 1))));
+  const dx = endX - startX, dy = endY - startY;
+  const distance = Math.max(1, Math.hypot(dx, dy));
+  const perpendicularX = -dy / distance, perpendicularY = dx / distance;
   for (let index = 0; index < particleCount; index++) {
-    const [offsetX, offsetY] = offsets[index % offsets.length];
+    // Each token starts a little apart and takes its own lane, so the stream
+    // never looks like one thick bundle converging on the balance.
+    const side = index % 2 ? 1 : -1;
+    const lane = side * (7 + Math.floor(index / 2) * 5);
+    const startOffsetX = side * (5 + Math.floor(index / 2) * 3);
+    const startOffsetY = index % 3 === 0 ? -4 : 4;
+    const tokenStartX = startX + startOffsetX;
+    const tokenStartY = startY + startOffsetY;
+    const midX = startX + dx * .54 + perpendicularX * lane;
+    const midY = startY + dy * .54 + perpendicularY * lane - 18 - (index % 2) * 5;
     const token = o('span', 'reward-flight-token reward-flight-token-' + kind, glyph);
     token.setAttribute('aria-hidden', 'true');
-    token.style.left = (startX - 18 + offsetX) + 'px';
-    token.style.top = (startY - 18 + offsetY) + 'px';
+    token.style.left = (tokenStartX - 14) + 'px';
+    token.style.top = (tokenStartY - 14) + 'px';
     document.body.append(token);
-    const dx = endX - (startX + offsetX), dy = endY - (startY + offsetY);
     const animation = token.animate([
-      { transform: 'translate3d(0,10px,0) scale(.58) rotate(-14deg)', opacity: 0 },
-      { transform: 'translate3d(0,-20px,0) scale(1.18) rotate(0)', opacity: 1, offset: .2 },
-      { transform: `translate3d(${dx * .72}px,${dy * .72 - 8}px,0) scale(.88) rotate(12deg)`, opacity: 1, offset: .72 },
-      { transform: `translate3d(${dx}px,${dy}px,0) scale(.42) rotate(${index % 2 ? 300 : -300}deg)`, opacity: 0 }
+      { transform: 'translate3d(0,5px,0) scale(.72) rotate(-8deg)', opacity: 0 },
+      { transform: `translate3d(${midX - tokenStartX}px,${midY - tokenStartY}px,0) scale(1) rotate(5deg)`, opacity: 1, offset: .48 },
+      { transform: `translate3d(${endX - tokenStartX}px,${endY - tokenStartY}px,0) scale(.48) rotate(${index % 2 ? 18 : -18}deg)`, opacity: 0, offset: 1 }
     ], {
       duration: flightDuration,
       delay: Math.round(index * delayStep),
-      easing: 'cubic-bezier(.2,.78,.2,1)',
+      easing: 'cubic-bezier(.22,.78,.22,1)',
       fill: 'forwards'
     });
-    animation.onfinish = () => token.remove();
+    animation.onfinish = () => {
+      token.remove();
+      if (index === particleCount - 1) pulseRewardTarget(target);
+    };
     animation.oncancel = () => token.remove();
   }
 }
@@ -320,11 +341,16 @@ function renderAchievements() {
   const overall = ACHIEVEMENTS.reduce((n,a) => n + (unlocked.includes(a.id) ? 1 : 0),0);
   e.replaceChildren();
   const top = o('div','achievement-overview');
+  const overviewHead = o('div','achievement-overview-head');
   const count = o('div','achievement-total');
   count.append(o('strong','',overall + ' / ' + total),o('span','','achievements earned'));
+  const gemBalance = o('div','achievement-gem-balance');
+  gemBalance.append(o('span','achievement-gem-label','Your Gems'),
+    o('strong','daily-gem-balance achievement-gem-balance-value',rewardNumber(S.doc && S.doc.gems || 0)));
   const track=o('div','achievement-overall-track'),fill=o('span','achievement-overall-fill');
   fill.style.transform='scaleX('+(overall/total)+')';track.append(fill);
-  top.append(count,track);
+  overviewHead.append(count,gemBalance);
+  top.append(overviewHead,track);
   const groups = [...new Set(ACHIEVEMENTS.map(a=>a.group))];
   e.append(top);
   groups.forEach(group=>{
@@ -358,7 +384,7 @@ function renderAchievements() {
             const claim = o('button','btn btn-primary btn-sm achievement-claim','Claim Gems');
             claim.type = 'button';
             claim.onclick = async () => {
-              const sourceRect = captureRewardRect(claim);
+              const sourceRect = captureRewardRect(rewardRow.querySelector('.achievement-gem-reward')) || captureRewardRect(claim);
               claim.disabled = true; claim.textContent = 'Claiming…';
               try {
                 const result = await Gems.claimAchievement(a.id, sourceRect);
@@ -2173,38 +2199,44 @@ async function ownerLock(silent) {
   showFtab(); if (!silent) App.toast('Owner locked.', 'good');
 }
 async function renewCurrentSession() {
-  if (!S.db || !S.uid || (!S.isOwner && !S.isAdmin)) return App.toast('Unlock staff access before renewing.', 'warn');
-  const owner = !!S.isOwner, mode = owner ? 'owner' : 'admin';
-  const ref = S.db.doc((owner ? 'ownerSessions/' : 'adminSessions/') + S.uid);
-  try {
-    const F = fsv();
-    const current = await ref.get({ source: 'server' });
-    const data = current.exists ? current.data() : null;
-    if (!data || (owner ? (!data.pw1 || !data.pw2) : !data.pin)) {
-      openPin(mode, true);
-      return;
-    }
-    const patch = owner
-      ? { pw1: data.pw1, pw2: data.pw2, at: F.FieldValue.serverTimestamp() }
-      : { pin: data.pin, at: F.FieldValue.serverTimestamp() };
-    // Update only the session credentials and timestamp; never replace the session
-    // document or clear any existing session fields during a renewal.
-    await ref.set(patch, { merge: true });
-    const renewed = await ref.get({ source: 'server' });
-    const stamp = renewed.exists && renewed.data().at;
-    if (!stamp || typeof stamp.toMillis !== 'function') throw new Error('The renewed session time was not confirmed by the server.');
-    if (owner) S.ownerAt = stamp.toMillis(); else S.adminAt = stamp.toMillis();
-    S.noAuto = false;
-    refreshAdmin(true);
-    await setBadge().catch(() => {});
-    await logAct('renew', '', owner ? 'Owner session renewed' : 'Admin session renewed');
-    if (owner) Adm.go('owner');
-    if (document.body.dataset.screen !== 'admin') App.navigate('admin');
-    else Adm.sync();
-    App.toast(owner ? 'Owner session renewed for 30 minutes.' : 'Admin session renewed for 2 hours.', 'good');
-  } catch (error) {
-    App.toast('Renewal failed. Your current session was not intentionally closed. ' + ((error && error.message) || 'Try unlocking again.'), 'warn');
+  if (!S.db || !S.uid) return App.toast('Connect to the profile service before renewing.', 'warn');
+  const owner = !!S.isOwner || !!(S.roster && S.roster.get(S.uid) === 'owner') || !!(S.owners && S.owners.has(S.uid));
+  const appointedAdmin = !owner && typeof isAppointed === 'function' && isAppointed(S.uid);
+  if (owner) {
+    // A fresh two-password check writes only the three fields allowed by the Owner rules.
+    openPin('owner', true);
+    return;
   }
+  if (appointedAdmin) {
+    // Appointed admins do not use a PIN. Their rule allows only the timestamp field.
+    try {
+      const ref = S.db.doc('adminSessions/' + S.uid);
+      await ref.set({ at: fsv().FieldValue.serverTimestamp() });
+      const renewed = await ref.get({ source: 'server' });
+      const stamp = renewed.exists && renewed.data().at;
+      if (!stamp || typeof stamp.toMillis !== 'function') throw new Error('The server did not confirm the new session time.');
+      S.adminAt = stamp.toMillis();
+      S.noAuto = false;
+      refreshAdmin(true);
+      await setBadge().catch(() => {});
+      await logAct('renew', '', 'Appointed admin session renewed');
+      App.toast('Admin session renewed for 2 hours.', 'good');
+    } catch (error) {
+      console.error('Appointed admin session renewal failed:', error);
+      const code = String(error && error.code || 'unknown-error');
+      App.toast(code === 'permission-denied'
+        ? 'The server rejected the renewal. Check that the latest Firestore rules are published.'
+        : `Could not renew the admin session (${code}). Please try again.`, 'warn');
+    }
+    return;
+  }
+  if (S.isAdmin) {
+    // Normal admins verify their PIN again. openPin replaces the session document
+    // instead of merge-writing fields that may no longer be permitted.
+    openPin('admin', true);
+    return;
+  }
+  App.toast('Staff access has expired. Unlock with your Owner passwords or Admin PIN to continue.', 'warn');
 }
 async function lockAll() {
   try { await S.db.doc('ownerSessions/' + S.uid).delete(); } catch {}
@@ -2233,6 +2265,9 @@ function openPin(mode, renew) {
   const i1 = pw(owner ? 'Owner password 1 of 2' : 'Admin PIN'), i2 = owner ? pw('Owner password 2 of 2') : null;
   if (i2) i2.hidden = true;
   go.type = 'submit'; no.type = 'button'; msg.setAttribute('role', 'alert');
+  if (renew) msg.textContent = owner
+    ? 'Enter both Owner passwords to renew your 30-minute session.'
+    : 'Enter your Admin PIN to renew your 2-hour session.';
   const close = () => { document.removeEventListener('keydown', esc); ov.remove(); }, esc = e => { if (e.key === 'Escape') close(); };
   no.onclick = close; document.addEventListener('keydown', esc); ov.addEventListener('click', e => { if (e.target === ov) close(); });
   const sw = elx('button', 'adm-link', owner ? '\u2190 Admin PIN instead' : 'I\u2019m the owner \u2192'); sw.type = 'button'; sw.onclick = () => { close(); openPin(owner ? 'admin' : 'owner', renew); };
@@ -3348,7 +3383,9 @@ const Gems = (() => {
     if (window.GemShop && typeof window.GemShop.render === 'function') window.GemShop.render();
     if (!data.duplicate && Number(data.change) > 0) {
       const previous = Number.isFinite(Number(data.previous)) ? Number(data.previous) : balanceBefore;
-      animateCurrencyReward('gems', previous, data.balance, rewardOrigin);
+      const achievementBalance = action === 'achievement'
+        ? document.querySelector('.achievement-gem-balance-value') : null;
+      animateCurrencyReward('gems', previous, data.balance, rewardOrigin, achievementBalance);
     }
     return { previous: data.previous, balance: data.balance, change: data.change, duplicate: !!data.duplicate, rewardDay: data.rewardDay, bonusAmount: data.bonusAmount };
   }

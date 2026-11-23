@@ -3425,3 +3425,48 @@ pre, code { overflow-wrap: anywhere; }
 @media(max-width:600px){.emoji-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}.emoji-pick{min-height:58px;padding:6px}.avatar-choice-icon{width:31px;height:31px;font-size:28px}}
 
 
+
+
+/* Achievements: keep the Gem destination visible beside the progress summary. */
+.achievement-overview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.achievement-total { margin-bottom: 0; }
+.achievement-gem-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface2);
+  white-space: nowrap;
+}
+.achievement-gem-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.achievement-gem-balance-value {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 520px) {
+  .achievement-overview { padding: 15px; }
+  .achievement-overview-head {
+    align-items: center;
+    gap: 10px;
+  }
+  .achievement-total { gap: 7px; }
+  .achievement-total strong { font-size: 25px; }
+  .achievement-total span { font-size: 12px; }
+  .achievement-gem-balance { min-height: 34px; padding: 6px 10px; gap: 7px; }
+}
