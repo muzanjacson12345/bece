@@ -756,6 +756,8 @@ async function main() {
     }
 
     // Exercise actual motion in normal-preference contexts at a phone and a desktop size.
+    // Keep each feature on its own page: leaving an active quiz intentionally opens
+    // a confirmation dialog, which must not block the independent Notes/Flashcards checks.
     const motionViewports = VIEWPORTS.filter(viewport => ['phone-390', 'desktop-1366'].includes(viewport.name));
     for (const viewport of motionViewports) {
       const motionContext = await browser.newContext({
@@ -768,6 +770,7 @@ async function main() {
       });
       const motionPage = await motionContext.newPage();
       const check = { viewport: viewport.name, reducedMotion: false, question: false, answerFeedback: false, notes: false, flashcard: false };
+      let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
         await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'setup', null, { timeout: 30000 });
@@ -789,39 +792,42 @@ async function main() {
         }));
         check.answerFeedback = feedbackState.answer === 'motion-answer-feedback' && feedbackState.explanation === 'motion-learning-rise';
 
-        await motionPage.goto(`${BASE}/#/notes`, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        // Leaving an active quiz intentionally requires confirmation. Handle the
-        // app's real dialog so this smoke test can continue into the Notes screen.
-        const confirmDialog = motionPage.locator('#confirm-dialog');
-        if (await confirmDialog.evaluate(dialog => dialog.open).catch(() => false)) {
-          await motionPage.locator('#confirm-ok').click();
-        }
-        await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'notes', null, { timeout: 30000 });
-        const firstNoteSection = motionPage.locator('#note-body > .note-section').first();
-        await firstNoteSection.waitFor({ state: 'attached', timeout: 10000 });
-        await motionPage.waitForFunction(() => {
+        stage = 'revision notes';
+        const notesPage = await motionContext.newPage();
+        await notesPage.goto(`${BASE}/#/notes`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await notesPage.waitForFunction(() => document.body?.dataset?.screen === 'notes', null, { timeout: 30000 });
+        await notesPage.locator('[data-notes-sub="social"]').click();
+        await notesPage.waitForFunction(() => !!document.querySelector('#note-body > .note-section'), null, { timeout: 10000 });
+        await notesPage.waitForTimeout(50);
+        check.notes = await notesPage.evaluate(() => {
           const section = document.querySelector('#note-body > .note-section');
           return !!section && getComputedStyle(section).animationName === 'motion-learning-rise';
-        }, null, { timeout: 10000 });
-        check.notes = true;
+        });
+        await notesPage.close();
 
-        await motionPage.goto(`${BASE}/#/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'home', null, { timeout: 30000 });
-        await motionPage.locator('#flashcard-disclosure > summary').click();
-        await motionPage.locator('#flashcard-disclosure[open]').waitFor({ state: 'attached', timeout: 5000 });
-        await motionPage.locator('#flash-start').click();
-        await motionPage.waitForFunction(() => !document.querySelector('#flash-session')?.hidden, null, { timeout: 10000 });
-        await motionPage.waitForTimeout(50);
-        const flashState = await motionPage.evaluate(() => ({
+        stage = 'flashcards';
+        const flashPage = await motionContext.newPage();
+        await flashPage.goto(`${BASE}/#/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await flashPage.waitForFunction(() => document.body?.dataset?.screen === 'home', null, { timeout: 30000 });
+        const disclosure = flashPage.locator('#flashcard-disclosure');
+        await flashPage.locator('#flashcard-disclosure > summary').click();
+        await flashPage.waitForFunction(() => document.querySelector('#flashcard-disclosure')?.open === true, null, { timeout: 5000 });
+        await flashPage.locator('#flash-start').click();
+        await flashPage.waitForFunction(() => document.querySelector('#flash-session')?.hidden === false, null, { timeout: 10000 });
+        await flashPage.waitForTimeout(70);
+        const flashState = await flashPage.evaluate(() => ({
+          reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
           entrance: getComputedStyle(document.querySelector('#flash-flip')).animationName,
           transition: getComputedStyle(document.querySelector('#flash-card')).transitionProperty,
         }));
-        await motionPage.locator('#flash-reveal').click();
-        await motionPage.waitForFunction(() => document.querySelector('#flash-flip')?.classList.contains('is-flipped'), null, { timeout: 5000 });
-        check.flashcard = flashState.entrance === 'motion-learning-rise' && flashState.transition.split(',').map(value => value.trim()).includes('transform');
-        check.reducedMotion = check.reducedMotion && flashState.entrance !== 'none';
+        await flashPage.locator('#flash-reveal').click();
+        await flashPage.waitForFunction(() => document.querySelector('#flash-flip')?.classList.contains('is-flipped'), null, { timeout: 5000 });
+        check.flashcard = flashState.entrance === 'motion-learning-rise'
+          && flashState.transition.split(',').map(value => value.trim()).includes('transform');
+        check.reducedMotion = check.reducedMotion && flashState.reduced === false;
+        await flashPage.close();
       } catch (error) {
-        check.error = String(error);
+        check.error = `${stage}: ${String(error)}`;
       }
       report.motionChecks.push(check);
       for (const [key, passed] of Object.entries(check)) {
