@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r16';
+const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r17';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -243,6 +243,8 @@ async function main() {
     ['Quiz choices animate only when a new question is rendered', source.includes('.motion-option-enter') && source.includes("if (this.motionQuestion) button.classList.add('motion-option-enter')")],
     ['Learning and reward progress fills use transform transitions', source.includes('transition-property: transform') && source.includes('fill.style.transform=') && source.includes('D.bar.style.transform')],
     ['Stage 3 and Stage 4 effects include reduced-motion overrides', source.includes('Stage 3 — Learning motion') && source.includes('Stage 4 — Rewards and social motion') && source.includes('animation: none !important;')],
+    ['Stage 6 screen, home and results motion is wired to real app state changes', source.includes('Stage 6 — Signature motion') && source.includes("screenNode.classList.add('motion-screen-major')") && source.includes("hero.classList.add('motion-home-hero-enter')") && source.includes("results.classList.add('motion-results-major')")],
+    ['Stage 6 includes touch timing, dialog motion and reduced-motion overrides', source.includes('--motion-major-screen-duration: 330ms') && source.includes('--motion-major-dialog-duration: 300ms') && source.includes('motion-home-ring-turn') && source.includes('animation: none !important;')],
   ];
   sourceChecks.push(...motionSourceChecks.map(([label, passed]) => ({ label, passed })));
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
@@ -769,11 +771,32 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, question: false, answerFeedback: false, notes: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, question: false, answerFeedback: false, results: false, notes: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
         await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'setup', null, { timeout: 30000 });
+        await motionPage.waitForTimeout(70);
+        check.screen = await motionPage.evaluate(() =>
+          getComputedStyle(document.querySelector('#screen-setup')).animationName === 'motion-screen-major-enter'
+        );
+
+        stage = 'home hero';
+        const homePage = await motionContext.newPage();
+        await homePage.goto(BASE + '/#/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await homePage.waitForFunction(() => document.body?.dataset?.screen === 'home', null, { timeout: 30000 });
+        await homePage.waitForTimeout(70);
+        check.homeHero = await homePage.evaluate(() => {
+          const screen = document.querySelector('#screen-home');
+          const hero = screen?.querySelector('.hero');
+          return !!hero
+            && getComputedStyle(screen).animationName === 'motion-screen-major-enter'
+            && getComputedStyle(hero.querySelector('.hero-art')).animationName === 'motion-home-art-enter'
+            && getComputedStyle(hero.querySelector('.hero-copy h1')).animationName === 'motion-home-copy-enter';
+        });
+        await homePage.close();
+
+        stage = 'quiz setup';
         await motionPage.locator('#setup-start').click();
         await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'quiz', null, { timeout: 30000 });
         await motionPage.waitForTimeout(70);
@@ -791,6 +814,20 @@ async function main() {
           explanation: getComputedStyle(document.querySelector('#expl-box')).animationName,
         }));
         check.answerFeedback = feedbackState.answer === 'motion-answer-feedback' && feedbackState.explanation === 'motion-learning-rise';
+
+        stage = 'quiz results';
+        const questionTotal = Number(await motionPage.locator('#qtotal').textContent());
+        for (let questionIndex = 1; questionIndex < questionTotal; questionIndex++) {
+          await motionPage.locator('#next-question-btn').click();
+          await motionPage.locator('#opts .option').first().click();
+        }
+        await motionPage.locator('#next-question-btn').click();
+        await motionPage.waitForFunction(() => document.querySelector('#results')?.hidden === false, null, { timeout: 10000 });
+        const resultsState = await motionPage.evaluate(() => ({
+          panel: getComputedStyle(document.querySelector('#results')).animationName,
+          score: getComputedStyle(document.querySelector('#score-ring')).animationName,
+        }));
+        check.results = resultsState.panel === 'motion-results-major-enter' && resultsState.score === 'motion-score-ring-reveal';
 
         stage = 'revision notes';
         const notesPage = await motionContext.newPage();
@@ -836,7 +873,7 @@ async function main() {
       }
       if (check.error) report.failures.push(`${viewport.name}/motion: ${check.error}`);
       await motionContext.close();
-      console.log(`Motion smoke check — ${viewport.name}: ${Object.entries(check).filter(([key, value]) => key !== 'viewport' && key !== 'error' && value).length}/5 passed`);
+      console.log(`Motion smoke check — ${viewport.name}: ${Object.entries(check).filter(([key, value]) => key !== 'viewport' && key !== 'error' && typeof value === 'boolean' && value).length}/${Object.entries(check).filter(([key, value]) => key !== 'viewport' && typeof value === 'boolean').length} passed`);
     }
   } finally {
     await browser.close();
