@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="bece-build" content="bece-complete-icon-system-2026-11-22-r10">
+<meta name="bece-build" content="bece-complete-icon-system-2026-11-23-r11">
 <title>BECE Mock Master &amp; GES Revision Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -241,7 +241,7 @@
   };
 
   /* ---------- public profile API (used by the Friends page) ---------- */
-  // Built-in avatar choices are rendered as custom SVGs, so platform emoji support is not needed.
+  // Avatar choices stay native emoji so their expressions and character details remain intact.
   const safeAv = a => a;
   const AVATAR_GROUPS = [
     { id: 'animals', label: 'Animals', items: ['🦁', '🐯', '🦊', '🐼', '🐸', '🦉', '🐙', '🦄', '🐨', '🐧', '🦈', '🐺', '🦋', '🐢', '🦖', '🐬', '🐻', '🐰', '🦒', '🦅', '🐝', '🦜', '🐘', '🦓'] },
@@ -3642,11 +3642,11 @@ pre, code { overflow-wrap: anywhere; }
 .ui-icon--trophy,.ui-icon--gold,.ui-icon--star{color:#c79a3a}.ui-icon--shield{color:#5a86a5}
 .ui-icon--versus{color:var(--primary)}.ui-icon--bolt{color:#d19a2f}.ui-icon--target{color:#4b8d9c}
 .ui-icon--warning{color:#c88731}.ui-icon--good{color:var(--good)}.ui-icon--bad{color:var(--bad)}
-.avatar-glyph{width:64%;height:64%;color:var(--av-d,var(--accent));stroke-width:1.65;flex:none}
+.avatar-glyph{width:64%;height:64%;display:grid;place-items:center;font-size:1em;line-height:1;flex:none}
 .av-badge .avatar-glyph{width:100%;height:100%}
 .avatar-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
 .avatar-pick{display:grid;place-items:center;min-width:0;min-height:64px;padding:8px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--accent);transition:border-color .18s,background .18s,transform .18s}
-.avatar-pick .avatar-glyph{width:36px;height:36px;color:currentColor}
+.avatar-pick .avatar-glyph{width:36px;height:36px;font-size:34px;color:currentColor}
 .avatar-pick:hover{transform:translateY(-2px);border-color:var(--accent)}
 .avatar-pick.is-on{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
 .avatar-picker-note{margin:8px 0 12px;color:var(--muted);font-size:13px;line-height:1.5}
@@ -3658,7 +3658,7 @@ pre, code { overflow-wrap: anywhere; }
 .ann-ic .ui-inline-icon{width:26px;height:26px;margin:0}
 .foot-bug{display:inline-flex;align-items:center;gap:7px}.foot-bug .icon{width:17px;height:17px;color:var(--accent)}
 .profile-tab{display:inline-flex;align-items:center;gap:7px}.profile-tab .icon{width:18px;height:18px;color:var(--accent)}
-@media(max-width:600px){.avatar-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}.avatar-pick{min-height:58px;padding:6px}.avatar-pick .avatar-glyph{width:32px;height:32px}}
+@media(max-width:600px){.avatar-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}.avatar-pick{min-height:58px;padding:6px}.avatar-pick .avatar-glyph{width:32px;height:32px;font-size:30px}}
 </style>
 <style id="bece-complete-icon-system">
 .ui-inline-icon{display:inline-block;width:1.18em;height:1.18em;min-width:1.18em;vertical-align:-.2em;flex:none;margin:0 .13em 0 0;stroke-width:1.75}
@@ -3672,17 +3672,17 @@ pre, code { overflow-wrap: anywhere; }
 .ui-icon--nature{color:#6F9A71}.ui-icon--history{color:#A77F54}.ui-icon--people{color:#8A79AD}
 .ui-icon--fun{color:#C27B73}.ui-icon--weather{color:#6998B8}.ui-icon--thinking{color:#8775A8}
 .ui-icon--sparkle{color:#A889C5}.ui-icon--avatar{color:currentColor}
-.avatar-svg{width:1.42em;height:1.42em;display:inline-block;vertical-align:middle;flex:none;stroke-width:1.6}
-.avatar-choice-icon{width:34px;height:34px;max-width:100%;max-height:100%}
-.account-avatar .avatar-svg{width:100%;height:100%}
-.account-badge .avatar-svg,.av-badge .avatar-svg{width:100%;height:100%}
+.avatar-glyph{display:grid;place-items:center;width:64%;height:64%;font-size:1em;line-height:1;flex:none}
+.avatar-choice-icon{width:34px;height:34px;max-width:100%;max-height:100%;font-size:31px}
+.account-avatar .avatar-glyph{width:100%;height:100%;font-size:1.1em}
+.account-badge .avatar-glyph,.av-badge .avatar-glyph{width:100%;height:100%;font-size:1em}
 .profile-doodle-icon{display:grid;place-items:center}
-.profile-doodle-icon .avatar-svg{width:20px;height:20px;opacity:.34}
+.profile-doodle-icon .avatar-glyph{width:20px;height:20px;font-size:18px;opacity:.34}
 .emoji-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
 .emoji-pick{display:grid;place-items:center;min-width:0;min-height:62px;padding:8px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--accent);transition:border-color .18s,background .18s,transform .18s}
 .emoji-pick:hover{transform:translateY(-2px);border-color:var(--accent)}
 .emoji-pick.is-on{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
-@media(max-width:600px){.emoji-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}.emoji-pick{min-height:58px;padding:6px}.avatar-choice-icon{width:31px;height:31px}}
+@media(max-width:600px){.emoji-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}.emoji-pick{min-height:58px;padding:6px}.avatar-choice-icon{width:31px;height:31px;font-size:28px}}
 </style>
 </head>
 <body>
@@ -8069,7 +8069,7 @@ function appendIconAwareText(node, value) {
     node.appendChild(document.createTextNode(text)); return;
   }
   const className = typeof node.className === 'string' ? node.className : '';
-  if (/(^|\\s)(note-|essay-|lesson-|lab-|flow-|board-bio|account-name|ann-txt|adm-bug-text|note-body|note-explanation|note-key-ideas|note-takeaway|note-section|bio-text|achievement-icon|achievement-gem-reward|profile-tab)(\\S*)?(\\s|$)/.test(className)) {
+  if (/(^|\s)(note-|essay-|lesson-|lab-|flow-|board-bio|account-name|ann-txt|adm-bug-text|note-body|note-explanation|note-key-ideas|note-takeaway|note-section|bio-text|achievement-icon|achievement-gem-reward|profile-tab|avatar-glyph|emoji-pick)(\S*)?(\s|$)/.test(className)) {
     node.appendChild(document.createTextNode(text)); return;
   }
   let buffer = '';
@@ -8109,10 +8109,12 @@ function icon(name, extraClass) {
 }
 function setAvatarGlyph(node, value, extraClass) {
   node.replaceChildren();
-  const glyph = String(value || '');
-  const definition = UI_GLYPH_MAP.get(glyph);
-  node.append(icon(definition ? definition.name : 'user-round',
-    'avatar-svg' + (definition && definition.cls ? ' ' + definition.cls : '') + (extraClass ? ' ' + extraClass : '')));
+  const glyph = String(value || '🙂');
+  const emoji = document.createElement('span');
+  emoji.className = 'avatar-glyph' + (extraClass ? ' ' + extraClass : '');
+  emoji.setAttribute('aria-hidden', 'true');
+  emoji.textContent = glyph;
+  node.append(emoji);
 }
 const store = {
   get(key, fallback) {
