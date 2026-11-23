@@ -94,3 +94,189 @@
     scroll-behavior: auto !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 2 — App-wide interaction polish
+   One shared feel across touch, mouse and trackpad input.
+   -------------------------------------------------------------------------- */
+
+:root {
+  --motion-control-duration: 180ms;
+  --motion-selection-duration: 190ms;
+  --motion-card-duration: 220ms;
+  --motion-press-scale: .985;
+  --motion-card-hover-lift: 3px;
+  --motion-card-hover-scale: 1.002;
+}
+
+/* These controls inherit the same timing without replacing their existing
+   colour, shadow, or layout transitions. */
+:where(
+  .btn,
+  .icon-button,
+  .link-button,
+  .nav-links a,
+  .tab-bar a,
+  .segmented button,
+  .chip,
+  .notes-view-tabs a,
+  .length-option,
+  .mode-option,
+  .topic-item,
+  .subject-card,
+  .tool-card,
+  .shop-tab,
+  .duel-modes button,
+  .f-tabs button,
+  .board-seg button,
+  .adm-subs > button,
+  .adm-chip,
+  .theme-tile,
+  .emoji-pick,
+  .avatar-pick,
+  .bookmark,
+  .back-link,
+  .pod
+) {
+  transition-duration: var(--motion-control-duration);
+  transition-timing-function: var(--motion-ease-standard);
+}
+
+/* Touch / keyboard press feedback. Keep the scale restrained so text and
+   icons remain steady and controls do not appear to jump. */
+.btn:active:not(:disabled),
+.icon-button:active,
+.link-button:active,
+.nav-links a:active,
+.tab-bar a:active,
+.segmented button:active,
+.chip:active,
+.notes-view-tabs a:active,
+.length-option:active,
+.mode-option:active,
+.topic-item:active,
+.subject-card:active,
+.tool-card:active,
+.shop-tab:active,
+.duel-modes button:active,
+.f-tabs button:active,
+.board-seg button:active,
+.adm-subs > button:active,
+.adm-chip:active,
+.theme-tile:active,
+.emoji-pick:active,
+.avatar-pick:active,
+.bookmark:active,
+.back-link:active,
+.pod:active {
+  transform: scale(var(--motion-press-scale));
+  transition-duration: 90ms;
+}
+
+/* Selected controls ease into their active state instead of snapping.
+   Existing colours and selected-state styling remain unchanged. */
+.segmented button[aria-pressed="true"],
+.segmented button[aria-selected="true"],
+.chip[aria-pressed="true"],
+.notes-view-tabs a[aria-selected="true"],
+.length-option[aria-pressed="true"],
+.mode-option[aria-checked="true"],
+.duel-modes button[aria-pressed="true"],
+.f-tabs button[aria-selected="true"],
+.board-seg button[aria-pressed="true"],
+.shop-tab.is-active,
+.theme-tile[aria-pressed="true"],
+.emoji-pick.is-on,
+.avatar-pick.is-on,
+.bookmark[aria-pressed="true"] {
+  transition-duration: var(--motion-selection-duration);
+}
+
+/* Subtle lift is reserved for devices that really have a hover pointer.
+   It never becomes the only feedback available to touch users. */
+@media (hover: hover) and (pointer: fine) {
+  .subject-card,
+  .tool-card,
+  .topic-item,
+  .theme-tile,
+  .emoji-pick,
+  .avatar-pick,
+  .achievement-launch {
+    transition-property: transform, border-color, background-color, box-shadow, color;
+    transition-duration: var(--motion-card-duration);
+    transition-timing-function: var(--motion-ease-standard);
+  }
+
+  .subject-card:hover,
+  .tool-card:hover,
+  .theme-tile:hover,
+  .emoji-pick:hover,
+  .avatar-pick:hover,
+  .achievement-launch:hover {
+    transform: translateY(calc(0px - var(--motion-card-hover-lift)));
+  }
+
+  .topic-item:hover {
+    transform: translateY(-1px);
+  }
+
+  .subject-card:active,
+  .tool-card:active,
+  .topic-item:active,
+  .theme-tile:active,
+  .emoji-pick:active,
+  .avatar-pick:active {
+    transform: scale(var(--motion-press-scale));
+  }
+
+  .icon-button:hover .icon {
+    transform: scale(1.06);
+  }
+
+  .icon-button .icon {
+    transition: transform var(--motion-control-duration) var(--motion-ease-standard);
+  }
+}
+
+/* Touch-first devices should never depend on hover styles. Use a slightly
+   quicker press response and cancel hover lifts that some mobile browsers
+   emulate after tapping. */
+@media (hover: none), (pointer: coarse) {
+  :root {
+    --motion-control-duration: 145ms;
+    --motion-selection-duration: 160ms;
+    --motion-card-duration: 170ms;
+    --motion-press-scale: .99;
+    --motion-card-hover-lift: 0px;
+  }
+
+  .subject-card:hover,
+  .tool-card:hover,
+  .topic-item:hover,
+  .theme-tile:hover,
+  .emoji-pick:hover,
+  .avatar-pick:hover,
+  .achievement-launch:hover {
+    transform: none;
+  }
+
+  .icon-button:hover .icon {
+    transform: none;
+  }
+}
+
+/* Keep disabled actions visually and physically still. */
+button:disabled,
+.btn:disabled,
+[aria-disabled="true"] {
+  transform: none !important;
+  cursor: not-allowed;
+}
+
+/* Respect larger accessibility text and keyboard focus without animating
+   focus rings into or away from view. */
+:where(button, a, [role="button"], input, select, textarea):focus-visible {
+  scroll-margin-block: 12px;
+}
+
