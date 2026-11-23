@@ -843,10 +843,7 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
   .segmented:not(.segmented-sm) { display: flex; width: 100%; }
   .segmented:not(.segmented-sm) button { flex: 1; }
 }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-  .dialog::backdrop { transition: none !important; }
-}
+
 @media print {
   .site-nav, .tab-bar, .quiz-bar, .quiz-actions, .toolbar, .notes-topics, .note-actions, .note-nav, .reading-progress { display: none !important; }
   .notes-layout { display: block; }
@@ -1004,7 +1001,7 @@ html[data-theme='dark'] .bookmark[aria-pressed='true'] { background: #3a3220; bo
 html { -webkit-tap-highlight-color: transparent; }
 @keyframes screenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .screen:not([hidden]) { animation: screenIn .28s ease-out both; }
-@media (prefers-reduced-motion: reduce) { .screen:not([hidden]) { animation: none; } }
+
 @media (max-width: 760px) {
   .segmented[aria-label="Subject"] { display: flex !important; grid-template-columns: none !important; flex-wrap: nowrap !important; overflow-x: auto; max-width: 100%; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .segmented[aria-label="Subject"]::-webkit-scrollbar { display: none; }
@@ -1118,7 +1115,7 @@ button, .btn, .subject-card, .topic-item, .chip { transition: transform .15s var
   .section-heading h2 { font-size: clamp(26px, 7.5vw, 34px); line-height: 1.15; }
   .block { margin-top: 36px; }
 }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
 
 /* --- Quiz + friends first; notes and essays are extras --- */
 .site-nav small { font-size: .7em; opacity: .6; }
@@ -1952,9 +1949,7 @@ html[data-theme="dark"] .cz-theme-panel .cz-picker-help { color:#bbb !important;
   .adm-card { padding: 12px; }
   .adm-bar { grid-template-columns: minmax(64px, 88px) minmax(0, 1fr) 26px; gap: 6px; font-size: 12px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .adm-ctl { animation: none; }
-}
+
 
 
 /* Original style block 3: <style id="mobile-layout-overflow-fix"> */
@@ -3195,10 +3190,7 @@ pre, code { overflow-wrap: anywhere; }
   #screen-home .tool-card { min-height: 94px; padding: 9px; }
   #screen-home .tool-card small { font-size: 10.5px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-}
+
 
 
 /* Original style block 12: <style id="overview-owner-responsive-final"> */
