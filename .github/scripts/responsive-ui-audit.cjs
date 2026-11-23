@@ -790,16 +790,25 @@ async function main() {
         check.answerFeedback = feedbackState.answer === 'motion-answer-feedback' && feedbackState.explanation === 'motion-learning-rise';
 
         await motionPage.goto(`${BASE}/#/notes`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        // Leaving an active quiz intentionally requires confirmation. Handle the
+        // app's real dialog so this smoke test can continue into the Notes screen.
+        const confirmDialog = motionPage.locator('#confirm-dialog');
+        if (await confirmDialog.evaluate(dialog => dialog.open).catch(() => false)) {
+          await motionPage.locator('#confirm-ok').click();
+        }
         await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'notes', null, { timeout: 30000 });
-        await motionPage.waitForTimeout(50);
-        check.notes = await motionPage.evaluate(() => {
+        const firstNoteSection = motionPage.locator('#note-body > .note-section').first();
+        await firstNoteSection.waitFor({ state: 'attached', timeout: 10000 });
+        await motionPage.waitForFunction(() => {
           const section = document.querySelector('#note-body > .note-section');
           return !!section && getComputedStyle(section).animationName === 'motion-learning-rise';
-        });
+        }, null, { timeout: 10000 });
+        check.notes = true;
 
         await motionPage.goto(`${BASE}/#/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
         await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'home', null, { timeout: 30000 });
         await motionPage.locator('#flashcard-disclosure > summary').click();
+        await motionPage.locator('#flashcard-disclosure[open]').waitFor({ state: 'attached', timeout: 5000 });
         await motionPage.locator('#flash-start').click();
         await motionPage.waitForFunction(() => !document.querySelector('#flash-session')?.hidden, null, { timeout: 10000 });
         await motionPage.waitForTimeout(50);
