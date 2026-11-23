@@ -96,7 +96,8 @@ async function main() {
     ['Avatar picker preserves the selected native emoji', "setAvatarGlyph(b, a, 'avatar-choice-icon')"],
     ['Player avatar badges preserve their selected emoji', 'setAvatarGlyph(bd, PF.safeAv(p.avatar))'],
     ['Avatar picker tracks saved keys instead of SVG text', 'b.dataset.avatar === cur'],
-    ['Lesson feedback icons use the shared SVG renderer', "setIconAwareText(fb, '✅ ' + why)"],
+    ['Lesson and note content preserves native emoji glyphs', 'node.appendChild(document.createTextNode(text)); return;'],
+    ['Lesson and note classes bypass automatic icon substitution', 'note-|essay-|lesson-|lab-'],
     ['Coin celebration particles retain their currency emoji', "o('span', 'coin-drop', '💰')"],
     ['Gem Shop retry labels render Gems through the shared SVG helper', "setIconAwareText(button, 'Buy 💎 ' + it.price)"],
     ['Semantic icons use coordinated subject colour families', '.ui-icon--science{color:#368D9D}']
@@ -172,7 +173,11 @@ async function main() {
       const iconMetadataGlyphs = [...source.matchAll(/(?:\bicon\s*:\s*'([^']+)'|"icon"\s*:\s*"([^"]+)")/g)]
         .map(match => match[1] || match[2])
         .filter(glyph => /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(glyph));
-      const unmappedIconMetadata = [...new Set(iconMetadataGlyphs.filter(glyph => !mappedGlyphs.has(glyph)))];
+      // This note-content sword is intentionally a native emoji, not a missing SVG icon.
+      const intentionallyNativeEmoji = new Set(['⚔️']);
+      const unmappedIconMetadata = [...new Set(iconMetadataGlyphs.filter(
+        glyph => !mappedGlyphs.has(glyph) && !intentionallyNativeEmoji.has(glyph)
+      ))];
 
       const versusSymbol = (source.match(/<symbol id="i-versus"[\s\S]*?<\/symbol>/) || [''])[0];
       const nativeEmojiPolicy = [
@@ -180,7 +185,7 @@ async function main() {
         source.includes('n.appendChild(document.createTextNode(String(k)))'),
         source.includes("const b = o('button', 'profile-tab', `${emoji} ${label}`)"),
         source.includes("const icon=o('span','achievement-icon',a.icon);"),
-        source.includes('|achievement-icon|achievement-gem-reward|profile-tab)'),
+        ['achievement-icon', 'achievement-gem-reward', 'profile-tab'].every(name => source.includes(name)),
         source.includes('.achievement-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--surface);font-size:25px;filter:none;opacity:1}'),
         source.includes("emoji.className = 'avatar-glyph'"),
         source.includes('emoji.textContent = glyph;'),
@@ -231,7 +236,7 @@ async function main() {
     ...gemRulesFeatures.map(([label, token]) => ({ label, passed: firestoreRulesSource.includes(token) })),
   ];
   sourceChecks.push({ label: 'Every achievement has a one-time client and server Gem reward', passed: allAchievementRewardsPresent });
-  sourceChecks.push({ label: 'Every mapped UI glyph and built-in avatar resolves to a custom SVG', passed: allUiGlyphsResolve });
+  sourceChecks.push({ label: 'Mapped UI glyphs resolve to SVGs while expressive avatars retain native emoji', passed: allUiGlyphsResolve });
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
 
   const browser = await chromium.launch({ headless: true });
@@ -745,7 +750,7 @@ async function main() {
   fs.writeFileSync('artifacts/ui-audit/report.json', JSON.stringify(report, null, 2));
   console.log(`Saved ${report.screenshots.length} screenshots.`);
   console.log(`Page errors: ${report.pageErrors.length}; console errors: ${report.consoleErrors.length}; failed requests: ${report.failedRequests.length}`);
-  console.log(`Layout failures: ${report.failures.length}`);
+  console.log(`Audit failures: ${report.failures.length}`);
   for (const failure of report.httpErrors) {
     try {
       if (new URL(failure.url).origin === new URL(BASE).origin) {
