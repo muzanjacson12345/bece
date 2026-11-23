@@ -1013,3 +1013,153 @@ button:disabled,
     transition: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 7 — Reward flights and XP progression
+   Currency only flies after a confirmed, non-duplicate reward is saved.
+   -------------------------------------------------------------------------- */
+
+@keyframes reward-count-pop {
+  0% { transform: scale(1); }
+  42% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.reward-count-pop {
+  display: inline-block;
+  animation: reward-count-pop 420ms var(--motion-ease-enter) both;
+}
+
+.reward-flight-token {
+  position: fixed;
+  z-index: 10001;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  pointer-events: none;
+  user-select: none;
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 3px 5px rgb(0 0 0 / 22%));
+  will-change: transform, opacity;
+}
+
+.reward-flight-token-coins { font-size: 25px; }
+.reward-flight-token-gems { font-size: 23px; }
+
+.coin-bal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.coin-bal-value {
+  display: inline-block;
+  color: var(--ink);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.exp-xp-progress {
+  display: grid;
+  gap: 9px;
+  margin: 16px 0 20px;
+  padding: 15px 16px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+}
+
+.exp-xp-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 11px;
+}
+
+.exp-level-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.exp-total-count {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.exp-level-up {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--good-soft);
+  color: var(--good);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  animation: motion-level-up 620ms var(--motion-ease-enter) both;
+}
+
+@keyframes motion-level-up {
+  0% { opacity: 0; transform: translateY(7px) scale(.86); }
+  65% { opacity: 1; transform: translateY(-2px) scale(1.06); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.exp-xp-track {
+  height: 11px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.exp-xp-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  transform-origin: left center;
+  transition: transform 1050ms var(--motion-ease-enter);
+  will-change: transform;
+}
+
+.exp-xp-next {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 420px) {
+  .exp-xp-progress { padding: 13px; }
+  .exp-xp-top { gap: 7px; }
+  .exp-total-count { font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reward-count-pop,
+  .exp-level-up {
+    animation: none !important;
+  }
+  .exp-xp-fill {
+    transition: none !important;
+  }
+  .reward-flight-token {
+    display: none !important;
+  }
+}
