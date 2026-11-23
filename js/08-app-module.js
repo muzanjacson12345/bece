@@ -32,10 +32,15 @@ function rewardMotionReduced() {
 function rewardNumber(value) {
   return Math.max(0, Math.round(Number(value) || 0)).toLocaleString('en-US');
 }
-function animateRewardNumber(element, from, to, formatter, duration = 850) {
+function rewardAnimationDuration(from, to) {
+  const delta = Math.abs((Number(to) || 0) - (Number(from) || 0));
+  return Math.min(5200, Math.round(1900 + Math.log10(delta + 1) * 900));
+}
+function animateRewardNumber(element, from, to, formatter, duration) {
   if (!element) return;
   const startValue = Number(from) || 0, endValue = Number(to) || 0;
   const format = formatter || (value => rewardNumber(value));
+  const animationDuration = Number(duration) > 0 ? Number(duration) : rewardAnimationDuration(startValue, endValue);
   if (rewardMotionReduced() || startValue === endValue) {
     element.textContent = format(endValue);
     return;
@@ -46,8 +51,10 @@ function animateRewardNumber(element, from, to, formatter, duration = 850) {
   const startedAt = performance.now();
   const tick = now => {
     if (!element.isConnected) return;
-    const progress = Math.min(1, (now - startedAt) / duration);
-    const eased = 1 - Math.pow(1 - progress, 3);
+    const progress = Math.min(1, (now - startedAt) / animationDuration);
+    const eased = progress < .5
+      ? 4 * Math.pow(progress, 3)
+      : 1 - Math.pow(-2 * progress + 2, 3) / 2;
     const value = Math.round(startValue + (endValue - startValue) * eased);
     element.textContent = format(value);
     if (progress < 1) requestAnimationFrame(tick);
@@ -60,7 +67,7 @@ function animateRewardNumber(element, from, to, formatter, duration = 850) {
   };
   requestAnimationFrame(tick);
 }
-function animateRewardFlight(sourceRect, target, kind, count = 4) {
+function animateRewardFlight(sourceRect, target, kind, countDuration, amount) {
   const targetRect = captureRewardRect(target);
   if (rewardMotionReduced() || !sourceRect || !targetRect || typeof Element.prototype.animate !== 'function') return;
   const glyph = kind === 'gems' ? '💎' : '💰';
@@ -68,22 +75,28 @@ function animateRewardFlight(sourceRect, target, kind, count = 4) {
   const startY = sourceRect.top + sourceRect.height / 2;
   const endX = targetRect.left + targetRect.width / 2;
   const endY = targetRect.top + targetRect.height / 2;
-  const offsets = [[-10, 2], [9, -7], [-5, -12], [12, 10], [0, 0]];
-  for (let index = 0; index < count; index++) {
+  const rewardAmount = Math.max(0, Number(amount) || 0);
+  const particleCount = Math.min(8, Math.max(4, 4 + Math.floor(Math.log10(rewardAmount + 1))));
+  const flightDuration = Math.max(1650, Math.min(2400, Math.round((Number(countDuration) || 2600) * .58)));
+  const delayBudget = Math.max(0, countDuration - flightDuration);
+  const delayStep = particleCount > 1 ? delayBudget / (particleCount - 1) : 0;
+  const offsets = [[-10, 2], [9, -7], [-5, -12], [12, 10], [0, 0], [-12, -8], [8, 12], [2, -14]];
+  for (let index = 0; index < particleCount; index++) {
     const [offsetX, offsetY] = offsets[index % offsets.length];
     const token = o('span', 'reward-flight-token reward-flight-token-' + kind, glyph);
     token.setAttribute('aria-hidden', 'true');
-    token.style.left = (startX - 15 + offsetX) + 'px';
-    token.style.top = (startY - 15 + offsetY) + 'px';
+    token.style.left = (startX - 18 + offsetX) + 'px';
+    token.style.top = (startY - 18 + offsetY) + 'px';
     document.body.append(token);
     const dx = endX - (startX + offsetX), dy = endY - (startY + offsetY);
     const animation = token.animate([
-      { transform: 'translate3d(0,0,0) scale(.55)', opacity: 0 },
-      { transform: 'translate3d(0,-18px,0) scale(1.12)', opacity: 1, offset: .2 },
-      { transform: `translate3d(${dx}px,${dy}px,0) scale(.38) rotate(${index % 2 ? 300 : -300}deg)`, opacity: 0 }
+      { transform: 'translate3d(0,10px,0) scale(.58) rotate(-14deg)', opacity: 0 },
+      { transform: 'translate3d(0,-20px,0) scale(1.18) rotate(0)', opacity: 1, offset: .2 },
+      { transform: `translate3d(${dx * .72}px,${dy * .72 - 8}px,0) scale(.88) rotate(12deg)`, opacity: 1, offset: .72 },
+      { transform: `translate3d(${dx}px,${dy}px,0) scale(.42) rotate(${index % 2 ? 300 : -300}deg)`, opacity: 0 }
     ], {
-      duration: 780,
-      delay: index * 75,
+      duration: flightDuration,
+      delay: Math.round(index * delayStep),
       easing: 'cubic-bezier(.2,.78,.2,1)',
       fill: 'forwards'
     });
@@ -96,6 +109,7 @@ function animateCurrencyReward(kind, previous, balance, sourceRect, preferredTar
   const glyph = isGem ? '💎' : '💰';
   const from = Math.max(0, Number(previous) || 0);
   const to = Math.max(0, Number(balance) || 0);
+  const duration = rewardAnimationDuration(from, to);
   const selectors = isGem
     ? '.account-gems, .daily-gem-balance, .gem-store-balance'
     : '.account-coins:not(.account-gems), .coin-bal-value';
@@ -105,14 +119,14 @@ function animateCurrencyReward(kind, previous, balance, sourceRect, preferredTar
   });
   targets.forEach(element => {
     const plainNumber = element.classList.contains('coin-bal-value');
-    animateRewardNumber(element, from, to, value => plainNumber ? rewardNumber(value) : glyph + ' ' + rewardNumber(value));
+    animateRewardNumber(element, from, to, value => plainNumber ? rewardNumber(value) : glyph + ' ' + rewardNumber(value), duration);
   });
   const preferredVisible = preferredTarget && captureRewardRect(preferredTarget) ? preferredTarget : null;
   const balanceTarget = preferredVisible
     || targets.find(element => isGem ? element.classList.contains('account-gems') : element.classList.contains('account-coins'))
     || targets[0];
   const origin = sourceRect || captureRewardRect(document.activeElement);
-  if (to > from && balanceTarget) animateRewardFlight(origin, balanceTarget, kind);
+  if (to > from && balanceTarget) animateRewardFlight(origin, balanceTarget, kind, duration, to - from);
 }
 
 function renderAccount() {
@@ -652,7 +666,7 @@ function coinPanel(total, parts, balance) {
     balanceLine.append(document.createTextNode('Your balance: '), o('strong', 'coin-bal-value', rewardNumber(balance)));
     w.append(balanceLine);
   }
-  animateRewardNumber(num, 0, total, value => '+' + rewardNumber(value), 820);
+  animateRewardNumber(num, 0, total, value => '+' + rewardNumber(value));
   return w;
 }
 
@@ -660,9 +674,12 @@ function showResult(e) {
   const t = $('exp-result');
   t.hidden = false;
   const xpReward = Math.max(0, Number(e.earned || 0) + Number(e.bonusExp || 0));
+  const previousTotal = Math.max(0, Number(e.previousTotal) || 0);
+  const newTotal = Math.max(previousTotal, Number(e.total) || 0);
+  const xpDuration = rewardAnimationDuration(previousTotal, newTotal);
   const xpHeadline = o('p', 'exp-headline', '+0 EXP');
   t.replaceChildren(xpHeadline);
-  animateRewardNumber(xpHeadline, 0, xpReward, value => '+' + rewardNumber(value) + ' EXP', 920);
+  animateRewardNumber(xpHeadline, 0, xpReward, value => '+' + rewardNumber(value) + ' EXP', xpDuration);
 
   const ul = o('ul', 'exp-breakdown');
   const add = (label, amount) => {
@@ -686,8 +703,6 @@ function showResult(e) {
     t.append(o('p', 'exp-status', `${plural(e.already, 'answer')} already earned EXP earlier today, so ${e.already === 1 ? 'it isn’t' : 'they aren’t'} counted twice.`));
   }
 
-  const previousTotal = Math.max(0, Number(e.previousTotal) || 0);
-  const newTotal = Math.max(previousTotal, Number(e.total) || 0);
   const previousLevel = lv(previousTotal);
   const currentLevel = lv(newTotal);
   const levelUp = currentLevel.level > previousLevel.level;
@@ -709,8 +724,41 @@ function showResult(e) {
   const nextLabel = o('p', 'exp-xp-next', rewardNumber(LVL - currentLevel.into) + ' EXP to level ' + (currentLevel.level + 1));
   xpProgress.append(xpTop, track, nextLabel);
   t.append(xpProgress);
-  animateRewardNumber(totalCount, previousTotal, newTotal, value => rewardNumber(value) + ' total EXP', 1050);
-  if (!rewardMotionReduced()) requestAnimationFrame(() => { fill.style.transform = 'scaleX(' + (currentLevel.into / LVL) + ')'; });
+  animateRewardNumber(totalCount, previousTotal, newTotal, value => rewardNumber(value) + ' total EXP', xpDuration);
+  const fromProgress = previousLevel.into / LVL;
+  const toProgress = currentLevel.into / LVL;
+  if (rewardMotionReduced() || previousTotal === newTotal) {
+    fill.style.transform = 'scaleX(' + toProgress + ')';
+  } else {
+    requestAnimationFrame(() => {
+      const frames = levelUp
+        ? [
+          { transform: 'scaleX(' + fromProgress + ')', offset: 0 },
+          { transform: 'scaleX(1)', offset: .46 },
+          { transform: 'scaleX(0)', offset: .52 },
+          { transform: 'scaleX(' + toProgress + ')', offset: 1 }
+        ]
+        : [
+          { transform: 'scaleX(' + fromProgress + ')', offset: 0 },
+          { transform: 'scaleX(' + toProgress + ')', offset: 1 }
+        ];
+      if (typeof fill.animate === 'function') {
+        const progressAnimation = fill.animate(frames, {
+          duration: xpDuration,
+          easing: 'cubic-bezier(.22,.72,.24,1)',
+          fill: 'forwards'
+        });
+        progressAnimation.onfinish = () => {
+          fill.style.transition = 'none';
+          fill.style.transform = 'scaleX(' + toProgress + ')';
+          progressAnimation.cancel();
+        };
+      } else {
+        fill.style.transitionDuration = xpDuration + 'ms';
+        fill.style.transform = 'scaleX(' + toProgress + ')';
+      }
+    });
+  }
   if (levelUp && !rewardMotionReduced()) levelBadge.classList.add('reward-count-pop');
 
   if (e.usedFreeze) t.append(o('p', 'exp-status', '🛡️ Streak Freeze used! Your streak is safe.'));

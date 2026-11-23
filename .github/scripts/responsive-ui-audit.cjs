@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r18';
+const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r19';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -98,7 +98,7 @@ async function main() {
     ['Avatar picker tracks saved keys instead of SVG text', 'b.dataset.avatar === cur'],
     ['Lesson and note content preserves native emoji glyphs', 'node.appendChild(document.createTextNode(text)); return;'],
     ['Lesson and note classes bypass automatic icon substitution', 'note-|essay-|lesson-|lab-'],
-    ['Coin celebration particles retain their currency emoji', "o('span', 'coin-drop', '💰')"],
+    ['Coin celebration particles retain their currency emoji', "const glyph = kind === 'gems' ? '💎' : '💰';"],
     ['Gem Shop retry labels render Gems through the shared SVG helper', "setIconAwareText(button, 'Buy 💎 ' + it.price)"],
     ['Semantic icons use coordinated subject colour families', '.ui-icon--science{color:#368D9D}']
   ];
@@ -117,13 +117,13 @@ async function main() {
     ['The client requests a server-verified cosmetic purchase', "purchaseCosmetic: (itemId, operationId) => applyGemChange('purchase', null, operationId, itemId)"],
     ['Client Gems API calls the trusted Worker', 'fetch(GEMS_API_URL, {'],
     ['Gems API remains available to app features', 'window.Gems = Gems;'],
-    ['Achievements display one-time Gem reward claim controls', 'Gems.claimAchievement(a.id)'],
+    ['Achievements display one-time Gem reward claim controls', "claimAchievement: (id, sourceRect) => applyGemChange('achievement', null, 'achievement:' + id, null, id, sourceRect)"],
     ['Daily Gem rewards require a completed practice quiz', "Number(progressData.quizzes || 0) >= 1"],
     ['Daily Gem reward panel includes a seven-day track', "n===7?'+6 💎':'+1 💎'"],
     ['Mobile Daily Gem cards use a four-column layout', '.daily-gem-days{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}'],
     ['Claimed Gem day labels stay within their cards', '.daily-gem-day small{font-size:9px}'],
     ['Daily challenge EXP is awarded automatically', 'EXP added automatically'],
-    ['Three completed daily missions unlock a separate coin claim', 'claimDailyChallengeCoins(day, challengeCoinAmount)'],
+    ['Three completed daily missions unlock a separate coin claim', 'claimDailyChallengeCoins(day, challengeCoinAmount, sourceRect)'],
     ['Daily challenge coin claims are saved once per day', 'state.coinClaimed === true'],
     ['Daily challenge coin claim checks all three selected missions', 'tasks.every(task => state.claimed.includes(task.id))'],
     ['High-score achievement tracks 90 percent quiz results', "achievementStats.highScore = (achievementStats.highScore || 0) + 1"],
@@ -249,6 +249,9 @@ async function main() {
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
     ['Reward counters, flights and XP bars respect reduced-motion settings', source.includes('function rewardMotionReduced()') && source.includes('if (rewardMotionReduced() || !sourceRect') && source.includes('.reward-flight-token') && source.includes('.exp-xp-fill') && source.includes('transition: none !important;')],
+    ['Reward counter and particle timing grows with the amount earned', source.includes('function rewardAnimationDuration(from, to)') && source.includes('Math.log10(delta + 1)') && source.includes('Math.min(5200') && source.includes('const delayBudget = Math.max(0, countDuration - flightDuration)')],
+    ['XP headline, total EXP and level progress share one amount-based duration', source.includes('const xpDuration = rewardAnimationDuration(previousTotal, newTotal)') && source.includes('animateRewardNumber(xpHeadline, 0, xpReward') && source.includes('animateRewardNumber(totalCount, previousTotal, newTotal') && source.includes('fill.animate(frames')],
+    ['Mobile coin and EXP reward sections use compact responsive layouts', source.includes('@media (max-width: 420px)') && source.includes('.coin-top {') && source.includes('grid-template-columns: auto auto') && source.includes('.exp-xp-top {') && source.includes('grid-template-columns: auto minmax(0, 1fr)')],
   ];
   sourceChecks.push(...motionSourceChecks.map(([label, passed]) => ({ label, passed })));
   const sourceFailures = sourceChecks.filter(check => !check.passed).map(check => 'Source check failed: ' + check.label);
