@@ -23,6 +23,7 @@ async function loadNames() {
 const rewardCounterAnimations = new WeakMap();
 const rewardFlightQueues = new Map();
 const rewardFlightBusy = new Set();
+let rewardFlightSequence = 0;
 const REWARD_FLIGHT_LAYER_ID = 'bece-reward-flight-layer';
 
 function captureRewardRect(element) {
@@ -240,6 +241,7 @@ function runRewardFlight(item) {
         const token = o('span', 'reward-flight-token reward-flight-token-' + item.kind
           + (isCoin ? ' reward-flight-token-particle' : ''));
         token.setAttribute('aria-hidden', 'true');
+        token.dataset.rewardBurst = String(item.sequence || 0);
         token.append(App.icon(item.kind === 'gems' ? 'gem' : 'coin', 'reward-flight-icon'));
         token.style.left = (p0.x - size / 2) + 'px';
         token.style.top = (p0.y - size / 2) + 'px';
@@ -320,7 +322,11 @@ function animateRewardFlight(sourceRect, target, kind, duration, amount) {
   if (rewardMotionReduced()) return;
   if (!rewardFlightQueues.has(kind)) rewardFlightQueues.set(kind, []);
   // Queue each confirmed reward; never cancel a coin that is already on its way.
-  rewardFlightQueues.get(kind).push({ sourceRect, target, kind, duration, amount: Math.max(0, Number(amount) || 0) });
+  rewardFlightQueues.get(kind).push({
+    sourceRect, target, kind, duration,
+    amount: Math.max(0, Number(amount) || 0),
+    sequence: ++rewardFlightSequence
+  });
   startNextRewardFlight(kind);
 }
 function formatRewardCounter(element, kind, value) {

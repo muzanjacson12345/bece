@@ -260,8 +260,8 @@ async function main() {
     ['Reward flights use a root-level overlay and a queue so new rewards never cancel active coins', source.includes("const REWARD_FLIGHT_LAYER_ID = 'bece-reward-flight-layer'") && source.includes('const rewardFlightQueues = new Map()') && source.includes('function startNextRewardFlight(kind)') && source.includes('Queue each confirmed reward; never cancel a coin that is already on its way.')],
     ['Mobile coin and EXP reward sections use compact responsive layouts', source.includes('@media (max-width: 420px)') && source.includes('.coin-top {') && source.includes('grid-template-columns: auto auto') && source.includes('.exp-xp-top {') && source.includes('grid-template-columns: auto minmax(0, 1fr)')],
     ['Duel creation stores only Firestore-whitelisted fields', source.includes('delete storedDoc.subjects;') && source.includes('await col().doc(code).set(storedDoc)') && source.includes('const hostSubjects =')],
-    ['Self-service progress reset updates instead of attempting forbidden self-delete', source.includes("const resetRef = S.db.doc('players/' + S.uid);") && source.includes('await resetRef.set(resetProfile);') && !source.includes("await S.db.doc('players/' + S.uid).delete();")],
-    ['Profile reset preserves trusted Gem balance and ownership history', source.includes("['gems', 'gemOps', 'gemCosmetics'].forEach(key =>") && source.includes('Your Gem balance and earned Gem cosmetics are kept.')],
+    ['Self-service progress reset uses the trusted Gem reset action', source.includes("Gems.resetEverything('reset:' + Date.now())") && source.includes("if (!result || !result.reset) throw new Error('RESET_NOT_CONFIRMED');")],
+    ['Full reset clears Gems and cosmetic ownership in one trusted Firestore transaction', source.includes("Gems.resetEverything('reset:' + Date.now())") && gemsWorkerSource.includes('async function applyFullReset(uid, accessToken)') && gemsWorkerSource.includes("gems: 0, gemOps: [], gemCosmetics: {}, equippedGemCosmetic: ''") && gemsWorkerSource.includes('documents:commit')],
     ['Admin progress reset preserves protected Gem fields', source.includes("'gemCosmetics', 'equippedGemCosmetic']")],
     ['Currency reward flights use a burst of small coins and a mobile-browser fallback', source.includes('const particleCount = isCoin') && source.includes('reward-flight-token-particle') && source.includes('token.animate(part.keyframes') && source.includes("App.icon(item.kind === 'gems' ? 'gem' : 'coin'") && source.includes('Older mobile browsers keep the same staggered burst with CSS transitions')],
     ['Achievement Gem claims have a visible local balance destination', source.includes('achievement-gem-balance-value') && source.includes('Your Gems') && source.includes("action === 'achievement'") && source.includes('achievementBalance')],
@@ -862,22 +862,30 @@ async function main() {
         });
         check.coinFlightVisible = coinFlightState.visible;
         check.coinFlightParticles = coinFlightState.count >= 3;
+        const firstBurstId = await homePage.evaluate(() =>
+          document.querySelector('#bece-reward-flight-layer .reward-flight-token-coins')?.dataset.rewardBurst || ''
+        );
         await homePage.evaluate(() => {
           const source = document.getElementById('reward-motion-test-source');
           const target = document.getElementById('reward-motion-test-target');
           window.animateCurrencyReward('coins', 5, 6, source.getBoundingClientRect(), target);
         });
-        await homePage.waitForTimeout(1530);
+        // Wait for a different burst ID so this verifies the queued reward really
+        // begins after the first animation, not merely that the first is still visible.
+        await homePage.waitForFunction(previousBurst => {
+          const tokens = [...(document.querySelector('#bece-reward-flight-layer')?.querySelectorAll('.reward-flight-token-coins') || [])];
+          return !!previousBurst && tokens.length >= 3
+            && tokens.every(token => token.dataset.rewardBurst !== previousBurst);
+        }, firstBurstId, { timeout: 5000 });
         check.queuedCoinFlightVisible = await homePage.evaluate(() => {
           const layer = document.getElementById('bece-reward-flight-layer');
-          const token = layer?.querySelector('.reward-flight-token-coins');
-          if (!layer || !token) return false;
+          const tokens = [...(layer?.querySelectorAll('.reward-flight-token-coins') || [])];
+          const token = tokens[0];
+          if (!layer || tokens.length < 3 || !token) return false;
           const rect = token.getBoundingClientRect();
-          const count = layer.querySelectorAll('.reward-flight-token-coins').length;
           return Number(getComputedStyle(token).opacity) > .5
             && rect.right > 0 && rect.bottom > 0
-            && rect.left < window.innerWidth && rect.top < window.innerHeight
-            && count >= 3;
+            && rect.left < window.innerWidth && rect.top < window.innerHeight;
         });
         await homePage.close();
 
