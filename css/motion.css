@@ -2357,3 +2357,123 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 36 — Interactive lesson answer feedback
+   Give embedded Notes checks a clear result without moving the whole lesson card.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-lesson-answer-duration: 235ms;
+  --motion-lesson-feedback-duration: 215ms;
+}
+@media (max-width: 760px) {
+  :root {
+    --motion-lesson-answer-duration: 210ms;
+    --motion-lesson-feedback-duration: 195ms;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-lesson-answer-duration: 245ms;
+    --motion-lesson-feedback-duration: 225ms;
+  }
+}
+
+@keyframes motion-lesson-answer-pop {
+  0% { opacity: .84; transform: scale(.965); }
+  68% { opacity: 1; transform: scale(1.025); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes motion-lesson-feedback-enter {
+  from { opacity: 0; transform: translate3d(0, 4px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+.lesson-opt.motion-lesson-answer-correct,
+.lesson-opt.motion-lesson-answer-wrong,
+.lesson-in.motion-lesson-input-correct,
+.lesson-in.motion-lesson-input-wrong {
+  transform-origin: center;
+  animation: motion-lesson-answer-pop var(--motion-lesson-answer-duration) var(--motion-ease-enter) both;
+}
+.lesson-fb.motion-lesson-feedback-correct,
+.lesson-fb.motion-lesson-feedback-wrong {
+  animation: motion-lesson-feedback-enter var(--motion-lesson-feedback-duration) var(--motion-ease-enter) both;
+}
+.lesson-in.is-correct {
+  border-color: var(--good);
+  background: var(--good-soft);
+}
+.lesson-in.is-incorrect {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-opt.motion-lesson-answer-correct,
+  .lesson-opt.motion-lesson-answer-wrong,
+  .lesson-in.motion-lesson-input-correct,
+  .lesson-in.motion-lesson-input-wrong,
+  .lesson-fb.motion-lesson-feedback-correct,
+  .lesson-fb.motion-lesson-feedback-wrong {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   Stage 37 — Worked-example step reveal
+   Animate only the step the learner just requested, not the whole example.
+   -------------------------------------------------------------------------- */
+:root { --motion-worked-step-duration: 235ms; }
+@media (max-width: 760px) {
+  :root { --motion-worked-step-duration: 205ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-worked-step-duration: 245ms; }
+}
+
+@keyframes motion-worked-step-enter {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.flow-step.motion-worked-step-enter {
+  animation: motion-worked-step-enter var(--motion-worked-step-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-step.motion-worked-step-enter {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   Stage 38 — Maths lab solved-state feedback
+   Celebrate only the moment a lab result first becomes correct.
+   -------------------------------------------------------------------------- */
+:root { --motion-lab-solved-duration: 265ms; }
+@media (max-width: 760px) {
+  :root { --motion-lab-solved-duration: 225ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-lab-solved-duration: 275ms; }
+}
+
+@keyframes motion-lab-solved-pop {
+  0% { opacity: .86; transform: scale(.98); }
+  66% { opacity: 1; transform: scale(1.025); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.lab-out.motion-lab-solved {
+  transform-origin: center;
+  animation: motion-lab-solved-pop var(--motion-lab-solved-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-out.motion-lab-solved {
+    animation: none !important;
+    transform: none !important;
+  }
+}
