@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-admin-action-feedback-2026-11-24-r57';
+const EXPECTED_BUILD = 'bece-duel-lifecycle-feedback-2026-11-24-r58';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -317,8 +317,11 @@ async function main() {
     ['Stage 41 reports a saved Essay draft only after confirming the localStorage write', source.includes('saveErrorShown: false') && source.includes('localStorage.setItem(key, serialized)') && source.includes("localStorage.getItem(key) !== serialized") && source.includes("this.setSaveStatus('saved', savedAt)") && source.includes("this.setSaveStatus('error', 'Couldn’t save draft · try again')")],
     ['Stage 41 saves the current Essay before switching questions or subjects', source.includes('if (this.idx === index) return;') && source.includes('this.idx = index;') && source.includes('Essays.sub = b.dataset.sbSub;') && source.includes("window.addEventListener('pagehide'") && source.includes("document.addEventListener('visibilitychange'")],
     ['Stage 41 draft save and error feedback has responsive timing and reduced-motion support', source.includes('Stage 41 — Essay draft save feedback') && source.includes('--motion-essay-draft-saved-duration: 205ms') && source.includes('--motion-essay-draft-saved-duration: 235ms') && source.includes('#essay-save-note.motion-essay-draft-saved') && source.includes('animation: none !important;')],
+    ['Stage 41 word counting and answer-guide bullets use correct whitespace handling', source.includes("split(/\\s+/)") && source.includes("line.replace(/^\\s*•\\s*/, '')")],
     ['Stage 42 animates only the Admin/Owner button for a successful database-backed action', source.includes('let actionTrigger = null') && source.includes("replayMotion(trigger, 'motion-admin-action-confirmed')") && source.includes('if (trigger && trigger.isConnected)') && source.includes('catch (e) {\n      fail(e);\n      return false;') ],
     ['Stage 42 Admin/Owner action feedback has responsive timing and reduced-motion support', source.includes('Stage 42 — Admin and Owner action confirmation') && source.includes('--motion-admin-action-duration: 220ms') && source.includes('--motion-admin-action-duration: 255ms') && source.includes('.adm button.motion-admin-action-confirmed') && source.includes('animation: none !important;')],
+    ['Stage 43 animates only the first lobby code, the Duel countdown and the final score panel', source.includes('let lastLobbyCode =') && source.includes('const isNewLobby = D.code !== lastLobbyCode') && source.includes("motion-duel-lobby-code-enter") && source.includes("motion-duel-countdown-enter") && source.includes("replayMotion(sc, 'motion-duel-result-score-enter')")],
+    ['Stage 43 Duel lifecycle transitions have responsive timing and reduced-motion support', source.includes('Stage 43 — Duel lifecycle transitions') && source.includes('--motion-duel-lifecycle-duration: 215ms') && source.includes('--motion-duel-lifecycle-duration: 255ms') && source.includes('.duel-score.motion-duel-result-score-enter') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -935,7 +938,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, duelLifecycleFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1123,6 +1126,30 @@ async function main() {
           return !!button && getComputedStyle(button).animationName === 'motion-admin-action-confirmed';
         });
         await motionPage.evaluate(() => document.querySelector('#motion-stage-42-panel')?.remove());
+
+        stage = 'Duel lifecycle confirmation feedback';
+        await motionPage.evaluate(() => {
+          const host = document.createElement('div');
+          host.className = 'duel-modal';
+          host.id = 'motion-stage-43-test';
+          const code = document.createElement('div');
+          code.className = 'duel-code motion-duel-lobby-code-enter';
+          const countdown = document.createElement('div');
+          countdown.className = 'duel-vs-big motion-duel-countdown-enter';
+          const score = document.createElement('div');
+          score.className = 'duel-score motion-duel-result-score-enter';
+          host.append(code, countdown, score);
+          document.body.append(host);
+        });
+        await motionPage.waitForTimeout(45);
+        check.duelLifecycleFeedback = await motionPage.evaluate(() => {
+          const root = document.querySelector('#motion-stage-43-test');
+          return !!root
+            && getComputedStyle(root.querySelector('.duel-code')).animationName === 'motion-duel-lifecycle-enter'
+            && getComputedStyle(root.querySelector('.duel-vs-big')).animationName === 'motion-duel-lifecycle-enter'
+            && getComputedStyle(root.querySelector('.duel-score')).animationName === 'motion-duel-lifecycle-enter';
+        });
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-43-test')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();

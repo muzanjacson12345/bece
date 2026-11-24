@@ -1,4 +1,4 @@
-const CACHE = 'bece-v100';
+const CACHE = 'bece-v101';
 const ASSETS = ['./', './index.html', './css/app.css', './css/motion.css', './js/01-theme-engine.js', './js/02-question-bank.js', './js/03-revision-notes.js', './js/04-learning-insights.js', './js/05-maths-content.js', './js/06-rme-content.js', './js/07-app-core.js', './js/08-app-module.js', './js/09-app-enhancements.js', './js/10-overview-ui-interactions.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './icon-180.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(ASSETS.map(a => c.add(a).catch(() => {})))).then(() => self.skipWaiting()));

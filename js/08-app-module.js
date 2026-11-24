@@ -1977,6 +1977,7 @@ const Duel = (() => {
   const cfgChips = d => chips(subjectNames(d.subjects || (d.subject && d.subject !== 'mixed' ? [d.subject] : [])), `${(d.qids || []).length} questions`, `${d.secs || 15}s each`, d.vis === 'private' ? '\u{1F512} Private' : '\u{1F310} Public');
   const buzz = n => { try { navigator.vibrate && navigator.vibrate(n); } catch {} };
   let box = null;
+  let lastLobbyCode = '';
   function put(...n) {
     if (!box || !box.isConnected) {
       const m = o('div', 'friend-modal duel-modal'); m.id = 'duel-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
@@ -2024,7 +2025,7 @@ const Duel = (() => {
     clearInterval(D.timer); clearInterval(D.scT); clearInterval(D.cdT); clearInterval(D.hbT); clearTimeout(D.wait);
     if (D.unsub) { D.unsub(); D.unsub = null; }
     if (D.doc && D.doc.state === 'waiting' && D.doc.host === S.uid) col().doc(D.code).delete().catch(() => {});
-    D.code = D.doc = D.me = null; D.started = D.cd = false; box = null;
+    D.code = D.doc = D.me = null; D.started = D.cd = false; box = null; lastLobbyCode = '';
     const m = $('duel-modal'); if (m) m.remove();
   }
   function watch(code) {
@@ -2048,6 +2049,8 @@ const Duel = (() => {
     paintScore();
   }
   function lobby() {
+    const isNewLobby = D.code !== lastLobbyCode;
+    if (isNewLobby) lastLobbyCode = D.code;
     const share = () => {
       const text = `Duel me on BECE Hub! Open the Friends tab and join with code ${D.code}`;
       if (navigator.share) navigator.share({ text }).catch(() => {});
@@ -2056,6 +2059,7 @@ const Duel = (() => {
     put(o('h2', 'pulse-text', 'Waiting for an opponent\u2026'), cfgChips(D.doc),
       o('p', 'muted', D.doc.vis === 'private' ? 'Private: only people with this code can join.' : 'Public: it also shows under Open challenges for everyone on the Friends tab.'),
       o('div', 'duel-code', D.code), row(btn('Share invite', 'btn-primary btn-sm', share), btn('Cancel', 'btn-ghost btn-sm', () => close())));
+    if (isNewLobby) replayMotion(box && box.querySelector('.duel-code'), 'motion-duel-lobby-code-enter');
   }
   function countdown() {
     D.cd = true; clearInterval(D.cdT);
@@ -2065,6 +2069,7 @@ const Duel = (() => {
     const vs = o('div', 'duel-vs duel-vs-big'); const a = o('div', 'duel-side'), b = o('div', 'duel-side opp');
     a.append(av(S.uid, 44), o('span', 'duel-nm', 'You')); b.append(av(oppId(), 44), o('span', 'duel-nm', oppName())); vs.append(a, o('b', 'duel-x2', 'VS'), b);
     put(o('p', 'eyebrow', 'Duel found'), vs, cfgChips(D.doc), n, o('p', 'muted', 'Get ready\u2026'));
+    replayMotion(box && box.querySelector('.duel-vs-big'), 'motion-duel-countdown-enter');
     tick(); D.cdT = setInterval(tick, 200);
   }
   function begin() { D.started = true; D.used = 0; D.idx = 0; D.log = []; D.streak = 0; D.best = 0; D.oppN = 0; D.me = { c: 0, n: 0, ms: 0, done: false }; ask(); }
@@ -2208,6 +2213,7 @@ const Duel = (() => {
       o('p', 'muted', opp.done ? 'Most correct answers wins; faster total time breaks ties.' : `${oppName()} didn\u2019t finish, so unanswered questions count as wrong.`),
       rev, row(btn('Rematch', 'btn-primary btn-sm', () => { close(); D.cfg = cfg; create(); }), btn('Close', 'btn-ghost btn-sm', () => close())));
     replayMotion(resultTitle, 'motion-duel-result-title-enter');
+    replayMotion(sc, 'motion-duel-result-score-enter');
     countUp(); if (!tie && win) { buzz([40, 30, 40, 30, 90]); setTimeout(confetti, 300); }
   }
   async function create() {

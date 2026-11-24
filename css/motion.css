@@ -2615,3 +2615,35 @@ button:disabled,
     box-shadow: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 43 — Duel lifecycle transitions
+   Reveal the invite code, ready-up panel and final score at their real state changes.
+   -------------------------------------------------------------------------- */
+:root { --motion-duel-lifecycle-duration: 245ms; }
+@media (max-width: 760px) {
+  :root { --motion-duel-lifecycle-duration: 215ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-duel-lifecycle-duration: 255ms; }
+}
+@keyframes motion-duel-lifecycle-enter {
+  0% { opacity: .5; transform: translateY(8px) scale(.985); }
+  70% { opacity: 1; transform: translateY(-2px) scale(1.005); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.duel-code.motion-duel-lobby-code-enter,
+.duel-vs-big.motion-duel-countdown-enter,
+.duel-score.motion-duel-result-score-enter {
+  animation: motion-duel-lifecycle-enter var(--motion-duel-lifecycle-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .duel-code.motion-duel-lobby-code-enter,
+  .duel-vs-big.motion-duel-countdown-enter,
+  .duel-score.motion-duel-result-score-enter {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
