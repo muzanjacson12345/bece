@@ -2180,3 +2180,36 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 30 — Notes topic selection feedback
+   Highlight the newly selected topic without replaying on search/filter refreshes.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-note-topic-duration: 205ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-note-topic-duration: 185ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-note-topic-duration: 215ms; }
+}
+
+@keyframes motion-note-topic-selected {
+  0% { transform: scale(.985); }
+  68% { transform: scale(1.012); }
+  100% { transform: scale(1); }
+}
+
+#notes-sidebar .topic-item.motion-note-topic-selected {
+  transform-origin: center;
+  animation: motion-note-topic-selected var(--motion-note-topic-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #notes-sidebar .topic-item.motion-note-topic-selected {
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -1956,7 +1956,7 @@ const Notes = {
       top.append(el('span', 'topic-level', (note.levelLabel || note.level).replace(/\s*\(.*\)/, '')));
       if (studied.has(note.id)) { const done = el('span', 'topic-done'); done.append(icon('check')); done.setAttribute('aria-label', 'studied'); top.append(done); }
       button.append(top, el('span', 'topic-name', note.topic));
-      button.addEventListener('click', () => { this.activeId = note.id; this.refresh({ keepScroll: false }); });
+      button.addEventListener('click', () => this.selectTopic(note.id));
       sidebar.append(button);
       if (active) requestAnimationFrame(() => {
         // Keep the active topic visible in the horizontal (mobile) or vertical (desktop) list.
@@ -2017,6 +2017,13 @@ const Notes = {
     next.querySelector('span').textContent = last ? 'Practise this subject' : 'Next topic';
     next.dataset.last = String(last);
   },
+  selectTopic(id) {
+    if (!id || this.activeId === id) return;
+    this.activeId = id;
+    this.refresh({ keepScroll: false });
+    const selected = $('notes-sidebar').querySelector('.topic-item[aria-current="true"]');
+    replayMotion(selected, 'motion-note-topic-selected');
+  },
   renderStudied(id) {
     const button = $('note-studied');
     const done = studied.has(id);
@@ -2040,8 +2047,7 @@ const Notes = {
     if (delta > 0 && idx === list.length - 1) { Setup.open(this.sub); return; }
     const target = list[idx + delta];
     if (!target) return;
-    this.activeId = target.id;
-    this.refresh({ keepScroll: false });
+    this.selectTopic(target.id);
   },
   scrollToReader() {
     const reader = $('note-reader');
