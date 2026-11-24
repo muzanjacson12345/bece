@@ -2705,7 +2705,7 @@ const Bugs = (() => {
 
 const Adm = (() => {
   const st = { sub: 'overview', q: '', f: 'all', sort: 'exp', open: null, amt: 10, kind: 'info', ttl: 86400000, limit: 40, alq: '', alr: 'all', bf: 'open', bq: '' };
-  let root = null, body = null, tabs = null, timer = null, eyebrow = null, title = null, tabsKey = '';
+  let root = null, body = null, tabs = null, timer = null, eyebrow = null, title = null, tabsKey = '', renderedSub = null;
   const btn = (t, c, f, dis) => { const b = elx('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; if (dis) b.disabled = true; return b; };
   const ok = m => App.toast(m, 'good');
   const fail = e => App.toast(e && e.code === 'permission-denied' ? 'Blocked by the Firestore rules. Publish the new firestore.rules and check that your role is allowed to do this.' : 'Failed: ' + ((e && e.message) || 'unknown error'), 'warn');
@@ -3521,6 +3521,7 @@ const Adm = (() => {
     if (!root || root.hidden && !force) return;
     if (!force && body && body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;   // don't wipe what you're typing
     if (!S.isOwner && (st.sub === 'owner' || st.sub === 'audit')) st.sub = 'players';
+    const sectionChanged = renderedSub !== null && renderedSub !== st.sub;
     const t = tabList(), key = t.map(x => x[1]).join('|');
     tabs.setAttribute('aria-label', S.isOwner ? 'Owner panel sections' : 'Admin panel sections');
     if (key !== tabsKey) {
@@ -3549,6 +3550,7 @@ const Adm = (() => {
       const content = view();
       body.replaceChildren(content);
       body.removeAttribute('data-render-error');
+      if (sectionChanged) replayMotion(body, 'motion-admin-section-enter');
     } catch (error) {
       console.error('Admin section failed to render:', st.sub, error);
       body.dataset.renderError = st.sub;
@@ -3558,7 +3560,9 @@ const Adm = (() => {
           elx('p', 'adm-info', 'The section encountered a display error. Your data and settings have not been changed. Please switch to another section and try again.')
         )
       );
+      if (sectionChanged) replayMotion(body, 'motion-admin-section-enter');
     }
+    renderedSub = st.sub;
   }
   function el() {
     if (root) return root;

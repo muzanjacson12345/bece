@@ -2138,3 +2138,34 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 24 — Admin section panel transitions
+   Animate genuine section changes; background refreshes and saved edits stay still.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-admin-section-duration: 235ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-admin-section-duration: 210ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-admin-section-duration: 240ms; }
+}
+
+@keyframes motion-admin-section-enter {
+  from { opacity: 0; transform: translate3d(0, 7px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+.adm-body.motion-admin-section-enter {
+  animation: motion-admin-section-enter var(--motion-admin-section-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-body.motion-admin-section-enter {
+    animation: none !important;
+    transform: none !important;
+  }
+}
