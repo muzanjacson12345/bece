@@ -29,6 +29,7 @@ let dailyGemClaimFeedback = false;
 let dailyCoinClaimFeedback = false;
 let achievementGemClaimFeedbackId = '';
 let dailyChallengeCompletionFeedback = new Set();
+let newlyEarnedAchievementFeedback = new Set();
 
 function captureRewardRect(element) {
   if (!element || typeof element.getBoundingClientRect !== 'function') return null;
@@ -600,7 +601,8 @@ function renderAchievements() {
       const value=achievementValue(a,data,stats), earned=unlocked.includes(a.id);
       const claimed = earned && gemOps.includes('achievement:' + a.id);
       const claimFeedback = claimed && achievementGemClaimFeedbackId === a.id;
-      const card=o('article','achievement-item'+(earned?' is-earned':'')+(claimFeedback?' is-gem-claim-confirmed':''));
+      const newlyEarned = earned && newlyEarnedAchievementFeedback.has(a.id);
+      const card=o('article','achievement-item'+(earned?' is-earned':'')+(newlyEarned?' is-newly-earned':'')+(claimFeedback?' is-gem-claim-confirmed':''));
       const main=o('div','achievement-main');
       const icon=o('span','achievement-icon',a.icon);
       const copy=o('div','achievement-copy');
@@ -835,6 +837,9 @@ App.on('quiz:finished', async ev => {
       if (value >= a.target && !achievementUnlocked.includes(a.id)) achievementUnlocked.push(a.id);
     });
     const achievements = { stats: achievementStats, subjects: achievementSubjects, unlocked: achievementUnlocked };
+    const previouslyUnlockedAchievements = Array.isArray(previousAchievements.unlocked)
+      ? previousAchievements.unlocked : [];
+    const newlyUnlockedAchievementIds = achievementUnlocked.filter(id => !previouslyUnlockedAchievements.includes(id));
     const previous = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, progress: {}, claimed: [] };
     const challengeState = { day, progress: { ...(previous.progress || {}) }, subjects: [...(previous.subjects || []).filter(code => code !== 'ga-')], claimed: [...(previous.claimed || [])] };
     // Daily Quiz sessions are intentionally excluded; only ordinary practice advances these missions.
@@ -919,7 +924,12 @@ App.on('quiz:finished', async ev => {
     } finally {
       dailyChallengeCompletionFeedback.clear();
     }
-    renderAchievements();
+    newlyEarnedAchievementFeedback = new Set(newlyUnlockedAchievementIds);
+    try {
+      renderAchievements();
+    } finally {
+      newlyEarnedAchievementFeedback.clear();
+    }
     showResult({ coins: coinsEarned, coinParts: scaledCoinParts, balance: (next.coins || 0), previousCoins: Number(d.coins) || 0, earned: awardedEarned, bonusExp: awardedBonusExp, correct: ev.correct, already, parts: scaledParts, total: next.totalExp, previousTotal: Number(d.totalExp) || 0, streak, extended, usedFreeze, xpMult, expRate, coinRate });
   } catch (err) { box.replaceChildren(o('p', 'exp-status', 'Couldn\u2019t save your EXP. ' + (err && err.message || ''))); }
 });

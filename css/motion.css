@@ -548,7 +548,7 @@ button:disabled,
 .achievement-grid > .achievement-item:nth-child(3) { animation-delay: calc(var(--motion-reward-stagger) * 2); }
 .achievement-grid > .achievement-item:nth-child(4) { animation-delay: calc(var(--motion-reward-stagger) * 3); }
 
-.achievement-item.is-earned .achievement-icon {
+.achievement-item.is-newly-earned .achievement-icon {
   animation: motion-reward-pop var(--motion-reward-pop-duration) var(--motion-ease-enter) both;
 }
 .achievement-track > span,
@@ -702,7 +702,7 @@ button:disabled,
   .achievement-overview,
   .achievement-group,
   .achievement-grid > .achievement-item,
-  .achievement-item.is-earned .achievement-icon,
+  .achievement-item.is-newly-earned .achievement-icon,
   .challenge-item,
   .daily-gem-rewards,
   .daily-challenge-bonus,
@@ -1982,6 +1982,18 @@ button:disabled,
 @media (prefers-reduced-motion: reduce) {
   .challenge-item.is-just-completed .challenge-icon,
   .challenge-item.is-just-completed .challenge-reward {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   Stage 19 — Newly unlocked achievement feedback
+   Pop an achievement icon only when that achievement is unlocked just now.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .achievement-item.is-newly-earned .achievement-icon {
     animation: none !important;
     transform: none !important;
   }
