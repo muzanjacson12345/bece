@@ -875,8 +875,6 @@ async function main() {
           window.App.toast('Responsive motion audit notice', 'good');
         });
         const auditToastText = 'Responsive motion audit notice';
-        const auditToast = () => [...document.querySelectorAll('.toasts .toast')]
-          .find(item => item.textContent.includes(auditToastText));
         await homePage.waitForFunction(() => {
           const item = [...document.querySelectorAll('.toasts .toast')]
             .find(node => node.textContent.includes('Responsive motion audit notice'));
