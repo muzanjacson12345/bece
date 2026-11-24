@@ -1377,7 +1377,7 @@ html[data-theme='dark'] .adm-prev[data-kind='warn'] { background: #4a3710; color
 .cz-head .eyebrow { margin-bottom: 4px; }
 .cz-status { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 3px 11px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); background: var(--surface); border: 1px solid var(--line); }
 .cz-status::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
-.cz-status[data-state='saving']::before { background: var(--warn); animation: pulse 1s infinite; }
+.cz-status[data-state='saving']::before { background: var(--warn); }
 .cz-status[data-state='error'] { color: var(--bad); border-color: var(--bad); }
 .cz-status[data-state='error']::before { background: var(--bad); }
 @keyframes pulse { 50% { opacity: .25; } }

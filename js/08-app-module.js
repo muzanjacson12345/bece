@@ -1349,7 +1349,13 @@ function buildProfileCard() {
 
 
   const STATUS = { saved: 'All changes saved', saving: 'Saving\u2026', error: 'Couldn\u2019t save \u00B7 will retry' };
-  const setStatus = s => { status.dataset.state = s; status.textContent = STATUS[s]; };
+  const setStatus = s => {
+    if (!Object.prototype.hasOwnProperty.call(STATUS, s)) return;
+    const changed = status.dataset.state !== s;
+    status.dataset.state = s;
+    status.textContent = STATUS[s];
+    if (changed) replayMotion(status, 'motion-profile-status-change');
+  };
 
   const pick = a => { queueSave({ avatar: a }); paint(); renderAccount(); if (st.refresh) st.refresh(); };
 

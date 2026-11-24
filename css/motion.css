@@ -2203,3 +2203,35 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 26 — Profile save status transitions
+   Give real state changes a brief cue; a steady Saving state does not pulse forever.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-profile-status-duration: 205ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-profile-status-duration: 185ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-profile-status-duration: 215ms; }
+}
+
+@keyframes motion-profile-status-change {
+  0% { opacity: .82; transform: translate3d(0, 2px, 0) scale(.985); }
+  72% { opacity: 1; transform: translate3d(0, 0, 0) scale(1.015); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.cz-status.motion-profile-status-change {
+  animation: motion-profile-status-change var(--motion-profile-status-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cz-status.motion-profile-status-change {
+    animation: none !important;
+    transform: none !important;
+  }
+}
