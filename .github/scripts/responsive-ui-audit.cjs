@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-profile-save-status-motion-2026-11-24-r42';
+const EXPECTED_BUILD = 'bece-appearance-mode-selection-motion-2026-11-24-r43';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -285,6 +285,8 @@ async function main() {
     ['Stage 25 study icon has responsive timing and respects reduced-motion', source.includes('Stage 25 — Mark-as-studied confirmation') && source.includes('--motion-note-study-duration: 225ms') && source.includes('#note-studied.motion-note-study-toggle .icon') && source.includes('animation: none !important;')],
     ['Stage 26 profile save status animates only when the state changes', source.includes('const changed = status.dataset.state !== s;') && source.includes("if (changed) replayMotion(status, 'motion-profile-status-change')") && source.includes('.cz-status.motion-profile-status-change')],
     ['Stage 26 removes continuous saving pulse and respects reduced-motion', !source.includes(".cz-status[data-state='saving']::before { background: var(--warn); animation: pulse 1s infinite; }") && source.includes('Stage 26 — Profile save status transitions') && source.includes('--motion-profile-status-duration: 185ms') && source.includes('animation: none !important;')],
+    ['Stage 27 animates the Light/Dark/Auto button only when its mode changes', source.includes('const changed = BeceTheme.pref !== k;') && source.includes("if (changed) replayMotion(b, 'motion-profile-mode-selected')") && source.includes('.mode-seg button.motion-profile-mode-selected')],
+    ['Stage 27 appearance mode feedback has responsive timing and reduced-motion support', source.includes('Stage 27 — Appearance mode selection feedback') && source.includes('--motion-profile-mode-duration: 190ms') && source.includes('.mode-seg button.motion-profile-mode-selected') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -863,7 +865,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1221,6 +1223,18 @@ async function main() {
         });
         check.profileStatusMotion = profileStatusMotion.name === 'motion-profile-status-change'
           && profileStatusMotion.duration >= .17 && profileStatusMotion.duration <= .23;
+        const appearanceModeMotion = await homePage.evaluate(() => {
+          const button = document.createElement('button');
+          button.className = 'mode-seg motion-profile-mode-selected';
+          document.body.append(button);
+          const style = getComputedStyle(button);
+          return {
+            name: style.animationName,
+            duration: Number.parseFloat(style.animationDuration) || 0,
+          };
+        });
+        check.appearanceModeFeedback = appearanceModeMotion.name === 'motion-profile-mode-selected'
+          && appearanceModeMotion.duration >= .18 && appearanceModeMotion.duration <= .23;
         await homePage.emulateMedia({ reducedMotion: 'reduce' });
         check.challengeCompletionReducedMotion = await homePage.evaluate(() => {
           const item = document.querySelector('#motion-challenge-complete-test');
@@ -1268,6 +1282,10 @@ async function main() {
         check.profileStatusReducedMotion = await homePage.evaluate(() => {
           const status = document.querySelector('.cz-status.motion-profile-status-change');
           return !!status && getComputedStyle(status).animationName === 'none';
+        });
+        check.appearanceModeReducedMotion = await homePage.evaluate(() => {
+          const button = document.querySelector('.mode-seg.motion-profile-mode-selected');
+          return !!button && getComputedStyle(button).animationName === 'none';
         });
         await homePage.evaluate(() => {
           const overlay = document.createElement('div');

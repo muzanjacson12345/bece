@@ -2235,3 +2235,36 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 27 — Appearance mode selection feedback
+   Highlight the newly selected Light/Dark/Auto option, not the whole page.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-profile-mode-duration: 215ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-profile-mode-duration: 190ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-profile-mode-duration: 220ms; }
+}
+
+@keyframes motion-profile-mode-selected {
+  0% { transform: scale(.94); }
+  68% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.mode-seg button.motion-profile-mode-selected {
+  transform-origin: center;
+  animation: motion-profile-mode-selected var(--motion-profile-mode-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode-seg button.motion-profile-mode-selected {
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -1427,7 +1427,12 @@ function buildProfileCard() {
     const seg = o('div', 'segmented segmented-full mode-seg'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Light or dark mode');
     const modeBtns = [['light', 'Light', 'sun'], ['dark', 'Dark', 'moon'], ['auto', 'Auto', null]].map(([k, t, i]) => {
       const b = o('button'); b.type = 'button'; b.dataset.mode = k; if (i) b.append(App.icon(i)); b.append(document.createTextNode(t));
-      b.onclick = () => BeceTheme.set(k); seg.append(b); return b;
+      b.onclick = () => {
+        const changed = BeceTheme.pref !== k;
+        BeceTheme.set(k);
+        if (changed) replayMotion(b, 'motion-profile-mode-selected');
+      };
+      seg.append(b); return b;
     });
     const paintModes = () => modeBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === BeceTheme.pref)));
 
