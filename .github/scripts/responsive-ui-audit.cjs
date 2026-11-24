@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-final-motion-polish-2026-11-23-r21';
+const EXPECTED_BUILD = 'bece-slower-stable-reward-motion-2026-11-24-r23';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -35,7 +35,9 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function waitForLatestDeployment() {
   // PR audits already run against a local preview of the checked-out branch.
   // Do not wait for GitHub Pages to deploy that branch before testing it.
-  if (/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(BASE)) {
+  let previewHost = '';
+  try { previewHost = new URL(BASE).hostname; } catch {}
+  if (previewHost === '127.0.0.1' || previewHost === 'localhost') {
     console.log('Using the local PR preview; skipping the public deployment wait.');
     return;
   }
@@ -249,8 +251,13 @@ async function main() {
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
     ['Reward counters, flights and XP bars respect reduced-motion settings', source.includes('function rewardMotionReduced()') && source.includes("if (rewardMotionReduced() || typeof Element.prototype.animate !== 'function')") && source.includes('.reward-flight-token') && source.includes('.exp-xp-fill') && source.includes('transition: none !important;')],
-    ['Reward counters use smooth amount-based timing for both XP and currency', source.includes('function rewardAnimationDuration(from, to)') && source.includes('Math.log10(delta + 1)') && source.includes('Math.min(5200') && source.includes('function rewardCurrencyDuration(from, to)') && source.includes('return Math.min(1100')],
+    ['Reward counters use smooth amount-based timing for both XP and currency', source.includes('function rewardAnimationDuration(from, to)') && source.includes('Math.log10(delta + 1)') && source.includes('Math.min(5200') && source.includes('function rewardCurrencyDuration(from, to)') && source.includes('return Math.min(1900')],
     ['XP headline, total EXP and level progress share one amount-based duration', source.includes('const xpDuration = rewardAnimationDuration(previousTotal, newTotal)') && source.includes('animateRewardNumber(xpHeadline, 0, xpReward') && source.includes('animateRewardNumber(totalCount, previousTotal, newTotal') && source.includes('fill.animate(frames')],
+    ['Reward count-up uses a slower 1.45–1.9 second duration', source.includes('function rewardCurrencyDuration(from, to)') && source.includes('Math.min(1900, Math.round(1450 + Math.log10(delta + 1) * 140))')],
+    ['Starting a new counter update cancels the previous animation frame', source.includes('const rewardCounterAnimations = new WeakMap()') && source.includes('cancelAnimationFrame(previous.frame)')],
+    ['Only one visible currency counter animates for each reward', source.includes('const visibleTargets = targets.filter(rewardElementVisible)') && source.includes('const balanceTarget = preferredVisible || accountTarget || visibleTargets[0] || null')],
+    ['Achievement Gem counter stays number-only while other balances keep their symbol', source.includes("element.classList.contains('achievement-gem-balance-value')") && source.includes("element.classList.contains('coin-bal-value')")],
+    ['Reward flights use one sampled curve and the shared slower duration', source.includes('const samples = [0, .125, .25, .375, .5, .625, .75, .875, 1]') && source.includes("easing: 'linear'") && source.includes('const rewardFlights = new Map()')],
     ['Mobile coin and EXP reward sections use compact responsive layouts', source.includes('@media (max-width: 420px)') && source.includes('.coin-top {') && source.includes('grid-template-columns: auto auto') && source.includes('.exp-xp-top {') && source.includes('grid-template-columns: auto minmax(0, 1fr)')],
     ['Duel creation stores only Firestore-whitelisted fields', source.includes('delete storedDoc.subjects;') && source.includes('await col().doc(code).set(storedDoc)') && source.includes('const hostSubjects =')],
     ['Self-service progress reset updates instead of attempting forbidden self-delete', source.includes("const resetRef = S.db.doc('players/' + S.uid);") && source.includes('await resetRef.set(resetProfile);') && !source.includes("await S.db.doc('players/' + S.uid).delete();")],
@@ -259,12 +266,12 @@ async function main() {
     ['Currency reward flights use one lightweight curved token with a fast mobile profile', source.includes('const samples = [0, .16, .34, .52, .72, .88, 1]') && source.includes('token.animate(keyframes') && source.includes("App.icon(kind === 'gems' ? 'gem' : 'coin'") && source.includes('Math.min(mobile ? 640 : 760')],
     ['Achievement Gem claims have a visible local balance destination', source.includes('achievement-gem-balance-value') && source.includes('Your Gems') && source.includes("action === 'achievement'") && source.includes('achievementBalance')],
     ['Achievement Gem particles begin at the reward chip', source.includes("captureRewardRect(rewardRow.querySelector('.achievement-gem-reward'))")],
-    ['Currency counters use a shorter amount-based count-up', source.includes('function rewardCurrencyDuration(from, to)') && source.includes('const countDuration = rewardCurrencyDuration(from, to)') && source.includes('return Math.min(1100')],
+    ['Currency counters use a shorter amount-based count-up', source.includes('function rewardCurrencyDuration(from, to)') && source.includes('const countDuration = rewardCurrencyDuration(from, to)') && source.includes('return Math.min(1900')],
     ['Quiz coin rewards fly to the shared account balance', source.includes("animateCurrencyReward('coins', e.previousCoins, e.balance, captureRewardRect(icon));")],
     ['Full account reset clears Gems, claim history and achievements through the trusted Worker', source.includes("Gems.resetEverything('reset:' + Date.now())") && source.includes('data.reset && data.profile') && gemsWorkerSource.includes('async function applyFullReset') && gemsWorkerSource.includes("action === 'reset'") && gemsWorkerSource.includes('gemOps: []') && gemsWorkerSource.includes('gems: 0')],
     ['Full reset also removes owned Gem cosmetics and the equipped profile ring', gemsWorkerSource.includes('gemCosmetics: {}') && gemsWorkerSource.includes("equippedGemCosmetic: ''") && source.includes('owned Gem cosmetics')],
 
-    ['Reward arrival highlights its destination counter', source.includes('function pulseRewardTarget(target)') && source.includes('reward-target-ping')],
+    ['Reward arrival uses the same landing pop as its active counter', source.includes("element.classList.add('reward-count-pop')") && source.includes('@keyframes reward-count-pop') && source.includes('function animateCurrencyReward')],
     ['Owner renewal re-verifies both passwords using the strict session fields', source.includes("openPin('owner', true);") && source.includes('Enter both Owner passwords to renew your 30-minute session.') && !source.includes('const patch = owner')],
     ['Appointed Admin renewal writes only its allowed timestamp', source.includes('const appointedAdmin = !owner && typeof isAppointed') && source.includes("await ref.set({ at: fsv().FieldValue.serverTimestamp() });")],
   ];

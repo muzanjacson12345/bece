@@ -20,6 +20,9 @@ async function loadNames() {
   try { const ps = await S.user.profiles([...new Set([S.uid, ...S.players.map(p => p.id)])]); for (const id in ps) if (ps[id].name) S.names[id] = ps[id].name; } catch {}
 }
 
+const rewardCounterAnimations = new WeakMap();
+const rewardFlights = new Map();
+
 function captureRewardRect(element) {
   if (!element || typeof element.getBoundingClientRect !== 'function') return null;
   const rect = element.getBoundingClientRect();
@@ -38,45 +41,61 @@ function rewardAnimationDuration(from, to) {
 }
 function rewardCurrencyDuration(from, to) {
   const delta = Math.abs((Number(to) || 0) - (Number(from) || 0));
-  return Math.min(1100, Math.round(640 + Math.log10(delta + 1) * 105));
+  return Math.min(1900, Math.round(1450 + Math.log10(delta + 1) * 140));
 }
 function animateRewardNumber(element, from, to, formatter, duration) {
   if (!element) return;
-  const startValue = Number(from) || 0, endValue = Number(to) || 0;
+  const previous = rewardCounterAnimations.get(element);
+  if (previous) {
+    if (previous.frame) cancelAnimationFrame(previous.frame);
+    if (previous.onAnimationEnd) element.removeEventListener('animationend', previous.onAnimationEnd);
+  }
+  rewardCounterAnimations.delete(element);
+  element.classList.remove('reward-count-pop');
+
+  const startValue = Number(from) || 0;
+  const endValue = Number(to) || 0;
   const format = formatter || (value => rewardNumber(value));
   const animationDuration = Number(duration) > 0 ? Number(duration) : rewardAnimationDuration(startValue, endValue);
   if (rewardMotionReduced() || startValue === endValue) {
     element.textContent = format(endValue);
     return;
   }
+
+  const state = { frame: 0, onAnimationEnd: null };
+  rewardCounterAnimations.set(element, state);
   element.textContent = format(startValue);
-  element.classList.remove('reward-count-pop');
-  void element.offsetWidth;
+
   const startedAt = performance.now();
   const tick = now => {
-    if (!element.isConnected) return;
-    const progress = Math.min(1, (now - startedAt) / animationDuration);
-    const eased = 1 - Math.pow(1 - progress, 3);
+    if (rewardCounterAnimations.get(element) !== state) return;
+    if (!element.isConnected) {
+      rewardCounterAnimations.delete(element);
+      return;
+    }
+    const progress = Math.min(1, Math.max(0, (now - startedAt) / animationDuration));
+    const eased = progress * progress * (3 - 2 * progress);
     const value = Math.round(startValue + (endValue - startValue) * eased);
     element.textContent = format(value);
-    if (progress < 1) requestAnimationFrame(tick);
-    else {
-      element.classList.add('reward-count-pop');
-      element.addEventListener('animationend', event => {
-        if (event.animationName === 'reward-count-pop') element.classList.remove('reward-count-pop');
-      }, { once: true });
+    if (progress < 1) {
+      state.frame = requestAnimationFrame(tick);
+      return;
     }
+
+    state.frame = 0;
+    element.textContent = format(endValue);
+    element.classList.remove('reward-count-pop');
+    void element.offsetWidth;
+    element.classList.add('reward-count-pop');
+    state.onAnimationEnd = event => {
+      if (event.animationName !== 'reward-count-pop') return;
+      element.classList.remove('reward-count-pop');
+      element.removeEventListener('animationend', state.onAnimationEnd);
+      if (rewardCounterAnimations.get(element) === state) rewardCounterAnimations.delete(element);
+    };
+    element.addEventListener('animationend', state.onAnimationEnd);
   };
-  requestAnimationFrame(tick);
-}
-function pulseRewardTarget(target) {
-  if (!target || !target.isConnected || rewardMotionReduced()) return;
-  target.classList.remove('reward-target-ping');
-  void target.offsetWidth;
-  target.classList.add('reward-target-ping');
-  target.addEventListener('animationend', event => {
-    if (event.animationName === 'reward-target-ping') target.classList.remove('reward-target-ping');
-  }, { once: true });
+  state.frame = requestAnimationFrame(tick);
 }
 function visibleInViewport(rect) {
   if (!rect) return false;
@@ -85,32 +104,52 @@ function visibleInViewport(rect) {
   return rect.left + rect.width > 0 && rect.top + rect.height > 0
     && rect.left < width && rect.top < height;
 }
-function animateRewardFlight(sourceRect, target, kind) {
-  const targetRect = captureRewardRect(target);
+function rewardElementVisible(element) {
+  if (!element || !element.isConnected) return false;
+  const rect = captureRewardRect(element);
+  if (!visibleInViewport(rect)) return false;
+  if (typeof window.getComputedStyle === 'function') {
+    const style = window.getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+  }
+  return true;
+}
+function animateRewardFlight(sourceRect, target, kind, duration) {
   if (rewardMotionReduced() || typeof Element.prototype.animate !== 'function') return;
-  if (!visibleInViewport(sourceRect) || !visibleInViewport(targetRect)) return;
+  if (!visibleInViewport(sourceRect) || !rewardElementVisible(target) || !document.body) return;
+
+  const previousFlight = rewardFlights.get(kind);
+  if (previousFlight) {
+    rewardFlights.delete(kind);
+    try { previousFlight.animation.cancel(); } catch {}
+    previousFlight.token.remove();
+  }
+
   const startX = sourceRect.left + sourceRect.width / 2;
   const startY = sourceRect.top + sourceRect.height / 2;
+  const targetRect = captureRewardRect(target);
   const endX = targetRect.left + targetRect.width / 2;
   const endY = targetRect.top + targetRect.height / 2;
-  const dx = endX - startX, dy = endY - startY;
-  const distance = Math.max(1, Math.hypot(dx, dy));
-  const mobile = window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
-  const duration = Math.min(mobile ? 640 : 760, Math.max(mobile ? 480 : 560, Math.round(distance * (mobile ? .78 : .82))));
-  const curve = Math.min(mobile ? 28 : 42, Math.max(12, distance * .15));
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const distance = Math.hypot(dx, dy);
+  const mobile = typeof window.matchMedia === 'function'
+    && window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+  const tokenSize = mobile ? 36 : 42;
+  if (distance < tokenSize * 1.25) return;
+
   const side = dx >= 0 ? 1 : -1;
-  const normalX = (-dy / distance) * side;
-  const normalY = (dx / distance) * side;
+  const arc = Math.min(mobile ? 76 : 98, Math.max(28, distance * .13));
   const p0x = startX, p0y = startY;
-  const p1x = startX + dx * .26 + normalX * curve;
-  const p1y = startY + dy * .26 + normalY * curve - (mobile ? 8 : 12);
-  const p2x = startX + dx * .72 + normalX * curve * .48;
-  const p2y = startY + dy * .72 + normalY * curve * .48 - (mobile ? 5 : 8);
+  const p1x = startX + dx * .27 + side * (mobile ? 10 : 14);
+  const p1y = startY + dy * .24 - arc;
+  const p2x = startX + dx * .73 - side * (mobile ? 8 : 10);
+  const p2y = startY + dy * .76 - arc * .52;
   const p3x = endX, p3y = endY;
-  const samples = [0, .16, .34, .52, .72, .88, 1];
-  const scales = [.58, .96, 1.09, 1.04, .94, .78, .42];
-  const opacities = [0, .98, 1, 1, 1, .86, 0];
-  const rotation = kind === 'coins' ? 164 : 48;
+  const samples = [0, .125, .25, .375, .5, .625, .75, .875, 1];
+  const scales = [.72, .94, 1.04, 1.08, 1.06, 1, .93, .84, .72];
+  const opacities = [0, .92, 1, 1, 1, 1, 1, .92, 0];
+  const rotation = kind === 'coins' ? 210 : 34;
   const keyframes = samples.map((t, index) => {
     const inverse = 1 - t;
     const x = inverse * inverse * inverse * p0x
@@ -124,44 +163,73 @@ function animateRewardFlight(sourceRect, target, kind) {
     return {
       offset: t,
       transform: 'translate3d(' + (x - startX) + 'px,' + (y - startY) + 'px,0) rotate('
-        + (rotation * t - (kind === 'coins' ? 12 : 8)) + 'deg) scale(' + scales[index] + ')',
+        + (rotation * t) + 'deg) scale(' + scales[index] + ')',
       opacity: opacities[index]
     };
   });
-  // One clear hero token glides along a cubic curve. No crowded particle cluster.
+
   const token = o('span', 'reward-flight-token reward-flight-token-' + kind);
   token.setAttribute('aria-hidden', 'true');
   token.append(App.icon(kind === 'gems' ? 'gem' : 'coin', 'reward-flight-icon'));
-  token.style.left = (startX - 18) + 'px';
-  token.style.top = (startY - 18) + 'px';
+  token.style.left = (startX - tokenSize / 2) + 'px';
+  token.style.top = (startY - tokenSize / 2) + 'px';
   document.body.append(token);
-  const animation = token.animate(keyframes, { duration, easing: 'cubic-bezier(.22,.76,.2,1)', fill: 'both' });
-  animation.onfinish = () => { token.remove(); pulseRewardTarget(target); };
-  animation.oncancel = () => token.remove();
+
+  let animation;
+  try {
+    animation = token.animate(keyframes, {
+      duration: Math.max(1450, Math.min(1900, Number(duration) || 1600)),
+      easing: 'linear',
+      fill: 'both'
+    });
+  } catch {
+    token.remove();
+    return;
+  }
+
+  const activeFlight = { token, animation };
+  const cleanup = () => {
+    token.remove();
+    if (rewardFlights.get(kind) === activeFlight) rewardFlights.delete(kind);
+  };
+  rewardFlights.set(kind, activeFlight);
+  animation.onfinish = cleanup;
+  animation.oncancel = cleanup;
+}
+function formatRewardCounter(element, kind, value) {
+  const number = rewardNumber(value);
+  const numberOnly = element.classList.contains('coin-bal-value')
+    || element.classList.contains('achievement-gem-balance-value');
+  if (numberOnly) return number;
+  return (kind === 'gems' ? '💎 ' : '💰 ') + number;
 }
 function animateCurrencyReward(kind, previous, balance, sourceRect, preferredTarget) {
   const isGem = kind === 'gems';
-  const glyph = isGem ? '💎' : '💰';
   const from = Math.max(0, Number(previous) || 0);
   const to = Math.max(0, Number(balance) || 0);
   const countDuration = rewardCurrencyDuration(from, to);
   const selectors = isGem
     ? '.account-gems, .daily-gem-balance, .gem-store-balance'
     : '.account-coins:not(.account-gems), .coin-bal-value';
-  const targets = [...document.querySelectorAll(selectors)].filter(element => {
-    const rect = element.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
-  });
+  const targets = [...new Set([
+    ...document.querySelectorAll(selectors),
+    ...(preferredTarget ? [preferredTarget] : [])
+  ])].filter(element => captureRewardRect(element));
+  const visibleTargets = targets.filter(rewardElementVisible);
+  const preferredVisible = preferredTarget && visibleTargets.includes(preferredTarget) ? preferredTarget : null;
+  const accountTarget = visibleTargets.find(element =>
+    isGem ? element.classList.contains('account-gems') : element.classList.contains('account-coins')
+  );
+  const balanceTarget = preferredVisible || accountTarget || visibleTargets[0] || null;
+
   targets.forEach(element => {
-    const plainNumber = element.classList.contains('coin-bal-value');
-    animateRewardNumber(element, from, to, value => plainNumber ? rewardNumber(value) : glyph + ' ' + rewardNumber(value), countDuration);
+    const formatter = value => formatRewardCounter(element, kind, value);
+    if (element === balanceTarget) animateRewardNumber(element, from, to, formatter, countDuration);
+    else animateRewardNumber(element, to, to, formatter, 0);
   });
-  const preferredVisible = preferredTarget && captureRewardRect(preferredTarget) ? preferredTarget : null;
-  const balanceTarget = preferredVisible
-    || targets.find(element => isGem ? element.classList.contains('account-gems') : element.classList.contains('account-coins'))
-    || targets[0];
+
   const origin = sourceRect || captureRewardRect(document.activeElement);
-  if (to > from && balanceTarget) animateRewardFlight(origin, balanceTarget, kind);
+  if (to > from && balanceTarget) animateRewardFlight(origin, balanceTarget, kind, countDuration);
 }
 
 function renderAccount() {
