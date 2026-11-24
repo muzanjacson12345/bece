@@ -188,8 +188,8 @@ function runRewardFlight(item) {
     const scales = isCoin
       ? [.72, .9, 1.04, 1.1, 1.08, 1.03, .98, .94, .9, .84, .76]
       : [.9, .98, 1.04, 1.08, 1.1, 1.08, 1.04, .99, .93, .86, .78];
-    const duration = isCoin ? (mobile ? 880 : 980) : (mobile ? 1020 : 1160);
-    const stagger = isCoin ? (mobile ? 76 : 82) : 0;
+    const duration = isCoin ? (mobile ? 1180 : 1300) : (mobile ? 1420 : 1560);
+    const stagger = isCoin ? (mobile ? 96 : 106) : 0;
     const clampX = value => Math.min(viewport.width - inset, Math.max(inset, value));
     const clampY = value => Math.min(viewport.height - inset, Math.max(inset, value));
     const parts = [];

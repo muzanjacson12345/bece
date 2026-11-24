@@ -1469,3 +1469,40 @@ button:disabled,
   .quiz-reward-wallet { padding-inline: 12px; gap: 6px; }
   .quiz-reward-pill { min-height: 24px; padding: 2px 8px; font-size: 11px; }
 }
+
+
+/* Gem reward token: a faceted crystal silhouette, not a rounded square. */
+.reward-flight-token-gems {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(145deg, #efffff 0%, #a4f3f4 27%, #54d5dc 56%, #197f9f 100%);
+  box-shadow: none !important;
+  filter: drop-shadow(0 3px 5px rgb(11 75 96 / 30%));
+  clip-path: polygon(18% 19%, 34% 4%, 66% 4%, 82% 19%, 98% 33%, 50% 97%, 2% 33%);
+}
+.reward-flight-token-gems::before {
+  inset: 0;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(135deg, rgb(255 255 255 / 76%) 0%, rgb(255 255 255 / 22%) 44%, transparent 68%);
+  clip-path: polygon(18% 19%, 34% 4%, 66% 4%, 50% 37%, 18% 19%);
+}
+.reward-flight-token-gems::after {
+  inset: 0;
+  border-radius: 0;
+  background: linear-gradient(155deg, rgb(255 255 255 / 8%) 0%, rgb(10 95 131 / 46%) 100%);
+  clip-path: polygon(18% 19%, 50% 37%, 82% 19%, 98% 33%, 50% 97%, 2% 33%);
+}
+.reward-flight-token-gems .reward-flight-icon {
+  width: 27px;
+  height: 27px;
+  color: #ffffff;
+  filter: drop-shadow(0 1px 1px rgb(0 69 93 / 28%));
+}
+@media (max-width: 760px) {
+  .reward-flight-token-gems {
+    border-radius: 0 !important;
+    filter: drop-shadow(0 2px 4px rgb(11 75 96 / 28%));
+  }
+  .reward-flight-token-gems .reward-flight-icon { width: 24px; height: 24px; }
+}
