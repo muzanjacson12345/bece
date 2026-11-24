@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-slower-stable-reward-motion-2026-11-24-r23';
+const EXPECTED_BUILD = 'bece-mobile-reliable-reward-motion-2026-11-24-r24';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -257,13 +257,13 @@ async function main() {
     ['Starting a new counter update cancels the previous animation frame', source.includes('const rewardCounterAnimations = new WeakMap()') && source.includes('cancelAnimationFrame(previous.frame)')],
     ['Only one visible currency counter animates for each reward', source.includes('const visibleTargets = targets.filter(rewardElementVisible)') && source.includes('const balanceTarget = preferredVisible || accountTarget || visibleTargets[0] || null')],
     ['Achievement Gem counter stays number-only while other balances keep their symbol', source.includes("element.classList.contains('achievement-gem-balance-value')") && source.includes("element.classList.contains('coin-bal-value')")],
-    ['Reward flights use one sampled curve and the shared slower duration', source.includes('const samples = [0, .125, .25, .375, .5, .625, .75, .875, 1]') && source.includes("easing: 'linear'") && source.includes('const rewardFlights = new Map()')],
+    ['Reward flights use a root-level overlay and a queue so new rewards never cancel active coins', source.includes("const REWARD_FLIGHT_LAYER_ID = 'bece-reward-flight-layer'") && source.includes('const rewardFlightQueues = new Map()') && source.includes('function startNextRewardFlight(kind)') && source.includes('Queue each confirmed reward; never cancel a coin that is already on its way.')],
     ['Mobile coin and EXP reward sections use compact responsive layouts', source.includes('@media (max-width: 420px)') && source.includes('.coin-top {') && source.includes('grid-template-columns: auto auto') && source.includes('.exp-xp-top {') && source.includes('grid-template-columns: auto minmax(0, 1fr)')],
     ['Duel creation stores only Firestore-whitelisted fields', source.includes('delete storedDoc.subjects;') && source.includes('await col().doc(code).set(storedDoc)') && source.includes('const hostSubjects =')],
     ['Self-service progress reset updates instead of attempting forbidden self-delete', source.includes("const resetRef = S.db.doc('players/' + S.uid);") && source.includes('await resetRef.set(resetProfile);') && !source.includes("await S.db.doc('players/' + S.uid).delete();")],
     ['Profile reset preserves trusted Gem balance and ownership history', source.includes("['gems', 'gemOps', 'gemCosmetics'].forEach(key =>") && source.includes('Your Gem balance and earned Gem cosmetics are kept.')],
     ['Admin progress reset preserves protected Gem fields', source.includes("'gemCosmetics', 'equippedGemCosmetic']")],
-    ['Currency reward flights use one lightweight curved token with slower phone and desktop timing', source.includes('const samples = [0, .125, .25, .375, .5, .625, .75, .875, 1]') && source.includes('token.animate(keyframes') && source.includes("App.icon(kind === 'gems' ? 'gem' : 'coin'") && source.includes('Math.max(1450, Math.min(1900, Number(duration) || 1600)')],
+    ['Currency reward flights use a visible single coin and a mobile-browser fallback', source.includes('const samples = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]') && source.includes('token.animate(keyframes') && source.includes("App.icon(item.kind === 'gems' ? 'gem' : 'coin'") && source.includes('Older mobile browsers get a simple transform transition') && source.includes('const duration = mobile ? 1120 : 1280')],
     ['Achievement Gem claims have a visible local balance destination', source.includes('achievement-gem-balance-value') && source.includes('Your Gems') && source.includes("action === 'achievement'") && source.includes('achievementBalance')],
     ['Achievement Gem particles begin at the reward chip', source.includes("captureRewardRect(rewardRow.querySelector('.achievement-gem-reward'))")],
     ['Currency counters use a shorter amount-based count-up', source.includes('function rewardCurrencyDuration(from, to)') && source.includes('const countDuration = rewardCurrencyDuration(from, to)') && source.includes('return Math.min(1900')],
@@ -800,7 +800,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, question: false, answerFeedback: false, results: false, notes: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, coinFlightVisible: false, queuedCoinFlightVisible: false, question: false, answerFeedback: false, results: false, notes: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -822,6 +822,46 @@ async function main() {
             && getComputedStyle(screen).animationName === 'motion-screen-major-enter'
             && getComputedStyle(hero.querySelector('.hero-art')).animationName === 'motion-home-art-enter'
             && getComputedStyle(hero.querySelector('.hero-copy h1')).animationName === 'motion-home-copy-enter';
+        });
+        stage = 'mobile coin reward flight';
+        await homePage.evaluate(() => {
+          const source = document.createElement('div');
+          source.id = 'reward-motion-test-source';
+          source.style.cssText = 'position:fixed;left:18px;bottom:112px;width:36px;height:36px;z-index:2;';
+          const target = document.createElement('div');
+          target.id = 'reward-motion-test-target';
+          target.className = 'account-coins';
+          target.style.cssText = 'position:fixed;right:18px;top:18px;width:88px;height:36px;z-index:2;';
+          document.body.append(source, target);
+          if (typeof window.animateCurrencyReward !== 'function') throw new Error('Currency reward function is not available to the browser.');
+          window.animateCurrencyReward('coins', 4, 5, source.getBoundingClientRect(), target);
+        });
+        await homePage.waitForSelector('#bece-reward-flight-layer .reward-flight-token', { timeout: 3000 });
+        await homePage.waitForTimeout(90);
+        check.coinFlightVisible = await homePage.evaluate(() => {
+          const layer = document.getElementById('bece-reward-flight-layer');
+          const token = layer?.querySelector('.reward-flight-token-coins');
+          if (!layer || layer.parentElement !== document.documentElement || !token) return false;
+          const rect = token.getBoundingClientRect();
+          return Number(getComputedStyle(token).opacity) > .85
+            && rect.width >= 30 && rect.height >= 30
+            && rect.right > 0 && rect.bottom > 0
+            && rect.left < window.innerWidth && rect.top < window.innerHeight;
+        });
+        await homePage.evaluate(() => {
+          const source = document.getElementById('reward-motion-test-source');
+          const target = document.getElementById('reward-motion-test-target');
+          window.animateCurrencyReward('coins', 5, 6, source.getBoundingClientRect(), target);
+        });
+        await homePage.waitForTimeout(1530);
+        check.queuedCoinFlightVisible = await homePage.evaluate(() => {
+          const layer = document.getElementById('bece-reward-flight-layer');
+          const token = layer?.querySelector('.reward-flight-token-coins');
+          if (!layer || !token) return false;
+          const rect = token.getBoundingClientRect();
+          return Number(getComputedStyle(token).opacity) > .5
+            && rect.right > 0 && rect.bottom > 0
+            && rect.left < window.innerWidth && rect.top < window.innerHeight;
         });
         await homePage.close();
 

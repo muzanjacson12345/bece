@@ -21,7 +21,9 @@ async function loadNames() {
 }
 
 const rewardCounterAnimations = new WeakMap();
-const rewardFlights = new Map();
+const rewardFlightQueues = new Map();
+const rewardFlightBusy = new Set();
+const REWARD_FLIGHT_LAYER_ID = 'bece-reward-flight-layer';
 
 function captureRewardRect(element) {
   if (!element || typeof element.getBoundingClientRect !== 'function') return null;
@@ -97,104 +99,193 @@ function animateRewardNumber(element, from, to, formatter, duration) {
   };
   state.frame = requestAnimationFrame(tick);
 }
+function rewardViewportSize() {
+  // getBoundingClientRect() and fixed-position overlays share the layout viewport.
+  // Avoid visualViewport width/height here: they can diverge during mobile browser chrome changes.
+  return {
+    width: Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1),
+    height: Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1)
+  };
+}
 function visibleInViewport(rect) {
   if (!rect) return false;
-  const width = window.visualViewport ? window.visualViewport.width : window.innerWidth;
-  const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const viewport = rewardViewportSize();
   return rect.left + rect.width > 0 && rect.top + rect.height > 0
-    && rect.left < width && rect.top < height;
+    && rect.left < viewport.width && rect.top < viewport.height;
 }
 function rewardElementVisible(element) {
   if (!element || !element.isConnected) return false;
   const rect = captureRewardRect(element);
   if (!visibleInViewport(rect)) return false;
   if (typeof window.getComputedStyle === 'function') {
-    const style = window.getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+    for (let node = element; node && node !== document.documentElement; node = node.parentElement) {
+      const style = window.getComputedStyle(node);
+      if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) < .02) return false;
+    }
   }
   return true;
 }
-function animateRewardFlight(sourceRect, target, kind, duration) {
-  if (rewardMotionReduced() || typeof Element.prototype.animate !== 'function') return;
-  if (!visibleInViewport(sourceRect) || !rewardElementVisible(target) || !document.body) return;
-
-  const previousFlight = rewardFlights.get(kind);
-  if (previousFlight) {
-    rewardFlights.delete(kind);
-    try { previousFlight.animation.cancel(); } catch {}
-    previousFlight.token.remove();
+function getRewardFlightLayer() {
+  let layer = document.getElementById(REWARD_FLIGHT_LAYER_ID);
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.id = REWARD_FLIGHT_LAYER_ID;
+    layer.className = 'reward-flight-layer';
+    layer.setAttribute('aria-hidden', 'true');
   }
-
-  const startX = sourceRect.left + sourceRect.width / 2;
-  const startY = sourceRect.top + sourceRect.height / 2;
-  const targetRect = captureRewardRect(target);
-  const endX = targetRect.left + targetRect.width / 2;
-  const endY = targetRect.top + targetRect.height / 2;
-  const dx = endX - startX;
-  const dy = endY - startY;
-  const distance = Math.hypot(dx, dy);
-  const mobile = typeof window.matchMedia === 'function'
-    && window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
-  const tokenSize = mobile ? 36 : 42;
-  if (distance < tokenSize * 1.25) return;
-
-  const side = dx >= 0 ? 1 : -1;
-  const arc = Math.min(mobile ? 76 : 98, Math.max(28, distance * .13));
-  const p0x = startX, p0y = startY;
-  const p1x = startX + dx * .27 + side * (mobile ? 10 : 14);
-  const p1y = startY + dy * .24 - arc;
-  const p2x = startX + dx * .73 - side * (mobile ? 8 : 10);
-  const p2y = startY + dy * .76 - arc * .52;
-  const p3x = endX, p3y = endY;
-  const samples = [0, .125, .25, .375, .5, .625, .75, .875, 1];
-  const scales = [.72, .94, 1.04, 1.08, 1.06, 1, .93, .84, .72];
-  const opacities = [0, .92, 1, 1, 1, 1, 1, .92, 0];
-  const rotation = kind === 'coins' ? 210 : 34;
-  const keyframes = samples.map((t, index) => {
-    const inverse = 1 - t;
-    const x = inverse * inverse * inverse * p0x
-      + 3 * inverse * inverse * t * p1x
-      + 3 * inverse * t * t * p2x
-      + t * t * t * p3x;
-    const y = inverse * inverse * inverse * p0y
-      + 3 * inverse * inverse * t * p1y
-      + 3 * inverse * t * t * p2y
-      + t * t * t * p3y;
-    return {
-      offset: t,
-      transform: 'translate3d(' + (x - startX) + 'px,' + (y - startY) + 'px,0) rotate('
-        + (rotation * t) + 'deg) scale(' + scales[index] + ')',
-      opacity: opacities[index]
-    };
-  });
-
-  const token = o('span', 'reward-flight-token reward-flight-token-' + kind);
-  token.setAttribute('aria-hidden', 'true');
-  token.append(App.icon(kind === 'gems' ? 'gem' : 'coin', 'reward-flight-icon'));
-  token.style.left = (startX - tokenSize / 2) + 'px';
-  token.style.top = (startY - tokenSize / 2) + 'px';
-  document.body.append(token);
-
-  let animation;
-  try {
-    animation = token.animate(keyframes, {
-      duration: Math.max(1450, Math.min(1900, Number(duration) || 1600)),
-      easing: 'linear',
-      fill: 'both'
-    });
-  } catch {
-    token.remove();
-    return;
+  // Keep it outside body/scroll containers so mobile transforms and overflow cannot clip the coin.
+  if (layer.parentElement !== document.documentElement) document.documentElement.append(layer);
+  return layer;
+}
+function resolveRewardFlightTarget(kind, preferredTarget) {
+  if (rewardElementVisible(preferredTarget)) return preferredTarget;
+  const selectors = kind === 'gems'
+    ? '.account-gems, .daily-gem-balance, .gem-store-balance'
+    : '.account-coins:not(.account-gems), .coin-bal-value';
+  for (const element of document.querySelectorAll(selectors)) {
+    if (rewardElementVisible(element)) return element;
   }
-
-  const activeFlight = { token, animation };
-  const cleanup = () => {
-    token.remove();
-    if (rewardFlights.get(kind) === activeFlight) rewardFlights.delete(kind);
+  const account = document.getElementById('account-btn');
+  return rewardElementVisible(account) ? account : null;
+}
+function rewardPoint(rect, fallback, inset, viewport) {
+  const rawX = rect && Number.isFinite(rect.left) ? rect.left + rect.width / 2 : fallback.x;
+  const rawY = rect && Number.isFinite(rect.top) ? rect.top + rect.height / 2 : fallback.y;
+  return {
+    x: Math.min(viewport.width - inset, Math.max(inset, rawX)),
+    y: Math.min(viewport.height - inset, Math.max(inset, rawY))
   };
-  rewardFlights.set(kind, activeFlight);
-  animation.onfinish = cleanup;
-  animation.oncancel = cleanup;
+}
+function runRewardFlight(item) {
+  return new Promise(resolve => {
+    const viewport = rewardViewportSize();
+    const mobile = typeof window.matchMedia === 'function'
+      && window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+    const size = mobile ? 46 : 52;
+    const inset = Math.min(Math.max(24, size / 2 + 4), Math.min(viewport.width, viewport.height) / 2);
+    const sourceElement = document.activeElement;
+    const sourceRect = item.sourceRect || (rewardElementVisible(sourceElement) ? captureRewardRect(sourceElement) : null);
+    const target = resolveRewardFlightTarget(item.kind, item.target);
+    const targetRect = captureRewardRect(target);
+    const start = rewardPoint(sourceRect, { x: viewport.width * .5, y: viewport.height * .72 }, inset, viewport);
+    // The top-right fallback matches the account control on compact screens if it is temporarily hidden.
+    const finish = rewardPoint(targetRect, { x: viewport.width - inset - 4, y: Math.max(inset, 28) }, inset, viewport);
+    let dx = finish.x - start.x;
+    let dy = finish.y - start.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance < 24) {
+      finish.y = Math.max(inset, finish.y - 34);
+      dx = finish.x - start.x;
+      dy = finish.y - start.y;
+    }
+
+    const side = dx >= 0 ? 1 : -1;
+    const arc = Math.min(mobile ? 58 : 76, Math.max(22, distance * .105));
+    const clampX = value => Math.min(viewport.width - inset, Math.max(inset, value));
+    const clampY = value => Math.min(viewport.height - inset, Math.max(inset, value));
+    const p0 = start;
+    const p1 = { x: clampX(start.x + dx * .27 + side * (mobile ? 8 : 12)), y: clampY(start.y + dy * .24 - arc) };
+    const p2 = { x: clampX(start.x + dx * .73 - side * (mobile ? 7 : 10)), y: clampY(start.y + dy * .76 - arc * .5) };
+    const p3 = finish;
+    const samples = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1];
+    const scales = [.9, .98, 1.04, 1.08, 1.1, 1.08, 1.04, .99, .93, .86, .78];
+    const rotation = item.kind === 'coins' ? 110 : 38;
+    const keyframes = samples.map((t, index) => {
+      const inverse = 1 - t;
+      const x = inverse * inverse * inverse * p0.x
+        + 3 * inverse * inverse * t * p1.x
+        + 3 * inverse * t * t * p2.x
+        + t * t * t * p3.x;
+      const y = inverse * inverse * inverse * p0.y
+        + 3 * inverse * inverse * t * p1.y
+        + 3 * inverse * t * t * p2.y
+        + t * t * t * p3.y;
+      return {
+        offset: t,
+        transform: 'translate3d(' + (x - start.x) + 'px,' + (y - start.y) + 'px,0) rotate('
+          + (rotation * t) + 'deg) scale(' + scales[index] + ')',
+        // The coin is visible immediately and remains solid until the final part of the flight.
+        opacity: t < .8 ? 1 : (t < .9 ? .92 : Math.max(0, 1 - (t - .9) * 10))
+      };
+    });
+
+    let layer;
+    let token;
+    try {
+      layer = getRewardFlightLayer();
+      token = o('span', 'reward-flight-token reward-flight-token-' + item.kind);
+      token.setAttribute('aria-hidden', 'true');
+      token.append(App.icon(item.kind === 'gems' ? 'gem' : 'coin', 'reward-flight-icon'));
+      token.style.left = (start.x - size / 2) + 'px';
+      token.style.top = (start.y - size / 2) + 'px';
+      token.style.width = size + 'px';
+      token.style.height = size + 'px';
+      token.style.opacity = '1';
+      layer.append(token);
+    } catch {
+      if (token) token.remove();
+      resolve();
+      return;
+    }
+
+    const duration = mobile ? 1120 : 1280;
+    let settled = false;
+    let animation = null;
+    let cleanupTimer = 0;
+    const cleanup = () => {
+      if (settled) return;
+      settled = true;
+      if (cleanupTimer) window.clearTimeout(cleanupTimer);
+      if (token && token.isConnected) token.remove();
+      resolve();
+    };
+
+    try {
+      if (typeof token.animate === 'function') {
+        animation = token.animate(keyframes, {
+          duration,
+          easing: 'cubic-bezier(.2,.72,.24,1)',
+          fill: 'both'
+        });
+        animation.onfinish = cleanup;
+        animation.oncancel = cleanup;
+        cleanupTimer = window.setTimeout(cleanup, duration + 420);
+      } else {
+        // Older mobile browsers get a simple transform transition instead of losing the reward.
+        const finalFrame = keyframes[keyframes.length - 1];
+        token.style.transform = keyframes[0].transform;
+        token.style.transition = 'none';
+        requestAnimationFrame(() => {
+          if (!token.isConnected) { cleanup(); return; }
+          token.style.transition = 'transform ' + duration + 'ms cubic-bezier(.2,.72,.24,1), opacity 180ms linear';
+          token.style.transform = finalFrame.transform;
+          token.style.opacity = '0';
+        });
+        cleanupTimer = window.setTimeout(cleanup, duration + 260);
+      }
+    } catch {
+      cleanup();
+    }
+  });
+}
+function startNextRewardFlight(kind) {
+  const queue = rewardFlightQueues.get(kind);
+  if (!queue || !queue.length || rewardFlightBusy.has(kind)) return;
+  rewardFlightBusy.add(kind);
+  const item = queue.shift();
+  runRewardFlight(item).finally(() => {
+    window.setTimeout(() => {
+      rewardFlightBusy.delete(kind);
+      startNextRewardFlight(kind);
+    }, 100);
+  });
+}
+function animateRewardFlight(sourceRect, target, kind, duration) {
+  if (rewardMotionReduced()) return;
+  if (!rewardFlightQueues.has(kind)) rewardFlightQueues.set(kind, []);
+  // Queue each confirmed reward; never cancel a coin that is already on its way.
+  rewardFlightQueues.get(kind).push({ sourceRect, target, kind, duration });
+  startNextRewardFlight(kind);
 }
 function formatRewardCounter(element, kind, value) {
   const number = rewardNumber(value);
@@ -228,8 +319,9 @@ function animateCurrencyReward(kind, previous, balance, sourceRect, preferredTar
     else animateRewardNumber(element, to, to, formatter, 0);
   });
 
-  const origin = sourceRect || captureRewardRect(document.activeElement);
-  if (to > from && balanceTarget) animateRewardFlight(origin, balanceTarget, kind, countDuration);
+  const origin = sourceRect || captureRewardRect(document.activeElement)
+    || { left: window.innerWidth * .42, top: window.innerHeight * .68, width: 32, height: 32 };
+  if (to > from) animateRewardFlight(origin, balanceTarget, kind, countDuration);
 }
 
 function renderAccount() {
