@@ -1558,3 +1558,79 @@ button:disabled,
     filter: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 12 — Navigation and in-page panel motion
+   Give route icons and peer-view changes a small, useful state-change cue.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-nav-icon-duration: 230ms;
+  --motion-tab-panel-duration: 245ms;
+}
+@media (max-width: 760px) {
+  :root {
+    --motion-nav-icon-duration: 205ms;
+    --motion-tab-panel-duration: 210ms;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-nav-icon-duration: 220ms;
+    --motion-tab-panel-duration: 240ms;
+  }
+}
+
+@keyframes motion-nav-icon-select {
+  0% {
+    opacity: .72;
+    transform: translate3d(0, 2px, 0) scale(.84);
+  }
+  68% {
+    opacity: 1;
+    transform: translate3d(0, -1px, 0) scale(1.09);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.tab-bar a.is-active .icon,
+.notes-view-tabs a[aria-selected="true"] .icon,
+.shop-tab.is-active .icon {
+  transform-origin: center;
+  animation: motion-nav-icon-select var(--motion-nav-icon-duration) var(--motion-ease-enter) both;
+}
+
+@keyframes motion-tab-panel-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* These panels switch without a full screen navigation, so animate only the
+   newly visible panel. Content stays readable and interactive throughout. */
+#notes-content:not([hidden]),
+#notes-essay-view:not([hidden]),
+#shop-body:not([hidden]),
+#gemshop-body:not([hidden]) {
+  animation: motion-tab-panel-enter var(--motion-tab-panel-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-bar a.is-active .icon,
+  .notes-view-tabs a[aria-selected="true"] .icon,
+  .shop-tab.is-active .icon,
+  #notes-content:not([hidden]),
+  #notes-essay-view:not([hidden]),
+  #shop-body:not([hidden]),
+  #gemshop-body:not([hidden]) {
+    animation: none !important;
+  }
+}

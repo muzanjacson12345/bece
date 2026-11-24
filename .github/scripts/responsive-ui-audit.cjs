@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-mobile-reliable-reward-motion-2026-11-24-r24';
+const EXPECTED_BUILD = 'bece-nav-panel-motion-2026-11-24-r28';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -252,6 +252,9 @@ async function main() {
     ['Stage 3 and Stage 4 effects include reduced-motion overrides', source.includes('Stage 3 — Learning motion') && source.includes('Stage 4 — Rewards and social motion') && source.includes('animation: none !important;')],
     ['Stage 6 screen, home and results motion is wired to real app state changes', source.includes('Stage 6 — Signature motion') && source.includes("screenNode.classList.add('motion-screen-major')") && source.includes("hero.classList.add('motion-home-hero-enter')") && source.includes("results.classList.add('motion-results-major')")],
     ['Stage 6 includes touch timing, dialog motion and reduced-motion overrides', source.includes('--motion-major-screen-duration: 330ms') && source.includes('--motion-major-dialog-duration: 300ms') && source.includes('motion-home-ring-turn') && source.includes('animation: none !important;')],
+    ['Stage 12 animates the active mobile navigation icon', source.includes('Stage 12 — Navigation and in-page panel motion') && source.includes('.tab-bar a.is-active .icon') && source.includes('motion-nav-icon-select')],
+    ['Stage 12 animates Notes/Essays and Coins/Gems panels', source.includes('#notes-content:not([hidden])') && source.includes('#notes-essay-view:not([hidden])') && source.includes('#shop-body:not([hidden])') && source.includes('#gemshop-body:not([hidden])') && source.includes('motion-tab-panel-enter')],
+    ['Stage 12 navigation and panel motion has explicit reduced-motion handling', source.includes('.notes-view-tabs a[aria-selected="true"] .icon') && source.includes('#gemshop-body:not([hidden])') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -268,7 +271,7 @@ async function main() {
     ['Self-service progress reset uses the trusted Gem reset action', source.includes("Gems.resetEverything('reset:' + Date.now())") && source.includes("if (!result || !result.reset) throw new Error('RESET_NOT_CONFIRMED');")],
     ['Full reset clears Gems and cosmetic ownership in one trusted Firestore transaction', source.includes("Gems.resetEverything('reset:' + Date.now())") && gemsWorkerSource.includes('async function applyFullReset(uid, accessToken)') && gemsWorkerSource.includes("gems: 0, gemOps: [], gemCosmetics: {}, equippedGemCosmetic: ''") && gemsWorkerSource.includes('documents:commit')],
     ['Admin progress reset preserves protected Gem fields', source.includes("'gemCosmetics', 'equippedGemCosmetic']")],
-    ['Currency reward flights use a burst of small coins and a mobile-browser fallback', source.includes('const particleCount = isCoin') && source.includes('reward-flight-token-particle') && source.includes('token.animate(part.keyframes') && source.includes("App.icon(item.kind === 'gems' ? 'gem' : 'coin'") && source.includes('Older mobile browsers keep the same staggered burst with CSS transitions')],
+    ['Currency reward flights use a burst of small coins and a mobile-browser fallback', source.includes('const particleCount = isCoin') && source.includes('reward-flight-token-particle') && source.includes("parts.every(part => typeof part.token.animate === 'function')") && source.includes('part.token.animate(part.keyframes') && source.includes("token.append(isCoin ? App.icon('coin', 'reward-flight-icon') : o('span', 'reward-flight-gem-facets'))") && source.includes('Older mobile browsers keep the same staggered burst with CSS transitions')],
     ['Achievement Gem claims have a visible local balance destination', source.includes('achievement-gem-balance-value') && source.includes('Your Gems') && source.includes("action === 'achievement'") && source.includes('achievementBalance')],
     ['Achievement Gem particles begin at the reward chip', source.includes("captureRewardRect(rewardRow.querySelector('.achievement-gem-reward'))")],
     ['Currency counters use a shorter amount-based count-up', source.includes('function rewardCurrencyDuration(from, to)') && source.includes('const countDuration = rewardCurrencyDuration(from, to)') && source.includes('return Math.min(1900')],
@@ -805,7 +808,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -814,6 +817,11 @@ async function main() {
         check.screen = await motionPage.evaluate(() =>
           getComputedStyle(document.querySelector('#screen-setup')).animationName === 'motion-screen-major-enter'
         );
+
+        check.navigationIcon = viewport.width > 760 || await motionPage.evaluate(() => {
+          const activeIcon = document.querySelector('.tab-bar a.is-active .icon');
+          return !!activeIcon && getComputedStyle(activeIcon).animationName === 'motion-nav-icon-select';
+        });
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();
@@ -935,6 +943,18 @@ async function main() {
         const notesPage = await motionContext.newPage();
         await notesPage.goto(`${BASE}/#/notes`, { waitUntil: 'domcontentloaded', timeout: 60000 });
         await notesPage.waitForFunction(() => document.body?.dataset?.screen === 'notes', null, { timeout: 30000 });
+        await notesPage.locator('[data-notes-view="essays"]').click();
+        await notesPage.waitForFunction(() => document.querySelector('#notes-essay-view')?.hidden === false, null, { timeout: 10000 });
+        await notesPage.waitForTimeout(50);
+        check.essaysPanel = await notesPage.evaluate(() =>
+          getComputedStyle(document.querySelector('#notes-essay-view')).animationName === 'motion-tab-panel-enter'
+        );
+        await notesPage.locator('[data-notes-view="notes"]').click();
+        await notesPage.waitForFunction(() => document.querySelector('#notes-content')?.hidden === false, null, { timeout: 10000 });
+        await notesPage.waitForTimeout(50);
+        check.notesPanel = await notesPage.evaluate(() =>
+          getComputedStyle(document.querySelector('#notes-content')).animationName === 'motion-tab-panel-enter'
+        );
         await notesPage.locator('[data-notes-sub="social"]').click();
         await notesPage.waitForFunction(() => !!document.querySelector('#note-body > .note-section'), null, { timeout: 10000 });
         await notesPage.waitForTimeout(50);
@@ -943,6 +963,24 @@ async function main() {
           return !!section && getComputedStyle(section).animationName === 'motion-learning-rise';
         });
         await notesPage.close();
+
+        stage = 'Coins and Gems shop tab transitions';
+        const shopPage = await motionContext.newPage();
+        await shopPage.goto(BASE + '/#/shop', { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await shopPage.waitForFunction(() => document.body?.dataset?.screen === 'shop', null, { timeout: 30000 });
+        await shopPage.locator('[data-shop-tab="gems"]').click();
+        await shopPage.waitForFunction(() => document.querySelector('#gemshop-body')?.hidden === false, null, { timeout: 10000 });
+        await shopPage.waitForTimeout(50);
+        check.gemsPanel = await shopPage.evaluate(() =>
+          getComputedStyle(document.querySelector('#gemshop-body')).animationName === 'motion-tab-panel-enter'
+        );
+        await shopPage.locator('[data-shop-tab="coins"]').click();
+        await shopPage.waitForFunction(() => document.querySelector('#shop-body')?.hidden === false, null, { timeout: 10000 });
+        await shopPage.waitForTimeout(50);
+        check.coinsPanel = await shopPage.evaluate(() =>
+          getComputedStyle(document.querySelector('#shop-body')).animationName === 'motion-tab-panel-enter'
+        );
+        await shopPage.close();
 
         stage = 'flashcards';
         const flashPage = await motionContext.newPage();
