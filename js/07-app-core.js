@@ -2026,10 +2026,13 @@ const Notes = {
   },
   toggleStudied() {
     if (!this.activeId) return;
-    if (studied.has(this.activeId)) studied.delete(this.activeId); else { studied.add(this.activeId); toast('Nice — topic marked as studied.', 'good'); }
+    const wasStudied = studied.has(this.activeId);
+    if (wasStudied) studied.delete(this.activeId);
+    else { studied.add(this.activeId); toast('Nice — topic marked as studied.', 'good'); }
     store.set('bece_studied', [...studied]);
     this.renderStudied(this.activeId);
     this.renderSidebar(this.list());
+    replayMotion($('note-studied'), 'motion-note-study-toggle');
   },
   step(delta) {
     const list = this.list();

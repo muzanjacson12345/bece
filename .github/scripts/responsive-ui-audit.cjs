@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-admin-section-transition-motion-2026-11-24-r40';
+const EXPECTED_BUILD = 'bece-note-study-toggle-motion-2026-11-24-r41';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -281,6 +281,8 @@ async function main() {
     ['Stage 23 Duel result heading has responsive timing and reduced-motion support', source.includes('Stage 23 — Duel result heading arrival') && source.includes('--motion-duel-result-title-duration: 215ms') && source.includes('.duel-result-heading.motion-duel-result-title-enter') && source.includes('animation: none !important;')],
     ['Stage 24 animates only genuine Admin/Owner section changes', source.includes('renderedSub !== st.sub') && source.includes('if (sectionChanged) replayMotion(body, \'motion-admin-section-enter\')') && source.includes('renderedSub = st.sub')],
     ['Stage 24 Admin section entrance has responsive timing and reduced-motion support', source.includes('Stage 24 — Admin section panel transitions') && source.includes('--motion-admin-section-duration: 210ms') && source.includes('.adm-body.motion-admin-section-enter') && source.includes('animation: none !important;')],
+    ['Stage 25 notes study feedback runs only after a deliberate studied-state toggle', source.includes("replayMotion($('note-studied'), 'motion-note-study-toggle')") && source.includes('const wasStudied = studied.has(this.activeId)') && source.includes('#note-studied.motion-note-study-toggle .icon')],
+    ['Stage 25 study icon has responsive timing and respects reduced-motion', source.includes('Stage 25 — Mark-as-studied confirmation') && source.includes('--motion-note-study-duration: 225ms') && source.includes('#note-studied.motion-note-study-toggle .icon') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -859,7 +861,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1187,6 +1189,22 @@ async function main() {
         });
         check.adminSectionMotion = adminSectionMotion.name === 'motion-admin-section-enter'
           && adminSectionMotion.duration >= .20 && adminSectionMotion.duration <= .25;
+        const noteStudyMotion = await homePage.evaluate(() => {
+          const button = document.createElement('button');
+          button.id = 'motion-note-study-test';
+          button.className = 'motion-note-study-toggle';
+          const icon = document.createElement('span');
+          icon.className = 'icon';
+          button.append(icon);
+          document.body.append(button);
+          const style = getComputedStyle(icon);
+          return {
+            name: style.animationName,
+            duration: Number.parseFloat(style.animationDuration) || 0,
+          };
+        });
+        check.noteStudyFeedback = noteStudyMotion.name === 'motion-note-study-icon-pop'
+          && noteStudyMotion.duration >= .21 && noteStudyMotion.duration <= .27;
         await homePage.emulateMedia({ reducedMotion: 'reduce' });
         check.challengeCompletionReducedMotion = await homePage.evaluate(() => {
           const item = document.querySelector('#motion-challenge-complete-test');
@@ -1226,6 +1244,10 @@ async function main() {
         check.adminSectionReducedMotion = await homePage.evaluate(() => {
           const body = document.querySelector('.adm-body.motion-admin-section-enter');
           return !!body && getComputedStyle(body).animationName === 'none';
+        });
+        check.noteStudyReducedMotion = await homePage.evaluate(() => {
+          const icon = document.querySelector('#motion-note-study-test .icon');
+          return !!icon && getComputedStyle(icon).animationName === 'none';
         });
         await homePage.evaluate(() => {
           const overlay = document.createElement('div');

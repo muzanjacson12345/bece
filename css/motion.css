@@ -2169,3 +2169,37 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 25 — Mark-as-studied confirmation
+   Give the reader a small icon cue only when they change this topic's state.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-note-study-duration: 245ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-note-study-duration: 225ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-note-study-duration: 255ms; }
+}
+
+@keyframes motion-note-study-icon-pop {
+  0% { transform: scale(.82); }
+  66% { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+
+#note-studied.motion-note-study-toggle .icon {
+  display: inline-block;
+  transform-origin: center;
+  animation: motion-note-study-icon-pop var(--motion-note-study-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #note-studied.motion-note-study-toggle .icon {
+    animation: none !important;
+    transform: none !important;
+  }
+}
