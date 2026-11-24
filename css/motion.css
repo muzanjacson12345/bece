@@ -3138,3 +3138,30 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 59 — Unanswered quiz warning reveal
+   Animate the warning only on its hidden-to-visible transition.
+   -------------------------------------------------------------------------- */
+:root { --motion-quiz-unanswered-warning-duration: 230ms; }
+@media (max-width: 760px) {
+  :root { --motion-quiz-unanswered-warning-duration: 210ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-quiz-unanswered-warning-duration: 240ms; }
+}
+@keyframes motion-quiz-unanswered-warning {
+  0% { opacity: .4; transform: translateY(7px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+#submit-check.motion-quiz-unanswered-warning {
+  animation: motion-quiz-unanswered-warning var(--motion-quiz-unanswered-warning-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #submit-check.motion-quiz-unanswered-warning {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

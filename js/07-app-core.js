@@ -1289,8 +1289,11 @@ const Quiz = {
     const unanswered = this.questions.filter(q => !this.answers[q.id]).length;
     if (unanswered) {
       $('submit-check-copy').textContent = `${unanswered} ${unanswered === 1 ? 'question is' : 'questions are'} still unanswered. Finish now and they count as incorrect, or go back to the first one.`;
-      $('submit-check').hidden = false;
-      $('submit-check').scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'center' });
+      const notice = $('submit-check');
+      const newlyShown = notice.hidden;
+      notice.hidden = false;
+      if (newlyShown) replayMotion(notice, 'motion-quiz-unanswered-warning');
+      notice.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'center' });
       return;
     }
     this.finish();
