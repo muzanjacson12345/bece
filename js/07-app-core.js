@@ -1917,9 +1917,10 @@ const Notes = {
   entered: false,
 
   enter() {
+    const firstEntry = !this.entered;
     if (!this.entered) { this.entered = true; this.sub = Setup.subject || 'social'; }
     this.applyFont();
-    this.refresh();
+    this.refresh({ animateTopicEntrance: firstEntry });
   },
   list() {
     let list = notesDB[this.sub] || [];
@@ -1933,13 +1934,13 @@ const Notes = {
     }
     return list;
   },
-  refresh({ keepScroll = true } = {}) {
+  refresh({ keepScroll = true, animateTopicEntrance = false } = {}) {
     const list = this.list();
     if (!list.some(n => n.id === this.activeId)) this.activeId = list[0]?.id ?? null;
     document.querySelectorAll('[data-notes-sub]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.notesSub === this.sub)));
     document.querySelectorAll('[data-level]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.level === this.level)));
     this.renderSidebar(list);
-    this.renderNote(list);
+    this.renderNote(list, animateTopicEntrance);
     if (!keepScroll) this.scrollToReader();
   },
   renderSidebar(list) {
@@ -1966,9 +1967,10 @@ const Notes = {
       });
     });
   },
-  renderNote(list) {
+  renderNote(list, animateTopicEntrance = false) {
     const note = list.find(n => n.id === this.activeId);
     const body = $('note-body');
+    body.classList.toggle('motion-note-content-enter', Boolean(animateTopicEntrance));
     body.replaceChildren();
     const outline = $('note-outline-links');
     outline.replaceChildren();
@@ -2020,7 +2022,7 @@ const Notes = {
   selectTopic(id) {
     if (!id || this.activeId === id) return;
     this.activeId = id;
-    this.refresh({ keepScroll: false });
+    this.refresh({ keepScroll: false, animateTopicEntrance: true });
     const selected = $('notes-sidebar').querySelector('.topic-item[aria-current="true"]');
     replayMotion(selected, 'motion-note-topic-selected');
   },

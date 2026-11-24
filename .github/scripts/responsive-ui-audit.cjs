@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-notes-topic-selection-motion-2026-11-24-r46';
+const EXPECTED_BUILD = 'bece-notes-content-on-topic-change-2026-11-24-r47';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -293,6 +293,8 @@ async function main() {
     ['Stage 29 Duel answer feedback is responsive and respects reduced motion', source.includes('--motion-duel-answer-duration: 225ms') && source.includes('--motion-duel-answer-duration: 255ms') && source.includes('.duel-opts > .option.is-wrong') && source.includes('animation: none !important;')],
     ['Stage 30 Notes topic selection animates only when a different topic is selected', source.includes('selectTopic(id)') && source.includes('if (!id || this.activeId === id) return;') && source.includes("replayMotion(selected, 'motion-note-topic-selected')") && source.includes('this.selectTopic(target.id)')],
     ['Stage 30 Notes topic selection has responsive timing and reduced-motion support', source.includes('Stage 30 — Notes topic selection feedback') && source.includes('--motion-note-topic-duration: 185ms') && source.includes('#notes-sidebar .topic-item.motion-note-topic-selected') && source.includes('animation: none !important;')],
+    ['Stage 31 Notes reading content animates only on initial entry or an explicit topic change', source.includes('this.refresh({ animateTopicEntrance: firstEntry })') && source.includes('this.refresh({ keepScroll: false, animateTopicEntrance: true })') && source.includes('renderNote(list, animateTopicEntrance = false)') && source.includes('body.classList.toggle(\'motion-note-content-enter\', Boolean(animateTopicEntrance))')],
+    ['Stage 31 Notes topic content stays still on ordinary refreshes and respects reduced motion', source.includes('#note-body.motion-note-content-enter > .note-section') && source.includes('Stage 31 — Animate Notes content only on a new topic') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -871,7 +873,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1312,6 +1314,24 @@ async function main() {
         });
         check.notesTopicFeedback = notesTopicMotion.name === 'motion-note-topic-selected'
           && notesTopicMotion.duration >= .17 && notesTopicMotion.duration <= .23;
+        const noteContentMotion = await homePage.evaluate(() => {
+          const activeBody = document.createElement('div');
+          activeBody.className = 'motion-note-content-enter';
+          const activeSection = document.createElement('section');
+          activeSection.className = 'note-section';
+          activeBody.append(activeSection);
+          const quietBody = document.createElement('div');
+          const quietSection = document.createElement('section');
+          quietSection.className = 'note-section';
+          quietBody.append(quietSection);
+          document.body.append(activeBody, quietBody);
+          return {
+            active: getComputedStyle(activeSection).animationName,
+            quiet: getComputedStyle(quietSection).animationName,
+          };
+        });
+        check.noteContentEntrance = noteContentMotion.active === 'motion-learning-rise'
+          && noteContentMotion.quiet === 'none';
         await homePage.emulateMedia({ reducedMotion: 'reduce' });
         check.challengeCompletionReducedMotion = await homePage.evaluate(() => {
           const item = document.querySelector('#motion-challenge-complete-test');
@@ -1353,6 +1373,10 @@ async function main() {
         check.notesTopicReducedMotion = await homePage.evaluate(() => {
           const topic = document.querySelector('#notes-sidebar .topic-item.motion-note-topic-selected');
           return !!topic && getComputedStyle(topic).animationName === 'none';
+        });
+        check.noteContentReducedMotion = await homePage.evaluate(() => {
+          const section = document.querySelector('.motion-note-content-enter > .note-section');
+          return !!section && getComputedStyle(section).animationName === 'none';
         });
         check.duelResultReducedMotion = await homePage.evaluate(() => {
           const title = document.querySelector('.duel-result-heading.motion-duel-result-title-enter');

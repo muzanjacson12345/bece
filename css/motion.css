@@ -409,14 +409,14 @@ button:disabled,
 }
 
 /* Notes enter in reading order, with a small stagger that stays short. */
-#note-body > .note-takeaway,
-#note-body > .note-section {
+#note-body.motion-note-content-enter > .note-takeaway,
+#note-body.motion-note-content-enter > .note-section {
   animation: motion-learning-rise var(--motion-learning-duration) var(--motion-ease-enter) both;
 }
-#note-body > .note-section:nth-child(2) { animation-delay: var(--motion-learning-stagger); }
-#note-body > .note-section:nth-child(3) { animation-delay: calc(var(--motion-learning-stagger) * 2); }
-#note-body > .note-section:nth-child(4) { animation-delay: calc(var(--motion-learning-stagger) * 3); }
-#note-body > .note-section:nth-child(5) { animation-delay: calc(var(--motion-learning-stagger) * 4); }
+#note-body.motion-note-content-enter > .note-section:nth-child(2) { animation-delay: var(--motion-learning-stagger); }
+#note-body.motion-note-content-enter > .note-section:nth-child(3) { animation-delay: calc(var(--motion-learning-stagger) * 2); }
+#note-body.motion-note-content-enter > .note-section:nth-child(4) { animation-delay: calc(var(--motion-learning-stagger) * 3); }
+#note-body.motion-note-content-enter > .note-section:nth-child(5) { animation-delay: calc(var(--motion-learning-stagger) * 4); }
 
 .note-answer[open] > p,
 .note-extra[open] > p,
@@ -459,8 +459,8 @@ button:disabled,
   #submit-check:not([hidden]),
   #results:not([hidden]),
   #score-ring,
-  #note-body > .note-takeaway,
-  #note-body > .note-section,
+  #note-body.motion-note-content-enter > .note-takeaway,
+  #note-body.motion-note-content-enter > .note-section,
   .note-answer[open] > p,
   .note-extra[open] > p,
   .recall-prompt[open] > p,
@@ -2213,3 +2213,9 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 31 — Animate Notes content only on a new topic
+   Search, level filters and background refreshes leave the reading panel still.
+   -------------------------------------------------------------------------- */
