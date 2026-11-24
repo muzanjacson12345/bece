@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-profile-photo-confirmation-2026-11-24-r54';
+const EXPECTED_BUILD = 'bece-essay-draft-feedback-2026-11-24-r55';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -314,6 +314,9 @@ async function main() {
     ['Stage 40 photo feedback waits for a successful Firestore save before changing the visible avatar', source.includes('async function persistPhoto(dataUrl)') && source.includes("await S.db.doc('players/' + S.uid).set({ photo: dataUrl }, { merge: true });") && source.includes("S.doc = { ...(S.doc || {}), photo: dataUrl };") && source.includes("replayMotion(av, 'motion-profile-photo-saved')") && source.includes("App.toast(dataUrl ? 'Photo saved!' : 'Photo removed.', 'good')")],
     ['Stage 40 photo feedback keeps the previous photo on failure and respects reduced motion', source.includes('Your previous photo is still in place') && source.includes('Stage 40 — Profile photo save confirmation') && source.includes('--motion-profile-photo-save-duration: 290ms') && source.includes('--motion-profile-photo-save-duration: 340ms') && source.includes('animation: none !important;')],
     ['Mobile announcements are placed after the fixed header, including on nested Notes and Essays routes', source.includes('#site-nav ~ .ann-bar') && source.includes('#site-nav ~ .ann-bar + #main')],
+    ['Stage 41 reports a saved Essay draft only after confirming the localStorage write', source.includes('saveErrorShown: false') && source.includes('localStorage.setItem(key, serialized)') && source.includes("localStorage.getItem(key) !== serialized") && source.includes("this.setSaveStatus('saved', savedAt)") && source.includes("this.setSaveStatus('error', 'Couldn’t save draft · try again')")],
+    ['Stage 41 saves the current Essay before switching questions or subjects', source.includes('if (this.idx === index) return;') && source.includes('this.save();\\n        this.idx = index;') && source.includes('Essays.save();\\n  Essays.sub = b.dataset.sbSub;') && source.includes('window.addEventListener(\'pagehide\', () => Essays.save())')],
+    ['Stage 41 draft save and error feedback has responsive timing and reduced-motion support', source.includes('Stage 41 — Essay draft save feedback') && source.includes('--motion-essay-draft-saved-duration: 205ms') && source.includes('--motion-essay-draft-saved-duration: 235ms') && source.includes('#essay-save-note.motion-essay-draft-saved') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -930,7 +933,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1085,6 +1088,21 @@ async function main() {
           return !!avatar && getComputedStyle(avatar).animationName === 'motion-profile-photo-saved';
         });
         await motionPage.evaluate(() => document.querySelector('#motion-stage-40-test')?.remove());
+
+        stage = 'Essay draft confirmation feedback';
+        await motionPage.evaluate(() => {
+          const note = document.createElement('span');
+          note.id = 'motion-stage-41-test';
+          note.className = 'motion-essay-draft-saved';
+          note.textContent = 'Saved';
+          document.body.append(note);
+        });
+        await motionPage.waitForTimeout(45);
+        check.essayDraftFeedback = await motionPage.evaluate(() => {
+          const note = document.querySelector('#motion-stage-41-test');
+          return !!note && getComputedStyle(note).animationName === 'motion-essay-draft-saved';
+        });
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-41-test')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();

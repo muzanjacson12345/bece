@@ -2170,9 +2170,18 @@ const Essays = {
   sub: 'social',
   idx: 0,
   saveTimer: null,
+  saveErrorShown: false,
   enter() { this.render(); },
   list() { return Array.isArray(sectionBDB[this.sub]) ? sectionBDB[this.sub] : []; },
   key(q) { return `bece_essay_${q.id}`; },
+  setSaveStatus(state, message) {
+    const note = $('essay-save-note');
+    if (!note) return;
+    note.dataset.state = state;
+    note.textContent = message;
+    if (state === 'saved') replayMotion(note, 'motion-essay-draft-saved');
+    else if (state === 'error') replayMotion(note, 'motion-essay-draft-error');
+  },
   render() {
     const list = this.list();
     if (!list.length) {
@@ -2198,7 +2207,12 @@ const Essays = {
       chip.setAttribute('aria-pressed', String(index === this.idx));
       chip.setAttribute('aria-label', `Question ${index + 1}: ${item.topic}${store.get(this.key(item), '') ? ' (draft saved)' : ''}`);
       if (store.get(this.key(item), '')) chip.classList.add('has-draft');
-      chip.addEventListener('click', () => { this.idx = index; this.render(); });
+      chip.addEventListener('click', () => {
+        if (this.idx === index) return;
+        this.save();
+        this.idx = index;
+        this.render();
+      });
       picker.append(chip);
     });
     $('sb-topic').textContent = q.topic;
@@ -2208,6 +2222,7 @@ const Essays = {
     $('sb-marks').textContent = `${q.marks} marks`;
     $('sb-ans').value = store.get(this.key(q), '');
     this.updateCount();
+    $('essay-save-note').dataset.state = 'idle';
     $('essay-save-note').textContent = $('sb-ans').value ? 'Draft restored' : 'Draft saves automatically';
 
     const plan = essayPlans[q.id];
@@ -2230,16 +2245,41 @@ const Essays = {
     $('sb-next').disabled = this.idx === list.length - 1;
   },
   updateCount() {
-    const count = $('sb-ans').value.trim().split(/\s+/).filter(Boolean).length;
+    const count = $('sb-ans').value.trim().split(/\\s+/).filter(Boolean).length;
     $('word-count').textContent = plural(count, 'word');
   },
   save() {
+    clearTimeout(this.saveTimer);
+    this.saveTimer = null;
     const q = this.list()[this.idx];
+    if (!q) return false;
     const text = $('sb-ans').value;
-    if (text.trim()) store.set(this.key(q), text); else store.remove(this.key(q));
-    $('essay-save-note').textContent = text.trim() ? `Saved ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Draft saves automatically';
-    const chip = $('sb-picker').children[this.idx];
-    chip?.classList.toggle('has-draft', Boolean(text.trim()));
+    const key = this.key(q);
+    try {
+      if (text.trim()) {
+        const serialized = JSON.stringify(text);
+        localStorage.setItem(key, serialized);
+        if (localStorage.getItem(key) !== serialized) throw new Error('DRAFT_WRITE_NOT_CONFIRMED');
+      } else {
+        localStorage.removeItem(key);
+      }
+      this.saveErrorShown = false;
+      const savedAt = text.trim()
+        ? `Saved ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
+        : 'Draft saves automatically';
+      this.setSaveStatus('saved', savedAt);
+      const chip = $('sb-picker').children[this.idx];
+      chip?.classList.toggle('has-draft', Boolean(text.trim()));
+      chip?.setAttribute('aria-label', `Question ${this.idx + 1}: ${q.topic}${text.trim() ? ' (draft saved)' : ''}`);
+      return true;
+    } catch (error) {
+      this.setSaveStatus('error', 'Couldn’t save draft · try again');
+      if (!this.saveErrorShown) {
+        toast('This draft could not be saved on this device. Check your browser storage and try again.', 'warn');
+        this.saveErrorShown = true;
+      }
+      return false;
+    }
   },
   toggleGuide() {
     const box = $('sb-scheme');
@@ -2252,7 +2292,7 @@ const Essays = {
         if (!line.trim()) { listNode = null; return; }
         if (line.trim().startsWith('•')) {
           if (!listNode) { listNode = el('ul'); content.append(listNode); }
-          listNode.append(el('li', '', line.replace(/^\s*•\s*/, '')));
+          listNode.append(el('li', '', line.replace(/^\\s*•\\s*/, '')));
         } else { listNode = null; content.append(el('p', 'guide-heading', line)); }
       });
     }
@@ -2262,29 +2302,58 @@ const Essays = {
     if (!box.hidden) box.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
   },
 };
-document.querySelectorAll('[data-sb-sub]').forEach(b => b.addEventListener('click', () => { Essays.sub = b.dataset.sbSub; Essays.idx = 0; Essays.render(); }));
+document.querySelectorAll('[data-sb-sub]').forEach(b => b.addEventListener('click', () => {
+  if (Essays.sub === b.dataset.sbSub) return;
+  Essays.save();
+  Essays.sub = b.dataset.sbSub;
+  Essays.idx = 0;
+  Essays.render();
+}));
 $('sb-ans').addEventListener('input', () => {
   Essays.updateCount();
-  $('essay-save-note').textContent = 'Saving…';
+  Essays.setSaveStatus('saving', 'Saving…');
   clearTimeout(Essays.saveTimer);
   Essays.saveTimer = setTimeout(() => Essays.save(), 500);
 });
-$('sb-prev').addEventListener('click', () => { if (Essays.idx > 0) { Essays.save(); Essays.idx--; Essays.render(); } });
-$('sb-next').addEventListener('click', () => { if (Essays.idx < Essays.list().length - 1) { Essays.save(); Essays.idx++; Essays.render(); } });
+$('sb-prev').addEventListener('click', () => {
+  if (Essays.idx > 0) {
+    Essays.save();
+    Essays.idx--;
+    Essays.render();
+  }
+});
+$('sb-next').addEventListener('click', () => {
+  if (Essays.idx < Essays.list().length - 1) {
+    Essays.save();
+    Essays.idx++;
+    Essays.render();
+  }
+});
 $('sb-guide-btn').addEventListener('click', () => Essays.toggleGuide());
 document.querySelector('[data-action="copy-essay"]').addEventListener('click', async () => {
+  Essays.save();
   const text = $('sb-ans').value;
   if (!text.trim()) { toast('Write something first.'); return; }
   try { await navigator.clipboard.writeText(text); toast('Copied to your clipboard.', 'good'); }
   catch { $('sb-ans').select(); toast('Select-all done — press Ctrl+C (or long-press) to copy.'); }
 });
 document.querySelector('[data-action="clear-essay"]').addEventListener('click', async () => {
-  if (!$('sb-ans').value.trim()) return;
+  const answer = $('sb-ans');
+  if (!answer.value.trim()) return;
   if (!(await confirmDialog('Clear this draft?', 'Your response to this question will be deleted from this browser.', 'Clear draft', 'Cancel'))) return;
-  $('sb-ans').value = '';
-  Essays.save();
+  const previous = answer.value;
+  answer.value = '';
+  if (!Essays.save()) {
+    answer.value = previous;
+    Essays.updateCount();
+    return;
+  }
   Essays.updateCount();
 });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') Essays.save();
+});
+window.addEventListener('pagehide', () => Essays.save());
 
 /* ======================= Flashcards ======================= */
 (() => {

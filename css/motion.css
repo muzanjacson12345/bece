@@ -2539,3 +2539,50 @@ button:disabled,
     box-shadow: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 41 — Essay draft save feedback
+   Animate the save status only after the local draft is verified.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-essay-draft-saved-duration: 225ms;
+  --motion-essay-draft-error-duration: 220ms;
+}
+@media (max-width: 760px) {
+  :root {
+    --motion-essay-draft-saved-duration: 205ms;
+    --motion-essay-draft-error-duration: 200ms;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-essay-draft-saved-duration: 235ms;
+    --motion-essay-draft-error-duration: 225ms;
+  }
+}
+@keyframes motion-essay-draft-saved {
+  0% { opacity: .55; transform: translateY(3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes motion-essay-draft-error {
+  0% { opacity: .6; transform: translateX(0); }
+  35% { opacity: 1; transform: translateX(-2px); }
+  70% { opacity: 1; transform: translateX(2px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+#essay-save-note.motion-essay-draft-saved {
+  animation: motion-essay-draft-saved var(--motion-essay-draft-saved-duration) var(--motion-ease-enter) both;
+}
+#essay-save-note.motion-essay-draft-error {
+  animation: motion-essay-draft-error var(--motion-essay-draft-error-duration) var(--motion-ease-enter) both;
+}
+#essay-save-note[data-state='error'] { color: var(--danger, #b33b35); }
+@media (prefers-reduced-motion: reduce) {
+  #essay-save-note.motion-essay-draft-saved,
+  #essay-save-note.motion-essay-draft-error {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
