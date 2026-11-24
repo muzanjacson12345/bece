@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-profile-customisation-motion-2026-11-24-r29';
+const EXPECTED_BUILD = 'bece-toast-feedback-motion-2026-11-24-r30';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -258,6 +258,8 @@ async function main() {
     ['Stage 13 replays a real entrance when a profile customisation panel is switched', source.includes("panel.classList.remove('motion-profile-panel-enter')") && source.includes("panel.classList.add('motion-profile-panel-enter')") && source.includes('#cz-panel > .cz-panel.motion-profile-panel-enter > .cz-section')],
     ['Stage 13 animates selected avatar and colour-theme choices with a check reveal', source.includes('#cz-panel .emoji-pick.is-on') && source.includes('#cz-panel .theme-tile[aria-pressed="true"]') && source.includes('motion-profile-choice-pop') && source.includes('motion-profile-check-reveal')],
     ['Stage 13 profile customisation motion respects reduced-motion settings', source.includes('#cz-panel .theme-tile[aria-pressed="true"] .tt-check') && source.includes('animation: none !important;')],
+    ['Stage 14 toast messages have responsive entrance and exit transitions', source.includes('Stage 14 — Toast entrance and exit motion') && source.includes('--motion-toast-enter-duration: 195ms') && source.includes('--motion-toast-exit-duration: 165ms') && source.includes('.toast.is-out') && source.includes("item.classList.add('is-out')")],
+    ['Stage 14 toast transitions respect reduced-motion settings', source.includes('.toast.is-in') && source.includes('.toast.is-out') && source.includes('transition: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -836,7 +838,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -864,6 +866,33 @@ async function main() {
             && getComputedStyle(hero.querySelector('.hero-art')).animationName === 'motion-home-art-enter'
             && getComputedStyle(hero.querySelector('.hero-copy h1')).animationName === 'motion-home-copy-enter';
         });
+        stage = 'toast entrance and exit';
+        await homePage.evaluate(() => {
+          if (typeof window.App?.toast !== 'function') throw new Error('App.toast is not available.');
+          window.App.toast('Responsive motion audit notice', 'good');
+        });
+        await homePage.waitForSelector('.toasts .toast.is-in', { timeout: 3000 });
+        await homePage.waitForTimeout(70);
+        check.toastEnter = await homePage.evaluate(() => {
+          const item = document.querySelector('.toasts .toast.is-in');
+          if (!item) return false;
+          const style = getComputedStyle(item);
+          const properties = style.transitionProperty.split(',').map(value => value.trim());
+          const duration = Number.parseFloat(style.transitionDuration) || 0;
+          const opacity = Number(style.opacity);
+          return properties.includes('opacity') && properties.includes('transform')
+            && duration >= .15 && duration <= .24 && opacity > 0 && opacity < 1;
+        });
+        await homePage.waitForSelector('.toasts .toast.is-out', { timeout: 5000 });
+        await homePage.waitForTimeout(70);
+        check.toastExit = await homePage.evaluate(() => {
+          const item = document.querySelector('.toasts .toast.is-out');
+          if (!item) return false;
+          const style = getComputedStyle(item);
+          const duration = Number.parseFloat(style.transitionDuration) || 0;
+          return Number(style.opacity) < .98 && duration >= .15 && duration <= .21;
+        });
+        await homePage.waitForFunction(() => !document.querySelector('.toasts .toast'), null, { timeout: 1000 });
         check.mobileHeaderPinned = !viewport.mobile || await homePage.evaluate(async () => {
           window.scrollTo(0, 620);
           await new Promise(resolve => setTimeout(resolve, 120));

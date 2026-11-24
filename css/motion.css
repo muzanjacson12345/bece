@@ -1713,3 +1713,48 @@ button:disabled,
     animation: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 14 — Toast entrance and exit motion
+   Keep feedback readable, brief and predictable on both touch and pointer devices.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-toast-enter-duration: 215ms;
+  --motion-toast-exit-duration: 185ms;
+}
+@media (max-width: 760px) {
+  :root {
+    --motion-toast-enter-duration: 195ms;
+    --motion-toast-exit-duration: 165ms;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-toast-enter-duration: 220ms;
+    --motion-toast-exit-duration: 190ms;
+  }
+}
+
+/* Enter with the existing toast design, then leave with a shorter fade. */
+.toast {
+  transition-property: opacity, transform;
+  transition-duration: var(--motion-toast-enter-duration);
+  transition-timing-function: var(--motion-ease-enter);
+}
+.toast.is-out {
+  opacity: 0;
+  transform: translate3d(0, 5px, 0) scale(.99);
+  transition-duration: var(--motion-toast-exit-duration);
+  transition-timing-function: var(--motion-ease-exit);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast.is-in,
+  .toast.is-out {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

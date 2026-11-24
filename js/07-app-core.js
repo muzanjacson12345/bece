@@ -713,7 +713,11 @@ function toast(message, tone = 'info') {
   const item = el('div', `toast toast-${tone}`, message);
   $('toasts').append(item);
   requestAnimationFrame(() => item.classList.add('is-in'));
-  setTimeout(() => { item.classList.remove('is-in'); setTimeout(() => item.remove(), 300); }, 3200);
+  setTimeout(() => {
+    item.classList.remove('is-in');
+    item.classList.add('is-out');
+    setTimeout(() => item.remove(), 260);
+  }, 3200);
 }
 function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
   const dialog = $('confirm-dialog');
