@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-no-replay-on-live-list-refresh-2026-11-24-r44';
+const EXPECTED_BUILD = 'bece-calm-duel-answer-feedback-2026-11-24-r45';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -289,6 +289,8 @@ async function main() {
     ['Stage 27 appearance mode feedback has responsive timing and reduced-motion support', source.includes('Stage 27 — Appearance mode selection feedback') && source.includes('--motion-profile-mode-duration: 190ms') && source.includes('.mode-seg button.motion-profile-mode-selected') && source.includes('animation: none !important;')],
     ['Stage 28 live-rendered achievement, daily, shop, Friends and Duel lists do not replay entrance animations', !/\.achievement-group\s*\{\s*animation:\s*motion-reward-rise/.test(source) && !/\.challenge-item,\s*\.daily-gem-rewards,\s*\.daily-challenge-bonus\s*\{\s*animation:\s*motion-reward-rise/.test(source) && !/\.board-list\s*>\s*li:nth-child\(-n\+5\)/.test(source) && !/\.duel-pane:not\(\[hidden\]\)\s*\{\s*animation:\s*motion-reward-rise/.test(source)],
     ['Stage 28 event-specific achievement and challenge feedback remains intact', source.includes('.achievement-item.is-newly-earned .achievement-icon') && source.includes('.challenge-item.is-just-completed .challenge-icon') && source.includes('Stage 28 — Prevent motion replay on live-rendered lists')],
+    ['Stage 29 Duel correct and wrong answers use a short, consistent feedback animation', source.includes('Stage 29 — Calm Duel answer feedback') && source.includes('.duel-opts > .option.is-correct') && source.includes('.duel-opts > .option.is-wrong') && source.includes('animation: motion-answer-feedback var(--motion-duel-answer-duration)')],
+    ['Stage 29 Duel answer feedback is responsive and respects reduced motion', source.includes('--motion-duel-answer-duration: 225ms') && source.includes('--motion-duel-answer-duration: 255ms') && source.includes('.duel-opts > .option.is-wrong') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -867,7 +869,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1272,6 +1274,26 @@ async function main() {
         check.repeatEntrySuppressed = liveListMotion.list.every(name => name === 'none');
         check.targetedRewardMotionPreserved = liveListMotion.earned === 'motion-reward-pop'
           && liveListMotion.completed === 'motion-challenge-complete-pop';
+        const duelAnswerMotion = await homePage.evaluate(() => {
+          const make = state => {
+            const button = document.createElement('button');
+            button.className = 'option is-' + state;
+            const group = document.createElement('div');
+            group.className = 'duel-opts';
+            group.append(button);
+            document.body.append(group);
+            const style = getComputedStyle(button);
+            return {
+              name: style.animationName,
+              duration: Number.parseFloat(style.animationDuration) || 0,
+            };
+          };
+          return { correct: make('correct'), wrong: make('wrong') };
+        });
+        check.duelAnswerFeedback = duelAnswerMotion.correct.name === 'motion-answer-feedback'
+          && duelAnswerMotion.wrong.name === 'motion-answer-feedback'
+          && duelAnswerMotion.correct.duration >= .21 && duelAnswerMotion.correct.duration <= .27
+          && duelAnswerMotion.wrong.duration >= .21 && duelAnswerMotion.wrong.duration <= .27;
         await homePage.emulateMedia({ reducedMotion: 'reduce' });
         check.challengeCompletionReducedMotion = await homePage.evaluate(() => {
           const item = document.querySelector('#motion-challenge-complete-test');
@@ -1303,6 +1325,12 @@ async function main() {
             document.querySelector('.duel-subject-picks > button.motion-duel-option-selected')
           ];
           return buttons.every(button => button && getComputedStyle(button).animationName === 'none');
+        });
+        check.duelAnswerReducedMotion = await homePage.evaluate(() => {
+          const buttons = [
+            ...document.querySelectorAll('.duel-opts > .option.is-correct, .duel-opts > .option.is-wrong')
+          ];
+          return buttons.length === 2 && buttons.every(button => getComputedStyle(button).animationName === 'none');
         });
         check.duelResultReducedMotion = await homePage.evaluate(() => {
           const title = document.querySelector('.duel-result-heading.motion-duel-result-title-enter');

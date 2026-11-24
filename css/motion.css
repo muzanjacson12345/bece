@@ -2152,3 +2152,31 @@ button:disabled,
    Stage 28 — Prevent motion replay on live-rendered lists
    Data refreshes should update content quietly; only a deliberate action moves.
    -------------------------------------------------------------------------- */
+
+
+/* --------------------------------------------------------------------------
+   Stage 29 — Calm Duel answer feedback
+   Keep answer status clear without the old long shake/glow movement.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-duel-answer-duration: 245ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-duel-answer-duration: 225ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-duel-answer-duration: 255ms; }
+}
+
+.duel-opts > .option.is-correct,
+.duel-opts > .option.is-wrong {
+  animation: motion-answer-feedback var(--motion-duel-answer-duration) var(--motion-ease-standard) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duel-opts > .option.is-correct,
+  .duel-opts > .option.is-wrong {
+    animation: none !important;
+    transform: none !important;
+  }
+}
