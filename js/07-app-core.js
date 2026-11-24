@@ -2064,7 +2064,13 @@ const Notes = {
 };
 document.querySelectorAll('[data-notes-sub]').forEach(b => b.addEventListener('click', () => { Notes.sub = b.dataset.notesSub; Notes.activeId = null; Notes.refresh(); }));
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => { Notes.level = b.dataset.level; Notes.refresh(); }));
-document.querySelectorAll('[data-font]').forEach(b => b.addEventListener('click', () => { Notes.font = b.dataset.font; store.set('bece_font', Notes.font); Notes.applyFont(); }));
+document.querySelectorAll('[data-font]').forEach(b => b.addEventListener('click', () => {
+  const changed = Notes.font !== b.dataset.font;
+  Notes.font = b.dataset.font;
+  store.set('bece_font', Notes.font);
+  Notes.applyFont();
+  if (changed) replayMotion(b, 'motion-note-font-selected');
+}));
 let searchTimer;
 $('note-search').addEventListener('input', event => {
   clearTimeout(searchTimer);

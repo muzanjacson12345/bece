@@ -2219,3 +2219,36 @@ button:disabled,
    Stage 31 — Animate Notes content only on a new topic
    Search, level filters and background refreshes leave the reading panel still.
    -------------------------------------------------------------------------- */
+
+
+/* --------------------------------------------------------------------------
+   Stage 32 — Notes text-size selection feedback
+   Give a small cue to the chosen A−/A/A+ control without moving the reading text.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-note-font-duration: 195ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-note-font-duration: 175ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-note-font-duration: 205ms; }
+}
+
+@keyframes motion-note-font-selected {
+  0% { transform: scale(.94); }
+  68% { transform: scale(1.055); }
+  100% { transform: scale(1); }
+}
+
+[data-font].motion-note-font-selected {
+  transform-origin: center;
+  animation: motion-note-font-selected var(--motion-note-font-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-font].motion-note-font-selected {
+    animation: none !important;
+    transform: none !important;
+  }
+}
