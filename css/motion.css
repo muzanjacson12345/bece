@@ -2965,3 +2965,31 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 53 — Notes outline destination focus
+   Highlight only the section reached from the reading outline.
+   -------------------------------------------------------------------------- */
+:root { --motion-note-section-focus-duration: 295ms; }
+@media (max-width: 760px) {
+  :root { --motion-note-section-focus-duration: 270ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-note-section-focus-duration: 305ms; }
+}
+@keyframes motion-note-section-focus {
+  0% { background-color: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+  100% { background-color: transparent; box-shadow: inset 0 0 0 transparent; }
+}
+.note-section.motion-note-section-focus {
+  animation: motion-note-section-focus var(--motion-note-section-focus-duration) var(--motion-ease-enter) both;
+  border-radius: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-section.motion-note-section-focus {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+  }
+}

@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-quiz-review-filter-feedback-2026-11-24-r67';
+const EXPECTED_BUILD = 'bece-notes-outline-focus-feedback-2026-11-24-r68';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -340,6 +340,8 @@ async function main() {
     ['Stage 51 review explanation reveal has responsive timing and reduced-motion support', source.includes('Stage 51 — Quiz answer-review explanation reveal') && source.includes('--motion-review-explanation-duration: 195ms') && source.includes('--motion-review-explanation-duration: 225ms') && source.includes('animation: none !important;')],
     ['Stage 52 changes quiz review filters only on a new selection and animates the chosen button', source.includes('const nextFilter = b.dataset.review;') && source.includes('if (Quiz.reviewFilter === nextFilter) return;') && source.includes("replayMotion(b, 'motion-review-filter-selected')")],
     ['Stage 52 review filter feedback has phone/desktop timing and reduced-motion support', source.includes('Stage 52 — Quiz review filter selection feedback') && source.includes('--motion-review-filter-duration: 185ms') && source.includes('--motion-review-filter-duration: 215ms') && source.includes('#screen-quiz [data-review].motion-review-filter-selected') && source.includes('animation: none !important;')],
+    ['Stage 53 Notes outline links target and animate only their matching section', source.includes('const sectionNode = renderNoteSection(section, index)') && source.includes("replayMotion(destination, 'motion-note-section-focus')") && source.includes('reading-section-')],
+    ['Stage 53 Notes outline focus has responsive timing and reduced-motion support', source.includes('Stage 53 — Notes outline destination focus') && source.includes('--motion-note-section-focus-duration: 270ms') && source.includes('--motion-note-section-focus-duration: 305ms') && source.includes('.note-section.motion-note-section-focus') && source.includes('animation: none !important;')],
     ['Stage 43 Duel result lifecycle animation runs once per duel, not on every snapshot refresh', source.includes("let lastLobbyCode = '', lastResultCode = '';") && source.includes('const isNewResult = D.code !== lastResultCode;') && source.includes("if (isNewResult) {") && source.includes("lastResultCode = ''")],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
@@ -957,7 +959,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, duelLifecycleFeedback: false, flashConfidenceFeedback: false, achievementProgressFeedback: false, dailyStreakMilestoneFeedback: false, quizSessionEntryFeedback: false, topicCompletionFeedback: false, resultsTopicBreakdownFeedback: false, dailyChallengeProgressFeedback: false, reviewExplanationFeedback: false, reviewFilterFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, duelLifecycleFeedback: false, flashConfidenceFeedback: false, achievementProgressFeedback: false, dailyStreakMilestoneFeedback: false, quizSessionEntryFeedback: false, topicCompletionFeedback: false, resultsTopicBreakdownFeedback: false, dailyChallengeProgressFeedback: false, reviewExplanationFeedback: false, reviewFilterFeedback: false, notesOutlineFocusFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1346,6 +1348,20 @@ async function main() {
           return !!button && getComputedStyle(button).animationName === 'motion-review-filter-selected';
         });
         await motionPage.evaluate(() => document.querySelector('#motion-stage-52-test')?.remove());
+
+        stage = 'Notes outline destination focus feedback';
+        await motionPage.evaluate(() => {
+          const section = document.createElement('section');
+          section.className = 'note-section motion-note-section-focus';
+          section.id = 'motion-stage-53-test';
+          document.body.append(section);
+        });
+        await motionPage.waitForTimeout(45);
+        check.notesOutlineFocusFeedback = await motionPage.evaluate(() => {
+          const section = document.querySelector('#motion-stage-53-test');
+          return !!section && getComputedStyle(section).animationName === 'motion-note-section-focus';
+        });
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-53-test')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();

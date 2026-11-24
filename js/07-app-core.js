@@ -2059,9 +2059,14 @@ const Notes = {
     takeaway.append(el('p', 'label', 'The big idea'), el('p', '', noteTakeaways[note.id] || note.summary));
     body.append(takeaway);
     note.sections.forEach((section, index) => {
-      body.append(renderNoteSection(section, index));
+      const sectionNode = renderNoteSection(section, index);
+      body.append(sectionNode);
       const link = el('a', '', section.title.replace(/^\d+\.\s*/, '').replace(/\*\*/g, ''));
       link.href = `#reading-section-${index}`;
+      link.addEventListener('click', () => {
+        const destination = document.getElementById(`reading-section-${index}`);
+        if (destination) replayMotion(destination, 'motion-note-section-focus');
+      });
       outline.append(link);
     });
     $('note-outline').open = window.innerWidth >= 760;
