@@ -2085,6 +2085,10 @@ const Notes = {
     this.renderStudied(this.activeId);
     this.renderSidebar(this.list());
     replayMotion($('note-studied'), 'motion-note-study-toggle');
+    if (!wasStudied) {
+      const completionMark = $('notes-sidebar')?.querySelector('.topic-item[aria-current="true"] .topic-done');
+      if (completionMark) replayMotion(completionMark, 'motion-topic-completion');
+    }
   },
   step(delta) {
     const list = this.list();

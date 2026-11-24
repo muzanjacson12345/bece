@@ -2821,3 +2821,32 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 48 — Notes topic completion progress feedback
+   Highlight the new studied marker after a topic is marked complete.
+   -------------------------------------------------------------------------- */
+:root { --motion-topic-completion-duration: 250ms; }
+@media (max-width: 760px) {
+  :root { --motion-topic-completion-duration: 225ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-topic-completion-duration: 260ms; }
+}
+@keyframes motion-topic-completion {
+  0% { opacity: .5; transform: scale(.62); }
+  68% { opacity: 1; transform: scale(1.18); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.topic-done.motion-topic-completion {
+  transform-origin: center;
+  animation: motion-topic-completion var(--motion-topic-completion-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .topic-done.motion-topic-completion {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

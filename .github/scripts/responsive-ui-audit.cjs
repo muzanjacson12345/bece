@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-quiz-session-entry-feedback-2026-11-24-r62';
+const EXPECTED_BUILD = 'bece-notes-topic-completion-feedback-2026-11-24-r63';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -330,6 +330,8 @@ async function main() {
     ['Stage 46 streak milestone has responsive timing and reduced-motion support', source.includes('Stage 46 — Seven-day daily Gem streak milestone') && source.includes('--motion-daily-streak-milestone-duration: 640ms') && source.includes('--motion-daily-streak-milestone-duration: 740ms') && source.includes('.daily-gem-day.is-streak-milestone') && source.includes('animation: none !important;')],
     ['Stage 47 quiz session entrance runs only when a valid Quiz.start begins', source.includes("replayMotion($('quiz-bar'), 'motion-quiz-session-bar-enter')") && source.includes("replayMotion($('quiz-stage'), 'motion-quiz-session-enter')") && source.includes("if (!opts.pool || !opts.pool.length)")],
     ['Stage 47 quiz session entrance has phone/desktop timing and reduced-motion support', source.includes('Stage 47 — Quiz session preparation transition') && source.includes('--motion-quiz-session-duration: 265ms') && source.includes('--motion-quiz-session-duration: 305ms') && source.includes('.quiz-bar.motion-quiz-session-bar-enter') && source.includes('animation: none !important;')],
+    ['Stage 48 marks a Notes topic as complete only when it becomes studied', source.includes("if (!wasStudied)") && source.includes("querySelector('.topic-item[aria-current=\"true\"] .topic-done')") && source.includes("replayMotion(completionMark, 'motion-topic-completion')")],
+    ['Stage 48 Notes completion marker has responsive timing and reduced-motion support', source.includes('Stage 48 — Notes topic completion progress feedback') && source.includes('--motion-topic-completion-duration: 225ms') && source.includes('--motion-topic-completion-duration: 260ms') && source.includes('.topic-done.motion-topic-completion') && source.includes('animation: none !important;')],
     ['Stage 43 Duel result lifecycle animation runs once per duel, not on every snapshot refresh', source.includes("let lastLobbyCode = '', lastResultCode = '';") && source.includes('const isNewResult = D.code !== lastResultCode;') && source.includes("if (isNewResult) {") && source.includes("lastResultCode = ''")],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
@@ -947,7 +949,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, duelLifecycleFeedback: false, flashConfidenceFeedback: false, achievementProgressFeedback: false, dailyStreakMilestoneFeedback: false, quizSessionEntryFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, duelLifecycleFeedback: false, flashConfidenceFeedback: false, achievementProgressFeedback: false, dailyStreakMilestoneFeedback: false, quizSessionEntryFeedback: false, topicCompletionFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1246,6 +1248,20 @@ async function main() {
           document.querySelector('#motion-stage-47-header')?.remove();
           document.querySelector('#motion-stage-47-stage')?.remove();
         });
+
+        stage = 'Notes topic completion feedback';
+        await motionPage.evaluate(() => {
+          const mark = document.createElement('span');
+          mark.className = 'topic-done motion-topic-completion';
+          mark.id = 'motion-stage-48-test';
+          document.body.append(mark);
+        });
+        await motionPage.waitForTimeout(45);
+        check.topicCompletionFeedback = await motionPage.evaluate(() => {
+          const mark = document.querySelector('#motion-stage-48-test');
+          return !!mark && getComputedStyle(mark).animationName === 'motion-topic-completion';
+        });
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-48-test')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();
