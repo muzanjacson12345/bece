@@ -3055,3 +3055,32 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 56 — Duel invite share confirmation
+   Confirm the share button only after a completed share or clipboard write.
+   -------------------------------------------------------------------------- */
+:root { --motion-duel-invite-shared-duration: 225ms; }
+@media (max-width: 760px) {
+  :root { --motion-duel-invite-shared-duration: 205ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-duel-invite-shared-duration: 235ms; }
+}
+@keyframes motion-duel-invite-shared {
+  0% { transform: scale(.96); box-shadow: 0 0 0 0 var(--accent-soft); }
+  66% { transform: scale(1.035); box-shadow: 0 0 0 4px var(--accent-soft); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+}
+.duel-modal .btn.motion-duel-invite-shared {
+  animation: motion-duel-invite-shared var(--motion-duel-invite-shared-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .duel-modal .btn.motion-duel-invite-shared {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}

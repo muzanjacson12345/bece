@@ -2088,14 +2088,30 @@ const Duel = (() => {
   function lobby() {
     const isNewLobby = D.code !== lastLobbyCode;
     if (isNewLobby) lastLobbyCode = D.code;
-    const share = () => {
+    let shareButton = null;
+    const share = async () => {
       const text = `Duel me on BECE Hub! Open the Friends tab and join with code ${D.code}`;
-      if (navigator.share) navigator.share({ text }).catch(() => {});
-      else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => App.toast('Invite copied.')).catch(() => {});
+      try {
+        if (navigator.share) {
+          await navigator.share({ text });
+          App.toast('Invite shared.', 'good');
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          App.toast('Invite copied.', 'good');
+        } else {
+          App.toast('Sharing is not available in this browser.', 'warn');
+          return;
+        }
+        if (shareButton && shareButton.isConnected) replayMotion(shareButton, 'motion-duel-invite-shared');
+      } catch (error) {
+        if (error && error.name === 'AbortError') return;
+        App.toast('Could not share the invite. Please try again.', 'warn');
+      }
     };
-    put(o('h2', 'pulse-text', 'Waiting for an opponent\u2026'), cfgChips(D.doc),
+    shareButton = btn('Share invite', 'btn-primary btn-sm', share);
+    put(o('h2', 'pulse-text', 'Waiting for an opponent…'), cfgChips(D.doc),
       o('p', 'muted', D.doc.vis === 'private' ? 'Private: only people with this code can join.' : 'Public: it also shows under Open challenges for everyone on the Friends tab.'),
-      o('div', 'duel-code', D.code), row(btn('Share invite', 'btn-primary btn-sm', share), btn('Cancel', 'btn-ghost btn-sm', () => close())));
+      o('div', 'duel-code', D.code), row(shareButton, btn('Cancel', 'btn-ghost btn-sm', () => close())));
     if (isNewLobby) replayMotion(box && box.querySelector('.duel-code'), 'motion-duel-lobby-code-enter');
   }
   function countdown() {
