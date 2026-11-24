@@ -100,7 +100,7 @@ async function main() {
     ['Avatar picker tracks saved keys instead of SVG text', 'b.dataset.avatar === cur'],
     ['Lesson and note content preserves native emoji glyphs', 'node.appendChild(document.createTextNode(text)); return;'],
     ['Lesson and note classes bypass automatic icon substitution', 'note-|essay-|lesson-|lab-'],
-    ['Coin celebration particles retain their currency emoji', "const glyph = kind === 'gems' ? '💎' : '💰';"],
+    ['Reward tokens use shared SVG icons while balance labels retain their currency symbols', source.includes("App.icon(kind === 'gems' ? 'gem' : 'coin'") && source.includes("kind === 'gems' ? '💎 ' : '💰 '")],
     ['Gem Shop retry labels render Gems through the shared SVG helper', "setIconAwareText(button, 'Buy 💎 ' + it.price)"],
     ['Semantic icons use coordinated subject colour families', '.ui-icon--science{color:#368D9D}']
   ];
@@ -263,7 +263,7 @@ async function main() {
     ['Self-service progress reset updates instead of attempting forbidden self-delete', source.includes("const resetRef = S.db.doc('players/' + S.uid);") && source.includes('await resetRef.set(resetProfile);') && !source.includes("await S.db.doc('players/' + S.uid).delete();")],
     ['Profile reset preserves trusted Gem balance and ownership history', source.includes("['gems', 'gemOps', 'gemCosmetics'].forEach(key =>") && source.includes('Your Gem balance and earned Gem cosmetics are kept.')],
     ['Admin progress reset preserves protected Gem fields', source.includes("'gemCosmetics', 'equippedGemCosmetic']")],
-    ['Currency reward flights use one lightweight curved token with a fast mobile profile', source.includes('const samples = [0, .16, .34, .52, .72, .88, 1]') && source.includes('token.animate(keyframes') && source.includes("App.icon(kind === 'gems' ? 'gem' : 'coin'") && source.includes('Math.min(mobile ? 640 : 760')],
+    ['Currency reward flights use one lightweight curved token with slower phone and desktop timing', source.includes('const samples = [0, .125, .25, .375, .5, .625, .75, .875, 1]') && source.includes('token.animate(keyframes') && source.includes("App.icon(kind === 'gems' ? 'gem' : 'coin'") && source.includes('Math.max(1450, Math.min(1900, Number(duration) || 1600)')],
     ['Achievement Gem claims have a visible local balance destination', source.includes('achievement-gem-balance-value') && source.includes('Your Gems') && source.includes("action === 'achievement'") && source.includes('achievementBalance')],
     ['Achievement Gem particles begin at the reward chip', source.includes("captureRewardRect(rewardRow.querySelector('.achievement-gem-reward'))")],
     ['Currency counters use a shorter amount-based count-up', source.includes('function rewardCurrencyDuration(from, to)') && source.includes('const countDuration = rewardCurrencyDuration(from, to)') && source.includes('return Math.min(1900')],
