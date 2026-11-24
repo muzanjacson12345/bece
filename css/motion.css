@@ -2070,3 +2070,40 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 22 — Duel setup selection feedback
+   Animate only a changed tab or setup choice, not the full duel card.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-duel-choice-duration: 215ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-duel-choice-duration: 190ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-duel-choice-duration: 225ms; }
+}
+
+@keyframes motion-duel-choice-pop {
+  0% { transform: scale(.94); }
+  68% { transform: scale(1.045); }
+  100% { transform: scale(1); }
+}
+
+.duel-modes button.motion-duel-mode-selected,
+.duel-seg button.motion-duel-option-selected,
+.duel-subject-picks > button.motion-duel-option-selected {
+  transform-origin: center;
+  animation: motion-duel-choice-pop var(--motion-duel-choice-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duel-modes button.motion-duel-mode-selected,
+  .duel-seg button.motion-duel-option-selected,
+  .duel-subject-picks > button.motion-duel-option-selected {
+    animation: none !important;
+    transform: none !important;
+  }
+}

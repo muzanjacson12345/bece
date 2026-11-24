@@ -2205,7 +2205,18 @@ const Duel = (() => {
   function seg(label, vals, key, fmt, after) {
     const w = o('div', 'duel-field'), r = o('div', 'duel-seg'); w.append(o('span', 'duel-lbl', label), r);
     const sync = () => r.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(D.cfg[key]))));
-    vals.forEach(v => { const b = o('button', '', fmt(v)); b.type = 'button'; b.dataset.v = v; b.onclick = () => { D.cfg[key] = v; sync(); if (after) after(); }; r.append(b); });
+    vals.forEach(v => {
+      const b = o('button', '', fmt(v));
+      b.type = 'button'; b.dataset.v = v;
+      b.onclick = () => {
+        const changed = String(D.cfg[key]) !== String(v);
+        D.cfg[key] = v;
+        sync();
+        if (changed) replayMotion(b, 'motion-duel-option-selected');
+        if (after) after();
+      };
+      r.append(b);
+    });
     sync(); return w;
   }
   function card() {
@@ -2239,10 +2250,12 @@ const Duel = (() => {
       b.title = b.getAttribute('aria-label');
       b.textContent = n === 'multiple' ? 'Multi' : String(n);
       b.onclick = () => {
+        const changed = String(D.cfg.subjectCount) !== String(n);
         D.cfg.subjectCount = n;
         const max = n === 'multiple' ? subjectKeys.length : Number(n);
         if (D.cfg.subjects.length > max) D.cfg.subjects = D.cfg.subjects.slice(0,max);
         syncSubjects();
+        if (changed) replayMotion(b, 'motion-duel-option-selected');
       };
       countBox.append(b);
     });
@@ -2253,9 +2266,11 @@ const Duel = (() => {
       b.onclick = () => {
         const at = D.cfg.subjects.indexOf(k);
         const max = D.cfg.subjectCount === 'multiple' ? subjectKeys.length : Number(D.cfg.subjectCount);
+        const changed = at >= 0 || D.cfg.subjects.length < max;
         if (at >= 0) D.cfg.subjects.splice(at,1);
         else if (D.cfg.subjects.length < max) D.cfg.subjects.push(k);
         syncSubjects();
+        if (changed) replayMotion(b, 'motion-duel-option-selected');
       };
       subjectBox.append(b);
     });
@@ -2270,7 +2285,18 @@ const Duel = (() => {
     D.list = o('ul', 'duel-open');
     D.tiles = ['Wins', 'Losses', 'Draws'].map(l => { const t = o('div', 'duel-tile'), n = o('strong', '', '0'); t.append(n, o('span', '', l)); t.n = n; return t; });
     const tiles = o('div', 'duel-tiles'); tiles.append(...D.tiles);
-    const mk = (k, t) => { const b = o('button', '', t); b.type = 'button'; b.onclick = () => { D.picked = true; D.mode = k; mode(); }; return b; };
+    const mk = (k, t) => {
+      const b = o('button', '', t);
+      b.type = 'button';
+      b.onclick = () => {
+        const changed = D.mode !== k;
+        D.picked = true;
+        D.mode = k;
+        mode();
+        if (changed) replayMotion(b, 'motion-duel-mode-selected');
+      };
+      return b;
+    };
     D.mb = { open: mk('open', 'Open'), create: mk('create', 'Create'), join: mk('join', 'Join code') };
     const modes = o('div', 'duel-modes'); modes.append(D.mb.open, D.mb.create, D.mb.join);
     D.pOpen = o('div', 'duel-pane'); D.pOpen.append(D.list);
