@@ -28,6 +28,7 @@ const REWARD_FLIGHT_LAYER_ID = 'bece-reward-flight-layer';
 let dailyGemClaimFeedback = false;
 let dailyCoinClaimFeedback = false;
 let achievementGemClaimFeedbackId = '';
+let dailyChallengeCompletionFeedback = new Set();
 
 function captureRewardRect(element) {
   if (!element || typeof element.getBoundingClientRect !== 'function') return null;
@@ -702,7 +703,8 @@ function renderDaily() {
   const list = o('div', 'challenge-list');
   tasks.forEach(t => {
     const complete = claimed.includes(t.id), current = Number(progressData[t.metric] || 0), progress = Math.min(t.target, current);
-    const card = o('article', 'challenge-item' + (complete ? ' is-complete' : ''));
+    const justCompleted = complete && dailyChallengeCompletionFeedback.has(t.id);
+    const card = o('article', 'challenge-item' + (complete ? ' is-complete' : '') + (justCompleted ? ' is-just-completed' : ''));
     const top = o('div', 'challenge-top'), name = o('div', 'challenge-name'), copy = o('div');
     name.append(o('span', 'challenge-icon', t.icon)); copy.append(o('strong', '', t.title), o('small', '', t.detail)); name.append(copy);
     top.append(name, o('span', 'challenge-reward', complete ? '✓ EXP earned' : '+' + t.reward + ' EXP'));
@@ -908,7 +910,16 @@ App.on('quiz:finished', async ev => {
       transaction.set(playerRef, { ...next, ...preserveGemFields });
     });
     S.doc = { ...next, ...preserveGemFields };
-    renderAccount(); renderDaily(); renderAchievements();
+    renderAccount();
+    dailyChallengeCompletionFeedback = new Set(
+      challengeState.claimed.filter(id => !previous.claimed.includes(id))
+    );
+    try {
+      renderDaily();
+    } finally {
+      dailyChallengeCompletionFeedback.clear();
+    }
+    renderAchievements();
     showResult({ coins: coinsEarned, coinParts: scaledCoinParts, balance: (next.coins || 0), previousCoins: Number(d.coins) || 0, earned: awardedEarned, bonusExp: awardedBonusExp, correct: ev.correct, already, parts: scaledParts, total: next.totalExp, previousTotal: Number(d.totalExp) || 0, streak, extended, usedFreeze, xpMult, expRate, coinRate });
   } catch (err) { box.replaceChildren(o('p', 'exp-status', 'Couldn\u2019t save your EXP. ' + (err && err.message || ''))); }
 });

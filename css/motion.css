@@ -1947,3 +1947,42 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 18 — Daily challenge completion feedback
+   Celebrate only newly completed missions, once, after their progress is saved.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-challenge-complete-duration: 305ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-challenge-complete-duration: 270ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-challenge-complete-duration: 310ms; }
+}
+
+@keyframes motion-challenge-complete-pop {
+  0% { opacity: .72; transform: scale(.9); }
+  68% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.challenge-item.is-just-completed .challenge-icon,
+.challenge-item.is-just-completed .challenge-reward {
+  display: inline-block;
+  transform-origin: center;
+  animation: motion-challenge-complete-pop var(--motion-challenge-complete-duration) var(--motion-ease-enter) both;
+}
+.challenge-item.is-just-completed .challenge-reward {
+  animation-delay: 35ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .challenge-item.is-just-completed .challenge-icon,
+  .challenge-item.is-just-completed .challenge-reward {
+    animation: none !important;
+    transform: none !important;
+  }
+}
