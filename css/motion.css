@@ -2908,3 +2908,31 @@ button:disabled,
     filter: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 51 — Quiz answer-review explanation reveal
+   Reveal the explanation when a learner opens a review item, without replaying
+   the larger results panel or changing the answer content.
+   -------------------------------------------------------------------------- */
+:root { --motion-review-explanation-duration: 215ms; }
+@media (max-width: 760px) {
+  :root { --motion-review-explanation-duration: 195ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-review-explanation-duration: 225ms; }
+}
+@keyframes motion-review-explanation-enter {
+  0% { opacity: .35; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+#res-review .review-item[open] > .review-body {
+  animation: motion-review-explanation-enter var(--motion-review-explanation-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #res-review .review-item[open] > .review-body {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
