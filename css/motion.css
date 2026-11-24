@@ -2252,3 +2252,36 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 33 — Notes subject selection feedback
+   Give a short cue to the chosen subject without animating the whole toolbar.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-note-subject-duration: 205ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-note-subject-duration: 185ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-note-subject-duration: 215ms; }
+}
+
+@keyframes motion-note-subject-selected {
+  0% { transform: scale(.96); }
+  68% { transform: scale(1.045); }
+  100% { transform: scale(1); }
+}
+
+.toolbar [data-notes-sub].motion-note-subject-selected {
+  transform-origin: center;
+  animation: motion-note-subject-selected var(--motion-note-subject-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toolbar [data-notes-sub].motion-note-subject-selected {
+    animation: none !important;
+    transform: none !important;
+  }
+}

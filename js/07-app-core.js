@@ -2062,7 +2062,14 @@ const Notes = {
     document.querySelectorAll('[data-font]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.font === this.font)));
   },
 };
-document.querySelectorAll('[data-notes-sub]').forEach(b => b.addEventListener('click', () => { Notes.sub = b.dataset.notesSub; Notes.activeId = null; Notes.refresh(); }));
+document.querySelectorAll('[data-notes-sub]').forEach(b => b.addEventListener('click', () => {
+  const changed = Notes.sub !== b.dataset.notesSub;
+  if (!changed) return;
+  Notes.sub = b.dataset.notesSub;
+  Notes.activeId = null;
+  Notes.refresh({ animateTopicEntrance: true });
+  replayMotion(b, 'motion-note-subject-selected');
+}));
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => { Notes.level = b.dataset.level; Notes.refresh(); }));
 document.querySelectorAll('[data-font]').forEach(b => b.addEventListener('click', () => {
   const changed = Notes.font !== b.dataset.font;
