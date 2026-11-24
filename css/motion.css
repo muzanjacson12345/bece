@@ -1758,3 +1758,95 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 15 — Custom overlay entrance and exit motion
+   Make dismissals feel deliberate while preserving each overlay's existing UI.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-overlay-enter-duration: 220ms;
+  --motion-overlay-exit-duration: 185ms;
+}
+@media (max-width: 760px) {
+  :root {
+    --motion-overlay-enter-duration: 200ms;
+    --motion-overlay-exit-duration: 165ms;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-overlay-enter-duration: 225ms;
+    --motion-overlay-exit-duration: 190ms;
+  }
+}
+
+@keyframes motion-overlay-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes motion-overlay-card-enter {
+  from { opacity: 0; transform: translate3d(0, 9px, 0) scale(.985); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* The friend details and photo cropper now join the same overlay rhythm. */
+.friend-modal:not(.duel-modal),
+.crop-ov {
+  animation: motion-overlay-backdrop-enter var(--motion-overlay-enter-duration) var(--motion-ease-enter) both;
+}
+.friend-modal:not(.duel-modal) > .friend-box {
+  animation: motion-overlay-card-enter calc(var(--motion-overlay-enter-duration) + 25ms) var(--motion-ease-enter) both;
+}
+
+/* Transitions apply only while a real close action is taking place. */
+.pin-ov,
+.friend-modal,
+.crop-ov {
+  transition-property: opacity, transform;
+  transition-duration: var(--motion-overlay-exit-duration);
+  transition-timing-function: var(--motion-ease-exit);
+}
+.pin-ov > .pin-card,
+.friend-modal > :is(.friend-box, .duel-box),
+.crop-ov > .crop-card {
+  transition-property: opacity, transform;
+  transition-duration: var(--motion-overlay-exit-duration);
+  transition-timing-function: var(--motion-ease-exit);
+}
+
+.pin-ov.motion-overlay-closing,
+.friend-modal.motion-overlay-closing,
+.crop-ov.motion-overlay-closing {
+  opacity: 0;
+  transform: translate3d(0, 5px, 0) scale(.995);
+  pointer-events: none;
+  animation: none !important;
+}
+.pin-ov.motion-overlay-closing > .pin-card,
+.friend-modal.motion-overlay-closing > :is(.friend-box, .duel-box),
+.crop-ov.motion-overlay-closing > .crop-card {
+  opacity: 0;
+  transform: translate3d(0, 7px, 0) scale(.99);
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .friend-modal:not(.duel-modal),
+  .friend-modal:not(.duel-modal) > .friend-box,
+  .crop-ov,
+  .pin-ov.motion-overlay-closing,
+  .friend-modal.motion-overlay-closing,
+  .crop-ov.motion-overlay-closing {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+  .pin-ov.motion-overlay-closing > .pin-card,
+  .friend-modal.motion-overlay-closing > :is(.friend-box, .duel-box),
+  .crop-ov.motion-overlay-closing > .crop-card {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

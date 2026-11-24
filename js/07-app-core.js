@@ -742,6 +742,42 @@ function confirmDialog(title, copy, okLabel = 'Leave', cancelLabel = 'Stay') {
   });
 }
 
+/* Close custom overlays gracefully without delaying their functional cleanup. */
+function dismissOverlay(node, afterRemove) {
+  const onRemoved = typeof afterRemove === 'function' ? afterRemove : null;
+  if (!node || !node.isConnected) {
+    if (onRemoved) onRemoved();
+    return;
+  }
+  if (node.classList.contains('motion-overlay-closing')) return;
+
+  let finished = false;
+  let timer = 0;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    if (timer) clearTimeout(timer);
+    node.removeEventListener('transitionend', onTransitionEnd);
+    if (node.isConnected) node.remove();
+    if (onRemoved) onRemoved();
+  };
+  const onTransitionEnd = event => {
+    if (event.target === node && event.propertyName === 'opacity') finish();
+  };
+  const reduceMotion = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) {
+    finish();
+    return;
+  }
+
+  node.addEventListener('transitionend', onTransitionEnd);
+  node.classList.add('motion-overlay-closing');
+  // Fallback for browsers that do not dispatch transitionend for a removed
+  // or backgrounded overlay. CSS exit timing is 165–190ms.
+  timer = setTimeout(finish, 280);
+}
+
 /* ======================= Router ======================= */
 const SCREENS = ['home', 'notes', 'setup', 'quiz', 'friends', 'admin', 'achievements', 'duels', 'shop', 'me'];
 const ROUTES = { '': 'home', home: 'home', notes: 'notes', practice: 'setup', quiz: 'quiz', essays: 'notes', friends: 'friends', admin: 'admin', achievements: 'achievements', duels: 'duels', shop: 'shop', gemshop: 'shop', me: 'me' };
@@ -2266,6 +2302,7 @@ window.App = {
   on: (name, fn) => bus.addEventListener(name, e => fn(e.detail)),
   navigate,
   toast,
+  dismissOverlay,
   el,
   icon,
   questionById: id => questionIndex.get(id),

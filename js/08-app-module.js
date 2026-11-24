@@ -1054,7 +1054,7 @@ function showFriend(p) {
   if (!rec.length) ul.append(o('li', 'muted', 'No quizzes finished yet.'));
   rec.forEach(r => { const li = o('li'), q = o('p'); q.append(document.createTextNode(`${r.kind === 'daily' ? 'Daily quiz' : 'Practised ' + r.subject} \u00B7 ${r.correct}/${r.total}`)); li.append(q, o('span', 'activity-exp', `+${r.exp}`), o('span', 'activity-time', ago(r.at))); ul.append(li); });
   const close = o('button', 'btn btn-ghost btn-sm', 'Close'); close.type = 'button';
-  const onKey = e => { if (e.key === 'Escape') shut(); }, shut = () => { document.removeEventListener('keydown', onKey); m.remove(); };
+  const onKey = e => { if (e.key === 'Escape') shut(); }, shut = () => { document.removeEventListener('keydown', onKey); App.dismissOverlay(m); };
   close.onclick = shut; m.onclick = e => { if (e.target === m) shut(); }; document.addEventListener('keydown', onKey);
   box.append(friendHead(p, title, box), tiles, mt, o('p', 'muted', dd), o('p', 'eyebrow', 'Recent sessions'), ul, close); m.append(box); document.body.append(m); close.focus();
 }
@@ -1171,7 +1171,13 @@ function openCropper(file, onDone) {
     const up = e => { pts.delete(e.pointerId); last = 0; };
     stage.onpointerup = stage.onpointercancel = up;
     stage.addEventListener('wheel', e => { e.preventDefault(); setZoom(k * (e.deltaY < 0 ? 1.08 : 0.92)); }, { passive: false });
-    const close = () => { URL.revokeObjectURL(url); document.removeEventListener('keydown', onKey); ov.remove(); };
+    let cropClosing = false;
+    const close = () => {
+      if (cropClosing) return;
+      cropClosing = true;
+      document.removeEventListener('keydown', onKey);
+      App.dismissOverlay(ov, () => URL.revokeObjectURL(url));
+    };
     const onKey = e => { if (e.key === 'Escape') close(); };
     document.addEventListener('keydown', onKey);
     ov.addEventListener('click', e => { if (e.target === ov) close(); });
@@ -2282,7 +2288,13 @@ function ask(cfg) {
     });
     const msg = elx('p', 'pin-msg'); msg.setAttribute('role', 'alert');
     const no = elx('button', 'btn btn-ghost', 'Cancel'), go = elx('button', 'btn ' + (cfg.danger ? 'btn-ghost adm-danger' : 'btn-primary'), cfg.ok || 'OK'); no.type = 'button'; go.type = 'submit';
-    const esc = e => { if (e.key === 'Escape') done(null); }, done = v => { document.removeEventListener('keydown', esc); ov.remove(); res(v); };
+    let settled = false;
+    const esc = e => { if (e.key === 'Escape') done(null); }, done = v => {
+      if (settled) return;
+      settled = true;
+      document.removeEventListener('keydown', esc);
+      App.dismissOverlay(ov, () => res(v));
+    };
     no.onclick = () => done(null); ov.addEventListener('click', e => { if (e.target === ov) done(null); }); document.addEventListener('keydown', esc);
     f.onsubmit = e => { e.preventDefault(); const v = {}; for (const k in inputs) v[k] = inputs[k].value; const er = cfg.validate && cfg.validate(v); if (er) { msg.textContent = er; return; } done(v); };
     f.append(msg, elx('div', 'cz-row pin-row', no, go)); ov.append(f); document.body.append(ov);
@@ -2318,7 +2330,7 @@ function showNotice(n) {
   if (ov) ov.remove();
   ov = elx('div', 'pin-ov'); ov.id = 'notice-ov'; ov.setAttribute('role', 'alertdialog');
   const c = elx('div', 'card pin-card'), go = elx('button', 'btn btn-primary', 'Got it'); go.type = 'button';
-  go.onclick = () => { ov.remove(); S.db.doc('notices/' + S.uid).delete().catch(() => {}); };
+  go.onclick = () => { App.dismissOverlay(ov); S.db.doc('notices/' + S.uid).delete().catch(() => {}); };
   c.append(elx('h3', '', '\u{1F4E9} Message from the admin team'), elx('p', '', n.text), go); ov.append(c); document.body.append(ov);
 }
 
@@ -2331,7 +2343,7 @@ function annPopup(a) {
   if ($('ann-pop')) return;
   const ov = elx('div', 'pin-ov ann-pop'); ov.id = 'ann-pop'; ov.setAttribute('role', 'alertdialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', ANN_NAME[a.kind] || ANN_NAME.info);
   const c = elx('div', 'card pin-card ann-pop-card'), go = elx('button', 'btn btn-primary', 'Got it'); c.dataset.kind = a.kind || 'info'; go.type = 'button';
-  const close = () => { try { localStorage.setItem('ann-popped', a.id); } catch {} ov.remove(); };
+  const close = () => { try { localStorage.setItem('ann-popped', a.id); } catch {} App.dismissOverlay(ov); };
   go.onclick = close; ov.addEventListener('click', e => { if (e.target === ov) close(); });
   c.append(elx('div', 'ann-pop-ic', ANN_ICON[a.kind] || ANN_ICON.info), elx('p', 'ann-pop-label', ANN_NAME[a.kind] || ANN_NAME.info), elx('p', 'ann-pop-text', a.text), a.by ? elx('small', 'muted', '\u2014 ' + a.by) : null, go);
   ov.append(c); document.body.append(ov); setTimeout(() => go.focus(), 60);
@@ -2499,7 +2511,7 @@ function openPin(mode, renew) {
   if (renew) msg.textContent = owner
     ? 'Enter both Owner passwords to renew your 30-minute session.'
     : 'Enter your Admin PIN to renew your 2-hour session.';
-  const close = () => { document.removeEventListener('keydown', esc); ov.remove(); }, esc = e => { if (e.key === 'Escape') close(); };
+  const close = () => { document.removeEventListener('keydown', esc); App.dismissOverlay(ov); }, esc = e => { if (e.key === 'Escape') close(); };
   no.onclick = close; document.addEventListener('keydown', esc); ov.addEventListener('click', e => { if (e.target === ov) close(); });
   const sw = elx('button', 'adm-link', owner ? '\u2190 Admin PIN instead' : 'I\u2019m the owner \u2192'); sw.type = 'button'; sw.onclick = () => { close(); openPin(owner ? 'admin' : 'owner', renew); };
   let step = 1;
@@ -2584,7 +2596,7 @@ const Bugs = (() => {
     const cnt = elx('span', 'adm-info', '0 / 600'); ta.oninput = () => { cnt.textContent = `${ta.value.length} / 600`; };
     const msg = elx('p', 'pin-msg'); msg.setAttribute('role', 'alert');
     const no = elx('button', 'btn btn-ghost', 'Close'), go = elx('button', 'btn btn-primary', 'Send report'); no.type = 'button'; go.type = 'submit';
-    const close = () => { document.removeEventListener('keydown', esc); ov.remove(); }, esc = e => { if (e.key === 'Escape') close(); };
+    const close = () => { document.removeEventListener('keydown', esc); App.dismissOverlay(ov); }, esc = e => { if (e.key === 'Escape') close(); };
     no.onclick = close; ov.addEventListener('click', e => { if (e.target === ov) close(); }); document.addEventListener('keydown', esc);
     f.append(elx('h3', '', '\u{1F41E} Report a bug'), elx('p', 'muted', 'Tell us what went wrong. A real person reads every report.'), elx('label', 'adm-lbl', 'What kind of problem?'), cat, elx('label', 'adm-lbl', 'What happened?'), ta, cnt,
       elx('p', 'adm-info', `We also send your name, the page you are on and your device (${deviceInfo()}). No passwords or private data.`), msg, elx('div', 'cz-row pin-row', no, go));
