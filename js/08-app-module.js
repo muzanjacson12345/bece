@@ -912,7 +912,7 @@ App.on('quiz:finished', async ev => {
     S.doc = { ...next, ...preserveGemFields };
     renderAccount();
     dailyChallengeCompletionFeedback = new Set(
-      challengeState.claimed.filter(id => !previous.claimed.includes(id))
+      challengeState.claimed.filter(id => !(previous.claimed || []).includes(id))
     );
     try {
       renderDaily();
