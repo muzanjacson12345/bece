@@ -29,6 +29,8 @@ let dailyGemClaimFeedback = false;
 let dailyCoinClaimFeedback = false;
 let achievementGemClaimFeedbackId = '';
 let dailyChallengeCompletionFeedback = new Set();
+const dailyChallengeProgressSnapshot = new Map();
+let dailyChallengeProgressUid = '', dailyChallengeProgressDay = '', dailyChallengeProgressReady = false;
 let newlyEarnedAchievementFeedback = new Set();
 const achievementProgressSnapshot = new Map();
 let achievementProgressUid = '';
@@ -711,6 +713,13 @@ async function claimDailyChallengeCoins(day, amount, sourceRect) {
 function renderDaily() {
   const e = $('daily-card'); if (!e) return; e.replaceChildren();
   const d = S.doc || {}, day = today();
+  if (dailyChallengeProgressUid !== (S.uid || '') || dailyChallengeProgressDay !== day) {
+    dailyChallengeProgressSnapshot.clear();
+    dailyChallengeProgressUid = S.uid || '';
+    dailyChallengeProgressDay = day;
+    dailyChallengeProgressReady = false;
+  }
+  const trackDailyProgress = !!(S.uid && S.doc);
   const state = d.challengeState && d.challengeState.day === day ? d.challengeState : { day, progress: {}, claimed: [] };
   const tasks = dailyChallengeSet(day), progressData = state.progress || {}, claimed = state.claimed || [];
   const done = tasks.filter(t => claimed.includes(t.id)).length;
@@ -722,15 +731,26 @@ function renderDaily() {
   const list = o('div', 'challenge-list');
   tasks.forEach(t => {
     const complete = claimed.includes(t.id), current = Number(progressData[t.metric] || 0), progress = Math.min(t.target, current);
+    const previousProgress = dailyChallengeProgressSnapshot.get(t.id);
+    const progressed = trackDailyProgress && dailyChallengeProgressReady && Number.isFinite(previousProgress) && progress > previousProgress && !complete;
     const justCompleted = complete && dailyChallengeCompletionFeedback.has(t.id);
     const card = o('article', 'challenge-item' + (complete ? ' is-complete' : '') + (justCompleted ? ' is-just-completed' : ''));
     const top = o('div', 'challenge-top'), name = o('div', 'challenge-name'), copy = o('div');
     name.append(o('span', 'challenge-icon', t.icon)); copy.append(o('strong', '', t.title), o('small', '', t.detail)); name.append(copy);
     top.append(name, o('span', 'challenge-reward', complete ? '✓ EXP earned' : '+' + t.reward + ' EXP'));
-    const track = o('div', 'challenge-track'), fill = o('span', 'challenge-fill'); fill.style.transform = `scaleX(${progress / t.target})`; track.append(fill);
+    const track = o('div', 'challenge-track'), fill = o('span', 'challenge-fill' + (progressed ? ' motion-challenge-progress' : ''));
+    const fillTo = progress / Math.max(1, t.target);
+    if (progressed) {
+      fill.style.setProperty('--challenge-progress-from', String(previousProgress / Math.max(1, t.target)));
+      fill.style.setProperty('--challenge-progress-to', String(fillTo));
+    }
+    fill.style.transform = `scaleX(${fillTo})`; track.append(fill);
+    if (trackDailyProgress) dailyChallengeProgressSnapshot.set(t.id, progress);
     const foot = o('div', 'challenge-foot'); foot.append(o('span', '', complete ? 'EXP added automatically' : progress + ' / ' + t.target), o('span', '', 'Resets daily'));
     card.append(top, track, foot); list.append(card);
+    if (progressed) replayMotion(fill, 'motion-challenge-progress');
   });
+  if (trackDailyProgress) dailyChallengeProgressReady = true;
 
   const gemOps = Array.isArray(d.gemOps) ? d.gemOps : [];
   const todayClaim = gemOps.find(op => typeof op === 'string' && op.startsWith('daily:' + day + ':'));

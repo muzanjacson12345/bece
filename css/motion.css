@@ -2878,3 +2878,33 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 50 — Daily Challenge incremental progress feedback
+   Animate genuine saved progress increases; Stage 18 remains the completion cue.
+   -------------------------------------------------------------------------- */
+:root { --motion-challenge-progress-duration: 360ms; }
+@media (max-width: 760px) {
+  :root { --motion-challenge-progress-duration: 325ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-challenge-progress-duration: 375ms; }
+}
+@keyframes motion-challenge-progress {
+  0% { transform: scaleX(var(--challenge-progress-from)); filter: brightness(1); }
+  68% { filter: brightness(1.16); }
+  100% { transform: scaleX(var(--challenge-progress-to)); filter: brightness(1); }
+}
+.challenge-fill.motion-challenge-progress {
+  transform-origin: left center;
+  animation: motion-challenge-progress var(--motion-challenge-progress-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .challenge-fill.motion-challenge-progress {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
