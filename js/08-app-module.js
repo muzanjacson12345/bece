@@ -1402,17 +1402,59 @@ function buildProfileCard() {
     const photoInp = document.createElement('input');
     photoInp.type = 'file'; photoInp.accept = 'image/*'; photoInp.className = 'sr-only'; photoInp.id = 'photo-upload-inp';
     const photoPickBtn = document.createElement('label');
-    photoPickBtn.htmlFor = 'photo-upload-inp'; photoPickBtn.className = 'btn btn-ghost btn-sm'; photoPickBtn.style.cursor = 'pointer';
+    photoPickBtn.htmlFor = 'photo-upload-inp'; photoPickBtn.className = 'btn btn-ghost btn-sm photo-upload-label'; photoPickBtn.style.cursor = 'pointer';
     setIconAwareText(photoPickBtn, '\u{1F4F7} Upload a photo');
     const clearPhotoBtn = o('button', 'btn btn-ghost btn-sm', '\u2715 Remove photo');
     clearPhotoBtn.type = 'button'; clearPhotoBtn.hidden = !me().photo; st.photoBtn = clearPhotoBtn;
-    clearPhotoBtn.onclick = () => { queueSave({ photo: '' }); paint(); renderAccount(); clearPhotoBtn.hidden = true; if (st.refresh) st.refresh(); };
+    let photoSaving = false;
+    async function persistPhoto(dataUrl) {
+      if (photoSaving) return false;
+      if (!S.db || !S.uid) {
+        if (S.pc) S.pc.status('error');
+        App.toast('Connect to the internet before saving a profile photo.', 'warn');
+        return false;
+      }
+      photoSaving = true;
+      photoPickBtn.classList.add('photo-save-pending');
+      photoPickBtn.setAttribute('aria-disabled', 'true');
+      photoPickBtn.textContent = dataUrl ? 'Saving photo…' : 'Removing photo…';
+      photoInp.disabled = true;
+      clearPhotoBtn.disabled = true;
+      photoRow.setAttribute('aria-busy', 'true');
+      if (S.pc) S.pc.status('saving');
+      try {
+        await S.db.doc('players/' + S.uid).set({ photo: dataUrl }, { merge: true });
+        S.doc = { ...(S.doc || {}), photo: dataUrl };
+        paint();
+        renderAccount();
+        clearPhotoBtn.hidden = !dataUrl;
+        if (st.refresh) st.refresh();
+        if (S.pc) S.pc.status(S.pend || S.saveT ? 'saving' : 'saved');
+        requestAnimationFrame(() => {
+          replayMotion(av, 'motion-profile-photo-saved');
+          const accountPhoto = $('account-btn')?.querySelector('.account-ph');
+          if (accountPhoto) replayMotion(accountPhoto, 'motion-profile-photo-saved');
+        });
+        App.toast(dataUrl ? 'Photo saved!' : 'Photo removed.', 'good');
+        return true;
+      } catch (error) {
+        if (S.pc) S.pc.status('error');
+        App.toast('Could not save that photo. Your previous photo is still in place. Please try again.', 'warn');
+        return false;
+      } finally {
+        photoSaving = false;
+        photoPickBtn.classList.remove('photo-save-pending');
+        photoPickBtn.removeAttribute('aria-disabled');
+        setIconAwareText(photoPickBtn, '\u{1F4F7} Upload a photo');
+        photoInp.disabled = false;
+        clearPhotoBtn.disabled = false;
+        photoRow.setAttribute('aria-busy', 'false');
+      }
+    }
+    clearPhotoBtn.onclick = () => { void persistPhoto(''); };
     photoInp.onchange = ev => {
       const file = ev.target.files && ev.target.files[0]; photoInp.value = ''; if (!file) return;
-      openCropper(file, dataUrl => {
-        queueSave({ photo: dataUrl }); paint(); renderAccount(); clearPhotoBtn.hidden = false;
-        App.toast('Photo saved!', 'good');
-      });
+      openCropper(file, dataUrl => { void persistPhoto(dataUrl); });
     };
     photoRow.append(photoPickBtn, photoInp, clearPhotoBtn);
 

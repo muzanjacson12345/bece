@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-shop-mobile-fixes-2026-11-24-r53';
+const EXPECTED_BUILD = 'bece-profile-photo-confirmation-2026-11-24-r54';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -311,6 +311,9 @@ async function main() {
     ['Stage 38 lab solved feedback has responsive timing and reduced-motion support', source.includes('--motion-lab-solved-duration: 225ms') && source.includes('--motion-lab-solved-duration: 275ms') && source.includes('animation: none !important;')],
     ['Stage 39 only pulses the matching Shop card after a purchase or equip action', source.includes('function pulseShopItem(id, slot)') && source.includes("replayMotion(card, 'motion-shop-item-confirmed')") && source.includes("pulseShopItem(slot, 'consumable')") && source.includes("pulseShopItem(it.id, 'gem')") && source.includes("card.dataset.shopSlot = 'gem'")],
     ['Stage 39 Shop item feedback has mobile and desktop timing plus reduced-motion support', source.includes('Stage 39 — Shop purchase and equip confirmation') && source.includes('--motion-shop-confirm-duration: 265ms') && source.includes('--motion-shop-confirm-duration: 310ms') && source.includes('.gem-item.motion-shop-item-confirmed') && source.includes('animation: none !important;')],
+    ['Stage 40 photo feedback waits for a successful Firestore save before changing the visible avatar', source.includes('async function persistPhoto(dataUrl)') && source.includes("await S.db.doc('players/' + S.uid).set({ photo: dataUrl }, { merge: true });") && source.includes("S.doc = { ...(S.doc || {}), photo: dataUrl };") && source.includes("replayMotion(av, 'motion-profile-photo-saved')") && source.includes("App.toast(dataUrl ? 'Photo saved!' : 'Photo removed.', 'good')")],
+    ['Stage 40 photo feedback keeps the previous photo on failure and respects reduced motion', source.includes('Your previous photo is still in place') && source.includes('Stage 40 — Profile photo save confirmation') && source.includes('--motion-profile-photo-save-duration: 290ms') && source.includes('--motion-profile-photo-save-duration: 340ms') && source.includes('animation: none !important;')],
+    ['Mobile announcements are placed after the fixed header, including on nested Notes and Essays routes', source.includes('#site-nav ~ .ann-bar') && source.includes('#site-nav ~ .ann-bar + #main')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -927,7 +930,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1068,6 +1071,20 @@ async function main() {
           return !!card && getComputedStyle(card).animationName === 'motion-shop-item-confirmed';
         });
         await motionPage.evaluate(() => document.querySelector('#motion-stage-39-test')?.remove());
+
+        stage = 'Profile photo save confirmation feedback';
+        await motionPage.evaluate(() => {
+          const avatar = document.createElement('span');
+          avatar.className = 'av motion-profile-photo-saved';
+          avatar.id = 'motion-stage-40-test';
+          document.body.append(avatar);
+        });
+        await motionPage.waitForTimeout(50);
+        check.profilePhotoSaveFeedback = await motionPage.evaluate(() => {
+          const avatar = document.querySelector('#motion-stage-40-test');
+          return !!avatar && getComputedStyle(avatar).animationName === 'motion-profile-photo-saved';
+        });
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-40-test')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();

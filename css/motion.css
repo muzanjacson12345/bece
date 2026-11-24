@@ -2508,3 +2508,34 @@ button:disabled,
     outline: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 40 — Profile photo save confirmation
+   Pulse the updated avatar only after the photo is saved successfully.
+   -------------------------------------------------------------------------- */
+:root { --motion-profile-photo-save-duration: 330ms; }
+@media (max-width: 760px) {
+  :root { --motion-profile-photo-save-duration: 290ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-profile-photo-save-duration: 340ms; }
+}
+@keyframes motion-profile-photo-saved {
+  0% { transform: scale(.94); box-shadow: 0 0 0 0 var(--accent-soft); }
+  58% { transform: scale(1.055); box-shadow: 0 0 0 6px var(--accent-soft); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+}
+.pc-head .av.motion-profile-photo-saved,
+.account-ph.motion-profile-photo-saved {
+  animation: motion-profile-photo-saved var(--motion-profile-photo-save-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-head .av.motion-profile-photo-saved,
+  .account-ph.motion-profile-photo-saved {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}

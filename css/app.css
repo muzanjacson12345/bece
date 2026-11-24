@@ -3495,14 +3495,14 @@ pre, code { overflow-wrap: anywhere; }
 
 /* Mobile announcement placement: account for the fixed header when a banner is present. */
 @media (max-width: 760px) {
-  #site-nav + .ann-bar {
+  #site-nav ~ .ann-bar {
     position: relative;
     top: auto;
     margin: calc(var(--nav-h) + env(safe-area-inset-top) + 10px) 12px 0;
     z-index: 30;
   }
-  #site-nav + .ann-bar + #main { padding-top: 0 !important; }
-  body[data-screen='quiz'] #site-nav + .ann-bar { margin-top: 10px; }
+  #site-nav ~ .ann-bar + #main { padding-top: 0 !important; }
+  body[data-screen='quiz'] #site-nav ~ .ann-bar { margin-top: 10px; }
   .pin-ov.ann-pop {
     box-sizing: border-box;
     overflow-y: auto;
@@ -3530,3 +3530,12 @@ pre, code { overflow-wrap: anywhere; }
   }
   .ann-pop-card .btn { min-height: 50px; }
 }
+
+
+/* Stage 40 photo saving state: keep the crop result pending until Firestore confirms it. */
+.cz-avatar-panel .photo-upload-label.photo-save-pending {
+  opacity: .65;
+  cursor: wait !important;
+  pointer-events: none;
+}
+.cz-avatar-panel .cz-row[aria-busy='true'] { cursor: progress; }
