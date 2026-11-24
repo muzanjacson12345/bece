@@ -927,6 +927,11 @@ async function main() {
           overlay.append(panel);
           document.body.append(overlay);
           window.__motionOverlayDone = false;
+        });
+        // Let the overlay's entrance settle before starting the exit transition.
+        await homePage.waitForTimeout(260);
+        await homePage.evaluate(() => {
+          const overlay = document.querySelector('#motion-overlay-test');
           window.App.dismissOverlay(overlay, () => { window.__motionOverlayDone = true; });
         });
         await homePage.waitForFunction(() =>
