@@ -20,6 +20,7 @@ The Worker deliberately refuses all Gems earnings except requests authenticated 
   - `earn`: Owner-only Gem grants, with `{ action, amount, operationId }`.
   - `spend`: player-initiated deductions, with `{ action, amount, operationId }`.
   - `purchase`: server-priced cosmetic purchases, with `{ action: 'purchase', itemId: 'profile-ring-gold', operationId }`. The Worker sets the 50-Gem price itself and atomically deducts Gems, records ownership, and equips the ring.
+  - `reset`: full self-service account-progress reset, with `{ action: 'reset', operationId: 'reset:<unique-id>' }`. The Worker atomically replaces the profile, clearing Gems, Gem history, cosmetic ownership, achievements, Coins, EXP, streaks, inventory and challenge progress while retaining the profile ID and display name.
 
 The Worker caps ordinary operations at 1,000,000 Gems, caps a balance at 1,000,000,000 Gems, keeps the last 100 operation IDs for replay protection, and rejects banned accounts. Cosmetic item IDs and prices are defined on the Worker; the client cannot choose a purchase price.
 

@@ -36,6 +36,10 @@ function rewardAnimationDuration(from, to) {
   const delta = Math.abs((Number(to) || 0) - (Number(from) || 0));
   return Math.min(5200, Math.round(1900 + Math.log10(delta + 1) * 900));
 }
+function rewardCurrencyDuration(from, to) {
+  const delta = Math.abs((Number(to) || 0) - (Number(from) || 0));
+  return Math.min(1100, Math.round(640 + Math.log10(delta + 1) * 105));
+}
 function animateRewardNumber(element, from, to, formatter, duration) {
   if (!element) return;
   const startValue = Number(from) || 0, endValue = Number(to) || 0;
@@ -52,9 +56,7 @@ function animateRewardNumber(element, from, to, formatter, duration) {
   const tick = now => {
     if (!element.isConnected) return;
     const progress = Math.min(1, (now - startedAt) / animationDuration);
-    const eased = progress < .5
-      ? 4 * Math.pow(progress, 3)
-      : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+    const eased = 1 - Math.pow(1 - progress, 3);
     const value = Math.round(startValue + (endValue - startValue) * eased);
     element.textContent = format(value);
     if (progress < 1) requestAnimationFrame(tick);
@@ -76,61 +78,82 @@ function pulseRewardTarget(target) {
     if (event.animationName === 'reward-target-ping') target.classList.remove('reward-target-ping');
   }, { once: true });
 }
-function animateRewardFlight(sourceRect, target, kind, countDuration, amount) {
+function pulseRewardTarget(target) {
+  if (!target || !target.isConnected || rewardMotionReduced()) return;
+  target.classList.remove('reward-target-ping');
+  void target.offsetWidth;
+  target.classList.add('reward-target-ping');
+  target.addEventListener('animationend', event => {
+    if (event.animationName === 'reward-target-ping') target.classList.remove('reward-target-ping');
+  }, { once: true });
+}
+function visibleInViewport(rect) {
+  if (!rect) return false;
+  const width = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+  const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  return rect.left + rect.width > 0 && rect.top + rect.height > 0
+    && rect.left < width && rect.top < height;
+}
+function animateRewardFlight(sourceRect, target, kind) {
   const targetRect = captureRewardRect(target);
-  if (rewardMotionReduced() || !sourceRect || !targetRect || typeof Element.prototype.animate !== 'function') return;
-  const glyph = kind === 'gems' ? '💎' : '💰';
+  if (rewardMotionReduced() || typeof Element.prototype.animate !== 'function') return;
+  if (!visibleInViewport(sourceRect) || !visibleInViewport(targetRect)) return;
   const startX = sourceRect.left + sourceRect.width / 2;
   const startY = sourceRect.top + sourceRect.height / 2;
   const endX = targetRect.left + targetRect.width / 2;
   const endY = targetRect.top + targetRect.height / 2;
-  const rewardAmount = Math.max(0, Number(amount) || 0);
-  // A small stream is easier to follow than a cloud of identical particles.
-  const particleCount = Math.min(5, Math.max(3, 2 + Math.ceil(Math.log10(rewardAmount + 1))));
-  const flightDuration = Math.max(780, Math.min(1050, Math.round((Number(countDuration) || 2400) * .36)));
-  const delayStep = Math.min(900, Math.max(520, Math.round((countDuration - flightDuration) / Math.max(1, particleCount - 1))));
   const dx = endX - startX, dy = endY - startY;
   const distance = Math.max(1, Math.hypot(dx, dy));
-  const perpendicularX = -dy / distance, perpendicularY = dx / distance;
-  for (let index = 0; index < particleCount; index++) {
-    // Each token starts a little apart and takes its own lane, so the stream
-    // never looks like one thick bundle converging on the balance.
-    const side = index % 2 ? 1 : -1;
-    const lane = side * (7 + Math.floor(index / 2) * 5);
-    const startOffsetX = side * (5 + Math.floor(index / 2) * 3);
-    const startOffsetY = index % 3 === 0 ? -4 : 4;
-    const tokenStartX = startX + startOffsetX;
-    const tokenStartY = startY + startOffsetY;
-    const midX = startX + dx * .54 + perpendicularX * lane;
-    const midY = startY + dy * .54 + perpendicularY * lane - 18 - (index % 2) * 5;
-    const token = o('span', 'reward-flight-token reward-flight-token-' + kind, glyph);
-    token.setAttribute('aria-hidden', 'true');
-    token.style.left = (tokenStartX - 14) + 'px';
-    token.style.top = (tokenStartY - 14) + 'px';
-    document.body.append(token);
-    const animation = token.animate([
-      { transform: 'translate3d(0,5px,0) scale(.72) rotate(-8deg)', opacity: 0 },
-      { transform: `translate3d(${midX - tokenStartX}px,${midY - tokenStartY}px,0) scale(1) rotate(5deg)`, opacity: 1, offset: .48 },
-      { transform: `translate3d(${endX - tokenStartX}px,${endY - tokenStartY}px,0) scale(.48) rotate(${index % 2 ? 18 : -18}deg)`, opacity: 0, offset: 1 }
-    ], {
-      duration: flightDuration,
-      delay: Math.round(index * delayStep),
-      easing: 'cubic-bezier(.22,.78,.22,1)',
-      fill: 'forwards'
-    });
-    animation.onfinish = () => {
-      token.remove();
-      if (index === particleCount - 1) pulseRewardTarget(target);
+  const mobile = window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+  const duration = Math.min(mobile ? 640 : 760, Math.max(mobile ? 480 : 560, Math.round(distance * (mobile ? .78 : .82))));
+  const curve = Math.min(mobile ? 28 : 42, Math.max(12, distance * .15));
+  const side = dx >= 0 ? 1 : -1;
+  const normalX = (-dy / distance) * side;
+  const normalY = (dx / distance) * side;
+  const p0x = startX, p0y = startY;
+  const p1x = startX + dx * .26 + normalX * curve;
+  const p1y = startY + dy * .26 + normalY * curve - (mobile ? 8 : 12);
+  const p2x = startX + dx * .72 + normalX * curve * .48;
+  const p2y = startY + dy * .72 + normalY * curve * .48 - (mobile ? 5 : 8);
+  const p3x = endX, p3y = endY;
+  const samples = [0, .16, .34, .52, .72, .88, 1];
+  const scales = [.58, .96, 1.09, 1.04, .94, .78, .42];
+  const opacities = [0, .98, 1, 1, 1, .86, 0];
+  const rotation = kind === 'coins' ? 164 : 48;
+  const keyframes = samples.map((t, index) => {
+    const inverse = 1 - t;
+    const x = inverse * inverse * inverse * p0x
+      + 3 * inverse * inverse * t * p1x
+      + 3 * inverse * t * t * p2x
+      + t * t * t * p3x;
+    const y = inverse * inverse * inverse * p0y
+      + 3 * inverse * inverse * t * p1y
+      + 3 * inverse * t * t * p2y
+      + t * t * t * p3y;
+    return {
+      offset: t,
+      transform: 'translate3d(' + (x - startX) + 'px,' + (y - startY) + 'px,0) rotate('
+        + (rotation * t - (kind === 'coins' ? 12 : 8)) + 'deg) scale(' + scales[index] + ')',
+      opacity: opacities[index]
     };
-    animation.oncancel = () => token.remove();
-  }
+  });
+  // One clear hero token glides along a cubic curve. No crowded particle cluster.
+  const token = o('span', 'reward-flight-token reward-flight-token-' + kind);
+  token.setAttribute('aria-hidden', 'true');
+  token.append(App.icon(kind === 'gems' ? 'gem' : 'coin', 'reward-flight-icon'));
+  token.style.left = (startX - 18) + 'px';
+  token.style.top = (startY - 18) + 'px';
+  document.body.append(token);
+  const animation = token.animate(keyframes, { duration, easing: 'cubic-bezier(.22,.76,.2,1)', fill: 'both' });
+  animation.onfinish = () => { token.remove(); pulseRewardTarget(target); };
+  animation.oncancel = () => token.remove();
 }
 function animateCurrencyReward(kind, previous, balance, sourceRect, preferredTarget) {
   const isGem = kind === 'gems';
   const glyph = isGem ? '💎' : '💰';
   const from = Math.max(0, Number(previous) || 0);
   const to = Math.max(0, Number(balance) || 0);
-  const duration = rewardAnimationDuration(from, to);
+  const countDuration = rewardCurrencyDuration(from, to);
   const selectors = isGem
     ? '.account-gems, .daily-gem-balance, .gem-store-balance'
     : '.account-coins:not(.account-gems), .coin-bal-value';
@@ -140,14 +163,14 @@ function animateCurrencyReward(kind, previous, balance, sourceRect, preferredTar
   });
   targets.forEach(element => {
     const plainNumber = element.classList.contains('coin-bal-value');
-    animateRewardNumber(element, from, to, value => plainNumber ? rewardNumber(value) : glyph + ' ' + rewardNumber(value), duration);
+    animateRewardNumber(element, from, to, value => plainNumber ? rewardNumber(value) : glyph + ' ' + rewardNumber(value), countDuration);
   });
   const preferredVisible = preferredTarget && captureRewardRect(preferredTarget) ? preferredTarget : null;
   const balanceTarget = preferredVisible
     || targets.find(element => isGem ? element.classList.contains('account-gems') : element.classList.contains('account-coins'))
     || targets[0];
   const origin = sourceRect || captureRewardRect(document.activeElement);
-  if (to > from && balanceTarget) animateRewardFlight(origin, balanceTarget, kind, duration, to - from);
+  if (to > from && balanceTarget) animateRewardFlight(origin, balanceTarget, kind);
 }
 
 function renderAccount() {
@@ -721,8 +744,7 @@ function showResult(e) {
     const card = coinPanel(e.coins, e.coinParts, e.balance);
     t.append(card);
     const icon = card.querySelector('.coin-ic');
-    const balanceNode = card.querySelector('.coin-bal-value');
-    animateCurrencyReward('coins', e.previousCoins, e.balance, captureRewardRect(icon), balanceNode);
+    animateCurrencyReward('coins', e.previousCoins, e.balance, captureRewardRect(icon));
   }
 
   if (e.already) {
@@ -1005,53 +1027,50 @@ function buildProfileCard() {
   safetyHead.append(o('p', 'eyebrow', 'Account & safety'), o('h2', '', 'Manage your profile data'),
     o('p', 'muted', 'Your app currently uses an anonymous profile on this device. You can reset its progress or remove this profile.'));
   const safetyActions = o('div', 'account-safety-actions');
-  const resetBtn = o('button', 'btn btn-ghost', '↻ Reset progress');
+  const resetBtn = o('button', 'btn btn-ghost', '↻ Reset everything');
   const deleteBtn = o('button', 'btn btn-danger', 'Delete profile');
   resetBtn.type = deleteBtn.type = 'button';
-  const safetyNote = o('p', 'account-safety-note', 'Reset keeps this profile ID. Delete removes this profile and its anonymous sign-in. Existing shared duel records may remain.');
+  const safetyNote = o('p', 'account-safety-note', 'Reset everything clears all progress, Gems, achievement claims and purchased Gem cosmetics while keeping your profile ID and display name. Delete profile is a separate action.');
   resetBtn.onclick = async () => {
     if (!S.db || !S.uid || !firebase.auth().currentUser) return App.toast('Your profile service is not ready. Please try again online.', 'warn');
-    if (!(await confirmDialog('Reset your progress?', 'This clears your cloud progress, EXP, coins, streak, achievements, Duels record and profile customisation, plus this browser’s quiz history, bookmarks and notes-studied list. Your Gem balance and earned Gem cosmetics are kept. This cannot be undone.', 'Reset progress', 'Keep it'))) return;
+    if (!(await confirmDialog(
+      'Reset everything?',
+      'This permanently clears all account progress: Gems, Coins, EXP, achievements and their Gem claim history, owned Gem cosmetics, shop inventory, streaks, daily rewards, Duel stats, profile customisation, quiz history, bookmarks, notes studied and saved essay drafts. Your profile ID and display name remain. This does not delete your sign-in account. This cannot be undone.',
+      'Reset everything',
+      'Keep my data'
+    ))) return;
+    if (!(await confirmDialog(
+      'Final confirmation',
+      'Your Gem balance will become 0, all achievements will be locked again, and the profile ring will be removed. Continue with the full reset?',
+      'Erase all progress',
+      'Cancel'
+    ))) return;
     try {
       clearTimeout(S.saveT); S.saveT = 0; S.pend = null;
-      const resetRef = S.db.doc('players/' + S.uid);
-      const snapshot = await resetRef.get();
-      const current = snapshot.exists ? (snapshot.data() || {}) : {};
-      const resetProfile = {
-        displayName: typeof current.displayName === 'string' ? current.displayName : '',
-        totalExp: 0, weekKey: '', weekExp: 0, dayKey: '', dayExp: 0,
-        streak: 0, bestStreak: 0, lastDay: '',
-        duelW: 0, duelL: 0, duelD: 0,
-        coins: 0, owned: {}, eq: {}, p50: 0, sfreezes: 0, xpBoost: 0,
-        dcDay: '', dcN: 0,
-        counted: { day: '', ids: [] },
-        challengeState: { day: today(), progress: {}, subjects: [], claimed: [], coinClaimed: false },
-        achievements: { stats: {}, subjects: [], unlocked: [] },
-        avatar: '', photo: '', color: '', bio: ''
-      };
-      // These fields are controlled by the trusted Gems service. Preserve them
-      // unchanged so a normal profile reset never alters a Gem balance/history.
-      ['gems', 'gemOps', 'gemCosmetics'].forEach(key => {
-        if (Object.prototype.hasOwnProperty.call(current, key)) resetProfile[key] = current[key];
-      });
-      // Replacing the profile is allowed by the player's update rule; deleting
-      // the document is deliberately not allowed for a normal signed-in player.
-      await resetRef.set(resetProfile);
-      S.doc = { ...resetProfile };
-      S.players = (S.players || []).filter(player => player.id !== S.uid);
-      S.players.push({ id: S.uid, ...resetProfile });
-      ['bece_history', 'bece_bookmarks', 'bece_studied'].forEach(k => store.remove(k));
-      bookmarks = []; studied = new Set();
-      renderAccount(); Home.render(); renderDaily(); renderAchievements(); renderFriends();
-      App.toast('Your progress has been reset. Your Gems were kept.', 'good');
+      const result = await Gems.resetEverything('reset:' + Date.now());
+      if (!result || !result.reset) throw new Error('RESET_NOT_CONFIRMED');
+      bookmarks = [];
+      studied = new Set();
+      try {
+        for (let index = localStorage.length - 1; index >= 0; index--) {
+          const key = localStorage.key(index);
+          if (key && (/^bece_(history|bookmarks|studied)$/.test(key) || /^bece_essay_/.test(key))) localStorage.removeItem(key);
+        }
+      } catch {}
+      Home.render(); renderDaily(); renderAchievements(); renderFriends();
+      if (window.GemShop && typeof window.GemShop.render === 'function') window.GemShop.render();
+      App.toast('Everything has been reset. Gems, achievements and Gem cosmetics are cleared.', 'good');
+      setTimeout(() => location.reload(), 650);
     } catch (err) {
-      console.error('Could not reset your progress:', err);
+      console.error('Could not reset everything:', err);
       const code = String(err && err.code || 'unknown-error');
       App.toast(code === 'permission-denied'
-        ? 'The server rejected the reset. Your progress has not been changed.'
-        : code === 'unavailable' || code === 'deadline-exceeded'
-          ? 'The profile service is temporarily unavailable. Please try again.'
-          : `Could not reset your progress (${code}). Please try again.`, 'warn');
+        ? 'The server rejected the reset. No progress was changed.'
+        : code === 'PLAYER_PROFILE_NOT_READY'
+          ? 'Your profile is still loading. Please try again.'
+          : code === 'unavailable' || code === 'deadline-exceeded'
+            ? 'The profile service is temporarily unavailable. Please try again.'
+            : 'Could not reset everything. No success was reported; please try again.', 'warn');
     }
   };
   deleteBtn.onclick = async () => {
@@ -3335,12 +3354,15 @@ const Gems = (() => {
     if (!GEMS_API_URL) throw new Error('GEMS_SERVICE_NOT_CONFIGURED');
     const purchase = action === 'purchase';
     const reward = action === 'achievement' || action === 'daily';
+    const reset = action === 'reset';
     if (purchase) {
       if (itemId !== 'profile-ring-gold') throw new Error('INVALID_GEM_ITEM');
       amount = 50;
     } else if (reward) {
       amount = null;
       if (action === 'achievement' && !Object.prototype.hasOwnProperty.call(GEM_ACHIEVEMENT_REWARDS, achievementId)) throw new Error('INVALID_ACHIEVEMENT_REWARD');
+    } else if (reset) {
+      amount = null;
     } else if (!['earn', 'spend'].includes(action)
         || !Number.isSafeInteger(amount) || amount <= 0 || amount > 1000000) {
       throw new Error('INVALID_GEM_AMOUNT');
@@ -3353,7 +3375,7 @@ const Gems = (() => {
     const response = await fetch(GEMS_API_URL, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...(purchase ? { itemId } : reward ? (action === 'achievement' ? { achievementId } : {}) : { amount }), operationId: opId })
+      body: JSON.stringify({ action, ...(purchase ? { itemId } : reward ? (action === 'achievement' ? { achievementId } : {}) : reset ? {} : { amount }), operationId: opId })
     });
     let data = {};
     try { data = await response.json(); } catch {}
@@ -3366,12 +3388,17 @@ const Gems = (() => {
       throw new Error('INVALID_GEMS_SERVICE_RESPONSE');
     }
     const operations = Array.isArray(data.operations) ? data.operations : [];
-    const nextDoc = { ...(S.doc || {}), gems: data.balance, gemOps: operations };
+    const nextDoc = data.reset && data.profile && typeof data.profile === 'object'
+      ? { ...data.profile }
+      : { ...(S.doc || {}), gems: data.balance, gemOps: operations };
     if (data.gemCosmetics && typeof data.gemCosmetics === 'object') nextDoc.gemCosmetics = data.gemCosmetics;
     if (typeof data.equippedGemCosmetic === 'string') nextDoc.equippedGemCosmetic = data.equippedGemCosmetic;
     S.doc = nextDoc;
     const mine = (S.players || []).find(player => player.id === S.uid);
-    if (mine) {
+    if (data.reset) {
+      S.players = (S.players || []).filter(player => player.id !== S.uid);
+      S.players.push({ id: S.uid, ...nextDoc });
+    } else if (mine) {
       mine.gems = data.balance; mine.gemOps = operations;
       if (data.gemCosmetics && typeof data.gemCosmetics === 'object') mine.gemCosmetics = data.gemCosmetics;
       if (typeof data.equippedGemCosmetic === 'string') mine.equippedGemCosmetic = data.equippedGemCosmetic;
@@ -3387,7 +3414,7 @@ const Gems = (() => {
         ? document.querySelector('.achievement-gem-balance-value') : null;
       animateCurrencyReward('gems', previous, data.balance, rewardOrigin, achievementBalance);
     }
-    return { previous: data.previous, balance: data.balance, change: data.change, duplicate: !!data.duplicate, rewardDay: data.rewardDay, bonusAmount: data.bonusAmount };
+    return { previous: data.previous, balance: data.balance, change: data.change, duplicate: !!data.duplicate, reset: !!data.reset, rewardDay: data.rewardDay, bonusAmount: data.bonusAmount };
   }
   return Object.freeze({
     getBalance: currentBalance,
@@ -3395,7 +3422,8 @@ const Gems = (() => {
     earn: (amount, operationId) => applyGemChange('earn', amount, operationId),
     spend: (amount, operationId) => applyGemChange('spend', amount, operationId),
     claimAchievement: (id, sourceRect) => applyGemChange('achievement', null, 'achievement:' + id, null, id, sourceRect),
-    claimDaily: sourceRect => applyGemChange('daily', null, 'daily:' + today(), null, null, sourceRect)
+    claimDaily: sourceRect => applyGemChange('daily', null, 'daily:' + today(), null, null, sourceRect),
+    resetEverything: operationId => applyGemChange('reset', null, operationId)
   });
 })();
 window.Gems = Gems;

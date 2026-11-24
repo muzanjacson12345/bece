@@ -475,6 +475,70 @@ async function applyGemReward(uid, action, achievementId, operationId, accessTok
   }
 }
 
+function encodeFirestoreValue(value) {
+  if (value === null) return { nullValue: null };
+  if (typeof value === 'string') return { stringValue: value };
+  if (typeof value === 'boolean') return { booleanValue: value };
+  if (typeof value === 'number') return Number.isInteger(value) ? { integerValue: String(value) } : { doubleValue: value };
+  if (Array.isArray(value)) return { arrayValue: { values: value.map(encodeFirestoreValue) } };
+  if (value && typeof value === 'object') {
+    return { mapValue: { fields: Object.fromEntries(Object.entries(value).map(([key, item]) => [key, encodeFirestoreValue(item)])) } };
+  }
+  throw new Error('INVALID_RESET_VALUE');
+}
+
+async function applyFullReset(uid, accessToken) {
+  const transactionResult = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents:beginTransaction',
+    accessToken,
+    { method: 'POST', body: {} }
+  );
+  const transaction = transactionResult.transaction;
+  if (!transaction) throw new Error('FIRESTORE_TRANSACTION_FAILED');
+  let finished = false;
+  try {
+    const player = await getDocument('players/' + encodeURIComponent(uid), accessToken, transaction);
+    if (!player) throw new Error('PLAYER_PROFILE_NOT_READY');
+    const currentFields = player.fields || {};
+    const displayName = currentFields.displayName && typeof currentFields.displayName.stringValue === 'string'
+      ? currentFields.displayName.stringValue : '';
+    const resetProfile = {
+      displayName,
+      totalExp: 0, weekKey: '', weekExp: 0, dayKey: '', dayExp: 0,
+      streak: 0, bestStreak: 0, lastDay: '',
+      duelW: 0, duelL: 0, duelD: 0,
+      coins: 0, owned: {}, eq: {}, p50: 0, sfreezes: 0, xpBoost: 0,
+      dcDay: '', dcN: 0,
+      counted: { day: '', ids: [] },
+      challengeState: { day: new Date().toISOString().slice(0, 10), progress: {}, subjects: [], claimed: [], coinClaimed: false },
+      achievements: { stats: {}, subjects: [], unlocked: [] },
+      avatar: '', photo: '', color: '', bio: '',
+      gems: 0, gemOps: [], gemCosmetics: {}, equippedGemCosmetic: ''
+    };
+    if (currentFields.role && typeof currentFields.role.stringValue === 'string') resetProfile.role = currentFields.role.stringValue;
+    const encodedFields = Object.fromEntries(Object.entries(resetProfile).map(([key, value]) => [key, encodeFirestoreValue(value)]));
+    const fieldPaths = [...new Set([...Object.keys(currentFields), ...Object.keys(encodedFields)])];
+    const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
+    await firestoreRequest(
+      'projects/' + PROJECT_ID + '/databases/(default)/documents:commit',
+      accessToken,
+      { method: 'POST', body: { transaction, writes: [{
+        update: { name: documentName, fields: encodedFields },
+        updateMask: { fieldPaths }
+      }] } }
+    );
+    finished = true;
+    const previous = currentFields.gems ? parseIntegerField(currentFields.gems, 0) : 0;
+    return {
+      previous, balance: 0, change: -previous, duplicate: false,
+      operations: [], gemCosmetics: {}, equippedGemCosmetic: '',
+      reset: true, profile: resetProfile
+    };
+  } finally {
+    if (!finished) await rollbackTransaction(transaction, accessToken);
+  }
+}
+
 async function applyGemChange(uid, action, amount, operationId, accessToken) {
   const documentName = 'projects/' + PROJECT_ID + '/databases/(default)/documents/players/' + uid;
   const transactionResult = await firestoreRequest(
@@ -565,7 +629,7 @@ export default {
       const action = payload && payload.action;
       const amount = payload && payload.amount;
       const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
-      if (!['earn', 'spend', 'purchase', 'achievement', 'daily'].includes(action)) return json({ ok: false, error: 'INVALID_ACTION' }, 400, origin);
+      if (!['earn', 'spend', 'purchase', 'achievement', 'daily', 'reset'].includes(action)) return json({ ok: false, error: 'INVALID_ACTION' }, 400, origin);
       if (action === 'purchase' && (typeof (payload && payload.itemId) !== 'string' || !GEM_COSMETICS[payload.itemId])) {
         return json({ ok: false, error: 'INVALID_GEM_ITEM' }, 400, origin);
       }
@@ -582,6 +646,7 @@ export default {
       if (action === 'achievement' && operationId !== 'achievement:' + achievementId) {
         return json({ ok: false, error: 'INVALID_ACHIEVEMENT_OPERATION_ID' }, 400, origin);
       }
+      if (action === 'reset' && !operationId.startsWith('reset:')) return json({ ok: false, error: 'INVALID_RESET_OPERATION_ID' }, 400, origin);
       if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(operationId)) {
         return json({ ok: false, error: 'INVALID_GEM_OPERATION_ID' }, 400, origin);
       }
@@ -591,11 +656,13 @@ export default {
         const role = await userRole(identity.uid, accessToken);
         if (role !== 'owner') return json({ ok: false, code: 'EARN_REQUIRES_OWNER', error: 'Gems can only be granted by the Owner until approved reward rules are added.' }, 403, origin);
       }
-      const outcome = action === 'purchase'
-        ? await applyGemCosmeticPurchase(identity.uid, payload.itemId, operationId, accessToken)
-        : (action === 'achievement' || action === 'daily')
-          ? await applyGemReward(identity.uid, action, achievementId, operationId, accessToken)
-          : await applyGemChange(identity.uid, action, amount, operationId, accessToken);
+      const outcome = action === 'reset'
+        ? await applyFullReset(identity.uid, accessToken)
+        : action === 'purchase'
+          ? await applyGemCosmeticPurchase(identity.uid, payload.itemId, operationId, accessToken)
+          : (action === 'achievement' || action === 'daily')
+            ? await applyGemReward(identity.uid, action, achievementId, operationId, accessToken)
+            : await applyGemChange(identity.uid, action, amount, operationId, accessToken);
       return json({ ok: true, ...outcome }, 200, origin);
     } catch (error) {
       if (error && error.message === 'INSUFFICIENT_GEMS') {

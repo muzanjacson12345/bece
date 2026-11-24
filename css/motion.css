@@ -1305,3 +1305,51 @@ button:disabled,
 @media (prefers-reduced-motion: reduce) {
   .reward-target-ping { animation: none !important; }
 }
+
+
+/* Stage 9 — refined currency reward flight. */
+.reward-flight-token {
+  position: fixed; z-index: 10002; display: grid; box-sizing: border-box;
+  width: 38px; height: 38px; place-items: center;
+  border: 1px solid rgb(255 255 255 / 78%); border-radius: 50%;
+  pointer-events: none; user-select: none; opacity: 0;
+  contain: layout paint style; will-change: transform, opacity;
+  background: radial-gradient(circle at 31% 23%, #fff9dc 0%, #ffe49a 21%, #eab64f 54%, #bd7a22 100%);
+  box-shadow: inset 0 1px 2px rgb(255 255 255 / 72%), inset 0 -2px 4px rgb(112 66 12 / 22%), 0 5px 13px rgb(0 0 0 / 18%);
+}
+.reward-flight-token::before {
+  content: ""; position: absolute; inset: 3px; border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: inherit; pointer-events: none;
+}
+.reward-flight-token::after {
+  content: ""; position: absolute; inset: -7px; z-index: -1; border-radius: 50%;
+  pointer-events: none; background: radial-gradient(circle, rgb(255 221 132 / 42%) 0%, rgb(255 221 132 / 0%) 72%);
+}
+.reward-flight-icon { position: relative; z-index: 1; width: 19px; height: 19px; color: #74460e; stroke-width: 2.5; }
+.reward-flight-token-gems {
+  width: 36px; height: 36px; border-radius: 12px; border-color: rgb(231 255 255 / 88%);
+  background: radial-gradient(circle at 29% 22%, #ffffff 0%, #c9ffff 16%, #55d8ce 47%, #218eaa 100%);
+  box-shadow: inset 0 1px 2px rgb(255 255 255 / 82%), inset 0 -2px 4px rgb(13 88 108 / 25%), 0 5px 13px rgb(0 0 0 / 18%);
+}
+.reward-flight-token-gems::before { inset: 3px; border-radius: 9px; border-color: rgb(255 255 255 / 55%); }
+.reward-flight-token-gems::after { background: radial-gradient(circle, rgb(105 240 229 / 46%) 0%, rgb(105 240 229 / 0%) 72%); }
+.reward-flight-token-gems .reward-flight-icon { width: 19px; height: 19px; color: #fff; }
+@keyframes reward-target-ping {
+  0% { transform: scale(1); text-shadow: 0 0 0 transparent; }
+  42% { transform: scale(1.1); text-shadow: 0 0 11px var(--accent); }
+  100% { transform: scale(1); text-shadow: 0 0 0 transparent; }
+}
+.reward-target-ping { display: inline-block; transform-origin: center; animation: reward-target-ping 390ms cubic-bezier(.16, 1, .3, 1) both; }
+@media (max-width: 760px) {
+  .reward-flight-token {
+    width: 34px; height: 34px;
+    box-shadow: inset 0 1px 2px rgb(255 255 255 / 68%), inset 0 -2px 4px rgb(112 66 12 / 18%), 0 3px 8px rgb(0 0 0 / 16%);
+  }
+  .reward-flight-icon { width: 17px; height: 17px; }
+  .reward-flight-token-gems { width: 33px; height: 33px; }
+  .reward-flight-token-gems .reward-flight-icon { width: 17px; height: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reward-flight-token { display: none !important; }
+  .reward-target-ping { animation: none !important; }
+}
