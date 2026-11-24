@@ -2993,3 +2993,36 @@ button:disabled,
     box-shadow: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 54 — Notes and Essay learning-aid reveal
+   Reveal answer checks, exam tips and planning guidance only when opened.
+   -------------------------------------------------------------------------- */
+:root { --motion-learning-aid-reveal-duration: 220ms; }
+@media (max-width: 760px) {
+  :root { --motion-learning-aid-reveal-duration: 200ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-learning-aid-reveal-duration: 230ms; }
+}
+@keyframes motion-learning-aid-reveal {
+  0% { opacity: .35; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.note-answer[open] > p,
+.note-extra[open] > p,
+#essay-plan details[open] > ol,
+#essay-plan details[open] > p {
+  animation: motion-learning-aid-reveal var(--motion-learning-aid-reveal-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-answer[open] > p,
+  .note-extra[open] > p,
+  #essay-plan details[open] > ol,
+  #essay-plan details[open] > p {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
