@@ -2742,3 +2742,37 @@ button:disabled,
     box-shadow: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 46 — Seven-day daily Gem streak milestone
+   Celebrate the confirmed Day 7 claim, not a preview or duplicate transaction.
+   -------------------------------------------------------------------------- */
+:root { --motion-daily-streak-milestone-duration: 720ms; }
+@media (max-width: 760px) {
+  :root { --motion-daily-streak-milestone-duration: 640ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-daily-streak-milestone-duration: 740ms; }
+}
+@keyframes motion-daily-streak-milestone {
+  0% { transform: scale(.94); box-shadow: 0 0 0 0 var(--accent-soft); }
+  48% { transform: scale(1.07); box-shadow: 0 0 0 6px var(--accent-soft); border-color: var(--accent); }
+  76% { transform: scale(1.025); box-shadow: 0 0 0 3px var(--accent-soft); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; border-color: var(--accent); }
+}
+.daily-gem-day.is-streak-milestone {
+  position: relative;
+  animation: motion-daily-streak-milestone var(--motion-daily-streak-milestone-duration) var(--motion-ease-enter) both;
+}
+.daily-gem-day.is-streak-milestone span {
+  color: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily-gem-day.is-streak-milestone {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}

@@ -748,7 +748,7 @@ function renderDaily() {
   rewardHead.append(rewardTitle,o('strong','daily-gem-balance','💎 ' + Math.max(0,Number(d.gems)||0)));
   const days = o('div','daily-gem-days');
   for(let n=1;n<=7;n++){
-    const tile=o('div','daily-gem-day'+(n<rewardDay || (claimedToday && n<=claimedDayNumber) ? ' is-done' : '')+(n===rewardDay && !claimedToday ? ' is-current' : '')+(dailyGemClaimFeedback && claimedToday && n===claimedDayNumber ? ' is-claim-confirmed' : ''));
+    const tile=o('div','daily-gem-day'+(n<rewardDay || (claimedToday && n<=claimedDayNumber) ? ' is-done' : '')+(n===rewardDay && !claimedToday ? ' is-current' : '')+(dailyGemClaimFeedback && claimedToday && n===claimedDayNumber ? ' is-claim-confirmed' : '')+(dailyGemClaimFeedback === 7 && claimedToday && n===7 ? ' is-streak-milestone' : ''));
     tile.append(o('strong','', 'Day '+n),o('span','',n===7?'+6 💎':'+1 💎'));
     if(claimedToday && n===claimedDayNumber) tile.append(o('small','','Claimed'));
     days.append(tile);
@@ -3824,7 +3824,7 @@ const Gems = (() => {
       if (data.gemCosmetics && typeof data.gemCosmetics === 'object') mine.gemCosmetics = data.gemCosmetics;
       if (typeof data.equippedGemCosmetic === 'string') mine.equippedGemCosmetic = data.equippedGemCosmetic;
     }
-    dailyGemClaimFeedback = action === 'daily' && !data.duplicate && Number(data.change) > 0;
+    dailyGemClaimFeedback = action === 'daily' && !data.duplicate && Number(data.change) > 0 ? (Number(data.rewardDay) || 1) : false;
     achievementGemClaimFeedbackId = action === 'achievement' && !data.duplicate && Number(data.change) > 0
       ? achievementId : '';
     renderAccount();
