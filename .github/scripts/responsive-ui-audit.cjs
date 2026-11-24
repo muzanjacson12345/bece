@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-announcement-banner-motion-2026-11-24-r32';
+const EXPECTED_BUILD = 'bece-reward-claim-feedback-2026-11-24-r33';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -265,6 +265,8 @@ async function main() {
     ['Stage 15 overlay dismissal respects reduced-motion settings', source.includes("'(prefers-reduced-motion: reduce)'") && source.includes('.friend-modal.motion-overlay-closing') && source.includes('transition: none !important;')],
     ['Stage 16 announcements animate in and dismiss through the shared overlay helper', source.includes('Stage 16 — Announcement banner motion') && source.includes('motion-announcement-enter') && source.includes('.ann-bar.motion-overlay-closing') && source.includes('if (bar) App.dismissOverlay(bar)')],
     ['Stage 16 announcement motion has responsive and reduced-motion settings', source.includes('--motion-announcement-enter-duration: 210ms') && source.includes('--motion-announcement-exit-duration: 165ms') && source.includes('.ann-bar.motion-overlay-closing') && source.includes('transition: none !important;')],
+    ['Stage 17 only animates the exact daily reward or achievement just claimed', source.includes('dailyGemClaimFeedback = action === \'daily\' && !data.duplicate && Number(data.change) > 0') && source.includes('achievementGemClaimFeedbackId = action === \'achievement\' && !data.duplicate && Number(data.change) > 0') && source.includes('dailyCoinClaimFeedback = outcome.added > 0 && !outcome.duplicate') && source.includes('.daily-gem-day.is-claim-confirmed') && source.includes('.achievement-item.is-gem-claim-confirmed')],
+    ['Stage 17 claim feedback has phone/desktop timing and respects reduced motion', source.includes('--motion-claim-confirmed-duration: 275ms') && source.includes('--motion-claim-confirmed-duration: 315ms') && source.includes('motion-reward-claim-confirmed') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -843,7 +845,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1006,7 +1008,41 @@ async function main() {
         });
         await homePage.waitForFunction(() => window.__motionAnnouncementDone === true
           && !document.querySelector('#motion-announcement-test'), null, { timeout: 1200 });
+        stage = 'confirmed reward claim feedback';
+        await homePage.evaluate(() => {
+          const dayTile = document.createElement('div');
+          dayTile.id = 'motion-claimed-day-test';
+          dayTile.className = 'daily-gem-day is-claim-confirmed';
+          const dailyCoins = document.createElement('section');
+          dailyCoins.className = 'daily-challenge-bonus is-claim-confirmed';
+          const coinIcon = document.createElement('span');
+          coinIcon.className = 'daily-challenge-bonus-icon';
+          dailyCoins.append(coinIcon);
+          const achievement = document.createElement('article');
+          achievement.className = 'achievement-item is-gem-claim-confirmed';
+          const claimedBadge = document.createElement('span');
+          claimedBadge.className = 'achievement-claim-confirmed';
+          achievement.append(claimedBadge);
+          document.body.append(dayTile, dailyCoins, achievement);
+        });
+        check.rewardClaimFeedback = await homePage.evaluate(() => {
+          const day = document.querySelector('#motion-claimed-day-test');
+          const coins = document.querySelector('.daily-challenge-bonus.is-claim-confirmed .daily-challenge-bonus-icon');
+          const badge = document.querySelector('.achievement-item.is-gem-claim-confirmed .achievement-claim-confirmed');
+          return !!day && !!coins && !!badge
+            && getComputedStyle(day).animationName === 'motion-reward-claim-confirmed'
+            && getComputedStyle(coins).animationName === 'motion-reward-claim-confirmed'
+            && getComputedStyle(badge).animationName === 'motion-reward-claim-confirmed';
+        });
         await homePage.emulateMedia({ reducedMotion: 'reduce' });
+        check.rewardClaimReducedMotion = await homePage.evaluate(() => {
+          const nodes = [
+            document.querySelector('#motion-claimed-day-test'),
+            document.querySelector('.daily-challenge-bonus.is-claim-confirmed .daily-challenge-bonus-icon'),
+            document.querySelector('.achievement-item.is-gem-claim-confirmed .achievement-claim-confirmed')
+          ];
+          return nodes.every(node => node && getComputedStyle(node).animationName === 'none');
+        });
         await homePage.evaluate(() => {
           const overlay = document.createElement('div');
           overlay.id = 'motion-overlay-reduced-test';

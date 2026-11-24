@@ -25,6 +25,9 @@ const rewardFlightQueues = new Map();
 const rewardFlightBusy = new Set();
 let rewardFlightSequence = 0;
 const REWARD_FLIGHT_LAYER_ID = 'bece-reward-flight-layer';
+let dailyGemClaimFeedback = false;
+let dailyCoinClaimFeedback = false;
+let achievementGemClaimFeedbackId = '';
 
 function captureRewardRect(element) {
   if (!element || typeof element.getBoundingClientRect !== 'function') return null;
@@ -594,7 +597,9 @@ function renderAchievements() {
     const grid=o('div','achievement-grid');
     items.forEach(a=>{
       const value=achievementValue(a,data,stats), earned=unlocked.includes(a.id);
-      const card=o('article','achievement-item'+(earned?' is-earned':''));
+      const claimed = earned && gemOps.includes('achievement:' + a.id);
+      const claimFeedback = claimed && achievementGemClaimFeedbackId === a.id;
+      const card=o('article','achievement-item'+(earned?' is-earned':'')+(claimFeedback?' is-gem-claim-confirmed':''));
       const main=o('div','achievement-main');
       const icon=o('span','achievement-icon',a.icon);
       const copy=o('div','achievement-copy');
@@ -610,8 +615,7 @@ function renderAchievements() {
         const rewardRow = o('div','achievement-reward-row');
         rewardRow.append(o('span','achievement-gem-reward','💎 ' + gemReward + ' Gems'));
         if (earned) {
-          const claimed = gemOps.includes('achievement:' + a.id);
-          if (claimed) rewardRow.append(o('span','achievement-status','✓ Gems claimed'));
+          if (claimed) rewardRow.append(o('span','achievement-status'+(claimFeedback?' achievement-claim-confirmed':''),'✓ Gems claimed'));
           else {
             const claim = o('button','btn btn-primary btn-sm achievement-claim','Claim Gems');
             claim.type = 'button';
@@ -671,8 +675,13 @@ async function claimDailyChallengeCoins(day, amount, sourceRect) {
   S.doc = { ...(S.doc || {}), coins: outcome.balance, challengeState: outcome.state };
   const mine = (S.players || []).find(player => player.id === S.uid);
   if (mine) { mine.coins = outcome.balance; mine.challengeState = outcome.state; }
-  renderAccount();
-  renderDaily();
+  dailyCoinClaimFeedback = outcome.added > 0 && !outcome.duplicate;
+  try {
+    renderAccount();
+    renderDaily();
+  } finally {
+    dailyCoinClaimFeedback = false;
+  }
   if (outcome.added > 0 && !outcome.duplicate) {
     animateCurrencyReward('coins', outcome.previous, outcome.balance, sourceRect);
   }
@@ -711,14 +720,14 @@ function renderDaily() {
   const previousDayNumber = yesterdayClaim ? Number(yesterdayClaim.split(':')[2]) || 0 : 0;
   const rewardDay = claimedToday ? claimedDayNumber : (previousDayNumber >= 1 && previousDayNumber < 7 ? previousDayNumber + 1 : 1);
   const canClaimGem = !!(S.db && S.uid && state.day === day && Number(progressData.quizzes || 0) >= 1);
-  const rewardPanel = o('section','daily-gem-rewards');
+  const rewardPanel = o('section','daily-gem-rewards'+(dailyGemClaimFeedback?' is-claim-confirmed':''));
   const rewardHead = o('div','daily-gem-head'), rewardTitle = o('div');
   rewardTitle.append(o('p','eyebrow','A little reward for learning'),o('h3','','Daily Gem Rewards'),
     o('p','','Complete at least one normal practice quiz today to unlock your Gems. Missed days never take away Gems you have already earned.'));
   rewardHead.append(rewardTitle,o('strong','daily-gem-balance','💎 ' + Math.max(0,Number(d.gems)||0)));
   const days = o('div','daily-gem-days');
   for(let n=1;n<=7;n++){
-    const tile=o('div','daily-gem-day'+(n<rewardDay || (claimedToday && n<=claimedDayNumber) ? ' is-done' : '')+(n===rewardDay && !claimedToday ? ' is-current' : ''));
+    const tile=o('div','daily-gem-day'+(n<rewardDay || (claimedToday && n<=claimedDayNumber) ? ' is-done' : '')+(n===rewardDay && !claimedToday ? ' is-current' : '')+(dailyGemClaimFeedback && claimedToday && n===claimedDayNumber ? ' is-claim-confirmed' : ''));
     tile.append(o('strong','', 'Day '+n),o('span','',n===7?'+6 💎':'+1 💎'));
     if(claimedToday && n===claimedDayNumber) tile.append(o('small','','Claimed'));
     days.append(tile);
@@ -748,7 +757,7 @@ function renderDaily() {
   const challengeCoinAmount = Math.floor(DAILY_CHALLENGE_COIN_REWARD * coinRate);
   const coinClaimed = state.coinClaimed === true;
   const allChallengesComplete = tasks.length === 3 && done === 3;
-  const coinPanel = o('section', 'daily-challenge-bonus');
+  const coinPanel = o('section', 'daily-challenge-bonus'+(dailyCoinClaimFeedback?' is-claim-confirmed':''));
   const coinCopy = o('div', 'daily-challenge-bonus-copy');
   coinCopy.append(o('span', 'daily-challenge-bonus-icon', '💰'));
   const coinText = o('div');
@@ -3629,10 +3638,18 @@ const Gems = (() => {
       if (data.gemCosmetics && typeof data.gemCosmetics === 'object') mine.gemCosmetics = data.gemCosmetics;
       if (typeof data.equippedGemCosmetic === 'string') mine.equippedGemCosmetic = data.equippedGemCosmetic;
     }
+    dailyGemClaimFeedback = action === 'daily' && !data.duplicate && Number(data.change) > 0;
+    achievementGemClaimFeedbackId = action === 'achievement' && !data.duplicate && Number(data.change) > 0
+      ? achievementId : '';
     renderAccount();
     renderFriends();
-    renderDaily();
-    renderAchievements();
+    try {
+      renderDaily();
+      renderAchievements();
+    } finally {
+      dailyGemClaimFeedback = false;
+      achievementGemClaimFeedbackId = '';
+    }
     if (window.GemShop && typeof window.GemShop.render === 'function') window.GemShop.render();
     if (!data.duplicate && Number(data.change) > 0) {
       const previous = Number.isFinite(Number(data.previous)) ? Number(data.previous) : balanceBefore;

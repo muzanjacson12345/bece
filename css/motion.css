@@ -1899,3 +1899,51 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 17 — Confirmed reward claim feedback
+   Highlight only the reward the player just claimed, never the whole page.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-claim-confirmed-duration: 310ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-claim-confirmed-duration: 275ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-claim-confirmed-duration: 315ms; }
+}
+
+@keyframes motion-reward-claim-confirmed {
+  0% { opacity: .76; transform: scale(.93); }
+  68% { opacity: 1; transform: scale(1.055); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.daily-gem-day.is-claim-confirmed {
+  transform-origin: center;
+  animation: motion-reward-claim-confirmed var(--motion-claim-confirmed-duration) var(--motion-ease-enter) both;
+}
+.daily-gem-rewards.is-claim-confirmed .daily-gem-balance {
+  animation: motion-reward-claim-confirmed var(--motion-claim-confirmed-duration) var(--motion-ease-enter) both;
+}
+.daily-challenge-bonus.is-claim-confirmed .daily-challenge-bonus-icon {
+  transform-origin: center;
+  animation: motion-reward-claim-confirmed var(--motion-claim-confirmed-duration) var(--motion-ease-enter) both;
+}
+.achievement-item.is-gem-claim-confirmed .achievement-claim-confirmed {
+  display: inline-block;
+  transform-origin: left center;
+  animation: motion-reward-claim-confirmed var(--motion-claim-confirmed-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daily-gem-day.is-claim-confirmed,
+  .daily-gem-rewards.is-claim-confirmed .daily-gem-balance,
+  .daily-challenge-bonus.is-claim-confirmed .daily-challenge-bonus-icon,
+  .achievement-item.is-gem-claim-confirmed .achievement-claim-confirmed {
+    animation: none !important;
+    transform: none !important;
+  }
+}
