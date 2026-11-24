@@ -2070,7 +2070,14 @@ document.querySelectorAll('[data-notes-sub]').forEach(b => b.addEventListener('c
   Notes.refresh({ animateTopicEntrance: true });
   replayMotion(b, 'motion-note-subject-selected');
 }));
-document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => { Notes.level = b.dataset.level; Notes.refresh(); }));
+document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => {
+  const changed = Notes.level !== b.dataset.level;
+  if (!changed) return;
+  Notes.level = b.dataset.level;
+  const activeTopicRemains = Notes.list().some(note => note.id === Notes.activeId);
+  Notes.refresh({ animateTopicEntrance: !activeTopicRemains });
+  replayMotion(b, 'motion-note-level-selected');
+}));
 document.querySelectorAll('[data-font]').forEach(b => b.addEventListener('click', () => {
   const changed = Notes.font !== b.dataset.font;
   Notes.font = b.dataset.font;

@@ -2285,3 +2285,36 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 34 — Notes JHS level selection feedback
+   Highlight the newly chosen level and enter replacement content only if needed.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-note-level-duration: 205ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-note-level-duration: 185ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-note-level-duration: 215ms; }
+}
+
+@keyframes motion-note-level-selected {
+  0% { transform: scale(.95); }
+  68% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+.chip[data-level].motion-note-level-selected {
+  transform-origin: center;
+  animation: motion-note-level-selected var(--motion-note-level-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip[data-level].motion-note-level-selected {
+    animation: none !important;
+    transform: none !important;
+  }
+}
