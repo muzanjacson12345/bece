@@ -1238,7 +1238,12 @@ const Quiz = {
       if (chosen) button.classList.add(exam ? 'is-answered' : chosen === question.correct ? 'is-right' : 'is-miss');
       if (index === this.idx) button.setAttribute('aria-current', 'step');
       button.setAttribute('aria-label', `Question ${index + 1}, ${chosen ? 'answered' : 'not answered'}${index === this.idx ? ', current' : ''}`);
-      button.addEventListener('click', () => this.go(index));
+      button.addEventListener('click', () => {
+        if (index === this.idx) return;
+        this.go(index);
+        const selected = map.querySelector('.qdot[aria-current="step"]');
+        if (selected) replayMotion(selected, 'motion-question-map-selected');
+      });
       map.append(button);
     });
     $('answered-count').textContent = `${Object.keys(this.answers).length} of ${this.questions.length} answered`;

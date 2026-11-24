@@ -3026,3 +3026,32 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 55 — Quiz question-map selection feedback
+   Highlight the newly selected question dot while the question card uses its own transition.
+   -------------------------------------------------------------------------- */
+:root { --motion-question-map-selected-duration: 205ms; }
+@media (max-width: 760px) {
+  :root { --motion-question-map-selected-duration: 185ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-question-map-selected-duration: 215ms; }
+}
+@keyframes motion-question-map-selected {
+  0% { transform: scale(.9); }
+  65% { transform: scale(1.13); }
+  100% { transform: scale(1); }
+}
+#question-map-buttons .qdot.motion-question-map-selected {
+  transform-origin: center;
+  animation: motion-question-map-selected var(--motion-question-map-selected-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #question-map-buttons .qdot.motion-question-map-selected {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
