@@ -1141,6 +1141,7 @@ const Quiz = {
 
     const saved = bookmarks.includes(q.id);
     const mark = $('bmark-btn');
+    mark.classList.remove('motion-bookmark-saved', 'motion-bookmark-removed');
     mark.setAttribute('aria-pressed', String(saved));
     mark.setAttribute('aria-label', saved ? 'Remove bookmark' : 'Bookmark this question');
     mark.title = saved ? 'Saved — tap to remove' : 'Save for later';
@@ -1281,10 +1282,14 @@ const Quiz = {
   },
   toggleBookmark() {
     const q = this.current();
-    if (bookmarks.includes(q.id)) { bookmarks = bookmarks.filter(id => id !== q.id); toast('Removed from saved questions.'); }
+    const wasSaved = bookmarks.includes(q.id);
+    const saved = !wasSaved;
+    if (wasSaved) { bookmarks = bookmarks.filter(id => id !== q.id); toast('Removed from saved questions.'); }
     else { bookmarks.push(q.id); toast('Saved. Find it under “Saved questions” on the home page.', 'good'); }
     saveBookmarks();
     this.render();
+    const mark = $('bmark-btn');
+    replayMotion(mark, saved ? 'motion-bookmark-saved' : 'motion-bookmark-removed');
   },
 
   finish(timeUp = false) {

@@ -1998,3 +1998,42 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 20 — Bookmark save and remove feedback
+   Animate only the actual save/remove action, never a normal quiz rerender.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-bookmark-feedback-duration: 260ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-bookmark-feedback-duration: 235ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-bookmark-feedback-duration: 270ms; }
+}
+
+@keyframes motion-bookmark-toggle-pop {
+  0% { transform: scale(.84); }
+  64% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+.bookmark.motion-bookmark-saved .icon,
+.bookmark.motion-bookmark-removed .icon {
+  display: inline-block;
+  transform-origin: center;
+  animation: motion-bookmark-toggle-pop var(--motion-bookmark-feedback-duration) var(--motion-ease-enter) both;
+}
+.bookmark.motion-bookmark-removed .icon {
+  animation-duration: calc(var(--motion-bookmark-feedback-duration) * .88);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookmark.motion-bookmark-saved .icon,
+  .bookmark.motion-bookmark-removed .icon {
+    animation: none !important;
+    transform: none !important;
+  }
+}
