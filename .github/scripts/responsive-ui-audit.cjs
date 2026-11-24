@@ -874,28 +874,51 @@ async function main() {
           if (typeof window.App?.toast !== 'function') throw new Error('App.toast is not available.');
           window.App.toast('Responsive motion audit notice', 'good');
         });
-        await homePage.waitForSelector('.toasts .toast.is-in', { timeout: 3000 });
-        await homePage.waitForTimeout(70);
-        check.toastEnter = await homePage.evaluate(() => {
-          const item = document.querySelector('.toasts .toast.is-in');
-          if (!item) return false;
+        const auditToastText = 'Responsive motion audit notice';
+        const auditToast = () => [...document.querySelectorAll('.toasts .toast')]
+          .find(item => item.textContent.includes(auditToastText));
+        await homePage.waitForFunction(() => {
+          const item = [...document.querySelectorAll('.toasts .toast')]
+            .find(node => node.textContent.includes('Responsive motion audit notice'));
+          return !!item && item.classList.contains('is-in');
+        }, null, { timeout: 3000 });
+        await homePage.waitForFunction(() => {
+          const item = [...document.querySelectorAll('.toasts .toast')]
+            .find(node => node.textContent.includes('Responsive motion audit notice'));
+          return !!item && Number(getComputedStyle(item).opacity) > .98;
+        }, null, { timeout: 1200 });
+        check.toastEnter = await homePage.evaluate(text => {
+          const item = [...document.querySelectorAll('.toasts .toast')]
+            .find(node => node.textContent.includes(text));
+          if (!item || !item.classList.contains('is-in')) return false;
           const style = getComputedStyle(item);
           const properties = style.transitionProperty.split(',').map(value => value.trim());
           const duration = Number.parseFloat(style.transitionDuration) || 0;
-          const opacity = Number(style.opacity);
           return properties.includes('opacity') && properties.includes('transform')
-            && duration >= .15 && duration <= .24 && opacity > 0 && opacity < 1;
-        });
-        await homePage.waitForSelector('.toasts .toast.is-out', { timeout: 5000 });
-        await homePage.waitForTimeout(70);
-        check.toastExit = await homePage.evaluate(() => {
-          const item = document.querySelector('.toasts .toast.is-out');
-          if (!item) return false;
+            && duration >= .15 && duration <= .24 && Number(style.opacity) > .98;
+        }, auditToastText);
+        await homePage.waitForFunction(() => {
+          const item = [...document.querySelectorAll('.toasts .toast')]
+            .find(node => node.textContent.includes('Responsive motion audit notice'));
+          return !!item && item.classList.contains('is-out');
+        }, null, { timeout: 5000 });
+        await homePage.waitForFunction(() => {
+          const item = [...document.querySelectorAll('.toasts .toast')]
+            .find(node => node.textContent.includes('Responsive motion audit notice'));
+          return !!item && Number(getComputedStyle(item).opacity) < .05;
+        }, null, { timeout: 1200 });
+        check.toastExit = await homePage.evaluate(text => {
+          const item = [...document.querySelectorAll('.toasts .toast')]
+            .find(node => node.textContent.includes(text));
+          if (!item || !item.classList.contains('is-out')) return false;
           const style = getComputedStyle(item);
+          const properties = style.transitionProperty.split(',').map(value => value.trim());
           const duration = Number.parseFloat(style.transitionDuration) || 0;
-          return Number(style.opacity) < .98 && duration >= .15 && duration <= .21;
-        });
-        await homePage.waitForFunction(() => !document.querySelector('.toasts .toast'), null, { timeout: 1000 });
+          return properties.includes('opacity') && properties.includes('transform')
+            && Number(style.opacity) < .05 && duration >= .15 && duration <= .21;
+        }, auditToastText);
+        await homePage.waitForFunction(() => ![...document.querySelectorAll('.toasts .toast')]
+          .some(item => item.textContent.includes('Responsive motion audit notice')), null, { timeout: 1000 });
         stage = 'custom overlay exit motion';
         await homePage.evaluate(() => {
           const overlay = document.createElement('div');
