@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-quiz-setup-selection-motion-2026-11-24-r51';
+const EXPECTED_BUILD = 'bece-learning-lab-motion-2026-11-24-r52';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -303,6 +303,12 @@ async function main() {
     ['Stage 34 new filtered topic content and level feedback respect reduced motion', source.includes('Stage 34 — Notes JHS level selection feedback') && source.includes('--motion-note-level-duration: 185ms') && source.includes('.chip[data-level].motion-note-level-selected') && source.includes('animation: none !important;')],
     ['Stage 35 quiz setup animates only deliberate count, subject, length and mode changes', source.includes('Stage 35 — Quiz setup selection feedback') && source.includes('#quiz-subject-count .length-option.motion-setup-count-selected') && source.includes('.subject-choice-grid [data-setup-sub].motion-setup-subject-selected') && source.includes('#length-buttons .length-option.motion-setup-length-selected') && source.includes('.mode-grid .mode-option.motion-setup-mode-selected') && source.includes('motion-setup-count-selected') && source.includes('motion-setup-subject-selected') && source.includes('motion-setup-length-selected') && source.includes('motion-setup-mode-selected')],
     ['Stage 35 quiz setup feedback has touch timing and reduced-motion handling', source.includes('--motion-setup-choice-duration: 185ms') && source.includes('--motion-setup-choice-duration: 215ms') && source.includes('animation: none !important;')],
+    ['Stage 36 interactive lesson answers animate the chosen option and feedback message', source.includes('Stage 36 — Interactive lesson answer feedback') && source.includes('.lesson-opt.motion-lesson-answer-correct') && source.includes('.lesson-opt.motion-lesson-answer-wrong') && source.includes('.lesson-fb.motion-lesson-feedback-correct') && source.includes("replayMotion(opts[n], 'motion-lesson-answer-correct')") && source.includes("replayMotion(opts[n], 'motion-lesson-answer-wrong')")],
+    ['Stage 36 numeric lesson answers have distinct correct and incorrect feedback states', source.includes('.lesson-in.is-correct') && source.includes('.lesson-in.is-incorrect') && source.includes('motion-lesson-input-correct') && source.includes('motion-lesson-input-wrong') && source.includes('animation: none !important;')],
+    ['Stage 37 animates only newly revealed worked-example steps', source.includes('Stage 37 — Worked-example step reveal') && source.includes('.flow-step.motion-worked-step-enter') && source.includes("replayMotion(d, 'motion-worked-step-enter')")],
+    ['Stage 37 worked-step entrance has responsive timing and reduced-motion support', source.includes('--motion-worked-step-duration: 205ms') && source.includes('--motion-worked-step-duration: 245ms') && source.includes('animation: none !important;')],
+    ['Stage 38 animates a Maths lab only when its result changes from unsolved to solved', source.includes('Stage 38 — Maths lab solved-state feedback') && source.includes("const wasSolved = !!result?.classList.contains('win')") && source.includes("replayMotion(result, 'motion-lab-solved')") && source.includes('.lab-out.motion-lab-solved')],
+    ['Stage 38 lab solved feedback has responsive timing and reduced-motion support', source.includes('--motion-lab-solved-duration: 225ms') && source.includes('--motion-lab-solved-duration: 275ms') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -881,7 +887,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -928,6 +934,85 @@ async function main() {
             && getComputedStyle(button).animationName === 'motion-setup-choice-pop';
         });
         await motionPage.locator('[data-mode="practice"]').click();
+
+        stage = 'interactive lesson answer feedback';
+        await motionPage.evaluate(() => {
+          const root = document.createElement('div');
+          root.id = 'motion-stage-36-test';
+          const card = FlowBlock({ ask: 'Which answer is correct?', opts: ['Not this one', 'This one'], ans: 1, reply: 'Correct answer!' });
+          root.append(card);
+          document.body.append(root);
+          root.querySelectorAll('.lesson-opt')[0].click();
+        });
+        await motionPage.waitForTimeout(50);
+        check.lessonAnswerFeedback = await motionPage.evaluate(() => {
+          const root = document.querySelector('#motion-stage-36-test');
+          const wrong = root?.querySelector('.lesson-opt.bad');
+          const feedback = root?.querySelector('.lesson-fb.motion-lesson-feedback-wrong');
+          if (!wrong || !feedback) return false;
+          const wrongMotion = getComputedStyle(wrong).animationName;
+          const feedbackMotion = getComputedStyle(feedback).animationName;
+          root.querySelectorAll('.lesson-opt')[1].click();
+          return wrongMotion === 'motion-lesson-answer-pop' && feedbackMotion === 'motion-lesson-feedback-enter';
+        });
+        await motionPage.waitForTimeout(50);
+        check.lessonAnswerFeedback = check.lessonAnswerFeedback && await motionPage.evaluate(() => {
+          const root = document.querySelector('#motion-stage-36-test');
+          const correct = root?.querySelector('.lesson-opt.ok.motion-lesson-answer-correct');
+          const feedback = root?.querySelector('.lesson-fb.motion-lesson-feedback-correct');
+          return !!correct && !!feedback
+            && getComputedStyle(correct).animationName === 'motion-lesson-answer-pop'
+            && getComputedStyle(feedback).animationName === 'motion-lesson-feedback-enter';
+        });
+
+        const numeric = await motionPage.evaluate(() => {
+          const root = document.querySelector('#motion-stage-36-test');
+          const card = FlowBlock({ try: 'What is 3 + 3?', ans: 6, hint: 'Add the two numbers.', reply: 'Six!' });
+          root.append(card);
+          const input = card.querySelector('.lesson-in');
+          input.value = '2';
+          input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+          return !!card.querySelector('.lesson-in.is-incorrect');
+        });
+        await motionPage.waitForTimeout(45);
+        check.lessonNumericFeedback = numeric && await motionPage.evaluate(() => {
+          const root = document.querySelector('#motion-stage-36-test');
+          const input = root?.querySelector('.lesson-in.is-incorrect.motion-lesson-input-wrong');
+          const feedback = root?.querySelector('.lesson-fb.motion-lesson-feedback-wrong');
+          return !!input && !!feedback && getComputedStyle(input).animationName === 'motion-lesson-answer-pop';
+        });
+
+        stage = 'worked-example step reveal';
+        await motionPage.evaluate(() => {
+          const root = document.querySelector('#motion-stage-36-test');
+          const card = FlowBlock({ title: 'A two-step example', steps: [{ h: 'First', w: 'Start with the first operation.' }] });
+          root.append(card);
+          card.querySelector('.lesson-check').click();
+        });
+        await motionPage.waitForTimeout(45);
+        check.workedStepFeedback = await motionPage.evaluate(() => {
+          const step = document.querySelector('#motion-stage-36-test .flow-step.motion-worked-step-enter');
+          return !!step && getComputedStyle(step).animationName === 'motion-worked-step-enter';
+        });
+
+        stage = 'Maths lab solved-state feedback';
+        await motionPage.evaluate(() => {
+          const root = document.querySelector('#motion-stage-36-test');
+          const lab = FlowBlock({ widget: 'bal' });
+          root.append(lab);
+          const slider = lab.querySelector('input[type="range"]');
+          slider.value = '3';
+          slider.dispatchEvent(new Event('input', { bubbles: true }));
+          slider.value = '6';
+          slider.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        await motionPage.waitForTimeout(50);
+        check.labSolvedFeedback = await motionPage.evaluate(() => {
+          const result = document.querySelector('#motion-stage-36-test .lab-out.motion-lab-solved');
+          return !!result && result.classList.contains('win')
+            && getComputedStyle(result).animationName === 'motion-lab-solved-pop';
+        });
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-36-test')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();
