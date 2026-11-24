@@ -1606,7 +1606,21 @@ function renderFriends() {
   let lbNote = ''; const lb = o('section', 'card leaderboard'), head = o('div', 'section-heading'), hd = o('div');
   hd.append(o('p', 'eyebrow', 'The friends board'), o('h2', '', 'Who\u2019s putting in the work?')); head.append(hd);
   const tg = o('div', 'board-seg'); head.append(o('span', 'section-meta', plural(list.length, 'player')));
-  [['day', 'Today'], ['week', 'Week'], ['all', 'All time'], ['everyone', 'Everyone']].forEach(([k, t]) => { const b = o('button', '', t); b.type = 'button'; b.setAttribute('aria-pressed', String(B === k)); b.onclick = () => { S.board = k; renderFriends(); }; tg.append(b); });
+  [['day', 'Today'], ['week', 'Week'], ['all', 'All time'], ['everyone', 'Everyone']].forEach(([k, t]) => {
+    const b = o('button', '', t);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(B === k));
+    b.onclick = () => {
+      const changed = S.board !== k;
+      S.board = k;
+      renderFriends();
+      if (changed) {
+        const selected = body.querySelector('.board-seg button[aria-pressed="true"]');
+        replayMotion(selected, 'motion-board-filter-selected');
+      }
+    };
+    tg.append(b);
+  });
   if (B === 'day') lbNote = 'Today\u2019s board resets at midnight. EXP counts from this update onward.';
   else if (B === 'week') lbNote = 'Weekly board resets every Monday. EXP counts from this update onward.';
   else if (B === 'everyone') lbNote = 'Everyone who has used the app, even with no EXP yet.';

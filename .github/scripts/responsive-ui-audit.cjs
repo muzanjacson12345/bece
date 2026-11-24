@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-bookmark-feedback-motion-2026-11-24-r36';
+const EXPECTED_BUILD = 'bece-friends-filter-selection-motion-2026-11-24-r37';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -273,6 +273,8 @@ async function main() {
     ['Stage 19 new-achievement pop respects reduced-motion settings', source.includes('Stage 19 — Newly unlocked achievement feedback') && source.includes('.achievement-item.is-newly-earned .achievement-icon') && source.includes('animation: none !important;')],
     ['Stage 20 bookmark save and remove animate only on a real toggle', source.includes('replayMotion(mark, saved ? \'motion-bookmark-saved\' : \'motion-bookmark-removed\')') && source.includes('motion-bookmark-saved') && source.includes('motion-bookmark-removed') && source.includes('.bookmark.motion-bookmark-saved .icon') && source.includes('.bookmark.motion-bookmark-removed .icon')],
     ['Stage 20 bookmark feedback respects reduced-motion and has responsive timing', source.includes('--motion-bookmark-feedback-duration: 235ms') && source.includes('Stage 20 — Bookmark save and remove feedback') && source.includes('.bookmark.motion-bookmark-saved .icon') && source.includes('animation: none !important;')],
+    ['Stage 21 leaderboard filter feedback runs only when the selected period changes', source.includes('const changed = S.board !== k;') && source.includes("if (changed) {") && source.includes("replayMotion(selected, 'motion-board-filter-selected')") && source.includes('.board-seg button.motion-board-filter-selected')],
+    ['Stage 21 filter feedback has responsive timing and reduced-motion support', source.includes('Stage 21 — Friends leaderboard filter feedback') && source.includes('--motion-board-filter-duration: 185ms') && source.includes('.board-seg button.motion-board-filter-selected') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -851,7 +853,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1115,6 +1117,21 @@ async function main() {
           && bookmarkMotionState.saveDuration >= .22 && bookmarkMotionState.saveDuration <= .29;
         check.bookmarkRemoveFeedback = bookmarkMotionState.removed === 'motion-bookmark-toggle-pop'
           && bookmarkMotionState.removeDuration >= .19 && bookmarkMotionState.removeDuration <= .26;
+        const boardFilterMotion = await homePage.evaluate(() => {
+          const group = document.createElement('div');
+          group.className = 'board-seg';
+          const selected = document.createElement('button');
+          selected.className = 'motion-board-filter-selected';
+          group.append(selected);
+          document.body.append(group);
+          const style = getComputedStyle(selected);
+          return {
+            name: style.animationName,
+            duration: Number.parseFloat(style.animationDuration) || 0,
+          };
+        });
+        check.boardFilterFeedback = boardFilterMotion.name === 'motion-board-filter-selected'
+          && boardFilterMotion.duration >= .17 && boardFilterMotion.duration <= .23;
         await homePage.emulateMedia({ reducedMotion: 'reduce' });
         check.challengeCompletionReducedMotion = await homePage.evaluate(() => {
           const item = document.querySelector('#motion-challenge-complete-test');
@@ -1134,6 +1151,10 @@ async function main() {
             document.querySelector('#motion-bookmark-remove-test .icon')
           ];
           return icons.every(icon => icon && getComputedStyle(icon).animationName === 'none');
+        });
+        check.boardFilterReducedMotion = await homePage.evaluate(() => {
+          const button = document.querySelector('.board-seg button.motion-board-filter-selected');
+          return !!button && getComputedStyle(button).animationName === 'none';
         });
         await homePage.evaluate(() => {
           const overlay = document.createElement('div');

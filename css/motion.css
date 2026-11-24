@@ -2037,3 +2037,36 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 21 — Friends leaderboard filter feedback
+   Give the newly selected period a small confirmation without moving the list.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-board-filter-duration: 205ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-board-filter-duration: 185ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-board-filter-duration: 215ms; }
+}
+
+@keyframes motion-board-filter-selected {
+  0% { transform: scale(.95); }
+  68% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+
+.board-seg button.motion-board-filter-selected {
+  transform-origin: center;
+  animation: motion-board-filter-selected var(--motion-board-filter-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-seg button.motion-board-filter-selected {
+    animation: none !important;
+    transform: none !important;
+  }
+}
