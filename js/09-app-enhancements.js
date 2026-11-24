@@ -133,11 +133,13 @@
         btn.setAttribute("aria-label",n==="multiple"?"Choose multiple subjects":("Choose "+n+" "+(n===1?"subject":"subjects")));
         btn.title=btn.getAttribute("aria-label");
         btn.addEventListener("click",()=>{
+          const changed=this.subjectCount!==n;
           this.subjectCount=n;
           const max=n==="multiple"?subjects.length:Number(n);
           if(this.subjects.length>max)this.subjects=this.subjects.slice(0,max);
           this.topic="all";
           this.renderSubject();
+          if(changed)replayMotion(btn,"motion-setup-count-selected");
         });
         countBox.append(btn);
       });
@@ -179,8 +181,13 @@
       if(n&&n>=count)return;
       const btn=document.createElement("button");
       btn.type="button";btn.className="length-option";btn.textContent=n?String(n):"All "+count;
+      btn.dataset.setupLength=String(n);
       btn.setAttribute("aria-pressed",String(n===this.length));
-      btn.addEventListener("click",()=>{Setup.length=n;Setup.update();});
+      btn.addEventListener("click",()=>{
+        const changed=Setup.length!==n;
+        Setup.length=n;Setup.update();
+        if(changed)replayMotion(document.querySelector('#length-buttons [data-setup-length="'+n+'"]'),"motion-setup-length-selected");
+      });
       box.append(btn);
     });
     document.querySelectorAll("[data-mode]").forEach(btn=>btn.setAttribute("aria-checked",String(btn.dataset.mode===this.mode)));
@@ -206,6 +213,7 @@
     ensureSelection();
     const key=one.dataset.setupSub;
     const max=subjectLimit();
+    const changed=Setup.subjects.includes(key)||Setup.subjects.length<max;
     if(Setup.subjects.includes(key)){
       Setup.subjects=Setup.subjects.filter(x=>x!==key);
     }else if(Setup.subjects.length<max){
@@ -214,6 +222,7 @@
     Setup.subject=Setup.subjects[0]||"social";
     Setup.topic="all";
     Setup.renderSubject();
+    if(changed)replayMotion(one,"motion-setup-subject-selected");
   });
   document.querySelectorAll("[data-notes-sub='careerTechnology']").forEach(btn=>btn.addEventListener("click",()=>{Notes.sub=btn.dataset.notesSub;Notes.activeId=null;Notes.refresh({keepScroll:false});}));
   Home.render();
