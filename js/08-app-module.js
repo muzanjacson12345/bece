@@ -30,6 +30,8 @@ let dailyCoinClaimFeedback = false;
 let achievementGemClaimFeedbackId = '';
 let dailyChallengeCompletionFeedback = new Set();
 let newlyEarnedAchievementFeedback = new Set();
+const achievementProgressSnapshot = new Map();
+let achievementProgressUid = '';
 
 function captureRewardRect(element) {
   if (!element || typeof element.getBoundingClientRect !== 'function') return null;
@@ -571,6 +573,10 @@ function achievementValue(a, data, stats) {
 }
 function renderAchievements() {
   const e = $('achievement-card'); if (!e) return;
+  if (achievementProgressUid !== (S.uid || '')) {
+    achievementProgressSnapshot.clear();
+    achievementProgressUid = S.uid || '';
+  }
   const data = S.doc && S.doc.achievements || {}, stats = data.stats || {};
   const unlocked = Array.isArray(data.unlocked) ? data.unlocked : [];
   const gemOps = Array.isArray(S.doc && S.doc.gemOps) ? S.doc.gemOps : [];
@@ -599,19 +605,30 @@ function renderAchievements() {
     const grid=o('div','achievement-grid');
     items.forEach(a=>{
       const value=achievementValue(a,data,stats), earned=unlocked.includes(a.id);
+      const previousValue = achievementProgressSnapshot.get(a.id);
+      const progressed = previousValue !== undefined && value > previousValue && !earned;
+      const previousQuarter = previousValue === undefined ? 0 : Math.floor(Math.min(previousValue, a.target) * 4 / Math.max(1, a.target));
+      const currentQuarter = Math.floor(Math.min(value, a.target) * 4 / Math.max(1, a.target));
+      const crossedMilestone = progressed && currentQuarter > previousQuarter;
       const claimed = earned && gemOps.includes('achievement:' + a.id);
       const claimFeedback = claimed && achievementGemClaimFeedbackId === a.id;
       const newlyEarned = earned && newlyEarnedAchievementFeedback.has(a.id);
       const card=o('article','achievement-item'+(earned?' is-earned':'')+(newlyEarned?' is-newly-earned':'')+(claimFeedback?' is-gem-claim-confirmed':''));
       const main=o('div','achievement-main');
-      const icon=o('span','achievement-icon',a.icon);
+      const icon=o('span','achievement-icon' + (crossedMilestone ? ' motion-achievement-milestone' : ''),a.icon);
       const copy=o('div','achievement-copy');
       copy.append(o('strong','',a.title),o('small','',a.detail));
       main.append(icon,copy);
       const status=o('span','achievement-status',earned?'✓ Earned':Math.min(value,a.target)+' / '+a.target);
-      const track=o('div','achievement-track'),bar=o('span','achievement-fill');
-      bar.style.transform='scaleX('+(Math.min(value,a.target)/a.target)+')';
+      const track=o('div','achievement-track'),bar=o('span','achievement-fill' + (progressed ? ' motion-achievement-progress' : ''));
+      const fillTo = Math.min(value,a.target) / Math.max(1, a.target);
+      if (progressed) {
+        bar.style.setProperty('--achievement-progress-from', String(Math.min(previousValue,a.target) / Math.max(1,a.target)));
+        bar.style.setProperty('--achievement-progress-to', String(fillTo));
+      }
+      bar.style.transform='scaleX(' + fillTo + ')';
       track.append(bar);
+      achievementProgressSnapshot.set(a.id, value);
       card.append(main,status,track);
       const gemReward = GEM_ACHIEVEMENT_REWARDS[a.id];
       if (gemReward) {

@@ -2693,3 +2693,52 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 45 — Achievement progress and quarter-milestone feedback
+   Animate only a real increase; milestone icons respond when a progress quarter is crossed.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-achievement-progress-duration: 380ms;
+  --motion-achievement-milestone-duration: 285ms;
+}
+@media (max-width: 760px) {
+  :root {
+    --motion-achievement-progress-duration: 340ms;
+    --motion-achievement-milestone-duration: 260ms;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-achievement-progress-duration: 395ms;
+    --motion-achievement-milestone-duration: 295ms;
+  }
+}
+@keyframes motion-achievement-progress {
+  0% { transform: scaleX(var(--achievement-progress-from)); filter: brightness(1); }
+  68% { filter: brightness(1.22); }
+  100% { transform: scaleX(var(--achievement-progress-to)); filter: brightness(1); }
+}
+@keyframes motion-achievement-milestone {
+  0% { transform: scale(.92); box-shadow: 0 0 0 0 var(--accent-soft); }
+  62% { transform: scale(1.08); box-shadow: 0 0 0 5px var(--accent-soft); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+}
+.achievement-fill.motion-achievement-progress {
+  animation: motion-achievement-progress var(--motion-achievement-progress-duration) var(--motion-ease-enter) both;
+  transform-origin: left center;
+}
+.achievement-icon.motion-achievement-milestone {
+  animation: motion-achievement-milestone var(--motion-achievement-milestone-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .achievement-fill.motion-achievement-progress,
+  .achievement-icon.motion-achievement-milestone {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
+}
