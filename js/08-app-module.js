@@ -726,7 +726,10 @@ function renderDaily() {
   const head = o('div', 'challenge-heading'), info = o('div', 'daily-info');
   info.append(o('p', 'eyebrow', '3 fresh missions every day'), o('h2', '', 'Daily Challenges'));
   info.append(o('p', 'muted', CHALLENGE_POOL.length + ' possible missions. Your three are randomly selected each day. EXP is added automatically as you complete each mission.'));
-  const summary = o('div', 'challenge-summary'); summary.append(o('strong', '', done + '/3'), o('span', '', 'completed'));
+  const summary = o('div', 'challenge-summary');
+  const summaryCount = o('strong', '', done + '/3');
+  summary.append(summaryCount, o('span', '', 'completed'));
+  if (dailyChallengeCompletionFeedback.size) replayMotion(summaryCount, 'motion-daily-challenge-summary-complete');
   head.append(info, summary);
   const list = o('div', 'challenge-list');
   tasks.forEach(t => {

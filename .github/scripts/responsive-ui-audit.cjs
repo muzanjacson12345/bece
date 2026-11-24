@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-quiz-question-map-expansion-feedback-2026-11-24-r75';
+const EXPECTED_BUILD = 'bece-daily-challenge-summary-feedback-2026-11-24-r77';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -356,6 +356,8 @@ async function main() {
     ['Stage 59 unanswered-question notice has responsive timing and reduced-motion support', source.includes('Stage 59 — Unanswered quiz warning reveal') && source.includes('--motion-quiz-unanswered-warning-duration: 210ms') && source.includes('--motion-quiz-unanswered-warning-duration: 240ms') && source.includes('#submit-check.motion-quiz-unanswered-warning') && source.includes('animation: none !important;')],
     ['Stage 60 animates the question grid only after a manual open of the collapsed question map', source.includes("const questionMapSummary = questionMap && questionMap.querySelector('summary')") && source.includes("if (questionMap.open) return;") && source.includes("replayMotion($('question-map-buttons'), 'motion-question-map-open')")],
     ['Stage 60 question-map expansion has responsive timing and reduced-motion support', source.includes('Stage 60 — Quiz question-map expansion') && source.includes('--motion-question-map-open-duration: 225ms') && source.includes('--motion-question-map-open-duration: 255ms') && source.includes('#question-map[open] .question-dots.motion-question-map-open') && source.includes('animation: none !important;')],
+    ['Stage 61 animates the Daily Challenge done/3 total only when newly completed missions are present', source.includes("const summaryCount = o('strong'") && source.includes('dailyChallengeCompletionFeedback.size') && source.includes("replayMotion(summaryCount, 'motion-daily-challenge-summary-complete')")],
+    ['Stage 61 Daily Challenge summary count has responsive timing and reduced-motion support', source.includes('Stage 61 — Daily Challenge total completion count') && source.includes('--motion-daily-challenge-summary-duration: 230ms') && source.includes('--motion-daily-challenge-summary-duration: 265ms') && source.includes('#daily-card .challenge-summary strong.motion-daily-challenge-summary-complete') && source.includes('animation: none !important;')],
     ['Stage 43 Duel result lifecycle animation runs once per duel, not on every snapshot refresh', source.includes("let lastLobbyCode = '', lastResultCode = '';") && source.includes('const isNewResult = D.code !== lastResultCode;') && source.includes("if (isNewResult) {") && source.includes("lastResultCode = ''")],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
@@ -973,7 +975,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, duelLifecycleFeedback: false, flashConfidenceFeedback: false, achievementProgressFeedback: false, dailyStreakMilestoneFeedback: false, quizSessionEntryFeedback: false, topicCompletionFeedback: false, resultsTopicBreakdownFeedback: false, dailyChallengeProgressFeedback: false, reviewExplanationFeedback: false, reviewFilterFeedback: false, notesOutlineFocusFeedback: false, learningAidRevealFeedback: false, questionMapSelectionFeedback: false, duelInviteShareFeedback: false, duelSetupPaneFeedback: false, recallPromptFeedback: false, unansweredWarningFeedback: false, questionMapExpansionFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, duelLifecycleFeedback: false, flashConfidenceFeedback: false, achievementProgressFeedback: false, dailyStreakMilestoneFeedback: false, quizSessionEntryFeedback: false, topicCompletionFeedback: false, resultsTopicBreakdownFeedback: false, dailyChallengeProgressFeedback: false, reviewExplanationFeedback: false, reviewFilterFeedback: false, notesOutlineFocusFeedback: false, learningAidRevealFeedback: false, questionMapSelectionFeedback: false, duelInviteShareFeedback: false, duelSetupPaneFeedback: false, recallPromptFeedback: false, unansweredWarningFeedback: false, questionMapExpansionFeedback: false, dailyChallengeSummaryFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1521,6 +1523,27 @@ async function main() {
           return !!dots && getComputedStyle(dots).animationName === 'motion-question-map-open';
         });
         await motionPage.evaluate(() => document.querySelector('#motion-stage-60-wrap')?.remove());
+
+        stage = 'Daily Challenge completion summary feedback';
+        await motionPage.evaluate(() => {
+          const card = document.createElement('section');
+          card.id = 'daily-card';
+          const summary = document.createElement('div');
+          summary.className = 'challenge-summary';
+          const count = document.createElement('strong');
+          count.className = 'motion-daily-challenge-summary-complete';
+          count.id = 'motion-stage-61-test';
+          count.textContent = '1/3';
+          summary.append(count);
+          card.append(summary);
+          document.body.append(card);
+        });
+        await motionPage.waitForTimeout(45);
+        check.dailyChallengeSummaryFeedback = await motionPage.evaluate(() => {
+          const count = document.querySelector('#motion-stage-61-test');
+          return !!count && getComputedStyle(count).animationName === 'motion-daily-challenge-summary-complete';
+        });
+        await motionPage.evaluate(() => document.querySelector('#daily-card')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();

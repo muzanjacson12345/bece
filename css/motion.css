@@ -3192,3 +3192,33 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 61 — Daily Challenge total completion count
+   Pulse the done/3 total only when newly completed tasks have been saved.
+   -------------------------------------------------------------------------- */
+:root { --motion-daily-challenge-summary-duration: 255ms; }
+@media (max-width: 760px) {
+  :root { --motion-daily-challenge-summary-duration: 230ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-daily-challenge-summary-duration: 265ms; }
+}
+@keyframes motion-daily-challenge-summary-complete {
+  0% { opacity: .6; transform: scale(.92); }
+  65% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+#daily-card .challenge-summary strong.motion-daily-challenge-summary-complete {
+  display: inline-block;
+  transform-origin: center;
+  animation: motion-daily-challenge-summary-complete var(--motion-daily-challenge-summary-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #daily-card .challenge-summary strong.motion-daily-challenge-summary-complete {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
