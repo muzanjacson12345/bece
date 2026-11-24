@@ -2312,7 +2312,10 @@ const Duel = (() => {
   function mode() {
     D.mode = D.mode || 'create';
     const panes = { open: D.pOpen, create: D.pCreate, join: D.pJoin };
+    const selectedPane = panes[D.mode];
+    const shouldAnimate = !!(selectedPane && selectedPane.hidden);
     Object.keys(panes).forEach(k => { D.mb[k].setAttribute('aria-pressed', String(D.mode === k)); panes[k].hidden = D.mode !== k; });
+    if (shouldAnimate) replayMotion(selectedPane, 'motion-duel-pane-enter');
   }
   function paint() {
     if (!D.list || !D.tiles) return;

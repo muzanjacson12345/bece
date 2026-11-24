@@ -3084,3 +3084,30 @@ button:disabled,
     box-shadow: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 57 — Duel setup pane entrance
+   Bring in only the Open, Create or Join panel that has just become visible.
+   -------------------------------------------------------------------------- */
+:root { --motion-duel-pane-duration: 220ms; }
+@media (max-width: 760px) {
+  :root { --motion-duel-pane-duration: 200ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-duel-pane-duration: 230ms; }
+}
+@keyframes motion-duel-pane-enter {
+  0% { opacity: .45; transform: translateY(7px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+#duels-body .duel-pane.motion-duel-pane-enter {
+  animation: motion-duel-pane-enter var(--motion-duel-pane-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #duels-body .duel-pane.motion-duel-pane-enter {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

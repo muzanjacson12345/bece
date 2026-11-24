@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-duel-invite-share-feedback-2026-11-24-r71';
+const EXPECTED_BUILD = 'bece-duel-setup-pane-feedback-2026-11-24-r72';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -348,6 +348,8 @@ async function main() {
     ['Stage 55 question-map selection has responsive timing and reduced-motion support', source.includes('Stage 55 — Quiz question-map selection feedback') && source.includes('--motion-question-map-selected-duration: 185ms') && source.includes('--motion-question-map-selected-duration: 215ms') && source.includes('#question-map-buttons .qdot.motion-question-map-selected') && source.includes('animation: none !important;')],
     ['Stage 56 animates the Duel invite button only after a completed native share or clipboard write', source.includes('let shareButton = null;') && source.includes('await navigator.share({ text })') && source.includes('await navigator.clipboard.writeText(text)') && source.includes("replayMotion(shareButton, 'motion-duel-invite-shared')") && source.includes("error.name === 'AbortError'")],
     ['Stage 56 Duel invite feedback has responsive timing and reduced-motion support', source.includes('Stage 56 — Duel invite share confirmation') && source.includes('--motion-duel-invite-shared-duration: 205ms') && source.includes('--motion-duel-invite-shared-duration: 235ms') && source.includes('.duel-modal .btn.motion-duel-invite-shared') && source.includes('animation: none !important;')],
+    ['Stage 57 animates a Duel setup pane only when that pane changes from hidden to visible', source.includes('const selectedPane = panes[D.mode];') && source.includes('const shouldAnimate = !!(selectedPane && selectedPane.hidden);') && source.includes("replayMotion(selectedPane, 'motion-duel-pane-enter')")],
+    ['Stage 57 Duel pane entrance has phone/desktop timing and reduced-motion support', source.includes('Stage 57 — Duel setup pane entrance') && source.includes('--motion-duel-pane-duration: 200ms') && source.includes('--motion-duel-pane-duration: 230ms') && source.includes('#duels-body .duel-pane.motion-duel-pane-enter') && source.includes('animation: none !important;')],
     ['Stage 43 Duel result lifecycle animation runs once per duel, not on every snapshot refresh', source.includes("let lastLobbyCode = '', lastResultCode = '';") && source.includes('const isNewResult = D.code !== lastResultCode;') && source.includes("if (isNewResult) {") && source.includes("lastResultCode = ''")],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
@@ -965,7 +967,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, duelLifecycleFeedback: false, flashConfidenceFeedback: false, achievementProgressFeedback: false, dailyStreakMilestoneFeedback: false, quizSessionEntryFeedback: false, topicCompletionFeedback: false, resultsTopicBreakdownFeedback: false, dailyChallengeProgressFeedback: false, reviewExplanationFeedback: false, reviewFilterFeedback: false, notesOutlineFocusFeedback: false, learningAidRevealFeedback: false, questionMapSelectionFeedback: false, duelInviteShareFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, duelLifecycleFeedback: false, flashConfidenceFeedback: false, achievementProgressFeedback: false, dailyStreakMilestoneFeedback: false, quizSessionEntryFeedback: false, topicCompletionFeedback: false, resultsTopicBreakdownFeedback: false, dailyChallengeProgressFeedback: false, reviewExplanationFeedback: false, reviewFilterFeedback: false, notesOutlineFocusFeedback: false, learningAidRevealFeedback: false, questionMapSelectionFeedback: false, duelInviteShareFeedback: false, duelSetupPaneFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1441,6 +1443,23 @@ async function main() {
           return !!button && getComputedStyle(button).animationName === 'motion-duel-invite-shared';
         });
         await motionPage.evaluate(() => document.querySelector('#motion-stage-56-test')?.remove());
+
+        stage = 'Duel setup pane entrance feedback';
+        await motionPage.evaluate(() => {
+          const body = document.createElement('section');
+          body.id = 'duels-body';
+          const pane = document.createElement('div');
+          pane.className = 'duel-pane motion-duel-pane-enter';
+          pane.id = 'motion-stage-57-test';
+          body.append(pane);
+          document.body.append(body);
+        });
+        await motionPage.waitForTimeout(45);
+        check.duelSetupPaneFeedback = await motionPage.evaluate(() => {
+          const pane = document.querySelector('#motion-stage-57-test');
+          return !!pane && getComputedStyle(pane).animationName === 'motion-duel-pane-enter';
+        });
+        await motionPage.evaluate(() => document.querySelector('#duels-body')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();
