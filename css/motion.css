@@ -3252,3 +3252,33 @@ button:disabled,
     box-shadow: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 63 — Quiz question number change
+   Give a small cue when navigating to a different question, not on same-question redraws.
+   -------------------------------------------------------------------------- */
+:root { --motion-quiz-question-number-duration: 205ms; }
+@media (max-width: 760px) {
+  :root { --motion-quiz-question-number-duration: 185ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-quiz-question-number-duration: 215ms; }
+}
+@keyframes motion-quiz-question-number-change {
+  0% { opacity: .55; transform: translateY(3px) scale(.94); }
+  70% { opacity: 1; transform: translateY(-1px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+#screen-quiz #qnum.motion-quiz-question-number-change {
+  display: inline-block;
+  transform-origin: center;
+  animation: motion-quiz-question-number-change var(--motion-quiz-question-number-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #screen-quiz #qnum.motion-quiz-question-number-change {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

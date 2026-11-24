@@ -1081,6 +1081,7 @@ const Quiz = {
   warned: false,
   reviewFilter: 'missed',
   motionQuestion: false,
+  lastRenderedQuestionIndex: null,
 
   start(opts) {
     if (!opts.pool || !opts.pool.length) { toast('There are no questions in this selection yet.'); return; }
@@ -1089,6 +1090,7 @@ const Quiz = {
     const picked = this.opts.keepOrder ? opts.pool.slice(0, count) : shuffle(opts.pool).slice(0, count);
     this.questions = picked.map(q => ({ ...q, order: shuffle(q.options.map(o => o.key)) }));
     this.idx = 0;
+    this.lastRenderedQuestionIndex = null;
     this.answers = {};
     this.score = 0;
     this.streak = 0;
@@ -1146,7 +1148,11 @@ const Quiz = {
     const exam = this.opts.mode === 'exam';
     const total = this.questions.length;
     const chosen = this.answers[q.id];
-    $('qnum').textContent = this.idx + 1;
+    const questionNumber = $('qnum');
+    const questionChanged = this.lastRenderedQuestionIndex !== null && this.lastRenderedQuestionIndex !== this.idx;
+    questionNumber.textContent = this.idx + 1;
+    if (questionChanged) replayMotion(questionNumber, 'motion-quiz-question-number-change');
+    this.lastRenderedQuestionIndex = this.idx;
     $('qtotal').textContent = total;
     $('pbar').style.transform = `scaleX(${Object.keys(this.answers).length / total})`;
     $('qtopic').textContent = q.topic;
