@@ -1634,3 +1634,82 @@ button:disabled,
     animation: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 13 — Profile customisation feedback
+   Animate the actual selected choice and the panel that has just been opened.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-profile-choice-duration: 225ms;
+  --motion-profile-panel-duration: 245ms;
+}
+@media (max-width: 760px) {
+  :root {
+    --motion-profile-choice-duration: 205ms;
+    --motion-profile-panel-duration: 220ms;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-profile-choice-duration: 225ms;
+    --motion-profile-panel-duration: 255ms;
+  }
+}
+
+@keyframes motion-profile-choice-pop {
+  0% {
+    opacity: .76;
+    transform: scale(.9);
+  }
+  68% {
+    opacity: 1;
+    transform: scale(1.065);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes motion-profile-check-reveal {
+  0% { opacity: 0; transform: scale(.65) rotate(-14deg); }
+  72% { opacity: 1; transform: scale(1.12) rotate(3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes motion-profile-panel-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 9px, 0) scale(.996);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+#cz-panel > .cz-panel.motion-profile-panel-enter > .cz-section {
+  animation: motion-profile-panel-enter var(--motion-profile-panel-duration) var(--motion-ease-enter) both;
+}
+
+#cz-panel > .cz-tabs > button[aria-selected="true"],
+#cz-panel .emoji-pick.is-on,
+#cz-panel .theme-tile[aria-pressed="true"] {
+  transform-origin: center;
+  animation: motion-profile-choice-pop var(--motion-profile-choice-duration) var(--motion-ease-enter) both;
+}
+
+#cz-panel .theme-tile[aria-pressed="true"] .tt-check {
+  animation: motion-profile-check-reveal 190ms var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #cz-panel > .cz-panel.motion-profile-panel-enter > .cz-section,
+  #cz-panel > .cz-tabs > button[aria-selected="true"],
+  #cz-panel .emoji-pick.is-on,
+  #cz-panel .theme-tile[aria-pressed="true"],
+  #cz-panel .theme-tile[aria-pressed="true"] .tt-check {
+    animation: none !important;
+  }
+}

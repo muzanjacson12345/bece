@@ -1512,6 +1512,9 @@ function buildProfileCard() {
     st.refresh = null; st.onTheme = null;
     panel.setAttribute('aria-labelledby', 'cz-tab-' + st.tab);
     panel.replaceChildren(st.tab === 'avatar' ? avatarPanel() : st.tab === 'theme' ? themePanel() : aboutPanel());
+    panel.classList.remove('motion-profile-panel-enter');
+    void panel.offsetWidth;
+    panel.classList.add('motion-profile-panel-enter');
   }
   document.addEventListener('bece:theme', () => { if (st.onTheme) st.onTheme(); });
 

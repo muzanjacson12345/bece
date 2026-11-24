@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-nav-panel-motion-2026-11-24-r28';
+const EXPECTED_BUILD = 'bece-profile-customisation-motion-2026-11-24-r29';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -255,6 +255,9 @@ async function main() {
     ['Stage 12 animates the active mobile navigation icon', source.includes('Stage 12 — Navigation and in-page panel motion') && source.includes('.tab-bar a.is-active .icon') && source.includes('motion-nav-icon-select')],
     ['Stage 12 animates Notes/Essays and Coins/Gems panels', source.includes('#notes-content:not([hidden])') && source.includes('#notes-essay-view:not([hidden])') && source.includes('#shop-body:not([hidden])') && source.includes('#gemshop-body:not([hidden])') && source.includes('motion-tab-panel-enter')],
     ['Stage 12 navigation and panel motion has explicit reduced-motion handling', source.includes('.notes-view-tabs a[aria-selected="true"] .icon') && source.includes('#gemshop-body:not([hidden])') && source.includes('animation: none !important;')],
+    ['Stage 13 replays a real entrance when a profile customisation panel is switched', source.includes("panel.classList.remove('motion-profile-panel-enter')") && source.includes("panel.classList.add('motion-profile-panel-enter')") && source.includes('#cz-panel > .cz-panel.motion-profile-panel-enter > .cz-section')],
+    ['Stage 13 animates selected avatar and colour-theme choices with a check reveal', source.includes('#cz-panel .emoji-pick.is-on') && source.includes('#cz-panel .theme-tile[aria-pressed="true"]') && source.includes('motion-profile-choice-pop') && source.includes('motion-profile-check-reveal')],
+    ['Stage 13 profile customisation motion respects reduced-motion settings', source.includes('#cz-panel .theme-tile[aria-pressed="true"] .tt-check') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -702,18 +705,43 @@ async function main() {
                 const tab = profileTabs.nth(profileIndex);
                 const tabId = (await tab.getAttribute('id') || '').replace('cz-tab-', '');
                 await tab.click();
-                await page.waitForTimeout(220);
+                await page.waitForTimeout(55);
                 if (await tab.getAttribute('aria-selected') !== 'true') {
                   report.failures.push(`${viewport.name}/friends-me: failed to select ${tabId}`);
                 }
                 if (!profilePanels[tabId] || !(await page.locator(`#cz-panel ${profilePanels[tabId]}`).count())) {
                   report.failures.push(`${viewport.name}/friends-me: ${tabId} panel content did not appear`);
                 }
+                const activeProfileTabMotion = await tab.evaluate(node => getComputedStyle(node).animationName);
+                const activeProfilePanelMotion = await page.locator('#cz-panel > .cz-panel > .cz-section').evaluate(node => getComputedStyle(node).animationName);
+                if (activeProfileTabMotion !== 'motion-profile-choice-pop') {
+                  report.failures.push(`${viewport.name}/friends-me: ${tabId} selected tab did not animate`);
+                }
+                if (activeProfilePanelMotion !== 'motion-profile-panel-enter') {
+                  report.failures.push(`${viewport.name}/friends-me: ${tabId} panel did not animate`);
+                }
                 if (tabId === 'avatar' && !(await page.locator('#cz-panel .emoji-grid .emoji-pick').count())) {
                   report.failures.push(`${viewport.name}/friends-me: avatar choices did not render`);
                 }
+                if (tabId === 'avatar') {
+                  const selectedAvatar = page.locator('#cz-panel .emoji-pick.is-on');
+                  if (await selectedAvatar.count()) {
+                    const avatarMotion = await selectedAvatar.evaluate(node => getComputedStyle(node).animationName);
+                    if (avatarMotion !== 'motion-profile-choice-pop') {
+                      report.failures.push(`${viewport.name}/friends-me: selected avatar did not animate`);
+                    }
+                  }
+                }
                 if (tabId === 'theme' && await page.locator('#cz-panel .mode-seg button[data-mode]').count() !== 3) {
                   report.failures.push(`${viewport.name}/friends-me: Light/Dark/Auto controls did not render`);
+                }
+                if (tabId === 'theme') {
+                  const selectedTheme = page.locator('#cz-panel .theme-tile[aria-pressed="true"]');
+                  const themeMotion = await selectedTheme.evaluate(node => getComputedStyle(node).animationName);
+                  const checkMotion = await selectedTheme.locator('.tt-check').evaluate(node => getComputedStyle(node).animationName);
+                  if (themeMotion !== 'motion-profile-choice-pop' || checkMotion !== 'motion-profile-check-reveal') {
+                    report.failures.push(`${viewport.name}/friends-me: selected colour theme did not animate`);
+                  }
                 }
                 if (tabId === 'about') {
                   if (!(await page.locator('#display-name').count()) || !(await page.locator('#bio-input').count())) {
