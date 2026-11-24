@@ -2477,3 +2477,34 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 39 — Shop purchase and equip confirmation
+   Highlight only the item that was just purchased or selected.
+   -------------------------------------------------------------------------- */
+:root { --motion-shop-confirm-duration: 300ms; }
+@media (max-width: 760px) {
+  :root { --motion-shop-confirm-duration: 265ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-shop-confirm-duration: 310ms; }
+}
+@keyframes motion-shop-item-confirmed {
+  0% { opacity: .82; transform: translateY(3px) scale(.985); }
+  58% { opacity: 1; transform: translateY(-2px) scale(1.008); outline: 3px solid var(--accent-soft); outline-offset: 1px; }
+  100% { opacity: 1; transform: translateY(0) scale(1); outline: 0 solid transparent; outline-offset: 0; }
+}
+.shop-item.motion-shop-item-confirmed,
+.gem-item.motion-shop-item-confirmed {
+  animation: motion-shop-item-confirmed var(--motion-shop-confirm-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shop-item.motion-shop-item-confirmed,
+  .gem-item.motion-shop-item-confirmed {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    outline: none !important;
+  }
+}

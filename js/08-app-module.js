@@ -1726,9 +1726,17 @@ const Shop = (() => {
   let el = null, bal = null, body = null, activeTab = 'coins';
   const btn = (t, c, f) => { const b = o('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; return b; };
   const warn = m => App.toast(m, 'warn');
+  function pulseShopItem(id, slot) {
+    requestAnimationFrame(() => {
+      const card = [...document.querySelectorAll('.shop-item[data-shop-item], .gem-item[data-shop-item]')]
+        .find(node => node.dataset.shopItem === String(id) && (!slot || node.dataset.shopSlot === String(slot)));
+      if (card) replayMotion(card, 'motion-shop-item-confirmed');
+    });
+  }
   function equip(slot, id) {
     const eq = (S.doc && S.doc.eq) || {};
-    queueSave({ eq: { ...eq, [slot]: eq[slot] === id ? '' : id } }); render(); renderFriends();
+    queueSave({ eq: { ...eq, [slot]: eq[slot] === id ? '' : id } });
+    render(); renderFriends(); pulseShopItem(id, slot);
   }
   async function buy(it, slot) {
     const d = S.doc || {};
@@ -1745,11 +1753,12 @@ const Shop = (() => {
       await S.db.doc('players/' + S.uid).set(patch, { merge: true });
       S.doc = { ...d, coins: (d.coins || 0) - it.price, ...docPatch };
       App.toast(`Bought ${it.name}!`);
-      if (['p50', 'sfreeze', 'xpboost'].includes(slot)) render(); else equip(slot, it.id);
+      if (['p50', 'sfreeze', 'xpboost'].includes(slot)) { render(); pulseShopItem(slot, 'consumable'); } else equip(slot, it.id);
     } catch (e) { warn(`Couldn\u2019t buy that (${(e && e.code) || 'error'}).`); }
   }
-  function wideItem(icon, title, desc, btnEl) {
+  function wideItem(icon, title, desc, btnEl, slot) {
     const c = o('div', 'shop-item shop-wide');
+    c.dataset.shopItem = String(slot || title); c.dataset.shopSlot = 'consumable';
     c.append(o('strong', '', icon + ' ' + title), o('span', 'muted', desc), btnEl); return c;
   }
   function group(title, items, preview, slot) {
@@ -1757,6 +1766,7 @@ const Shop = (() => {
     g.append(o('h3', '', title), grid);
     items.forEach(it => {
       const c = o('div', 'shop-item'), pv = o('div', 'shop-prev');
+      c.dataset.shopItem = String(it.id); c.dataset.shopSlot = String(slot);
       pv.append(preview(it));
       let b;
       if (owned[it.id]) b = eq[slot] === it.id ? btn('Equipped \u2713', 'btn-ghost btn-sm', () => equip(slot, it.id)) : btn('Equip', 'btn-primary btn-sm', () => equip(slot, it.id));
@@ -1774,7 +1784,7 @@ const Shop = (() => {
       await S.db.doc('players/' + S.uid).set({ equippedGemCosmetic: next }, { merge: true });
       S.doc = { ...d, equippedGemCosmetic: next };
       App.toast(next ? 'Profile ring equipped!' : 'Profile ring removed.', 'good');
-      render(); GemShop.render(); renderFriends();
+      render(); GemShop.render(); renderFriends(); pulseShopItem(id, 'gem');
     } catch (error) {
       warn('Could not update your profile ring. Please try again.');
     }
@@ -1795,7 +1805,7 @@ const Shop = (() => {
         throw error;
       }
       App.toast('Bought ' + it.name + '! It is now equipped.', 'good');
-      render(); GemShop.render(); renderFriends();
+      render(); GemShop.render(); renderFriends(); pulseShopItem(it.id, 'gem');
     } catch (error) {
       button.disabled = false;
       setIconAwareText(button, 'Buy 💎 ' + it.price);
@@ -1811,6 +1821,7 @@ const Shop = (() => {
     const head = o('div', 'gem-store-head');
     head.append(o('h3', '', 'Gem Shop'), o('span', 'gem-store-balance', '💎 ' + Gems.getBalance()));
     const card = o('div', 'gem-item'), previewBox = o('div', 'gem-item-preview');
+    card.dataset.shopItem = String(it.id); card.dataset.shopSlot = 'gem';
     const preview = bubble({ id: S.uid, avatar: '⭐', color: d.color || '', gemCosmetics: {}, equippedGemCosmetic: '' }, 54);
     preview.dataset.gemRing = 'gold';
     previewBox.append(preview);
@@ -1835,11 +1846,11 @@ const Shop = (() => {
     cons.append(o('h3', '', 'Power-ups'));
     cons.append(
       wideItem('\u{1F6E1}\uFE0F', 'Streak Freeze', `Protects your streak for one missed day. You have ${d.sfreezes || 0}.`,
-        btn(`Buy \u{1F4B0} ${SHOP.sfreeze.price}`, canAfford(SHOP.sfreeze.price), () => buy(SHOP.sfreeze, 'sfreeze'))),
+        btn(`Buy \u{1F4B0} ${SHOP.sfreeze.price}`, canAfford(SHOP.sfreeze.price), () => buy(SHOP.sfreeze, 'sfreeze')), 'sfreeze'),
       wideItem('\u26A1', 'XP Boost', `Doubles EXP on your next quiz. You have ${d.xpBoost || 0}.`,
-        btn(`Buy \u{1F4B0} ${SHOP.xpboost.price}`, canAfford(SHOP.xpboost.price), () => buy(SHOP.xpboost, 'xpboost'))),
+        btn(`Buy \u{1F4B0} ${SHOP.xpboost.price}`, canAfford(SHOP.xpboost.price), () => buy(SHOP.xpboost, 'xpboost')), 'xpboost'),
       wideItem('\u{1F3AF}', 'Second Chance', `Use in a duel: if you answer wrong, pick again (without hints). You have ${d.p50 || 0}.`,
-        btn(`Buy \u{1F4B0} ${SHOP.p50.price}`, canAfford(SHOP.p50.price), () => buy(SHOP.p50, 'p50'))),
+        btn(`Buy \u{1F4B0} ${SHOP.p50.price}`, canAfford(SHOP.p50.price), () => buy(SHOP.p50, 'p50')), 'p50'),
     );
 
     // Titles section
@@ -2442,8 +2453,8 @@ function showAnn() {
   const kids = [o('span', 'ann-ic', ANN_ICON[a.kind] || ANN_ICON.info), elx('div', 'ann-body', elx('span', 'ann-label', ANN_NAME[a.kind] || ANN_NAME.info), elx('div', 'ann-txt', a.text))];
   if (!critical) { const x = o('button', 'ann-x', '\u2715'); x.type = 'button'; x.setAttribute('aria-label', 'Dismiss announcement'); x.onclick = () => { try { localStorage.setItem('ann-seen', a.id); } catch {} showAnn(); }; kids.push(x); }
   bar.replaceChildren(...kids);
-  const small = window.matchMedia && matchMedia('(max-width: 720px)').matches;
-  if (!annPopped(a.id) && !S.isAdmin && !$('ban-ov') && (small || a.kind === 'warn' || critical)) annPopup(a);
+  // Routine updates stay as non-blocking banners on phones; only warnings and urgent notices open a dialog.
+  if (!annPopped(a.id) && !S.isAdmin && !$('ban-ov') && (a.kind === 'warn' || critical)) annPopup(a);
 }
 setInterval(() => showAnn(), 60000);
 

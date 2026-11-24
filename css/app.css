@@ -3275,9 +3275,9 @@ pre, code { overflow-wrap: anywhere; }
 @media (max-width: 760px) {
   #screen-home { overflow-x: clip; }
   #screen-home .container { width: min(100% - 24px, 680px); min-width: 0; }
-  #screen-home .hero { display: flex; align-items: flex-start; min-width: 0; }
-  #screen-home .hero-copy { flex: 1 1 100%; width: 100%; max-width: none; min-width: 0; }
-  #screen-home .hero-art { display: none; }
+  #screen-home .hero { display: flex; position: relative; align-items: flex-start; min-width: 0; }
+  #screen-home .hero-copy { flex: 1 1 100%; width: 100%; max-width: none; min-width: 0; padding-right: clamp(82px, 24vw, 112px); position: relative; z-index: 1; }
+  #screen-home .hero-art { display: block; position: absolute; top: 8px; right: 0; width: clamp(84px, 27vw, 120px); max-width: 120px; opacity: .78; pointer-events: none; z-index: 0; }
   #screen-home .hero h1 { max-width: 14ch; overflow-wrap: anywhere; }
   #screen-home .snapshot { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
   #screen-home .daily-card { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 18px; margin-bottom: 28px; }
@@ -3291,6 +3291,8 @@ pre, code { overflow-wrap: anywhere; }
 @media (max-width: 380px) {
   #screen-home .container { width: calc(100% - 20px); }
   #screen-home .hero h1 { font-size: clamp(30px, 9vw, 36px); line-height: 1.08; }
+  #screen-home .hero-copy { padding-right: 84px; }
+  #screen-home .hero-art { top: 4px; width: 78px; max-width: 78px; opacity: .72; }
   #screen-home .daily-card { padding: 14px; }
   #screen-home .subject-grid { gap: 8px; }
   #screen-home .subject-card { padding: 10px; }
@@ -3488,4 +3490,43 @@ pre, code { overflow-wrap: anywhere; }
   body[data-screen='quiz'] #site-nav + #main {
     padding-top: 0;
   }
+}
+
+
+/* Mobile announcement placement: account for the fixed header when a banner is present. */
+@media (max-width: 760px) {
+  #site-nav + .ann-bar {
+    position: relative;
+    top: auto;
+    margin: calc(var(--nav-h) + env(safe-area-inset-top) + 10px) 12px 0;
+    z-index: 30;
+  }
+  #site-nav + .ann-bar + #main { padding-top: 0 !important; }
+  body[data-screen='quiz'] #site-nav + .ann-bar { margin-top: 10px; }
+  .pin-ov.ann-pop {
+    box-sizing: border-box;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ann-pop-card {
+    box-sizing: border-box;
+    width: 100%;
+    max-height: calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: 0;
+    padding: 18px clamp(16px, 5vw, 22px);
+    gap: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ann-pop-text {
+    font-size: clamp(15px, 4vw, 17px);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  .ann-pop-card .btn { min-height: 50px; }
 }

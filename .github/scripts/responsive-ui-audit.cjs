@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-learning-lab-motion-2026-11-24-r52';
+const EXPECTED_BUILD = 'bece-shop-mobile-fixes-2026-11-24-r53';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -269,7 +269,7 @@ async function main() {
     ['Stage 17 claim feedback has phone/desktop timing and respects reduced motion', source.includes('--motion-claim-confirmed-duration: 275ms') && source.includes('--motion-claim-confirmed-duration: 315ms') && source.includes('motion-reward-claim-confirmed') && source.includes('animation: none !important;')],
     ['Stage 18 animates only daily challenges newly completed after the quiz result is saved', source.includes('dailyChallengeCompletionFeedback = new Set(') && source.includes('challengeState.claimed.filter(id => !(previous.claimed || []).includes(id))') && source.includes('dailyChallengeCompletionFeedback.has(t.id)') && source.includes('dailyChallengeCompletionFeedback.clear()')],
     ['Stage 18 daily challenge icon and reward feedback has responsive timing and reduced-motion support', source.includes('Stage 18 — Daily challenge completion feedback') && source.includes('--motion-challenge-complete-duration: 270ms') && source.includes('.challenge-item.is-just-completed .challenge-icon') && source.includes('.challenge-item.is-just-completed .challenge-reward') && source.includes('animation: none !important;')],
-    ['Stage 19 only animates achievements newly unlocked by the saved quiz', source.includes('newlyEarnedAchievementFeedback = new Set(newlyUnlockedAchievementIds)') && source.includes('newlyEarnedAchievementFeedback.has(a.id)') && source.includes('newlyEarnedAchievementFeedback.clear()') && source.includes('.achievement-item.is-newly-earned .achievement-icon') && !source.includes('.achievement-item.is-earned .achievement-icon')],
+    ['Stage 19 only animates achievements newly unlocked by the saved quiz', source.includes('newlyEarnedAchievementFeedback = new Set(newlyUnlockedAchievementIds)') && source.includes('newlyEarnedAchievementFeedback.has(a.id)') && source.includes('newlyEarnedAchievementFeedback.clear()') && source.includes('.achievement-item.is-newly-earned .achievement-icon') && !/\\.achievement-item\\.is-earned\\s+\\.achievement-icon\\s*\\{\\s*animation\\s*:/.test(source)],
     ['Stage 19 new-achievement pop respects reduced-motion settings', source.includes('Stage 19 — Newly unlocked achievement feedback') && source.includes('.achievement-item.is-newly-earned .achievement-icon') && source.includes('animation: none !important;')],
     ['Stage 20 bookmark save and remove animate only on a real toggle', source.includes('replayMotion(mark, saved ? \'motion-bookmark-saved\' : \'motion-bookmark-removed\')') && source.includes('motion-bookmark-saved') && source.includes('motion-bookmark-removed') && source.includes('.bookmark.motion-bookmark-saved .icon') && source.includes('.bookmark.motion-bookmark-removed .icon')],
     ['Stage 20 bookmark feedback respects reduced-motion and has responsive timing', source.includes('--motion-bookmark-feedback-duration: 235ms') && source.includes('Stage 20 — Bookmark save and remove feedback') && source.includes('.bookmark.motion-bookmark-saved .icon') && source.includes('animation: none !important;')],
@@ -309,6 +309,8 @@ async function main() {
     ['Stage 37 worked-step entrance has responsive timing and reduced-motion support', source.includes('--motion-worked-step-duration: 205ms') && source.includes('--motion-worked-step-duration: 245ms') && source.includes('animation: none !important;')],
     ['Stage 38 animates a Maths lab only when its result changes from unsolved to solved', source.includes('Stage 38 — Maths lab solved-state feedback') && source.includes("const wasSolved = !!result?.classList.contains('win')") && source.includes("replayMotion(result, 'motion-lab-solved')") && source.includes('.lab-out.motion-lab-solved')],
     ['Stage 38 lab solved feedback has responsive timing and reduced-motion support', source.includes('--motion-lab-solved-duration: 225ms') && source.includes('--motion-lab-solved-duration: 275ms') && source.includes('animation: none !important;')],
+    ['Stage 39 only pulses the matching Shop card after a purchase or equip action', source.includes('function pulseShopItem(id, slot)') && source.includes("replayMotion(card, 'motion-shop-item-confirmed')") && source.includes("pulseShopItem(slot, 'consumable')") && source.includes("pulseShopItem(it.id, 'gem')") && source.includes("card.dataset.shopSlot = 'gem'")],
+    ['Stage 39 Shop item feedback has mobile and desktop timing plus reduced-motion support', source.includes('Stage 39 — Shop purchase and equip confirmation') && source.includes('--motion-shop-confirm-duration: 265ms') && source.includes('--motion-shop-confirm-duration: 310ms') && source.includes('.gem-item.motion-shop-item-confirmed') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -390,6 +392,7 @@ async function main() {
         error: request.failure()?.errorText || 'request failed',
       }));
 
+      let announcementPopupHandled = false;
       for (const route of ROUTES) {
         const target = `${BASE}/${route.hash}`;
         try {
@@ -399,7 +402,10 @@ async function main() {
             route.screen,
             { timeout: 30000 }
           );
-          await page.locator('#ann-pop button').filter({ hasText: 'Got it' }).click({ timeout: 1500 }).catch(() => {});
+          if (!announcementPopupHandled) {
+            await page.locator('#ann-pop button').filter({ hasText: 'Got it' }).click({ timeout: 2200 }).catch(() => {});
+            announcementPopupHandled = true;
+          }
           if (route.screen === 'friends') {
             try {
               await page.waitForFunction(() => {
@@ -495,6 +501,25 @@ async function main() {
                   }),
                 };
               })(),
+              heroArtwork: (() => {
+                const node = document.querySelector('#screen-home .hero-art');
+                if (!node) return { found: false };
+                const rect = node.getBoundingClientRect();
+                return { found: true, display: getComputedStyle(node).display, width: Math.round(rect.width), left: Math.round(rect.left), right: Math.round(rect.right) };
+              })(),
+              brandSymbol: (() => {
+                const node = document.querySelector('.site-nav .brand-symbol');
+                if (!node) return { found: false };
+                const rect = node.getBoundingClientRect();
+                return { found: true, display: getComputedStyle(node).display, width: Math.round(rect.width), left: Math.round(rect.left), right: Math.round(rect.right) };
+              })(),
+              announcementBar: (() => {
+                const node = document.querySelector('#ann-bar');
+                if (!node) return { found: false };
+                const rect = node.getBoundingClientRect();
+                const navRect = document.querySelector('#site-nav')?.getBoundingClientRect();
+                return { found: true, top: Math.round(rect.top), bottom: Math.round(rect.bottom), navBottom: Math.round(navRect?.bottom || 0) };
+              })(),
               flashcard: (() => {
                 const node = document.querySelector('#flashcard-disclosure');
                 if (!node) return { found: false };
@@ -528,6 +553,21 @@ async function main() {
             }
             if (!diagnostics.flashcard?.found || diagnostics.flashcard.width > viewport.width + 2) {
               report.failures.push(`${key}: Flashcards section is missing or wider than the phone viewport`);
+            }
+          }
+          if (viewport.width <= 760) {
+            if (!diagnostics.brandSymbol?.found || diagnostics.brandSymbol.display === 'none' || diagnostics.brandSymbol.width < 28
+              || diagnostics.brandSymbol.left < -2 || diagnostics.brandSymbol.right > viewport.width + 2) {
+              report.failures.push(`${key}: mobile brand symbol is missing or clipped`);
+            }
+            if (diagnostics.announcementBar?.found && diagnostics.announcementBar.top < diagnostics.announcementBar.navBottom - 2) {
+              report.failures.push(`${key}: announcement banner is hidden beneath the fixed mobile header`);
+            }
+          }
+          if (route.screen === 'home' && viewport.width <= 760) {
+            const artwork = diagnostics.heroArtwork;
+            if (!artwork?.found || artwork.display === 'none' || artwork.width < 60 || artwork.left < -2 || artwork.right > viewport.width + 2) {
+              report.failures.push(`${key}: Overview artwork is missing or clipped on mobile`);
             }
           }
           if (route.screen === 'admin') {
@@ -887,7 +927,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1014,6 +1054,20 @@ async function main() {
             && getComputedStyle(result).animationName === 'motion-lab-solved-pop';
         });
         await motionPage.evaluate(() => document.querySelector('#motion-stage-36-test')?.remove());
+
+        stage = 'Shop confirmation feedback';
+        await motionPage.evaluate(() => {
+          const card = document.createElement('article');
+          card.className = 'shop-item motion-shop-item-confirmed';
+          card.id = 'motion-stage-39-test';
+          document.body.append(card);
+        });
+        await motionPage.waitForTimeout(45);
+        check.shopConfirmationFeedback = await motionPage.evaluate(() => {
+          const card = document.querySelector('#motion-stage-39-test');
+          return !!card && getComputedStyle(card).animationName === 'motion-shop-item-confirmed';
+        });
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-39-test')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();
