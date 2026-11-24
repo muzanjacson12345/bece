@@ -2137,11 +2137,13 @@ const Duel = (() => {
       it.append(o('span', '', `Correct: ${txt(q.correct)}`)); if (q.explanation) it.append(o('span', 'muted', q.explanation)); rev.append(it);
     });
     const d = D.doc, cfg = { subjects: d.subjects || (d.subject && d.subject !== 'mixed' ? [d.subject] : ['social']), subjectCount: (d.subjects || []).length || 1, len: n, secs: secs(), vis: d.vis || 'public' };
-    put(o('p', 'eyebrow', 'Duel result'), o('h2', tie ? '' : win ? 'duel-win' : '', tie ? 'It\u2019s a draw!' : win ? 'You won! \u{1F3C6}' : `${oppName()} wins this one`), sc,
+    const resultTitle = o('h2', 'duel-result-heading' + (!tie && win ? ' duel-win' : ''), tie ? 'It\u2019s a draw!' : win ? 'You won! \u{1F3C6}' : `${oppName()} wins this one`);
+    put(o('p', 'eyebrow', 'Duel result'), resultTitle, sc,
       chips(`${Math.round(me.c / n * 100)}% accuracy`, `${(me.ms / Math.max(1, me.n) / 1000).toFixed(1)}s per question`, D.best > 1 ? `\u{1F525} best run ${D.best}` : ''),
       cn ? coinPanel(cn, D.coinParts, D.bal) : o('p', 'muted', D.limit ? '\u{1F4B0} Daily duel coin limit reached (10 duels). Come back tomorrow!' : 'No coins this time.'),
       o('p', 'muted', opp.done ? 'Most correct answers wins; faster total time breaks ties.' : `${oppName()} didn\u2019t finish, so unanswered questions count as wrong.`),
       rev, row(btn('Rematch', 'btn-primary btn-sm', () => { close(); D.cfg = cfg; create(); }), btn('Close', 'btn-ghost btn-sm', () => close())));
+    replayMotion(resultTitle, 'motion-duel-result-title-enter');
     countUp(); if (!tie && win) { buzz([40, 30, 40, 30, 90]); setTimeout(confetti, 300); }
   }
   async function create() {

@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-duel-setup-selection-motion-2026-11-24-r38';
+const EXPECTED_BUILD = 'bece-duel-result-heading-motion-2026-11-24-r39';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -277,6 +277,8 @@ async function main() {
     ['Stage 21 filter feedback has responsive timing and reduced-motion support', source.includes('Stage 21 — Friends leaderboard filter feedback') && source.includes('--motion-board-filter-duration: 185ms') && source.includes('.board-seg button.motion-board-filter-selected') && source.includes('animation: none !important;')],
     ['Stage 22 Duel setup controls animate only when their values actually change', source.includes("if (changed) replayMotion(b, 'motion-duel-option-selected')") && source.includes("if (changed) replayMotion(b, 'motion-duel-mode-selected')") && source.includes('const changed = String(D.cfg[key]) !== String(v)')],
     ['Stage 22 Duel selection feedback has responsive timing and reduced-motion support', source.includes('Stage 22 — Duel setup selection feedback') && source.includes('--motion-duel-choice-duration: 190ms') && source.includes('.duel-modes button.motion-duel-mode-selected') && source.includes('animation: none !important;')],
+    ['Stage 23 animates the actual Duel result heading without changing score count-up', source.includes("replayMotion(resultTitle, 'motion-duel-result-title-enter')") && source.includes('duel-result-heading') && source.includes('function countUp()')],
+    ['Stage 23 Duel result heading has responsive timing and reduced-motion support', source.includes('Stage 23 — Duel result heading arrival') && source.includes('--motion-duel-result-title-duration: 215ms') && source.includes('.duel-result-heading.motion-duel-result-title-enter') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -855,7 +857,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1159,6 +1161,18 @@ async function main() {
         check.duelOptionFeedback = duelMotionState.options.name === 'motion-duel-choice-pop'
           && duelMotionState.subjects.name === 'motion-duel-choice-pop'
           && duelMotionState.options.duration >= .18 && duelMotionState.options.duration <= .24;
+        const duelResultTitleMotion = await homePage.evaluate(() => {
+          const title = document.createElement('h2');
+          title.className = 'duel-result-heading motion-duel-result-title-enter';
+          document.body.append(title);
+          const style = getComputedStyle(title);
+          return {
+            name: style.animationName,
+            duration: Number.parseFloat(style.animationDuration) || 0,
+          };
+        });
+        check.duelResultHeading = duelResultTitleMotion.name === 'motion-duel-result-title-arrive'
+          && duelResultTitleMotion.duration >= .20 && duelResultTitleMotion.duration <= .25;
         await homePage.emulateMedia({ reducedMotion: 'reduce' });
         check.challengeCompletionReducedMotion = await homePage.evaluate(() => {
           const item = document.querySelector('#motion-challenge-complete-test');
@@ -1190,6 +1204,10 @@ async function main() {
             document.querySelector('.duel-subject-picks > button.motion-duel-option-selected')
           ];
           return buttons.every(button => button && getComputedStyle(button).animationName === 'none');
+        });
+        check.duelResultReducedMotion = await homePage.evaluate(() => {
+          const title = document.querySelector('.duel-result-heading.motion-duel-result-title-enter');
+          return !!title && getComputedStyle(title).animationName === 'none';
         });
         await homePage.evaluate(() => {
           const overlay = document.createElement('div');

@@ -2107,3 +2107,34 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 23 — Duel result heading arrival
+   Reveal only the final outcome label; the existing score count-up stays intact.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-duel-result-title-duration: 235ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-duel-result-title-duration: 215ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-duel-result-title-duration: 240ms; }
+}
+
+@keyframes motion-duel-result-title-arrive {
+  from { opacity: 0; transform: translate3d(0, 7px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+.duel-result-heading.motion-duel-result-title-enter {
+  animation: motion-duel-result-title-arrive var(--motion-duel-result-title-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duel-result-heading.motion-duel-result-title-enter {
+    animation: none !important;
+    transform: none !important;
+  }
+}
