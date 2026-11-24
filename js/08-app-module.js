@@ -70,15 +70,6 @@ function animateRewardNumber(element, from, to, formatter, duration) {
   requestAnimationFrame(tick);
 }
 function pulseRewardTarget(target) {
-  if (!target || !target.isConnected) return;
-  target.classList.remove('reward-target-ping');
-  void target.offsetWidth;
-  target.classList.add('reward-target-ping');
-  target.addEventListener('animationend', event => {
-    if (event.animationName === 'reward-target-ping') target.classList.remove('reward-target-ping');
-  }, { once: true });
-}
-function pulseRewardTarget(target) {
   if (!target || !target.isConnected || rewardMotionReduced()) return;
   target.classList.remove('reward-target-ping');
   void target.offsetWidth;
