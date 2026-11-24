@@ -2936,3 +2936,32 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 52 — Quiz review filter selection feedback
+   Mark the chosen Missed/All filter only after the learner changes the view.
+   -------------------------------------------------------------------------- */
+:root { --motion-review-filter-duration: 205ms; }
+@media (max-width: 760px) {
+  :root { --motion-review-filter-duration: 185ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-review-filter-duration: 215ms; }
+}
+@keyframes motion-review-filter-selected {
+  0% { transform: scale(.975); }
+  68% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+#screen-quiz [data-review].motion-review-filter-selected {
+  transform-origin: center;
+  animation: motion-review-filter-selected var(--motion-review-filter-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #screen-quiz [data-review].motion-review-filter-selected {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

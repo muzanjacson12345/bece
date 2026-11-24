@@ -1411,7 +1411,13 @@ document.querySelector('[data-action="to-unanswered"]').addEventListener('click'
 document.querySelector('[data-action="exit-quiz"]').addEventListener('click', () => navigate('home'));
 document.querySelector('[data-action="retry-missed"]').addEventListener('click', () => Quiz.retryMissed());
 document.querySelector('[data-action="restart-quiz"]').addEventListener('click', () => Quiz.restart());
-document.querySelectorAll('[data-review]').forEach(b => b.addEventListener('click', () => { Quiz.reviewFilter = b.dataset.review; Quiz.renderReview(); }));
+document.querySelectorAll('[data-review]').forEach(b => b.addEventListener('click', () => {
+  const nextFilter = b.dataset.review;
+  if (Quiz.reviewFilter === nextFilter) return;
+  Quiz.reviewFilter = nextFilter;
+  Quiz.renderReview();
+  replayMotion(b, 'motion-review-filter-selected');
+}));
 document.addEventListener('keydown', event => {
   if (currentScreen !== 'quiz' || !Quiz.active || Quiz.finished) return;
   if (event.altKey || event.ctrlKey || event.metaKey || isTyping(event.target) || document.querySelector('dialog[open]')) return;
