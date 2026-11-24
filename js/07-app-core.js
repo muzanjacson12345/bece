@@ -1049,8 +1049,21 @@ const Setup = {
 };
 // Quiz subject clicks are handled once by the final setup controller below.
 $('topic-sel').addEventListener('change',()=>Setup.update());
-document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{Setup.mode=b.dataset.mode;Setup.update();}));
-document.querySelector('.mode-grid').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();Setup.mode=Setup.mode==='practice'?'exam':'practice';Setup.update();document.querySelector(`[data-mode="${Setup.mode}"]`).focus();});
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{
+  const changed=Setup.mode!==b.dataset.mode;
+  Setup.mode=b.dataset.mode;Setup.update();
+  if(changed) replayMotion(b,'motion-setup-mode-selected');
+}));
+document.querySelector('.mode-grid').addEventListener('keydown',e=>{
+  if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
+  e.preventDefault();
+  const next=Setup.mode==='practice'?'exam':'practice';
+  const changed=Setup.mode!==next;
+  Setup.mode=next;Setup.update();
+  const selected=document.querySelector(`[data-mode="${Setup.mode}"]`);
+  selected?.focus();
+  if(changed) replayMotion(selected,'motion-setup-mode-selected');
+});
 $('setup-start').addEventListener('click', () => Setup.start());
 
 /* ======================= Quiz ======================= */
