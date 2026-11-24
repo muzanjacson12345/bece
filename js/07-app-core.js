@@ -1113,6 +1113,8 @@ const Quiz = {
     emit('quiz:start', { kind: this.opts.kind });
     if (currentScreen === 'quiz') { window.scrollTo({ top: 0 }); } else navigate('quiz');
     this.render();
+    replayMotion($('quiz-bar'), 'motion-quiz-session-bar-enter');
+    replayMotion($('quiz-stage'), 'motion-quiz-session-enter');
   },
   inProgress() { return this.active && !this.finished && Object.keys(this.answers).length > 0; },
   abort() { this.stopTimer(); this.active = false; },

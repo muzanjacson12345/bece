@@ -2776,3 +2776,48 @@ button:disabled,
     box-shadow: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 47 — Quiz session preparation transition
+   Bring in the session header and first question only when a valid session starts.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-quiz-session-duration: 290ms;
+  --motion-quiz-session-bar-duration: 250ms;
+}
+@media (max-width: 760px) {
+  :root {
+    --motion-quiz-session-duration: 265ms;
+    --motion-quiz-session-bar-duration: 230ms;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-quiz-session-duration: 305ms;
+    --motion-quiz-session-bar-duration: 260ms;
+  }
+}
+@keyframes motion-quiz-session-enter {
+  0% { opacity: .5; transform: translateY(10px) scale(.995); }
+  72% { opacity: 1; transform: translateY(-2px) scale(1.002); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes motion-quiz-session-bar-enter {
+  0% { opacity: .55; transform: translateY(-7px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.quiz-bar.motion-quiz-session-bar-enter {
+  animation: motion-quiz-session-bar-enter var(--motion-quiz-session-bar-duration) var(--motion-ease-enter) both;
+}
+#quiz-stage.motion-quiz-session-enter {
+  animation: motion-quiz-session-enter var(--motion-quiz-session-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiz-bar.motion-quiz-session-bar-enter,
+  #quiz-stage.motion-quiz-session-enter {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
