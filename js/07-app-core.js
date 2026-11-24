@@ -1442,7 +1442,13 @@ function labSlider(box, text, min, max, step, val, onInput) {
   const row = el('label'), name = el('span', '', text), out = el('b', '', String(val));
   const inp = document.createElement('input');
   Object.assign(inp, { type: 'range', min, max, step, value: val });
-  inp.addEventListener('input', () => { out.textContent = inp.value; onInput(); });
+  inp.addEventListener('input', () => {
+    out.textContent = inp.value;
+    const result = box.querySelector('.lab-out');
+    const wasSolved = !!result?.classList.contains('win');
+    onInput();
+    if (result && !wasSolved && result.classList.contains('win')) replayMotion(result, 'motion-lab-solved');
+  });
   row.append(name, inp, out); box.append(row);
   return inp;
 }
@@ -1838,19 +1844,40 @@ function FlowBlock(b) {
   if (b.widget) return WIDGETS[b.widget]();
   if (b.why) { const d = el('details', 'flow-why'); d.append(el('summary', '', 'But why? ' + b.why), noteRichText('p', b.text)); return d; }
   const card = el('div', 'flow-card'), fb = el('p', 'lesson-fb');
+  const setFeedback = (kind, content) => {
+    fb.replaceChildren(noteRichText('span', content));
+    replayMotion(fb, kind === 'correct' ? 'motion-lesson-feedback-correct' : 'motion-lesson-feedback-wrong');
+  };
   if (b.ask) {
     card.append(el('p', 'flow-tag', 'Think first'), el('p', 'lesson-q', b.ask));
     const opts = b.opts.map((t, n) => btn('lesson-opt', t, () => {
-      if (n === b.ans) { opts.forEach(o => o.disabled = true); opts[n].classList.add('ok'); fb.replaceChildren(noteRichText('span', '✅ ' + b.reply)); }
-      else { opts[n].classList.add('bad'); opts[n].disabled = true; fb.textContent = '🤔 Not quite. Think about what is really happening and pick again.'; }
+      if (n === b.ans) {
+        opts.forEach(o => o.disabled = true);
+        opts[n].classList.add('ok');
+        replayMotion(opts[n], 'motion-lesson-answer-correct');
+        setFeedback('correct', '✅ ' + b.reply);
+      } else {
+        opts[n].classList.add('bad'); opts[n].disabled = true;
+        replayMotion(opts[n], 'motion-lesson-answer-wrong');
+        setFeedback('wrong', '🤔 Not quite. Think about what is really happening and pick again.');
+      }
     }));
     card.append(...opts, fb);
   } else if (b.try) {
     card.append(el('p', 'flow-tag', 'Your turn'), el('p', 'lesson-q', b.try));
     const inp = el('input', 'lesson-in'); inp.inputMode = 'decimal'; inp.placeholder = 'Answer'; let tries = 0;
     const check = () => {
-      if (Math.abs(parseFloat(inp.value) - b.ans) < 0.05) { inp.disabled = true; fb.replaceChildren(noteRichText('span', '✅ ' + b.reply)); }
-      else { tries++; fb.textContent = tries > 1 ? '💡 Hint: ' + b.hint : '🤔 Not quite. Have another go.'; }
+      if (Math.abs(parseFloat(inp.value) - b.ans) < 0.05) {
+        inp.disabled = true;
+        inp.classList.remove('is-incorrect'); inp.classList.add('is-correct');
+        replayMotion(inp, 'motion-lesson-input-correct');
+        setFeedback('correct', '✅ ' + b.reply);
+      } else {
+        tries++;
+        inp.classList.remove('is-correct'); inp.classList.add('is-incorrect');
+        replayMotion(inp, 'motion-lesson-input-wrong');
+        setFeedback('wrong', tries > 1 ? '💡 Hint: ' + b.hint : '🤔 Not quite. Have another go.');
+      }
     };
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
     card.append(inp, btn('lesson-check', 'Check', check), fb);
@@ -1860,6 +1887,7 @@ function FlowBlock(b) {
     const go = btn('lesson-check', 'Show the first step', () => {
       const s = b.steps[k++], d = el('div', 'flow-step');
       d.append(el('p', 'flow-step-h', s.h), noteRichText('p', s.w, 'flow-step-w')); list.append(d);
+      replayMotion(d, 'motion-worked-step-enter');
       go.textContent = k < b.steps.length ? 'Show the next step →' : 'Done ✓'; go.disabled = k >= b.steps.length;
     });
     card.append(list, go);
