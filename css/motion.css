@@ -1850,3 +1850,52 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 16 — Announcement banner motion
+   Slide status messages into view and dismiss them upward without a layout jump.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-announcement-enter-duration: 230ms;
+  --motion-announcement-exit-duration: 185ms;
+}
+@media (max-width: 760px) {
+  :root {
+    --motion-announcement-enter-duration: 210ms;
+    --motion-announcement-exit-duration: 165ms;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --motion-announcement-enter-duration: 235ms;
+    --motion-announcement-exit-duration: 190ms;
+  }
+}
+
+@keyframes motion-announcement-enter {
+  from { opacity: 0; transform: translate3d(0, -7px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+.ann-bar {
+  animation: motion-announcement-enter var(--motion-announcement-enter-duration) var(--motion-ease-enter) both;
+  transition-property: opacity, transform;
+  transition-duration: var(--motion-announcement-exit-duration);
+  transition-timing-function: var(--motion-ease-exit);
+}
+.ann-bar.motion-overlay-closing {
+  opacity: 0;
+  transform: translate3d(0, -7px, 0);
+  pointer-events: none;
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ann-bar,
+  .ann-bar.motion-overlay-closing {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

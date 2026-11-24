@@ -2351,7 +2351,9 @@ function annPopup(a) {
 function showAnn() {
   let bar = $('ann-bar'); const a = S.ann, critical = !!a && a.kind === 'critical';
   const live = a && a.text && (!a.expires || a.expires > Date.now()) && (critical || !annSeen(a.id));
-  if (!live) { if (bar) bar.remove(); return; }
+  if (!live) { if (bar) App.dismissOverlay(bar); return; }
+  // A newly arrived announcement must not reuse a banner that is already fading out.
+  if (bar && bar.classList.contains('motion-overlay-closing')) { bar.remove(); bar = null; }
   if (!bar) { bar = o('div', 'ann-bar'); bar.id = 'ann-bar'; bar.setAttribute('role', 'status'); const m = $('main'); m.parentNode.insertBefore(bar, m); }
   bar.dataset.kind = a.kind || 'info';
   const kids = [o('span', 'ann-ic', ANN_ICON[a.kind] || ANN_ICON.info), elx('div', 'ann-body', elx('span', 'ann-label', ANN_NAME[a.kind] || ANN_NAME.info), elx('div', 'ann-txt', a.text))];

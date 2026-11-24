@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-custom-overlay-exit-motion-2026-11-24-r31';
+const EXPECTED_BUILD = 'bece-announcement-banner-motion-2026-11-24-r32';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -263,6 +263,8 @@ async function main() {
     ['Stage 15 custom overlays close through one reduced-motion-aware helper', source.includes('function dismissOverlay(node, afterRemove)') && source.includes('motion-overlay-closing') && source.includes('App.dismissOverlay(ov, () => URL.revokeObjectURL(url))')],
     ['Stage 15 profile, cropper and admin overlays have responsive exit motion', source.includes('Stage 15 — Custom overlay entrance and exit motion') && source.includes('.friend-modal.motion-overlay-closing') && source.includes('.crop-ov.motion-overlay-closing') && source.includes('.pin-ov.motion-overlay-closing') && source.includes('--motion-overlay-exit-duration: 165ms')],
     ['Stage 15 overlay dismissal respects reduced-motion settings', source.includes("'(prefers-reduced-motion: reduce)'") && source.includes('.friend-modal.motion-overlay-closing') && source.includes('transition: none !important;')],
+    ['Stage 16 announcements animate in and dismiss through the shared overlay helper', source.includes('Stage 16 — Announcement banner motion') && source.includes('motion-announcement-enter') && source.includes('.ann-bar.motion-overlay-closing') && source.includes('if (bar) App.dismissOverlay(bar)')],
+    ['Stage 16 announcement motion has responsive and reduced-motion settings', source.includes('--motion-announcement-enter-duration: 210ms') && source.includes('--motion-announcement-exit-duration: 165ms') && source.includes('.ann-bar.motion-overlay-closing') && source.includes('transition: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -841,7 +843,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -964,6 +966,46 @@ async function main() {
           && overlayMotionState.panelProperties.includes('transform');
         await homePage.waitForFunction(() => window.__motionOverlayDone === true
           && !document.querySelector('#motion-overlay-test'), null, { timeout: 1200 });
+        stage = 'announcement banner entrance and exit';
+        await homePage.evaluate(() => {
+          const banner = document.createElement('div');
+          banner.id = 'motion-announcement-test';
+          banner.className = 'ann-bar';
+          banner.textContent = 'Announcement motion audit';
+          document.body.append(banner);
+        });
+        await homePage.waitForTimeout(260);
+        check.announcementEnter = await homePage.evaluate(() => {
+          const banner = document.querySelector('#motion-announcement-test');
+          if (!banner) return false;
+          const style = getComputedStyle(banner);
+          const duration = Number.parseFloat(style.animationDuration) || 0;
+          return style.animationName === 'motion-announcement-enter'
+            && duration >= .19 && duration <= .25 && Number(style.opacity) > .98;
+        });
+        await homePage.evaluate(() => {
+          const banner = document.querySelector('#motion-announcement-test');
+          window.__motionAnnouncementDone = false;
+          window.App.dismissOverlay(banner, () => { window.__motionAnnouncementDone = true; });
+        });
+        await homePage.waitForFunction(() =>
+          document.querySelector('#motion-announcement-test')?.classList.contains('motion-overlay-closing'),
+          null, { timeout: 2000 }
+        );
+        await homePage.waitForTimeout(55);
+        check.announcementExit = await homePage.evaluate(() => {
+          const banner = document.querySelector('#motion-announcement-test');
+          if (!banner) return false;
+          const style = getComputedStyle(banner);
+          const properties = style.transitionProperty.split(',').map(value => value.trim());
+          const duration = Number.parseFloat(style.transitionDuration) || 0;
+          const opacity = Number(style.opacity);
+          return opacity > 0 && opacity < 1
+            && properties.includes('opacity') && properties.includes('transform')
+            && duration >= .15 && duration <= .21;
+        });
+        await homePage.waitForFunction(() => window.__motionAnnouncementDone === true
+          && !document.querySelector('#motion-announcement-test'), null, { timeout: 1200 });
         await homePage.emulateMedia({ reducedMotion: 'reduce' });
         await homePage.evaluate(() => {
           const overlay = document.createElement('div');
