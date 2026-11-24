@@ -140,8 +140,8 @@ function getRewardFlightLayer() {
 function resolveRewardFlightTarget(kind, preferredTarget) {
   if (rewardElementVisible(preferredTarget)) return preferredTarget;
   const selectors = kind === 'gems'
-    ? '.account-gems, .daily-gem-balance, .gem-store-balance'
-    : '.account-coins:not(.account-gems), .coin-bal-value';
+    ? '.quiz-wallet-gems, .account-gems, .daily-gem-balance, .gem-store-balance'
+    : '.quiz-wallet-coins, .account-coins:not(.account-gems), .coin-bal-value';
   for (const element of document.querySelectorAll(selectors)) {
     if (rewardElementVisible(element)) return element;
   }
@@ -161,107 +161,143 @@ function runRewardFlight(item) {
     const viewport = rewardViewportSize();
     const mobile = typeof window.matchMedia === 'function'
       && window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
-    const size = mobile ? 46 : 52;
-    const inset = Math.min(Math.max(24, size / 2 + 4), Math.min(viewport.width, viewport.height) / 2);
+    const isCoin = item.kind === 'coins';
+    const size = isCoin ? (mobile ? 20 : 22) : (mobile ? 36 : 42);
+    const inset = Math.min(Math.max(16, size / 2 + 3), Math.min(viewport.width, viewport.height) / 2);
     const sourceElement = document.activeElement;
     const sourceRect = item.sourceRect || (rewardElementVisible(sourceElement) ? captureRewardRect(sourceElement) : null);
     const target = resolveRewardFlightTarget(item.kind, item.target);
     const targetRect = captureRewardRect(target);
     const start = rewardPoint(sourceRect, { x: viewport.width * .5, y: viewport.height * .72 }, inset, viewport);
-    // The top-right fallback matches the account control on compact screens if it is temporarily hidden.
     const finish = rewardPoint(targetRect, { x: viewport.width - inset - 4, y: Math.max(inset, 28) }, inset, viewport);
     let dx = finish.x - start.x;
     let dy = finish.y - start.y;
-    const distance = Math.hypot(dx, dy);
-    if (distance < 24) {
-      finish.y = Math.max(inset, finish.y - 34);
+    if (Math.hypot(dx, dy) < 24) {
+      finish.y = Math.max(inset, finish.y - 28);
       dx = finish.x - start.x;
       dy = finish.y - start.y;
     }
 
-    const side = dx >= 0 ? 1 : -1;
-    const arc = Math.min(mobile ? 58 : 76, Math.max(22, distance * .105));
+    // A reward is a little burst, not one oversized coin. Larger coin rewards
+    // send a few more particles, while Gems keep one clear, recognisable shape.
+    const particleCount = isCoin
+      ? Math.min(7, Math.max(3, Math.ceil(Math.sqrt(Math.max(1, Number(item.amount) || 1)))))
+      : 1;
+    const samples = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1];
+    const scales = isCoin
+      ? [.72, .9, 1.04, 1.1, 1.08, 1.03, .98, .94, .9, .84, .76]
+      : [.9, .98, 1.04, 1.08, 1.1, 1.08, 1.04, .99, .93, .86, .78];
+    const duration = isCoin ? (mobile ? 880 : 980) : (mobile ? 1020 : 1160);
+    const stagger = isCoin ? (mobile ? 76 : 82) : 0;
     const clampX = value => Math.min(viewport.width - inset, Math.max(inset, value));
     const clampY = value => Math.min(viewport.height - inset, Math.max(inset, value));
-    const p0 = start;
-    const p1 = { x: clampX(start.x + dx * .27 + side * (mobile ? 8 : 12)), y: clampY(start.y + dy * .24 - arc) };
-    const p2 = { x: clampX(start.x + dx * .73 - side * (mobile ? 7 : 10)), y: clampY(start.y + dy * .76 - arc * .5) };
-    const p3 = finish;
-    const samples = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1];
-    const scales = [.9, .98, 1.04, 1.08, 1.1, 1.08, 1.04, .99, .93, .86, .78];
-    const rotation = item.kind === 'coins' ? 110 : 38;
-    const keyframes = samples.map((t, index) => {
-      const inverse = 1 - t;
-      const x = inverse * inverse * inverse * p0.x
-        + 3 * inverse * inverse * t * p1.x
-        + 3 * inverse * t * t * p2.x
-        + t * t * t * p3.x;
-      const y = inverse * inverse * inverse * p0.y
-        + 3 * inverse * inverse * t * p1.y
-        + 3 * inverse * t * t * p2.y
-        + t * t * t * p3.y;
-      return {
-        offset: t,
-        transform: 'translate3d(' + (x - start.x) + 'px,' + (y - start.y) + 'px,0) rotate('
-          + (rotation * t) + 'deg) scale(' + scales[index] + ')',
-        // The coin is visible immediately and remains solid until the final part of the flight.
-        opacity: t < .8 ? 1 : (t < .9 ? .92 : Math.max(0, 1 - (t - .9) * 10))
-      };
-    });
-
+    const parts = [];
     let layer;
-    let token;
+
     try {
       layer = getRewardFlightLayer();
-      token = o('span', 'reward-flight-token reward-flight-token-' + item.kind);
-      token.setAttribute('aria-hidden', 'true');
-      token.append(App.icon(item.kind === 'gems' ? 'gem' : 'coin', 'reward-flight-icon'));
-      token.style.left = (start.x - size / 2) + 'px';
-      token.style.top = (start.y - size / 2) + 'px';
-      token.style.width = size + 'px';
-      token.style.height = size + 'px';
-      token.style.opacity = '1';
-      layer.append(token);
+      for (let index = 0; index < particleCount; index++) {
+        const angle = particleCount === 1 ? 0 : (index / particleCount) * Math.PI * 2;
+        const sourceOffset = isCoin
+          ? { x: Math.cos(angle) * 11, y: Math.sin(angle) * 9 }
+          : { x: 0, y: 0 };
+        const targetOffset = isCoin
+          ? { x: Math.cos(angle) * 3, y: Math.sin(angle) * 3 }
+          : { x: 0, y: 0 };
+        const p0 = { x: clampX(start.x + sourceOffset.x), y: clampY(start.y + sourceOffset.y) };
+        const p3 = { x: clampX(finish.x + targetOffset.x), y: clampY(finish.y + targetOffset.y) };
+        const partDx = p3.x - p0.x;
+        const partDy = p3.y - p0.y;
+        const side = partDx >= 0 ? 1 : -1;
+        const arc = Math.min(mobile ? 54 : 70, Math.max(18, Math.hypot(partDx, partDy) * .1));
+        const p1 = {
+          x: clampX(p0.x + partDx * .27 + side * (mobile ? 7 : 10)),
+          y: clampY(p0.y + partDy * .24 - arc)
+        };
+        const p2 = {
+          x: clampX(p0.x + partDx * .73 - side * (mobile ? 6 : 8)),
+          y: clampY(p0.y + partDy * .76 - arc * .48)
+        };
+        const rotation = isCoin ? (index % 2 ? -420 : 420) : 38;
+        const keyframes = samples.map((t, frameIndex) => {
+          const inverse = 1 - t;
+          const x = inverse * inverse * inverse * p0.x
+            + 3 * inverse * inverse * t * p1.x
+            + 3 * inverse * t * t * p2.x
+            + t * t * t * p3.x;
+          const y = inverse * inverse * inverse * p0.y
+            + 3 * inverse * inverse * t * p1.y
+            + 3 * inverse * t * t * p2.y
+            + t * t * t * p3.y;
+          return {
+            offset: t,
+            transform: 'translate3d(' + (x - p0.x) + 'px,' + (y - p0.y) + 'px,0) rotate('
+              + (rotation * t) + 'deg) scale(' + scales[frameIndex] + ')',
+            opacity: t < .82 ? 1 : (t < .92 ? .9 : Math.max(0, 1 - (t - .92) * 12.5))
+          };
+        });
+
+        const token = o('span', 'reward-flight-token reward-flight-token-' + item.kind
+          + (isCoin ? ' reward-flight-token-particle' : ''));
+        token.setAttribute('aria-hidden', 'true');
+        token.append(App.icon(item.kind === 'gems' ? 'gem' : 'coin', 'reward-flight-icon'));
+        token.style.left = (p0.x - size / 2) + 'px';
+        token.style.top = (p0.y - size / 2) + 'px';
+        token.style.width = size + 'px';
+        token.style.height = size + 'px';
+        token.style.transform = keyframes[0].transform;
+        token.style.opacity = '1';
+        layer.append(token);
+        parts.push({ token, keyframes, delay: index * stagger, done: false });
+      }
     } catch {
-      if (token) token.remove();
+      parts.forEach(part => part.token.remove());
       resolve();
       return;
     }
 
-    const duration = mobile ? 1120 : 1280;
     let settled = false;
-    let animation = null;
     let cleanupTimer = 0;
     const cleanup = () => {
       if (settled) return;
       settled = true;
       if (cleanupTimer) window.clearTimeout(cleanupTimer);
-      if (token && token.isConnected) token.remove();
+      parts.forEach(part => { if (part.token.isConnected) part.token.remove(); });
       resolve();
+    };
+    const finishPart = part => {
+      if (part.done) return;
+      part.done = true;
+      if (part.token.isConnected) part.token.remove();
+      if (parts.every(candidate => candidate.done)) cleanup();
     };
 
     try {
-      if (typeof token.animate === 'function') {
-        animation = token.animate(keyframes, {
-          duration,
-          easing: 'cubic-bezier(.2,.72,.24,1)',
-          fill: 'both'
+      if (parts.every(part => typeof part.token.animate === 'function')) {
+        parts.forEach(part => {
+          const animation = part.token.animate(part.keyframes, {
+            duration,
+            delay: part.delay,
+            easing: 'cubic-bezier(.2,.72,.24,1)',
+            fill: 'both'
+          });
+          animation.onfinish = () => finishPart(part);
+          animation.oncancel = () => finishPart(part);
         });
-        animation.onfinish = cleanup;
-        animation.oncancel = cleanup;
-        cleanupTimer = window.setTimeout(cleanup, duration + 420);
+        cleanupTimer = window.setTimeout(cleanup, duration + stagger * (particleCount - 1) + 420);
       } else {
-        // Older mobile browsers get a simple transform transition instead of losing the reward.
-        const finalFrame = keyframes[keyframes.length - 1];
-        token.style.transform = keyframes[0].transform;
-        token.style.transition = 'none';
-        requestAnimationFrame(() => {
-          if (!token.isConnected) { cleanup(); return; }
-          token.style.transition = 'transform ' + duration + 'ms cubic-bezier(.2,.72,.24,1), opacity 180ms linear';
-          token.style.transform = finalFrame.transform;
-          token.style.opacity = '0';
+        // Older mobile browsers keep the same staggered burst with CSS transitions.
+        parts.forEach(part => {
+          window.setTimeout(() => {
+            requestAnimationFrame(() => {
+              if (!part.token.isConnected) return;
+              part.token.style.transition = 'transform ' + duration + 'ms cubic-bezier(.2,.72,.24,1), opacity 220ms linear ' + (duration - 220) + 'ms';
+              part.token.style.transform = part.keyframes[part.keyframes.length - 1].transform;
+              part.token.style.opacity = '0';
+            });
+          }, part.delay);
         });
-        cleanupTimer = window.setTimeout(cleanup, duration + 260);
+        cleanupTimer = window.setTimeout(cleanup, duration + stagger * (particleCount - 1) + 320);
       }
     } catch {
       cleanup();
@@ -280,11 +316,11 @@ function startNextRewardFlight(kind) {
     }, 100);
   });
 }
-function animateRewardFlight(sourceRect, target, kind, duration) {
+function animateRewardFlight(sourceRect, target, kind, duration, amount) {
   if (rewardMotionReduced()) return;
   if (!rewardFlightQueues.has(kind)) rewardFlightQueues.set(kind, []);
   // Queue each confirmed reward; never cancel a coin that is already on its way.
-  rewardFlightQueues.get(kind).push({ sourceRect, target, kind, duration });
+  rewardFlightQueues.get(kind).push({ sourceRect, target, kind, duration, amount: Math.max(0, Number(amount) || 0) });
   startNextRewardFlight(kind);
 }
 function formatRewardCounter(element, kind, value) {
@@ -292,6 +328,7 @@ function formatRewardCounter(element, kind, value) {
   const numberOnly = element.classList.contains('coin-bal-value')
     || element.classList.contains('achievement-gem-balance-value');
   if (numberOnly) return number;
+  if (element.classList.contains('quiz-wallet-coins') || element.classList.contains('quiz-wallet-gems')) return number;
   return (kind === 'gems' ? '💎 ' : '💰 ') + number;
 }
 function animateCurrencyReward(kind, previous, balance, sourceRect, preferredTarget) {
@@ -300,8 +337,8 @@ function animateCurrencyReward(kind, previous, balance, sourceRect, preferredTar
   const to = Math.max(0, Number(balance) || 0);
   const countDuration = rewardCurrencyDuration(from, to);
   const selectors = isGem
-    ? '.account-gems, .daily-gem-balance, .gem-store-balance'
-    : '.account-coins:not(.account-gems), .coin-bal-value';
+    ? '.quiz-wallet-gems, .account-gems, .daily-gem-balance, .gem-store-balance'
+    : '.quiz-wallet-coins, .account-coins:not(.account-gems), .coin-bal-value';
   const targets = [...new Set([
     ...document.querySelectorAll(selectors),
     ...(preferredTarget ? [preferredTarget] : [])
@@ -321,10 +358,24 @@ function animateCurrencyReward(kind, previous, balance, sourceRect, preferredTar
 
   const origin = sourceRect || captureRewardRect(document.activeElement)
     || { left: window.innerWidth * .42, top: window.innerHeight * .68, width: 32, height: 32 };
-  if (to > from) animateRewardFlight(origin, balanceTarget, kind, countDuration);
+  if (to > from) animateRewardFlight(origin, balanceTarget, kind, countDuration, to - from);
+}
+window.animateCurrencyReward = animateCurrencyReward;
+
+function updateQuizRewardWallet() {
+  const wallet = $('quiz-reward-wallet');
+  if (!wallet) return;
+  const ready = !!(S.db && S.doc && S.uid);
+  wallet.hidden = !ready;
+  if (!ready) return;
+  const coins = $('quiz-wallet-coins-value');
+  const gems = $('quiz-wallet-gems-value');
+  if (coins) coins.textContent = rewardNumber(S.doc.coins || 0);
+  if (gems) gems.textContent = rewardNumber(S.doc.gems || 0);
 }
 
 function renderAccount() {
+  updateQuizRewardWallet();
   if (window.BeceProfile && S.doc && S.doc.color && BeceProfile.parse(S.doc.color).key !== BeceProfile.accent) BeceProfile.applyAccent(S.doc.color);
   const e = $('account-btn'); e.replaceChildren(); const m = view();
   if (!S.db) { e.append(o('span', 'account-name', 'Offline')); e.onclick = () => App.navigate('friends'); return; }

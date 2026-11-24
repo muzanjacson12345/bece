@@ -250,7 +250,7 @@ async function main() {
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
-    ['Reward counters, flights and XP bars respect reduced-motion settings', source.includes('function rewardMotionReduced()') && source.includes("if (rewardMotionReduced() || typeof Element.prototype.animate !== 'function')") && source.includes('.reward-flight-token') && source.includes('.exp-xp-fill') && source.includes('transition: none !important;')],
+    ['Reward counters, flights and XP bars respect reduced-motion settings', source.includes('function rewardMotionReduced()') && source.includes('if (rewardMotionReduced() || startValue === endValue)') && source.includes('if (rewardMotionReduced()) return;') && source.includes('.reward-flight-token') && source.includes('.exp-xp-fill') && source.includes('transition: none !important;')],
     ['Reward counters use smooth amount-based timing for both XP and currency', source.includes('function rewardAnimationDuration(from, to)') && source.includes('Math.log10(delta + 1)') && source.includes('Math.min(5200') && source.includes('function rewardCurrencyDuration(from, to)') && source.includes('return Math.min(1900')],
     ['XP headline, total EXP and level progress share one amount-based duration', source.includes('const xpDuration = rewardAnimationDuration(previousTotal, newTotal)') && source.includes('animateRewardNumber(xpHeadline, 0, xpReward') && source.includes('animateRewardNumber(totalCount, previousTotal, newTotal') && source.includes('fill.animate(frames')],
     ['Reward count-up uses a slower 1.45–1.9 second duration', source.includes('function rewardCurrencyDuration(from, to)') && source.includes('Math.min(1900, Math.round(1450 + Math.log10(delta + 1) * 140))')],
@@ -263,7 +263,7 @@ async function main() {
     ['Self-service progress reset updates instead of attempting forbidden self-delete', source.includes("const resetRef = S.db.doc('players/' + S.uid);") && source.includes('await resetRef.set(resetProfile);') && !source.includes("await S.db.doc('players/' + S.uid).delete();")],
     ['Profile reset preserves trusted Gem balance and ownership history', source.includes("['gems', 'gemOps', 'gemCosmetics'].forEach(key =>") && source.includes('Your Gem balance and earned Gem cosmetics are kept.')],
     ['Admin progress reset preserves protected Gem fields', source.includes("'gemCosmetics', 'equippedGemCosmetic']")],
-    ['Currency reward flights use a visible single coin and a mobile-browser fallback', source.includes('const samples = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]') && source.includes('token.animate(keyframes') && source.includes("App.icon(item.kind === 'gems' ? 'gem' : 'coin'") && source.includes('Older mobile browsers get a simple transform transition') && source.includes('const duration = mobile ? 1120 : 1280')],
+    ['Currency reward flights use a burst of small coins and a mobile-browser fallback', source.includes('const particleCount = isCoin') && source.includes('reward-flight-token-particle') && source.includes('token.animate(part.keyframes') && source.includes("App.icon(item.kind === 'gems' ? 'gem' : 'coin'") && source.includes('Older mobile browsers keep the same staggered burst with CSS transitions')],
     ['Achievement Gem claims have a visible local balance destination', source.includes('achievement-gem-balance-value') && source.includes('Your Gems') && source.includes("action === 'achievement'") && source.includes('achievementBalance')],
     ['Achievement Gem particles begin at the reward chip', source.includes("captureRewardRect(rewardRow.querySelector('.achievement-gem-reward'))")],
     ['Currency counters use a shorter amount-based count-up', source.includes('function rewardCurrencyDuration(from, to)') && source.includes('const countDuration = rewardCurrencyDuration(from, to)') && source.includes('return Math.min(1900')],
@@ -800,7 +800,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, coinFlightVisible: false, queuedCoinFlightVisible: false, question: false, answerFeedback: false, results: false, notes: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -823,6 +823,14 @@ async function main() {
             && getComputedStyle(hero.querySelector('.hero-art')).animationName === 'motion-home-art-enter'
             && getComputedStyle(hero.querySelector('.hero-copy h1')).animationName === 'motion-home-copy-enter';
         });
+        check.mobileHeaderPinned = !viewport.mobile || await homePage.evaluate(async () => {
+          window.scrollTo(0, 620);
+          await new Promise(resolve => setTimeout(resolve, 120));
+          const nav = document.getElementById('site-nav');
+          const rect = nav?.getBoundingClientRect();
+          return !!nav && getComputedStyle(nav).position === 'fixed'
+            && !!rect && Math.abs(rect.top) <= 1 && rect.bottom > 0;
+        });
         stage = 'mobile coin reward flight';
         await homePage.evaluate(() => {
           const source = document.createElement('div');
@@ -837,17 +845,23 @@ async function main() {
           window.animateCurrencyReward('coins', 4, 5, source.getBoundingClientRect(), target);
         });
         await homePage.waitForSelector('#bece-reward-flight-layer .reward-flight-token', { timeout: 3000 });
-        await homePage.waitForTimeout(90);
-        check.coinFlightVisible = await homePage.evaluate(() => {
+        await homePage.waitForTimeout(230);
+        const coinFlightState = await homePage.evaluate(() => {
           const layer = document.getElementById('bece-reward-flight-layer');
-          const token = layer?.querySelector('.reward-flight-token-coins');
-          if (!layer || layer.parentElement !== document.documentElement || !token) return false;
-          const rect = token.getBoundingClientRect();
-          return Number(getComputedStyle(token).opacity) > .85
-            && rect.width >= 30 && rect.height >= 30
-            && rect.right > 0 && rect.bottom > 0
-            && rect.left < window.innerWidth && rect.top < window.innerHeight;
+          const tokens = [...(layer?.querySelectorAll('.reward-flight-token-coins') || [])];
+          const first = tokens[0];
+          if (!layer || layer.parentElement !== document.documentElement || !first) return { visible: false, count: 0 };
+          const rect = first.getBoundingClientRect();
+          return {
+            visible: Number(getComputedStyle(first).opacity) > .85
+              && rect.width >= 16 && rect.height >= 16
+              && rect.right > 0 && rect.bottom > 0
+              && rect.left < window.innerWidth && rect.top < window.innerHeight,
+            count: tokens.length
+          };
         });
+        check.coinFlightVisible = coinFlightState.visible;
+        check.coinFlightParticles = coinFlightState.count >= 3;
         await homePage.evaluate(() => {
           const source = document.getElementById('reward-motion-test-source');
           const target = document.getElementById('reward-motion-test-target');
@@ -859,9 +873,11 @@ async function main() {
           const token = layer?.querySelector('.reward-flight-token-coins');
           if (!layer || !token) return false;
           const rect = token.getBoundingClientRect();
+          const count = layer.querySelectorAll('.reward-flight-token-coins').length;
           return Number(getComputedStyle(token).opacity) > .5
             && rect.right > 0 && rect.bottom > 0
-            && rect.left < window.innerWidth && rect.top < window.innerHeight;
+            && rect.left < window.innerWidth && rect.top < window.innerHeight
+            && count >= 3;
         });
         await homePage.close();
 
@@ -869,6 +885,10 @@ async function main() {
         await motionPage.locator('#setup-start').click();
         await motionPage.waitForFunction(() => document.body?.dataset?.screen === 'quiz', null, { timeout: 30000 });
         await motionPage.waitForTimeout(70);
+        check.quizWalletMarkup = await motionPage.evaluate(() =>
+          !!document.querySelector('#quiz-reward-wallet .quiz-wallet-coins')
+          && !!document.querySelector('#quiz-reward-wallet .quiz-wallet-gems')
+        );
         const questionState = await motionPage.evaluate(() => ({
           reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
           card: getComputedStyle(document.querySelector('#qcard')).animationName,

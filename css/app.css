@@ -3470,3 +3470,22 @@ pre, code { overflow-wrap: anywhere; }
   .achievement-total span { font-size: 12px; }
   .achievement-gem-balance { min-height: 34px; padding: 6px 10px; gap: 7px; }
 }
+
+
+/* Mobile wallet visibility: keep the account balances attached to the viewport while scrolling. */
+@media (max-width: 760px) {
+  #site-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 80;
+  }
+  #site-nav + #main {
+    padding-top: calc(var(--nav-h) + env(safe-area-inset-top));
+  }
+  body[data-screen='quiz'] #site-nav + #main {
+    padding-top: 0;
+  }
+}
