@@ -2245,7 +2245,7 @@ const Essays = {
     $('sb-next').disabled = this.idx === list.length - 1;
   },
   updateCount() {
-    const count = $('sb-ans').value.trim().split(/\\s+/).filter(Boolean).length;
+    const count = $('sb-ans').value.trim().split(/\s+/).filter(Boolean).length;
     $('word-count').textContent = plural(count, 'word');
   },
   save() {
@@ -2292,7 +2292,7 @@ const Essays = {
         if (!line.trim()) { listNode = null; return; }
         if (line.trim().startsWith('•')) {
           if (!listNode) { listNode = el('ul'); content.append(listNode); }
-          listNode.append(el('li', '', line.replace(/^\\s*•\\s*/, '')));
+          listNode.append(el('li', '', line.replace(/^\s*•\s*/, '')));
         } else { listNode = null; content.append(el('p', 'guide-heading', line)); }
       });
     }

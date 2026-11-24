@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-essay-draft-feedback-2026-11-24-r55';
+const EXPECTED_BUILD = 'bece-essay-draft-feedback-2026-11-24-r56';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -315,7 +315,7 @@ async function main() {
     ['Stage 40 photo feedback keeps the previous photo on failure and respects reduced motion', source.includes('Your previous photo is still in place') && source.includes('Stage 40 — Profile photo save confirmation') && source.includes('--motion-profile-photo-save-duration: 290ms') && source.includes('--motion-profile-photo-save-duration: 340ms') && source.includes('animation: none !important;')],
     ['Mobile announcements are placed after the fixed header, including on nested Notes and Essays routes', source.includes('#site-nav ~ .ann-bar') && source.includes('#site-nav ~ .ann-bar + #main')],
     ['Stage 41 reports a saved Essay draft only after confirming the localStorage write', source.includes('saveErrorShown: false') && source.includes('localStorage.setItem(key, serialized)') && source.includes("localStorage.getItem(key) !== serialized") && source.includes("this.setSaveStatus('saved', savedAt)") && source.includes("this.setSaveStatus('error', 'Couldn’t save draft · try again')")],
-    ['Stage 41 saves the current Essay before switching questions or subjects', source.includes('if (this.idx === index) return;') && source.includes('this.save();\\n        this.idx = index;') && source.includes('Essays.save();\\n  Essays.sub = b.dataset.sbSub;') && source.includes('window.addEventListener(\'pagehide\', () => Essays.save())')],
+    ['Stage 41 saves the current Essay before switching questions or subjects', source.includes('if (this.idx === index) return;') && source.includes('this.idx = index;') && source.includes('Essays.sub = b.dataset.sbSub;') && source.includes("window.addEventListener('pagehide'") && source.includes("document.addEventListener('visibilitychange'")],
     ['Stage 41 draft save and error feedback has responsive timing and reduced-motion support', source.includes('Stage 41 — Essay draft save feedback') && source.includes('--motion-essay-draft-saved-duration: 205ms') && source.includes('--motion-essay-draft-saved-duration: 235ms') && source.includes('#essay-save-note.motion-essay-draft-saved') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
