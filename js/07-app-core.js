@@ -1342,13 +1342,17 @@ const Quiz = {
       groups[q.topic].total++;
       if (this.answers[q.id] === q.correct) groups[q.topic].correct++;
     });
+    let topicResultIndex = 0;
     Object.entries(groups).sort(([, a], [, b]) => a.correct / a.total - b.correct / b.total).forEach(([topic, g]) => {
-      const row = el('div', 'topic-row');
+      const row = el('div', 'topic-row motion-results-topic-row-enter');
+      row.style.setProperty('--topic-result-index', String(Math.min(topicResultIndex, 6)));
       const meter = el('progress', 'meter');
       meter.max = g.total; meter.value = g.correct;
       meter.setAttribute('aria-label', `${topic}: ${g.correct} of ${g.total} correct`);
       row.append(el('span', '', topic), el('strong', '', `${g.correct}/${g.total}`), meter);
       breakdown.append(row);
+      replayMotion(row, 'motion-results-topic-row-enter');
+      topicResultIndex++;
     });
     this.reviewFilter = missed ? 'missed' : 'all';
     this.renderReview();

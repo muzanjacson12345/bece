@@ -2850,3 +2850,31 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 49 — Quiz results topic breakdown arrival
+   Stagger the actual focus areas after the results screen has appeared.
+   -------------------------------------------------------------------------- */
+:root { --motion-results-topic-row-duration: 255ms; }
+@media (max-width: 760px) {
+  :root { --motion-results-topic-row-duration: 230ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-results-topic-row-duration: 265ms; }
+}
+@keyframes motion-results-topic-row-enter {
+  0% { opacity: .45; transform: translateY(7px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+#topic-breakdown .topic-row.motion-results-topic-row-enter {
+  animation: motion-results-topic-row-enter var(--motion-results-topic-row-duration) var(--motion-ease-enter) both;
+  animation-delay: calc(var(--topic-result-index, 0) * 42ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  #topic-breakdown .topic-row.motion-results-topic-row-enter {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
