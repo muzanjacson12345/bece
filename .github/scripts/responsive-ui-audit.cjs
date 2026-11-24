@@ -1503,6 +1503,8 @@ async function main() {
 
         stage = 'Quiz question-map expansion feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-60-wrap';
           const map = document.createElement('details');
           map.id = 'question-map';
           map.open = true;
@@ -1510,14 +1512,15 @@ async function main() {
           dots.className = 'question-dots motion-question-map-open';
           dots.id = 'motion-stage-60-test';
           map.append(document.createElement('summary'), dots);
-          document.body.append(map);
+          wrapper.append(map);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(45);
         check.questionMapExpansionFeedback = await motionPage.evaluate(() => {
           const dots = document.querySelector('#motion-stage-60-test');
           return !!dots && getComputedStyle(dots).animationName === 'motion-question-map-open';
         });
-        await motionPage.evaluate(() => document.querySelector('#question-map')?.remove());
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-60-wrap')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();
