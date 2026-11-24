@@ -2416,10 +2416,15 @@ window.addEventListener('pagehide', () => Essays.save());
     if (!revealed || get('session').hidden) return;
     if (known) remembered++; else revisit.push(cards[index]);
     index++;
-    if (index < cards.length) { show(); return; }
+    if (index < cards.length) {
+      show();
+      replayMotion(get('confidence'), 'motion-flash-confidence-update');
+      return;
+    }
     get('session').hidden = true;
     get('summary').hidden = false;
     get('summary-title').textContent = `${remembered} of ${cards.length} remembered.`;
+    replayMotion(get('summary-title'), 'motion-flash-summary-arrival');
     get('summary-copy').textContent = revisit.length
       ? `${revisit.length} ${revisit.length === 1 ? 'idea needs' : 'ideas need'} another look. Try them again while the explanations are fresh.`
       : 'You recalled every answer in this round. Try a fresh selection or explore another topic.';

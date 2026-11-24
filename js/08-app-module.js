@@ -1977,7 +1977,7 @@ const Duel = (() => {
   const cfgChips = d => chips(subjectNames(d.subjects || (d.subject && d.subject !== 'mixed' ? [d.subject] : [])), `${(d.qids || []).length} questions`, `${d.secs || 15}s each`, d.vis === 'private' ? '\u{1F512} Private' : '\u{1F310} Public');
   const buzz = n => { try { navigator.vibrate && navigator.vibrate(n); } catch {} };
   let box = null;
-  let lastLobbyCode = '';
+  let lastLobbyCode = '', lastResultCode = '';
   function put(...n) {
     if (!box || !box.isConnected) {
       const m = o('div', 'friend-modal duel-modal'); m.id = 'duel-modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
@@ -2025,7 +2025,7 @@ const Duel = (() => {
     clearInterval(D.timer); clearInterval(D.scT); clearInterval(D.cdT); clearInterval(D.hbT); clearTimeout(D.wait);
     if (D.unsub) { D.unsub(); D.unsub = null; }
     if (D.doc && D.doc.state === 'waiting' && D.doc.host === S.uid) col().doc(D.code).delete().catch(() => {});
-    D.code = D.doc = D.me = null; D.started = D.cd = false; box = null; lastLobbyCode = '';
+    D.code = D.doc = D.me = null; D.started = D.cd = false; box = null; lastLobbyCode = ''; lastResultCode = '';
     const m = $('duel-modal'); if (m) m.remove();
   }
   function watch(code) {
@@ -2192,6 +2192,8 @@ const Duel = (() => {
     });
   }
   function result(r) {
+    const isNewResult = D.code !== lastResultCode;
+    if (isNewResult) lastResultCode = D.code;
     const me = D.me, opp = r || { c: 0, n: 0, ms: 0, done: false }, n = total();
     const tie = me.c === opp.c && me.ms === opp.ms, win = me.c !== opp.c ? me.c > opp.c : me.ms < opp.ms;
     const cn = record(tie ? 'd' : win ? 'w' : 'l');
@@ -2212,8 +2214,10 @@ const Duel = (() => {
       cn ? coinPanel(cn, D.coinParts, D.bal) : o('p', 'muted', D.limit ? '\u{1F4B0} Daily duel coin limit reached (10 duels). Come back tomorrow!' : 'No coins this time.'),
       o('p', 'muted', opp.done ? 'Most correct answers wins; faster total time breaks ties.' : `${oppName()} didn\u2019t finish, so unanswered questions count as wrong.`),
       rev, row(btn('Rematch', 'btn-primary btn-sm', () => { close(); D.cfg = cfg; create(); }), btn('Close', 'btn-ghost btn-sm', () => close())));
-    replayMotion(resultTitle, 'motion-duel-result-title-enter');
-    replayMotion(sc, 'motion-duel-result-score-enter');
+    if (isNewResult) {
+      replayMotion(resultTitle, 'motion-duel-result-title-enter');
+      replayMotion(sc, 'motion-duel-result-score-enter');
+    }
     countUp(); if (!tie && win) { buzz([40, 30, 40, 30, 90]); setTimeout(confetti, 300); }
   }
   async function create() {
