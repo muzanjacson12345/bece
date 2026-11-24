@@ -945,18 +945,19 @@ async function main() {
           root.querySelectorAll('.lesson-opt')[0].click();
         });
         await motionPage.waitForTimeout(50);
-        check.lessonAnswerFeedback = await motionPage.evaluate(() => {
+        const wrongFeedback = await motionPage.evaluate(() => {
           const root = document.querySelector('#motion-stage-36-test');
-          const wrong = root?.querySelector('.lesson-opt.bad');
+          const wrong = root?.querySelector('.lesson-opt.bad.motion-lesson-answer-wrong');
           const feedback = root?.querySelector('.lesson-fb.motion-lesson-feedback-wrong');
-          if (!wrong || !feedback) return false;
-          const wrongMotion = getComputedStyle(wrong).animationName;
-          const feedbackMotion = getComputedStyle(feedback).animationName;
-          root.querySelectorAll('.lesson-opt')[1].click();
-          return wrongMotion === 'motion-lesson-answer-pop' && feedbackMotion === 'motion-lesson-feedback-enter';
+          return !!wrong && !!feedback
+            && getComputedStyle(wrong).animationName === 'motion-lesson-answer-pop'
+            && getComputedStyle(feedback).animationName === 'motion-lesson-feedback-enter';
+        });
+        await motionPage.evaluate(() => {
+          document.querySelector('#motion-stage-36-test')?.querySelectorAll('.lesson-opt')[1].click();
         });
         await motionPage.waitForTimeout(50);
-        check.lessonAnswerFeedback = check.lessonAnswerFeedback && await motionPage.evaluate(() => {
+        check.lessonAnswerFeedback = wrongFeedback && await motionPage.evaluate(() => {
           const root = document.querySelector('#motion-stage-36-test');
           const correct = root?.querySelector('.lesson-opt.ok.motion-lesson-answer-correct');
           const feedback = root?.querySelector('.lesson-fb.motion-lesson-feedback-correct');
