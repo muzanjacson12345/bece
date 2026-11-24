@@ -3165,3 +3165,30 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 60 — Quiz question-map expansion
+   Animate the numbered question grid only when the learner opens the map.
+   -------------------------------------------------------------------------- */
+:root { --motion-question-map-open-duration: 245ms; }
+@media (max-width: 760px) {
+  :root { --motion-question-map-open-duration: 225ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-question-map-open-duration: 255ms; }
+}
+@keyframes motion-question-map-open {
+  0% { opacity: .4; transform: translateY(7px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+#question-map[open] .question-dots.motion-question-map-open {
+  animation: motion-question-map-open var(--motion-question-map-open-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #question-map[open] .question-dots.motion-question-map-open {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

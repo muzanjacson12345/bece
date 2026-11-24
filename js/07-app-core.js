@@ -1413,6 +1413,14 @@ const Quiz = {
 $('pbtn').addEventListener('click', () => Quiz.prev());
 $('next-question-btn').addEventListener('click', () => Quiz.next());
 $('hint-btn').addEventListener('click', () => Quiz.toggleHint());
+const questionMap = $('question-map');
+const questionMapSummary = questionMap && questionMap.querySelector('summary');
+if (questionMapSummary) questionMapSummary.addEventListener('click', () => {
+  if (questionMap.open) return;
+  requestAnimationFrame(() => {
+    if (questionMap.open) replayMotion($('question-map-buttons'), 'motion-question-map-open');
+  });
+});
 $('bmark-btn').addEventListener('click', () => Quiz.toggleBookmark());
 document.querySelector('[data-action="finish-quiz"]').addEventListener('click', () => Quiz.finish());
 document.querySelector('[data-action="to-unanswered"]').addEventListener('click', () => Quiz.toUnanswered());
