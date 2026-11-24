@@ -2318,3 +2318,42 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 35 — Quiz setup selection feedback
+   Confirm a deliberate setup choice without animating the whole setup card.
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-setup-choice-duration: 205ms;
+}
+@media (max-width: 760px) {
+  :root { --motion-setup-choice-duration: 185ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-setup-choice-duration: 215ms; }
+}
+
+@keyframes motion-setup-choice-pop {
+  0% { opacity: .82; transform: scale(.95); }
+  68% { opacity: 1; transform: scale(1.045); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+#quiz-subject-count .length-option.motion-setup-count-selected,
+.subject-choice-grid [data-setup-sub].motion-setup-subject-selected,
+#length-buttons .length-option.motion-setup-length-selected,
+.mode-grid .mode-option.motion-setup-mode-selected {
+  transform-origin: center;
+  animation: motion-setup-choice-pop var(--motion-setup-choice-duration) var(--motion-ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #quiz-subject-count .length-option.motion-setup-count-selected,
+  .subject-choice-grid [data-setup-sub].motion-setup-subject-selected,
+  #length-buttons .length-option.motion-setup-length-selected,
+  .mode-grid .mode-option.motion-setup-mode-selected {
+    animation: none !important;
+    transform: none !important;
+  }
+}
