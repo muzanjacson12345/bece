@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-quiz-question-number-feedback-2026-11-24-r79';
+const EXPECTED_BUILD = 'bece-audit-fixture-isolation-2026-11-24-r80';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -1257,27 +1257,26 @@ async function main() {
 
         stage = 'Quiz session preparation feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-47-wrap';
           const header = document.createElement('div');
           header.className = 'quiz-bar motion-quiz-session-bar-enter';
           header.id = 'motion-stage-47-header';
           const stage = document.createElement('div');
           stage.id = 'quiz-stage';
           stage.className = 'motion-quiz-session-enter';
-          stage.id = 'motion-stage-47-stage';
-          document.body.append(header, stage);
+          wrapper.append(header, stage);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(50);
         check.quizSessionEntryFeedback = await motionPage.evaluate(() => {
           const header = document.querySelector('#motion-stage-47-header');
-          const stage = document.querySelector('#motion-stage-47-stage');
+          const stage = document.querySelector('#motion-stage-47-wrap #quiz-stage');
           return !!header && !!stage
             && getComputedStyle(header).animationName === 'motion-quiz-session-bar-enter'
             && getComputedStyle(stage).animationName === 'motion-quiz-session-enter';
         });
-        await motionPage.evaluate(() => {
-          document.querySelector('#motion-stage-47-header')?.remove();
-          document.querySelector('#motion-stage-47-stage')?.remove();
-        });
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-47-wrap')?.remove());
 
         stage = 'Notes topic completion feedback';
         await motionPage.evaluate(() => {
@@ -1295,6 +1294,8 @@ async function main() {
 
         stage = 'Quiz results topic breakdown feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-49-wrap';
           const breakdown = document.createElement('section');
           breakdown.id = 'topic-breakdown';
           const row = document.createElement('div');
@@ -1302,14 +1303,15 @@ async function main() {
           row.style.setProperty('--topic-result-index', '2');
           row.id = 'motion-stage-49-test';
           breakdown.append(row);
-          document.body.append(breakdown);
+          wrapper.append(breakdown);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(45);
         check.resultsTopicBreakdownFeedback = await motionPage.evaluate(() => {
           const row = document.querySelector('#motion-stage-49-test');
           return !!row && getComputedStyle(row).animationName === 'motion-results-topic-row-enter';
         });
-        await motionPage.evaluate(() => document.querySelector('#topic-breakdown')?.remove());
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-49-wrap')?.remove());
 
         stage = 'Daily Challenge incremental progress feedback';
         await motionPage.evaluate(() => {
@@ -1332,6 +1334,8 @@ async function main() {
 
         stage = 'Quiz review explanation reveal feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-51-wrap';
           const review = document.createElement('section');
           review.id = 'res-review';
           const item = document.createElement('details');
@@ -1343,14 +1347,15 @@ async function main() {
           body.textContent = 'Explanation';
           item.append(body);
           review.append(item);
-          document.body.append(review);
+          wrapper.append(review);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(45);
         check.reviewExplanationFeedback = await motionPage.evaluate(() => {
           const body = document.querySelector('#motion-stage-51-test');
           return !!body && getComputedStyle(body).animationName === 'motion-review-explanation-enter';
         });
-        await motionPage.evaluate(() => document.querySelector('#res-review')?.remove());
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-51-wrap')?.remove());
 
         stage = 'Quiz review filter selection feedback';
         await motionPage.evaluate(() => {
@@ -1423,6 +1428,8 @@ async function main() {
 
         stage = 'Quiz question-map selection feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-55-wrap';
           const map = document.createElement('div');
           map.id = 'question-map-buttons';
           const dot = document.createElement('button');
@@ -1430,14 +1437,15 @@ async function main() {
           dot.setAttribute('aria-current', 'step');
           dot.id = 'motion-stage-55-test';
           map.append(dot);
-          document.body.append(map);
+          wrapper.append(map);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(45);
         check.questionMapSelectionFeedback = await motionPage.evaluate(() => {
           const dot = document.querySelector('#motion-stage-55-test');
           return !!dot && getComputedStyle(dot).animationName === 'motion-question-map-selected';
         });
-        await motionPage.evaluate(() => document.querySelector('#question-map-buttons')?.remove());
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-55-wrap')?.remove());
 
         stage = 'Duel invite share confirmation feedback';
         await motionPage.evaluate(() => {
@@ -1458,23 +1466,28 @@ async function main() {
 
         stage = 'Duel setup pane entrance feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-57-wrap';
           const body = document.createElement('section');
           body.id = 'duels-body';
           const pane = document.createElement('div');
           pane.className = 'duel-pane motion-duel-pane-enter';
           pane.id = 'motion-stage-57-test';
           body.append(pane);
-          document.body.append(body);
+          wrapper.append(body);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(45);
         check.duelSetupPaneFeedback = await motionPage.evaluate(() => {
           const pane = document.querySelector('#motion-stage-57-test');
           return !!pane && getComputedStyle(pane).animationName === 'motion-duel-pane-enter';
         });
-        await motionPage.evaluate(() => document.querySelector('#duels-body')?.remove());
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-57-wrap')?.remove());
 
         stage = 'Quiz recall prompt reveal feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-58-wrap';
           const host = document.createElement('section');
           host.id = 'expl-box';
           const details = document.createElement('details');
@@ -1484,28 +1497,32 @@ async function main() {
           answer.id = 'motion-stage-58-test';
           details.append(document.createElement('summary'), answer);
           host.append(details);
-          document.body.append(host);
+          wrapper.append(host);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(45);
         check.recallPromptFeedback = await motionPage.evaluate(() => {
           const answer = document.querySelector('#motion-stage-58-test');
           return !!answer && getComputedStyle(answer).animationName === 'motion-recall-prompt-enter';
         });
-        await motionPage.evaluate(() => document.querySelector('#expl-box')?.remove());
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-58-wrap')?.remove());
 
         stage = 'Quiz unanswered-question warning feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-59-wrap';
           const notice = document.createElement('section');
           notice.id = 'submit-check';
           notice.className = 'motion-quiz-unanswered-warning';
-          document.body.append(notice);
+          wrapper.append(notice);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(45);
         check.unansweredWarningFeedback = await motionPage.evaluate(() => {
-          const notice = document.querySelector('#submit-check');
+          const notice = document.querySelector('#motion-stage-59-wrap #submit-check');
           return !!notice && getComputedStyle(notice).animationName === 'motion-quiz-unanswered-warning';
         });
-        await motionPage.evaluate(() => document.querySelector('#submit-check')?.remove());
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-59-wrap')?.remove());
 
         stage = 'Quiz question-map expansion feedback';
         await motionPage.evaluate(() => {
@@ -1530,6 +1547,8 @@ async function main() {
 
         stage = 'Daily Challenge completion summary feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-61-wrap';
           const card = document.createElement('section');
           card.id = 'daily-card';
           const summary = document.createElement('div');
@@ -1540,17 +1559,20 @@ async function main() {
           count.textContent = '1/3';
           summary.append(count);
           card.append(summary);
-          document.body.append(card);
+          wrapper.append(card);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(45);
         check.dailyChallengeSummaryFeedback = await motionPage.evaluate(() => {
           const count = document.querySelector('#motion-stage-61-test');
           return !!count && getComputedStyle(count).animationName === 'motion-daily-challenge-summary-complete';
         });
-        await motionPage.evaluate(() => document.querySelector('#daily-card')?.remove());
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-61-wrap')?.remove());
 
         stage = 'Flashcards filter selection feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-62-wrap';
           const studio = document.createElement('section');
           studio.id = 'flashcard-studio';
           const filters = document.createElement('div');
@@ -1560,25 +1582,28 @@ async function main() {
           select.id = 'motion-stage-62-test';
           filters.append(select);
           studio.append(filters);
-          document.body.append(studio);
+          wrapper.append(studio);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(45);
         check.flashcardFilterFeedback = await motionPage.evaluate(() => {
           const select = document.querySelector('#motion-stage-62-test');
           return !!select && getComputedStyle(select).animationName === 'motion-flash-filter-selected';
         });
-        await motionPage.evaluate(() => document.querySelector('#flashcard-studio')?.remove());
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-62-wrap')?.remove());
 
         stage = 'Quiz question number change feedback';
         await motionPage.evaluate(() => {
+          const wrapper = document.createElement('div');
+          wrapper.id = 'motion-stage-63-wrap';
           const root = document.createElement('section');
           root.id = 'screen-quiz';
           const number = document.createElement('span');
           number.id = 'qnum';
           number.className = 'motion-quiz-question-number-change';
           root.append(number);
-          root.id = 'motion-stage-63-wrap';
-          document.body.append(root);
+          wrapper.append(root);
+          document.body.append(wrapper);
         });
         await motionPage.waitForTimeout(45);
         check.quizQuestionNumberFeedback = await motionPage.evaluate(() => {
