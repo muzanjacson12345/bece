@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-appearance-mode-selection-motion-2026-11-24-r43';
+const EXPECTED_BUILD = 'bece-no-replay-on-live-list-refresh-2026-11-24-r44';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -287,6 +287,8 @@ async function main() {
     ['Stage 26 removes continuous saving pulse and respects reduced-motion', !source.includes(".cz-status[data-state='saving']::before { background: var(--warn); animation: pulse 1s infinite; }") && source.includes('Stage 26 — Profile save status transitions') && source.includes('--motion-profile-status-duration: 185ms') && source.includes('animation: none !important;')],
     ['Stage 27 animates the Light/Dark/Auto button only when its mode changes', source.includes('const changed = BeceTheme.pref !== k;') && source.includes("if (changed) replayMotion(b, 'motion-profile-mode-selected')") && source.includes('.mode-seg button.motion-profile-mode-selected')],
     ['Stage 27 appearance mode feedback has responsive timing and reduced-motion support', source.includes('Stage 27 — Appearance mode selection feedback') && source.includes('--motion-profile-mode-duration: 190ms') && source.includes('.mode-seg button.motion-profile-mode-selected') && source.includes('animation: none !important;')],
+    ['Stage 28 live-rendered achievement, daily, shop, Friends and Duel lists do not replay entrance animations', !source.includes('.achievement-group {\\n  animation: motion-reward-rise') && !source.includes('.challenge-item,\\n.daily-gem-rewards,\\n.daily-challenge-bonus {\\n  animation: motion-reward-rise') && !source.includes('.board-list > li:nth-child(-n+5)') && !source.includes('.duel-pane:not([hidden]) {\\n  animation: motion-reward-rise')],
+    ['Stage 28 event-specific achievement and challenge feedback remains intact', source.includes('.achievement-item.is-newly-earned .achievement-icon') && source.includes('.challenge-item.is-just-completed .challenge-icon') && source.includes('Stage 28 — Prevent motion replay on live-rendered lists')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -865,7 +867,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1235,6 +1237,41 @@ async function main() {
         });
         check.appearanceModeFeedback = appearanceModeMotion.name === 'motion-profile-mode-selected'
           && appearanceModeMotion.duration >= .18 && appearanceModeMotion.duration <= .23;
+        const liveListMotion = await homePage.evaluate(() => {
+          const classes = [
+            'achievement-overview', 'achievement-group', 'achievement-item',
+            'challenge-item', 'daily-gem-rewards', 'daily-gem-day',
+            'shop-group', 'gem-store', 'gem-item', 'leaderboard',
+            'activity', 'profile-card', 'duel-card', 'duel-pane',
+            'board-list', 'activity-list', 'duel-open'
+          ];
+          const list = classes.map(className => {
+            const node = document.createElement('div');
+            node.className = className;
+            document.body.append(node);
+            return getComputedStyle(node).animationName;
+          });
+          const earned = document.createElement('article');
+          earned.className = 'achievement-item is-newly-earned';
+          const earnedIcon = document.createElement('span');
+          earnedIcon.className = 'achievement-icon';
+          earned.append(earnedIcon);
+          document.body.append(earned);
+          const completed = document.createElement('article');
+          completed.className = 'challenge-item is-just-completed';
+          const completedIcon = document.createElement('span');
+          completedIcon.className = 'challenge-icon';
+          completed.append(completedIcon);
+          document.body.append(completed);
+          return {
+            list,
+            earned: getComputedStyle(earnedIcon).animationName,
+            completed: getComputedStyle(completedIcon).animationName,
+          };
+        });
+        check.repeatEntrySuppressed = liveListMotion.list.every(name => name === 'none');
+        check.targetedRewardMotionPreserved = liveListMotion.earned === 'motion-reward-pop'
+          && liveListMotion.completed === 'motion-challenge-complete-pop';
         await homePage.emulateMedia({ reducedMotion: 'reduce' });
         check.challengeCompletionReducedMotion = await homePage.evaluate(() => {
           const item = document.querySelector('#motion-challenge-complete-test');
