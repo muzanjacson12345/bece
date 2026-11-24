@@ -3111,3 +3111,30 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 58 — Quiz recall prompt reveal
+   Reveal the optional recall prompt only when a learner chooses to open it.
+   -------------------------------------------------------------------------- */
+:root { --motion-recall-prompt-duration: 205ms; }
+@media (max-width: 760px) {
+  :root { --motion-recall-prompt-duration: 185ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-recall-prompt-duration: 215ms; }
+}
+@keyframes motion-recall-prompt-enter {
+  0% { opacity: .35; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+#expl-box .recall-prompt[open] > p {
+  animation: motion-recall-prompt-enter var(--motion-recall-prompt-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #expl-box .recall-prompt[open] > p {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
