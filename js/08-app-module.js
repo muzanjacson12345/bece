@@ -2770,10 +2770,38 @@ const Bugs = (() => {
 const Adm = (() => {
   const st = { sub: 'overview', q: '', f: 'all', sort: 'exp', open: null, amt: 10, kind: 'info', ttl: 86400000, limit: 40, alq: '', alr: 'all', bf: 'open', bq: '' };
   let root = null, body = null, tabs = null, timer = null, eyebrow = null, title = null, tabsKey = '', renderedSub = null;
-  const btn = (t, c, f, dis) => { const b = elx('button', 'btn ' + c, t); b.type = 'button'; b.onclick = f; if (dis) b.disabled = true; return b; };
+  let actionTrigger = null;
+  const btn = (t, c, f, dis) => {
+    const b = elx('button', 'btn ' + c, t);
+    b.type = 'button';
+    b.onclick = () => {
+      actionTrigger = b;
+      const result = f();
+      if (result && typeof result.finally === 'function') {
+        Promise.resolve(result).finally(() => {
+          if (actionTrigger === b) actionTrigger = null;
+        }).catch(() => {});
+      } else if (actionTrigger === b) actionTrigger = null;
+      return result;
+    };
+    if (dis) b.disabled = true;
+    return b;
+  };
   const ok = m => App.toast(m, 'good');
   const fail = e => App.toast(e && e.code === 'permission-denied' ? 'Blocked by the Firestore rules. Publish the new firestore.rules and check that your role is allowed to do this.' : 'Failed: ' + ((e && e.message) || 'unknown error'), 'warn');
-  const run = async (fn, msg) => { try { await fn(); if (msg) ok(msg); return true; } catch (e) { fail(e); return false; } };
+  const run = async (fn, msg) => {
+    const trigger = actionTrigger;
+    actionTrigger = null;
+    try {
+      await fn();
+      if (msg) ok(msg);
+      if (trigger && trigger.isConnected) replayMotion(trigger, 'motion-admin-action-confirmed');
+      return true;
+    } catch (e) {
+      fail(e);
+      return false;
+    }
+  };
   const pdoc = id => S.db.doc('players/' + id);
   const del = () => fsv().FieldValue.delete();
   const daysSince = d => d ? Math.max(0, Math.floor((Date.parse(today()) - Date.parse(d)) / 864e5)) : 9999;

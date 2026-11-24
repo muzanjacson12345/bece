@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-essay-draft-feedback-2026-11-24-r56';
+const EXPECTED_BUILD = 'bece-admin-action-feedback-2026-11-24-r57';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -317,6 +317,8 @@ async function main() {
     ['Stage 41 reports a saved Essay draft only after confirming the localStorage write', source.includes('saveErrorShown: false') && source.includes('localStorage.setItem(key, serialized)') && source.includes("localStorage.getItem(key) !== serialized") && source.includes("this.setSaveStatus('saved', savedAt)") && source.includes("this.setSaveStatus('error', 'Couldn’t save draft · try again')")],
     ['Stage 41 saves the current Essay before switching questions or subjects', source.includes('if (this.idx === index) return;') && source.includes('this.idx = index;') && source.includes('Essays.sub = b.dataset.sbSub;') && source.includes("window.addEventListener('pagehide'") && source.includes("document.addEventListener('visibilitychange'")],
     ['Stage 41 draft save and error feedback has responsive timing and reduced-motion support', source.includes('Stage 41 — Essay draft save feedback') && source.includes('--motion-essay-draft-saved-duration: 205ms') && source.includes('--motion-essay-draft-saved-duration: 235ms') && source.includes('#essay-save-note.motion-essay-draft-saved') && source.includes('animation: none !important;')],
+    ['Stage 42 animates only the Admin/Owner button for a successful database-backed action', source.includes('let actionTrigger = null') && source.includes("replayMotion(trigger, 'motion-admin-action-confirmed')") && source.includes('if (trigger && trigger.isConnected)') && source.includes('catch (e) {\n      fail(e);\n      return false;') ],
+    ['Stage 42 Admin/Owner action feedback has responsive timing and reduced-motion support', source.includes('Stage 42 — Admin and Owner action confirmation') && source.includes('--motion-admin-action-duration: 220ms') && source.includes('--motion-admin-action-duration: 255ms') && source.includes('.adm button.motion-admin-action-confirmed') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -933,7 +935,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, lessonAnswerFeedback: false, lessonNumericFeedback: false, workedStepFeedback: false, labSolvedFeedback: false, shopConfirmationFeedback: false, profilePhotoSaveFeedback: false, essayDraftFeedback: false, adminActionConfirmationFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -1103,6 +1105,24 @@ async function main() {
           return !!note && getComputedStyle(note).animationName === 'motion-essay-draft-saved';
         });
         await motionPage.evaluate(() => document.querySelector('#motion-stage-41-test')?.remove());
+
+        stage = 'Admin/Owner action confirmation feedback';
+        await motionPage.evaluate(() => {
+          const panel = document.createElement('section');
+          panel.className = 'adm';
+          panel.id = 'motion-stage-42-panel';
+          const button = document.createElement('button');
+          button.className = 'btn motion-admin-action-confirmed';
+          button.textContent = 'Saved';
+          panel.append(button);
+          document.body.append(panel);
+        });
+        await motionPage.waitForTimeout(45);
+        check.adminActionConfirmationFeedback = await motionPage.evaluate(() => {
+          const button = document.querySelector('#motion-stage-42-panel button');
+          return !!button && getComputedStyle(button).animationName === 'motion-admin-action-confirmed';
+        });
+        await motionPage.evaluate(() => document.querySelector('#motion-stage-42-panel')?.remove());
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();
