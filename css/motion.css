@@ -3222,3 +3222,33 @@ button:disabled,
     transform: none !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   Stage 62 — Flashcards subject and topic filter feedback
+   Cue the changed native filter after the round is reset, not the whole studio.
+   -------------------------------------------------------------------------- */
+:root { --motion-flash-filter-duration: 220ms; }
+@media (max-width: 760px) {
+  :root { --motion-flash-filter-duration: 195ms; }
+}
+@media (hover: hover) and (pointer: fine) {
+  :root { --motion-flash-filter-duration: 230ms; }
+}
+@keyframes motion-flash-filter-selected {
+  0% { transform: scale(.99); box-shadow: 0 0 0 0 var(--accent-soft); }
+  65% { transform: scale(1.012); box-shadow: 0 0 0 3px var(--accent-soft); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+}
+#flashcard-studio .flash-filters select.motion-flash-filter-selected {
+  transform-origin: center;
+  animation: motion-flash-filter-selected var(--motion-flash-filter-duration) var(--motion-ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  #flashcard-studio .flash-filters select.motion-flash-filter-selected {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}

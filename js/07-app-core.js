@@ -2468,8 +2468,8 @@ window.addEventListener('pagehide', () => Essays.save());
     get('retry').hidden = !revisit.length;
     get('summary').focus({ preventScroll: true });
   }
-  get('subject').addEventListener('change', () => { updateTopics(); reset(); });
-  get('topic').addEventListener('change', reset);
+  get('subject').addEventListener('change', () => { updateTopics(); reset(); replayMotion(get('subject'), 'motion-flash-filter-selected'); });
+  get('topic').addEventListener('change', () => { reset(); replayMotion(get('topic'), 'motion-flash-filter-selected'); });
   get('start').addEventListener('click', freshRound);
   get('new').addEventListener('click', freshRound);
   get('reveal').addEventListener('click', reveal);
