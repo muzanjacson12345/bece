@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
 const BASE = (process.env.SITE_URL || 'https://muzanjacson12345.github.io/bece').replace(/\/+$/, '');
 const EXPECTED_VIEWPORT = 'content="width=device-width, initial-scale=1, viewport-fit=cover"';
-const EXPECTED_BUILD = 'bece-notes-level-selection-motion-2026-11-24-r50';
+const EXPECTED_BUILD = 'bece-quiz-setup-selection-motion-2026-11-24-r51';
 const ROUTES = [
   { name: 'home', hash: '#/', screen: 'home' },
   { name: 'practice', hash: '#/practice', screen: 'setup' },
@@ -301,6 +301,8 @@ async function main() {
     ['Stage 33 Notes subject feedback has responsive timing and reduced-motion support', source.includes('Stage 33 — Notes subject selection feedback') && source.includes('--motion-note-subject-duration: 185ms') && source.includes('.toolbar [data-notes-sub].motion-note-subject-selected') && source.includes('animation: none !important;')],
     ['Stage 34 Notes JHS level buttons animate only on an actual filter change', source.includes('const changed = Notes.level !== b.dataset.level;') && source.includes('if (!changed) return;') && source.includes('const activeTopicRemains = Notes.list().some(note => note.id === Notes.activeId)') && source.includes("replayMotion(b, 'motion-note-level-selected')")],
     ['Stage 34 new filtered topic content and level feedback respect reduced motion', source.includes('Stage 34 — Notes JHS level selection feedback') && source.includes('--motion-note-level-duration: 185ms') && source.includes('.chip[data-level].motion-note-level-selected') && source.includes('animation: none !important;')],
+    ['Stage 35 quiz setup animates only deliberate count, subject, length and mode changes', source.includes('Stage 35 — Quiz setup selection feedback') && source.includes('#quiz-subject-count .length-option.motion-setup-count-selected') && source.includes('.subject-choice-grid [data-setup-sub].motion-setup-subject-selected') && source.includes('#length-buttons .length-option.motion-setup-length-selected') && source.includes('.mode-grid .mode-option.motion-setup-mode-selected') && source.includes('motion-setup-count-selected') && source.includes('motion-setup-subject-selected') && source.includes('motion-setup-length-selected') && source.includes('motion-setup-mode-selected')],
+    ['Stage 35 quiz setup feedback has touch timing and reduced-motion handling', source.includes('--motion-setup-choice-duration: 185ms') && source.includes('--motion-setup-choice-duration: 215ms') && source.includes('animation: none !important;')],
     ['Coin and Gem reward flights move towards live balance counters', source.includes('function animateCurrencyReward') && source.includes('function animateRewardFlight') && source.includes('reward-flight-token') && source.includes('coin-bal-value') && source.includes('daily-gem-balance')],
     ['Only confirmed non-duplicate Gem and daily coin rewards trigger currency flights', source.includes('!data.duplicate && Number(data.change) > 0') && source.includes('outcome.added > 0 && !outcome.duplicate')],
     ['Quiz XP count-up includes animated level progress and level-up feedback', source.includes('animateRewardNumber(xpHeadline') && source.includes('exp-xp-fill') && source.includes('previousTotal') && source.includes('LEVEL UP!')],
@@ -879,7 +881,7 @@ async function main() {
         serviceWorkers: 'block',
       });
       const motionPage = await motionContext.newPage();
-      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
+      const check = { viewport: viewport.name, reducedMotion: false, screen: false, homeHero: false, toastEnter: false, toastExit: false, overlayExit: false, overlayPanelExit: false, overlayReducedMotion: false, announcementEnter: false, announcementExit: false, rewardClaimFeedback: false, rewardClaimReducedMotion: false, challengeCompletionFeedback: false, challengeCompletionReducedMotion: false, newAchievementFeedback: false, newAchievementReducedMotion: false, bookmarkSaveFeedback: false, bookmarkRemoveFeedback: false, bookmarkReducedMotion: false, boardFilterFeedback: false, boardFilterReducedMotion: false, duelModeFeedback: false, duelOptionFeedback: false, duelReducedMotion: false, duelResultHeading: false, duelResultReducedMotion: false, adminSectionMotion: false, adminSectionReducedMotion: false, noteStudyFeedback: false, noteStudyReducedMotion: false, profileStatusMotion: false, profileStatusReducedMotion: false, appearanceModeFeedback: false, appearanceModeReducedMotion: false, repeatEntrySuppressed: false, targetedRewardMotionPreserved: false, duelAnswerFeedback: false, duelAnswerReducedMotion: false, notesTopicFeedback: false, notesTopicReducedMotion: false, noteContentEntrance: false, noteContentReducedMotion: false, noteFontFeedback: false, noteFontReducedMotion: false, noteSubjectFeedback: false, noteSubjectReducedMotion: false, noteLevelFeedback: false, noteLevelReducedMotion: false, setupCountFeedback: false, setupSubjectFeedback: false, setupLengthFeedback: false, setupModeFeedback: false, navigationIcon: false, mobileHeaderPinned: false, coinFlightVisible: false, coinFlightParticles: false, queuedCoinFlightVisible: false, quizWalletMarkup: false, question: false, answerFeedback: false, results: false, notes: false, notesPanel: false, essaysPanel: false, coinsPanel: false, gemsPanel: false, flashcard: false };
       let stage = 'quiz setup';
       try {
         await motionPage.goto(`${BASE}/#/practice`, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -893,6 +895,39 @@ async function main() {
           const activeIcon = document.querySelector('.tab-bar a.is-active .icon');
           return !!activeIcon && getComputedStyle(activeIcon).animationName === 'motion-nav-icon-select';
         });
+
+        stage = 'quiz setup selection feedback';
+        await motionPage.locator('#quiz-subject-count [data-subject-count="2"]').click();
+        await motionPage.waitForTimeout(45);
+        check.setupCountFeedback = await motionPage.evaluate(() => {
+          const button = document.querySelector('#quiz-subject-count [data-subject-count="2"]');
+          return !!button && button.getAttribute('aria-pressed') === 'true'
+            && getComputedStyle(button).animationName === 'motion-setup-choice-pop';
+        });
+        await motionPage.locator('[data-setup-sub="arts"]').click();
+        await motionPage.waitForTimeout(45);
+        check.setupSubjectFeedback = await motionPage.evaluate(() => {
+          const button = document.querySelector('[data-setup-sub="arts"]');
+          return !!button && button.getAttribute('aria-pressed') === 'true'
+            && getComputedStyle(button).animationName === 'motion-setup-choice-pop';
+        });
+        await motionPage.locator('#quiz-subject-count [data-subject-count="1"]').click();
+        await motionPage.locator('#length-buttons [data-setup-length="5"]').click();
+        await motionPage.waitForTimeout(45);
+        check.setupLengthFeedback = await motionPage.evaluate(() => {
+          const button = document.querySelector('#length-buttons [data-setup-length="5"]');
+          return !!button && button.getAttribute('aria-pressed') === 'true'
+            && getComputedStyle(button).animationName === 'motion-setup-choice-pop';
+        });
+        await motionPage.locator('#length-buttons [data-setup-length="10"]').click();
+        await motionPage.locator('[data-mode="exam"]').click();
+        await motionPage.waitForTimeout(45);
+        check.setupModeFeedback = await motionPage.evaluate(() => {
+          const button = document.querySelector('[data-mode="exam"]');
+          return !!button && button.getAttribute('aria-checked') === 'true'
+            && getComputedStyle(button).animationName === 'motion-setup-choice-pop';
+        });
+        await motionPage.locator('[data-mode="practice"]').click();
 
         stage = 'home hero';
         const homePage = await motionContext.newPage();
