@@ -1506,3 +1506,55 @@ button:disabled,
   }
   .reward-flight-token-gems .reward-flight-icon { width: 24px; height: 24px; }
 }
+
+
+/* Final flying Gem: CSS-only crystal. The normal Gem SVG has a blue stroke, so it is
+   intentionally not used for these reward particles. */
+.reward-flight-token-gems,
+.reward-flight-token-gems:hover,
+.reward-flight-token-gems:focus {
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(150deg, #f5ffff 0%, #d0fbff 25%, #8be9ed 58%, #55c8d9 100%) !important;
+  box-shadow: none !important;
+  filter: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  clip-path: polygon(17% 18%, 33% 4%, 67% 4%, 83% 18%, 98% 35%, 50% 97%, 2% 35%);
+}
+.reward-flight-token-gems::before {
+  inset: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(135deg, rgb(255 255 255 / 90%) 0%, rgb(255 255 255 / 34%) 46%, transparent 68%) !important;
+  clip-path: polygon(17% 18%, 33% 4%, 67% 4%, 50% 36%, 17% 18%);
+}
+.reward-flight-token-gems::after {
+  inset: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(160deg, rgb(255 255 255 / 12%) 0%, rgb(74 193 211 / 20%) 100%) !important;
+  clip-path: polygon(17% 18%, 50% 36%, 83% 18%, 98% 35%, 50% 97%, 2% 35%);
+}
+.reward-flight-gem-facets {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 17%;
+  width: 50%;
+  height: 42%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, rgb(255 255 255 / 94%), rgb(255 255 255 / 22%));
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  pointer-events: none;
+}
+@media (max-width: 760px) {
+  .reward-flight-token-gems {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+}

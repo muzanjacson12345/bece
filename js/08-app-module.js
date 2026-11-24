@@ -188,8 +188,8 @@ function runRewardFlight(item) {
     const scales = isCoin
       ? [.72, .9, 1.04, 1.1, 1.08, 1.03, .98, .94, .9, .84, .76]
       : [.9, .98, 1.04, 1.08, 1.1, 1.08, 1.04, .99, .93, .86, .78];
-    const duration = isCoin ? (mobile ? 1180 : 1300) : (mobile ? 1420 : 1560);
-    const stagger = isCoin ? (mobile ? 96 : 106) : 0;
+    const duration = isCoin ? (mobile ? 2300 : 2200) : (mobile ? 2500 : 2400);
+    const stagger = isCoin ? (mobile ? 180 : 160) : 0;
     const clampX = value => Math.min(viewport.width - inset, Math.max(inset, value));
     const clampY = value => Math.min(viewport.height - inset, Math.max(inset, value));
     const parts = [];
@@ -242,7 +242,8 @@ function runRewardFlight(item) {
           + (isCoin ? ' reward-flight-token-particle' : ''));
         token.setAttribute('aria-hidden', 'true');
         token.dataset.rewardBurst = String(item.sequence || 0);
-        token.append(App.icon(item.kind === 'gems' ? 'gem' : 'coin', 'reward-flight-icon'));
+        // The regular Gem SVG uses a hard-coded blue stroke. Draw flying Gems with CSS facets instead.
+        token.append(isCoin ? App.icon('coin', 'reward-flight-icon') : o('span', 'reward-flight-gem-facets'));
         token.style.left = (p0.x - size / 2) + 'px';
         token.style.top = (p0.y - size / 2) + 'px';
         token.style.width = size + 'px';

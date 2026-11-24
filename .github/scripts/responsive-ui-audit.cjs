@@ -230,7 +230,12 @@ async function main() {
     ['Players cannot create their own Gem cosmetic ownership', "!('gemCosmetics' in request.resource.data)"],
     ['Players can equip the ring only after server-recorded ownership', "resource.data.get('gemCosmetics', {}).get('profile-ring-gold', false) == true"],
   ];
+  const rewardVisualChecks = [
+    ['Flying Gems use CSS facets and no blue-stroked standard SVG', source.includes("o('span', 'reward-flight-gem-facets')") && source.includes('.reward-flight-token-gems') && source.includes('border: 0 !important') && source.includes('.reward-flight-gem-facets') && !source.includes("App.icon(item.kind === 'gems' ? 'gem' : 'coin'")],
+    ['Coin reward travel is deliberately slow on phones and desktops', source.includes('const duration = isCoin ? (mobile ? 2300 : 2200) : (mobile ? 2500 : 2400)') && source.includes('const stagger = isCoin ? (mobile ? 180 : 160) : 0')],
+  ];
   const sourceChecks = [
+    ...rewardVisualChecks.map(([label, passed]) => ({ label, passed })),
     ...ownerFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
     ...gemFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
     ...iconFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
