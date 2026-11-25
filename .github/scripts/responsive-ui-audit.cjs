@@ -231,12 +231,15 @@ async function main() {
     ['Players can equip the ring only after server-recorded ownership', "resource.data.get('gemCosmetics', {}).get('profile-ring-gold', false) == true"],
   ];
   const serviceWorkerSource = fs.readFileSync(path.join(process.cwd(), 'sw.js'), 'utf8');
+  const captureScriptSource = fs.readFileSync(path.join(process.cwd(), 'js/11-bug-capture.js'), 'utf8');
   const bugCaptureFeatures = [
     ['Bug capture module loads before the app module', htmlSource.indexOf('js/11-bug-capture.js') >= 0 && htmlSource.indexOf('js/11-bug-capture.js') < htmlSource.indexOf('js/08-app-module.js')],
     ['Show on App keeps a floating bubble and opens current-screen capture', source.includes("'Show on App'") && source.includes('window.BeceBugCapture.start') && source.includes('bug-capture-bubble') && source.includes('Capture this screen')],
     ['Screen capture is limited to the current BECE Hub page and excludes capture controls', source.includes('html2canvas(document.body') && source.includes('ignoreElements: element =>') && source.includes('data-bug-capture-ignore')],
     ['Screenshot annotation supports pointer input for mouse, finger and stylus', source.includes("canvas.addEventListener('pointerdown'") && source.includes("canvas.addEventListener('pointermove'") && source.includes("canvas.addEventListener('pointerup'") && source.includes('setPointerCapture')],
     ['Annotation editor includes pen, highlighter, arrows, rectangles, circles and cover', ['pen', 'highlight', 'arrow', 'rect', 'circle', 'cover'].every(tool => source.includes("['" + tool + "'"))],
+    ['Screenshot editor appends real Cancel and Use screenshot buttons', captureScriptSource.includes('actions.append(cancel, save)')],
+    ['Screen capture preserves the app section and route that was captured', captureScriptSource.includes('sourceMeta.screen') && captureScriptSource.includes('sourceMeta.route')],
     ['Annotation editor supports undo, redo, clear and zoom', source.includes("el('button', 'bug-tool-button', 'Undo')") && source.includes("el('button', 'bug-tool-button', 'Redo')") && source.includes("el('button', 'bug-tool-button', 'Clear')") && source.includes("zoom.addEventListener('input'")],
     ['Image upload and camera fallback are available', source.includes("filePicker.accept = 'image/*'") && source.includes("cameraPicker.setAttribute('capture', 'environment')")],
     ['Original and annotated image versions are kept separately', source.includes('originalData: original.data') && source.includes('annotatedData: annotated.data')],
@@ -990,6 +993,7 @@ async function main() {
       // Exercise the actual floating-bubble -> current page -> editor -> annotation
       // pipeline at every viewport. html2canvas is stubbed so the test does not
       // depend on third-party CDN availability or capture CI chrome.
+      let bugCaptureStage = 'setup';
       try {
         await page.evaluate(() => {
           window.__beceBugCaptureTest = { done: false, canceled: false, error: '' };
@@ -1028,8 +1032,10 @@ async function main() {
         await page.waitForFunction(() => document.body.dataset.screen === 'shop', null, { timeout: 10000 });
         const bubblePersisted = await bubble.isVisible();
         if (!bubblePersisted) throw new Error('Floating bubble did not persist after internal tab navigation.');
-        await bubble.click();
-        await page.getByRole('button', { name: 'Capture this screen' }).click();
+        bugCaptureStage = 'open floating bubble';
+        await bubble.click({ timeout: 5000 });
+        bugCaptureStage = 'capture current screen';
+        await page.getByRole('button', { name: 'Capture this screen' }).click({ timeout: 5000 });
         await page.locator('.bug-editor-overlay').waitFor({ state: 'visible', timeout: 12000 });
 
         const toolLabels = (await page.locator('.bug-tool-button').allTextContents()).map(value => value.trim());
@@ -1057,21 +1063,25 @@ async function main() {
         });
         const inkAfterDraw = await countInk();
         if (!inkAfterDraw) throw new Error('Drawing with pointer input did not leave any marks.');
-        await page.getByRole('button', { name: 'Undo', exact: true }).click();
+        bugCaptureStage = 'undo annotation';
+        await page.getByRole('button', { name: 'Undo', exact: true }).click({ timeout: 5000 });
         const inkAfterUndo = await countInk();
         if (inkAfterUndo !== 0) throw new Error('Undo did not remove the annotation.');
-        await page.getByRole('button', { name: 'Redo', exact: true }).click();
+        bugCaptureStage = 'redo annotation';
+        await page.getByRole('button', { name: 'Redo', exact: true }).click({ timeout: 5000 });
         const inkAfterRedo = await countInk();
         if (!inkAfterRedo) throw new Error('Redo did not restore the annotation.');
 
-        await page.getByRole('button', { name: 'Use screenshot', exact: true }).click();
+        bugCaptureStage = 'save annotated screenshot';
+        await page.getByRole('button', { name: 'Use screenshot', exact: true }).click({ timeout: 5000 });
         await page.waitForFunction(() => window.__beceBugCaptureTest?.done === true, null, { timeout: 12000 });
         const outcome = await page.evaluate(() => window.__beceBugCaptureTest);
         if (!outcome.captureTargetIsBody || !outcome.hasIgnoreFilter) {
           throw new Error('Capture did not target the app document or exclude capture controls.');
         }
         if (!outcome.payload?.original || !outcome.payload?.annotated
-          || outcome.payload.width > 1280 || outcome.payload.height > 1280) {
+          || outcome.payload.width > 1280 || outcome.payload.height > 1280
+          || outcome.payload.screen !== 'shop' || !String(outcome.payload.route || '').includes('#/shop')) {
           throw new Error('Original and annotated compressed images were not returned correctly.');
         }
         report.bugCaptureChecks.push({
@@ -1081,7 +1091,7 @@ async function main() {
         });
         console.log('Bug capture interaction passed — ' + viewport.name);
       } catch (error) {
-        report.failures.push(viewport.name + '/bug-capture: ' + String(error));
+        report.failures.push(viewport.name + '/bug-capture [' + bugCaptureStage + ']: ' + String(error));
       }
 
       await context.close();
