@@ -460,10 +460,10 @@ service cloud.firestore {
           && exists(parentReportPath())
           && get(parentReportPath()).data.get('uid', '') == request.auth.uid
           && request.resource.data.keys().hasOnly([
-            'originalData', 'annotatedData', 'mimeType', 'width', 'height', 'createdAt'
+            'originalData', 'annotatedData', 'mimeType', 'redactedOriginal', 'width', 'height', 'createdAt'
           ])
           && request.resource.data.keys().hasAll([
-            'originalData', 'annotatedData', 'mimeType', 'width', 'height', 'createdAt'
+            'originalData', 'annotatedData', 'mimeType', 'redactedOriginal', 'width', 'height', 'createdAt'
           ])
           && request.resource.data.originalData is string
           && request.resource.data.originalData.size() <= 320000
@@ -472,6 +472,7 @@ service cloud.firestore {
           && request.resource.data.annotatedData.size() <= 320000
           && request.resource.data.annotatedData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')
           && request.resource.data.mimeType == 'image/jpeg'
+          && request.resource.data.redactedOriginal is bool
           && request.resource.data.width is int
           && request.resource.data.width >= 1
           && request.resource.data.width <= 2000
