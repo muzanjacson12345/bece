@@ -2915,9 +2915,31 @@ const Bugs = (() => {
       go.disabled = true; go.textContent = 'Sending\u2026'; msg.textContent = '';
       try {
         const reportRef = S.db.collection('bugReports').doc();
-        await reportRef.set({ uid: S.uid, name: String(nameOf(S.uid) || 'Player').slice(0, 40), cat: cat.value, text, screen: String((screenshot && screenshot.screen) || App.screen || '').slice(0, 30), device: deviceInfo(), at: fsv().FieldValue.serverTimestamp(), status: 'open', hasScreenshot: false });
-        let screenshotSaved = !screenshot;
+        const reportData = {
+          uid: S.uid,
+          name: String(nameOf(S.uid) || 'Player').slice(0, 40),
+          cat: cat.value,
+          text,
+          screen: String((screenshot && screenshot.screen) || App.screen || '').slice(0, 30),
+          device: deviceInfo(),
+          at: fsv().FieldValue.serverTimestamp(),
+          status: 'open'
+        };
+        let screenshotSchemaReady = false;
         if (screenshot) {
+          try {
+            await reportRef.set({ ...reportData, hasScreenshot: false });
+            screenshotSchemaReady = true;
+          } catch (schemaError) {
+            // Keep text-only reporting working during a staged rules rollout.
+            // Screenshot upload remains disabled until the new attachment rules are active.
+            await reportRef.set(reportData);
+          }
+        } else {
+          await reportRef.set(reportData);
+        }
+        let screenshotSaved = !screenshot;
+        if (screenshot && screenshotSchemaReady) {
           try {
             await reportRef.collection('attachments').doc('screenshot').set({
               originalData: screenshot.originalData, annotatedData: screenshot.annotatedData,
@@ -2943,7 +2965,7 @@ const Bugs = (() => {
           console.warn('Bug report GitHub sync pending:', syncError && syncError.message);
         }
         if (!githubSynced) App.toast(screenshot && !screenshotSaved
-          ? 'Your report was saved, but the screenshot could not be uploaded. GitHub sync is pending.'
+          ? 'Your report was saved, but screenshot storage is not available yet or the upload failed. GitHub sync is pending.'
           : 'Your report was saved. GitHub sync is pending and can be retried by staff.', 'good');
         else if (screenshot && !screenshotSaved) App.toast('The report reached GitHub, but its screenshot could not be saved.', 'warn');
         close();
