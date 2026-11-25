@@ -792,7 +792,7 @@ export default {
     let payload;
     try {
       const raw = await request.text();
-      if (raw.length > 2048) return json({ ok: false, error: 'REQUEST_TOO_LARGE' }, 413, origin);
+      if (raw.length > (url.pathname === '/bugs' ? 8192 : 2048)) return json({ ok: false, error: 'REQUEST_TOO_LARGE' }, 413, origin);
       payload = JSON.parse(raw);
     } catch {
       return json({ ok: false, error: 'INVALID_JSON' }, 400, origin);
