@@ -68,3 +68,11 @@ Before enabling the app integration, add the GITHUB_TOKEN secret to the
 existing bece-hub-gems-api Worker and deploy this Worker version. Without
 that secret the app still stores reports in Firestore, but GitHub sync returns
 GITHUB_SYNC_NOT_CONFIGURED and reports remain pending.
+
+
+### Screenshot privacy covers
+
+The screenshot editor's Cover tool draws a fully opaque mask. When covers are
+used, they are baked into both the unmarked and annotated JPEG copies before
+the private Firestore attachment is written. The unmarked copy therefore does
+not retain text hidden by a privacy cover.
