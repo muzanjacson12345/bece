@@ -416,6 +416,30 @@ function safeIssueLine(value, maxLength, fallback = '') {
     .trim()
     .slice(0, maxLength);
 }
+function bugStatusValue(report) {
+  const status = bugStringField(report, 'status', 'open');
+  return ['open', 'fixing', 'done', 'wontfix'].includes(status) ? status : 'open';
+}
+function githubStateForBugStatus(status) {
+  return ['done', 'wontfix'].includes(status) ? 'closed' : 'open';
+}
+async function syncGithubBugStatus(issueNumber, report, githubToken) {
+  const status = bugStatusValue(report);
+  const state = githubStateForBugStatus(status);
+  const path = 'repos/muzanjacson12345/bece/issues/' + Number(issueNumber);
+  const current = await githubJson(path, githubToken);
+  const previousBody = String(current.body || '');
+  const otherLines = previousBody.split('\\n')
+    .filter(line => !line.startsWith('- Current BECE status:'));
+  const body = (otherLines.join('\\n').trimEnd()
+    + '\\n\\n- Current BECE status: ' + status + '\\n').slice(0, 65000);
+  if (current.state === state && body === previousBody) return current;
+  return githubJson(path, githubToken, {
+    method: 'PATCH',
+    body: { state, body }
+  });
+}
+
 async function createOrFindGithubBugIssue(reportId, report, githubToken, accessToken) {
   const existingNumber = bugIssueNumber(report);
   const existingUrl = bugStringField(report, 'githubIssueUrl');
@@ -453,6 +477,8 @@ async function createOrFindGithubBugIssue(reportId, report, githubToken, accessT
       '- App section: ' + screen,
       '- Device/browser: ' + device.replace(/[<>]/g, ''),
       '- Originally submitted: ' + createdAt,
+      '- Original BECE status: ' + bugStatusValue(report),
+      '- Current BECE status: ' + bugStatusValue(report),
       '',
       '## Private report details',
       '',
@@ -462,19 +488,24 @@ async function createOrFindGithubBugIssue(reportId, report, githubToken, accessT
     ].join('\n');
     issue = await githubJson('repos/muzanjacson12345/bece/issues', githubToken, {
       method: 'POST',
-      body: { title: title.slice(0, 180), body }
+      body: {
+        title: title.slice(0, 180),
+        body,
+        state: githubStateForBugStatus(bugStatusValue(report))
+      }
     });
   }
   if (!issue || !Number.isSafeInteger(Number(issue.number)) || typeof issue.html_url !== 'string') {
     throw new Error('GITHUB_ISSUE_RESPONSE_INVALID');
   }
+  issue = await syncGithubBugStatus(issue.number, report, githubToken);
   await saveGithubBugLink(reportId, issue, accessToken);
   return { issueNumber: Number(issue.number), issueUrl: issue.html_url, alreadyLinked: false };
 }
 
 async function handleBugSync(payload, identity, env, origin) {
   const action = payload && payload.action;
-  if (!['syncOne', 'migrate'].includes(action)) {
+  if (!['syncOne', 'syncStatus', 'migrate'].includes(action)) {
     return json({ ok: false, code: 'INVALID_BUG_ACTION', error: 'Unsupported bug-report action.' }, 400, origin);
   }
   if (!env.GITHUB_TOKEN) {
@@ -502,6 +533,26 @@ async function handleBugSync(payload, identity, env, origin) {
     }
     const issue = await createOrFindGithubBugIssue(reportId, report, env.GITHUB_TOKEN, accessToken);
     return json({ ok: true, ...issue }, 200, origin);
+  }
+  if (action === 'syncStatus') {
+    if (!['admin', 'owner'].includes(role)) {
+      return json({ ok: false, code: 'STAFF_REQUIRED', error: 'Only authorised staff can sync a report status.' }, 403, origin);
+    }
+    const reportId = typeof payload.reportId === 'string' ? payload.reportId.trim() : '';
+    if (!/^[A-Za-z0-9_-]{1,150}$/.test(reportId)) {
+      return json({ ok: false, code: 'INVALID_REPORT_ID', error: 'The report reference is invalid.' }, 400, origin);
+    }
+    const report = await getDocument('bugReports/' + encodeURIComponent(reportId), accessToken);
+    if (!report) return json({ ok: false, code: 'REPORT_NOT_FOUND', error: 'This bug report could not be found.' }, 404, origin);
+    const issue = await createOrFindGithubBugIssue(reportId, report, env.GITHUB_TOKEN, accessToken);
+    const updated = await syncGithubBugStatus(issue.issueNumber, report, env.GITHUB_TOKEN);
+    return json({
+      ok: true,
+      issueNumber: issue.issueNumber,
+      issueUrl: issue.issueUrl,
+      status: bugStatusValue(report),
+      state: updated.state
+    }, 200, origin);
   }
   if (role !== 'owner') {
     return json({ ok: false, code: 'OWNER_REQUIRED', error: 'Only the Owner can migrate older reports.' }, 403, origin);
