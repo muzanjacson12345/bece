@@ -312,6 +312,18 @@ async function isBugUserBanned(uid, accessToken) {
   const until = bugBanUntil(document);
   return until === 0 || until > Date.now();
 }
+async function constantTimeStringEqual(left, right) {
+  const encoder = new TextEncoder();
+  const [leftDigest, rightDigest] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(String(left || ''))),
+    crypto.subtle.digest('SHA-256', encoder.encode(String(right || '')))
+  ]);
+  const a = new Uint8Array(leftDigest);
+  const b = new Uint8Array(rightDigest);
+  let mismatch = 0;
+  for (let index = 0; index < a.length; index++) mismatch |= a[index] ^ b[index];
+  return mismatch === 0;
+}
 async function verifyBugStaffRole(uid, accessToken) {
   const [ownerSession, ownerConfig, adminSession, adminConfig, roster] = await Promise.all([
     getDocument('ownerSessions/' + encodeURIComponent(uid), accessToken),
@@ -322,12 +334,20 @@ async function verifyBugStaffRole(uid, accessToken) {
   ]);
   const now = Date.now();
   const ownerAt = firestoreTimestampMs(ownerSession, 'at');
+  const ownerPw1 = firestoreString(ownerSession, 'pw1');
+  const ownerPw2 = firestoreString(ownerSession, 'pw2');
+  const configuredPw1 = firestoreString(ownerConfig, 'pw1');
+  const configuredPw2 = firestoreString(ownerConfig, 'pw2');
+  const ownerCredentialMatches = !!ownerConfig && !!ownerPw1 && !!ownerPw2
+    && !!configuredPw1 && !!configuredPw2
+    && (await Promise.all([
+      constantTimeStringEqual(ownerPw1, configuredPw1),
+      constantTimeStringEqual(ownerPw2, configuredPw2)
+    ])).every(Boolean);
   const ownerActive = !!ownerAt
     && now - ownerAt >= 0
     && now - ownerAt < 30 * 60 * 1000
-    && !!ownerConfig
-    && firestoreString(ownerSession, 'pw1') === firestoreString(ownerConfig, 'pw1')
-    && firestoreString(ownerSession, 'pw2') === firestoreString(ownerConfig, 'pw2');
+    && ownerCredentialMatches;
   if (ownerActive) return 'owner';
 
   const adminAt = firestoreTimestampMs(adminSession, 'at');
@@ -335,12 +355,12 @@ async function verifyBugStaffRole(uid, accessToken) {
   const appointed = !!roster
     && !!(roster.fields && roster.fields.appointed && roster.fields.appointed.booleanValue === true)
     && firestoreString(roster, 'role') === 'admin';
-  const pinMatches = !!adminConfig
-    && !!firestoreString(adminSession, 'pin')
-    && firestoreString(adminSession, 'pin') === firestoreString(adminConfig, 'pin');
+  const sessionPin = firestoreString(adminSession, 'pin');
+  const configuredPin = firestoreString(adminConfig, 'pin');
+  const pinMatches = !!adminConfig && !!sessionPin && !!configuredPin
+    && await constantTimeStringEqual(sessionPin, configuredPin);
   return adminActive && (appointed || pinMatches) ? 'admin' : null;
 }
-
 
 function bugStringField(document, key, fallback = '') {
   const field = document && document.fields && document.fields[key];
@@ -388,6 +408,14 @@ async function saveGithubBugLink(reportId, issue, accessToken) {
     }
   });
 }
+function safeIssueLine(value, maxLength, fallback = '') {
+  return String(value || fallback)
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/[<>\[\]\x60*_~|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}
 async function createOrFindGithubBugIssue(reportId, report, githubToken, accessToken) {
   const existingNumber = bugIssueNumber(report);
   const existingUrl = bugStringField(report, 'githubIssueUrl');
@@ -397,7 +425,7 @@ async function createOrFindGithubBugIssue(reportId, report, githubToken, accessT
   const marker = 'BECE_REPORT_ID:' + reportId;
   let issue = null;
   try {
-    const query = 'repo:muzanjacson12345/bece "' + marker + '"';
+    const query = 'repo:muzanjacson12345/bece "' + reportId + '"';
     const found = await githubJson('search/issues?q=' + encodeURIComponent(query) + '&per_page=1', githubToken);
     if (Array.isArray(found.items) && found.items.length) issue = found.items[0];
   } catch (error) {
@@ -405,8 +433,8 @@ async function createOrFindGithubBugIssue(reportId, report, githubToken, accessT
   }
   if (!issue) {
     const category = bugStringField(report, 'cat', 'other').toLowerCase();
-    const screen = bugStringField(report, 'screen', 'unknown').slice(0, 30);
-    const device = bugStringField(report, 'device', 'Not supplied').slice(0, 160);
+    const screen = safeIssueLine(bugStringField(report, 'screen', 'unknown'), 30, 'unknown');
+    const device = safeIssueLine(bugStringField(report, 'device', 'Not supplied'), 160, 'Not supplied');
     const createdAt = report && report.fields && report.fields.at && report.fields.at.timestampValue
       ? report.fields.at.timestampValue : 'Unknown';
     const titleCategory = ({
@@ -491,7 +519,11 @@ async function handleBugSync(payload, identity, env, origin) {
     totals.scanned++;
     const name = String(report.name || '');
     const reportId = name.split('/').pop();
-    if (!reportId || (bugIssueNumber(report) && bugStringField(report, 'githubIssueUrl'))) {
+    if (!reportId || !/^[A-Za-z0-9_-]{1,150}$/.test(reportId)) {
+      totals.failed++;
+      continue;
+    }
+    if (bugIssueNumber(report) && bugStringField(report, 'githubIssueUrl')) {
       totals.skipped++;
       continue;
     }
