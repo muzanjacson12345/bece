@@ -435,6 +435,7 @@ async function main() {
     failedRequests: [],
     failures: [],
     motionChecks: [],
+    bugCaptureChecks: [],
   };
 
   try {
@@ -986,6 +987,103 @@ async function main() {
           } catch {}
         }
       }
+      // Exercise the actual floating-bubble -> current page -> editor -> annotation
+      // pipeline at every viewport. html2canvas is stubbed so the test does not
+      // depend on third-party CDN availability or capture CI chrome.
+      try {
+        await page.evaluate(() => {
+          window.__beceBugCaptureTest = { done: false, canceled: false, error: '' };
+          window.html2canvas = async (node, options = {}) => {
+            window.__beceBugCaptureTest.captureTargetIsBody = node === document.body;
+            window.__beceBugCaptureTest.hasIgnoreFilter = typeof options.ignoreElements === 'function';
+            const canvas = document.createElement('canvas');
+            canvas.width = 640;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#f5f7fb';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#4b7bec';
+            ctx.fillRect(24, 24, 150, 70);
+            return canvas;
+          };
+          if (!window.BeceBugCapture || typeof window.BeceBugCapture.start !== 'function') {
+            throw new Error('Bug capture module is not loaded.');
+          }
+          window.BeceBugCapture.start({
+            onDone: payload => {
+              window.__beceBugCaptureTest.done = true;
+              window.__beceBugCaptureTest.payload = {
+                original: !!payload.originalData && payload.originalData.startsWith('data:image/jpeg;base64,'),
+                annotated: !!payload.annotatedData && payload.annotatedData.startsWith('data:image/jpeg;base64,'),
+                width: payload.width,
+                height: payload.height,
+              };
+            },
+            onCancel: () => { window.__beceBugCaptureTest.canceled = true; },
+          });
+        });
+        const bubble = page.locator('.bug-capture-bubble');
+        await bubble.waitFor({ state: 'visible', timeout: 8000 });
+        await page.evaluate(() => { window.location.hash = '#/shop'; });
+        await page.waitForFunction(() => document.body.dataset.screen === 'shop', null, { timeout: 10000 });
+        const bubblePersisted = await bubble.isVisible();
+        if (!bubblePersisted) throw new Error('Floating bubble did not persist after internal tab navigation.');
+        await bubble.click();
+        await page.getByRole('button', { name: 'Capture this screen' }).click();
+        await page.locator('.bug-editor-overlay').waitFor({ state: 'visible', timeout: 12000 });
+
+        const toolLabels = (await page.locator('.bug-tool-button').allTextContents()).map(value => value.trim());
+        const requiredTools = ['Pen', 'Highlight', 'Arrow', 'Rectangle', 'Circle', 'Cover', 'Undo', 'Redo', 'Clear'];
+        const missingTools = requiredTools.filter(label => !toolLabels.includes(label));
+        if (missingTools.length) throw new Error('Annotation tools missing: ' + missingTools.join(', '));
+
+        const drawing = page.locator('.bug-editor-drawing');
+        const bounds = await drawing.boundingBox();
+        if (!bounds || bounds.width < 20 || bounds.height < 20) throw new Error('Annotation canvas is not visible.');
+        const x1 = bounds.x + Math.min(18, bounds.width / 5);
+        const y1 = bounds.y + Math.min(18, bounds.height / 5);
+        const x2 = bounds.x + Math.min(135, bounds.width / 2);
+        const y2 = bounds.y + Math.min(75, bounds.height / 2);
+        await page.mouse.move(x1, y1);
+        await page.mouse.down();
+        await page.mouse.move(x2, y2, { steps: 5 });
+        await page.mouse.up();
+
+        const countInk = () => drawing.evaluate(canvas => {
+          const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+          let count = 0;
+          for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 0) count++;
+          return count;
+        });
+        const inkAfterDraw = await countInk();
+        if (!inkAfterDraw) throw new Error('Drawing with pointer input did not leave any marks.');
+        await page.getByRole('button', { name: 'Undo', exact: true }).click();
+        const inkAfterUndo = await countInk();
+        if (inkAfterUndo !== 0) throw new Error('Undo did not remove the annotation.');
+        await page.getByRole('button', { name: 'Redo', exact: true }).click();
+        const inkAfterRedo = await countInk();
+        if (!inkAfterRedo) throw new Error('Redo did not restore the annotation.');
+
+        await page.getByRole('button', { name: 'Use screenshot', exact: true }).click();
+        await page.waitForFunction(() => window.__beceBugCaptureTest?.done === true, null, { timeout: 12000 });
+        const outcome = await page.evaluate(() => window.__beceBugCaptureTest);
+        if (!outcome.captureTargetIsBody || !outcome.hasIgnoreFilter) {
+          throw new Error('Capture did not target the app document or exclude capture controls.');
+        }
+        if (!outcome.payload?.original || !outcome.payload?.annotated
+          || outcome.payload.width > 1280 || outcome.payload.height > 1280) {
+          throw new Error('Original and annotated compressed images were not returned correctly.');
+        }
+        report.bugCaptureChecks.push({
+          viewport: viewport.name, bubblePersisted, annotationTools: requiredTools,
+          pointerDrawing: true, undo: inkAfterUndo === 0, redo: inkAfterRedo > 0,
+          imagePayload: outcome.payload,
+        });
+        console.log('Bug capture interaction passed — ' + viewport.name);
+      } catch (error) {
+        report.failures.push(viewport.name + '/bug-capture: ' + String(error));
+      }
+
       await context.close();
     }
 
