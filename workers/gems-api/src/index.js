@@ -490,8 +490,7 @@ async function createOrFindGithubBugIssue(reportId, report, githubToken, accessT
       method: 'POST',
       body: {
         title: title.slice(0, 180),
-        body,
-        state: githubStateForBugStatus(bugStatusValue(report))
+        body
       }
     });
   }
