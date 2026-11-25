@@ -242,6 +242,8 @@
       shell.append(header, toolbar, zoomLabel, viewport, footer);
       overlay.append(shell);
       document.body.append(overlay);
+      overlay.tabIndex = -1;
+      overlay.focus();
 
       const ctx = canvas.getContext('2d');
       if (!ctx) {
