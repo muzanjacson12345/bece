@@ -2925,6 +2925,7 @@ const Bugs = (() => {
             screenshotSaved = true;
           } catch (imageError) {
             console.warn('Bug screenshot attachment failed:', imageError && imageError.message);
+            await reportRef.collection('attachments').doc('screenshot').delete().catch(() => {});
             screenshotSaved = false;
           }
         }
