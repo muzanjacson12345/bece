@@ -243,6 +243,7 @@ async function main() {
     ['Privacy covers are fully opaque and applied to the unmarked original', captureScriptSource.includes('privacyCovers.forEach(stroke => drawStroke(originalContext, stroke))') && captureScriptSource.includes("strokes.filter(stroke => stroke.tool === 'cover')")],
     ['Annotation editor supports undo, redo, clear and zoom', source.includes("el('button', 'bug-tool-button', 'Undo')") && source.includes("el('button', 'bug-tool-button', 'Redo')") && source.includes("el('button', 'bug-tool-button', 'Clear')") && source.includes("zoom.addEventListener('input'")],
     ['Image upload and camera fallback are available', source.includes("filePicker.accept = 'image/*'") && source.includes("cameraPicker.setAttribute('capture', 'environment')")],
+    ['Compatible HEIC and HEIF camera images are accepted when the browser can decode them', captureScriptSource.includes('heic|heif')],
     ['Original and annotated image versions are kept separately', source.includes('originalData: original.data') && source.includes('annotatedData: annotated.data')],
     ['Bug capture feature has responsive phone and desktop styling', source.includes('.bug-capture-bubble') && source.includes('.bug-editor-overlay') && source.includes('@media (max-width:700px)') && source.includes('@media (max-width:380px)')],
     ['PWA cache includes the bug capture module', serviceWorkerSource.includes("'./js/11-bug-capture.js'") && serviceWorkerSource.includes('bece-v124')],
@@ -253,6 +254,7 @@ async function main() {
   const bugRulesFeatures = [
     ['Screenshot attachments are limited to the reporter and authorised staff', firestoreRulesSource.includes('match /attachments/{attachmentId}') && firestoreRulesSource.includes("get(parentReportPath()).data.get('uid', '') == request.auth.uid || isStaff()")],
     ['Only the report owner can create the screenshot attachment', firestoreRulesSource.includes("get(parentReportPath()).data.get('uid', '') == request.auth.uid")],
+    ['Reporter can clean up an incomplete screenshot while the report has no attachment flag', firestoreRulesSource.includes("get('hasScreenshot', false) == false") && firestoreRulesSource.includes('allow delete: if isOwner()')],
     ['Screenshot attachment data has strict JPEG, size and dimension limits', firestoreRulesSource.includes('originalData.size() <= 320000') && firestoreRulesSource.includes('annotatedData.size() <= 320000') && firestoreRulesSource.includes('width <= 2000') && firestoreRulesSource.includes('height <= 2000')],
     ['Screenshot redaction metadata is required and boolean', firestoreRulesSource.includes('redactedOriginal') && firestoreRulesSource.includes('request.resource.data.redactedOriginal is bool')],
     ['Screenshot parent flag can change only after the attachment exists', firestoreRulesSource.includes("affectedKeys().hasOnly(['hasScreenshot'])") && firestoreRulesSource.includes('/attachments/screenshot')],
