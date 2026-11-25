@@ -76,3 +76,13 @@ The screenshot editor's Cover tool draws a fully opaque mask. When covers are
 used, they are baked into both the unmarked and annotated JPEG copies before
 the private Firestore attachment is written. The unmarked copy therefore does
 not retain text hidden by a privacy cover.
+
+
+### GitHub issue status sync
+
+The authenticated POST /bugs action=syncStatus endpoint is restricted to live
+Admin/Owner sessions. After a staff member changes the Firestore report status,
+the app asks the Worker to update the linked GitHub Issue: open and fixing
+remain open; done and wontfix close the Issue. The issue body keeps both the
+original status recorded at migration/creation and a current status line.
+A staff member can retry from the report card if GitHub is unavailable.
