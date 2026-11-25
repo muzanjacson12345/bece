@@ -429,10 +429,10 @@ async function syncGithubBugStatus(issueNumber, report, githubToken) {
   const path = 'repos/muzanjacson12345/bece/issues/' + Number(issueNumber);
   const current = await githubJson(path, githubToken);
   const previousBody = String(current.body || '');
-  const otherLines = previousBody.split('\\n')
+  const otherLines = previousBody.split('\n')
     .filter(line => !line.startsWith('- Current BECE status:'));
-  const body = (otherLines.join('\\n').trimEnd()
-    + '\\n\\n- Current BECE status: ' + status + '\\n').slice(0, 65000);
+  const body = (otherLines.join('\n').trimEnd()
+    + '\n\n- Current BECE status: ' + status + '\n').slice(0, 65000);
   if (current.state === state && body === previousBody) return current;
   return githubJson(path, githubToken, {
     method: 'PATCH',
