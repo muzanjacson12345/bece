@@ -119,7 +119,7 @@
       const x = Math.min(first.x, last.x), y = Math.min(first.y, last.y);
       const w = Math.abs(last.x - first.x), h = Math.abs(last.y - first.y);
       if (stroke.tool === 'cover') {
-        ctx.globalAlpha = 0.88;
+        ctx.globalAlpha = 1;
         ctx.fillRect(x, y, Math.max(2, w), Math.max(2, h));
         ctx.globalAlpha = 1;
         ctx.strokeStyle = '#ffffff';
@@ -363,7 +363,18 @@
           out.fillRect(0, 0, result.width, result.height);
           out.drawImage(image, 0, 0);
           out.drawImage(canvas, 0, 0);
-          const original = await jpegData(source);
+
+          // Privacy covers are baked into both copies; other marks stay on the annotated copy.
+          const privacyCovers = strokes.filter(stroke => stroke.tool === 'cover');
+          const originalCanvas = document.createElement('canvas');
+          originalCanvas.width = image.naturalWidth;
+          originalCanvas.height = image.naturalHeight;
+          const originalContext = originalCanvas.getContext('2d', { alpha: false });
+          originalContext.fillStyle = '#ffffff';
+          originalContext.fillRect(0, 0, originalCanvas.width, originalCanvas.height);
+          originalContext.drawImage(image, 0, 0);
+          privacyCovers.forEach(stroke => drawStroke(originalContext, stroke));
+          const original = await jpegData(originalCanvas.toDataURL('image/png'));
           const annotated = await jpegData(result.toDataURL('image/png'));
           if (cleanup() && onDone) {
             onDone({
@@ -372,6 +383,7 @@
               width: annotated.width,
               height: annotated.height,
               mimeType: 'image/jpeg',
+              redactedOriginal: privacyCovers.length > 0,
               screen: String(sourceMeta.screen || '').slice(0, 30),
               route: String(sourceMeta.route || '').slice(0, 120)
             });
@@ -551,7 +563,7 @@
     close.addEventListener('click', () => overlay.remove());
     head.append(close);
     const grid = el('div', 'bug-image-viewer-grid');
-    [['Original', attachment.originalData], ['Marked-up', attachment.annotatedData]].forEach(([label, src]) => {
+    [[attachment.redactedOriginal ? 'Original (private areas covered)' : 'Original', attachment.originalData], ['Marked-up', attachment.annotatedData]].forEach(([label, src]) => {
       const item = el('figure', 'bug-image-viewer-item');
       item.append(el('figcaption', '', label));
       const image = el('img');
