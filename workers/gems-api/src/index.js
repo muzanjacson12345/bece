@@ -474,7 +474,7 @@ async function createOrFindGithubBugIssue(reportId, report, githubToken, accessT
     const body = [
       '## BECE Hub report',
       '',
-      '- Report reference: ' + reportId,
+      '- Report reference: ' + marker,
       '- Category: ' + category,
       '- App section: ' + screen,
       '- Device/browser: ' + device.replace(/[<>]/g, ''),
