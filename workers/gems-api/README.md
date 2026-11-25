@@ -51,10 +51,12 @@ The route accepts Firebase ID tokens in the Authorization: Bearer ... header:
   This action is restricted to the Owner. The app's Owner tool walks the
   returned nextPageToken until all existing reports have been checked.
 
-Issue bodies contain report details with basic email/phone/token redaction.
-They do not include the player's display name or Firebase UID. Because the
-repository is public, issue summaries are public. Screenshots are stored in
-private Firestore subcollection documents under
+Issue bodies contain only anonymous tracking metadata (report reference,
+category, app section, device/browser and original submission date). They do
+not include the full description, player's display name, Firebase UID, or
+screenshots. Because the repository is public, this tracking metadata is
+public. Full report details and screenshots are stored in private Firestore
+subcollection documents under
 bugReports/{reportId}/attachments/screenshot; they are not uploaded to public
 GitHub issues.
 
