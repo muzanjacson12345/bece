@@ -230,6 +230,7 @@ async function main() {
     ['Players cannot create their own Gem cosmetic ownership', "!('gemCosmetics' in request.resource.data)"],
     ['Players can equip the ring only after server-recorded ownership', "resource.data.get('gemCosmetics', {}).get('profile-ring-gold', false) == true"],
   ];
+  const serviceWorkerSource = fs.readFileSync(path.join(process.cwd(), 'sw.js'), 'utf8');
   const bugCaptureFeatures = [
     ['Bug capture module loads before the app module', htmlSource.indexOf('js/11-bug-capture.js') >= 0 && htmlSource.indexOf('js/11-bug-capture.js') < htmlSource.indexOf('js/08-app-module.js')],
     ['Show on App keeps a floating bubble and opens current-screen capture', source.includes("'Show on App'") && source.includes('window.BeceBugCapture.start') && source.includes('bug-capture-bubble') && source.includes('Capture this screen')],
@@ -240,7 +241,7 @@ async function main() {
     ['Image upload and camera fallback are available', source.includes("filePicker.accept = 'image/*'") && source.includes("cameraPicker.setAttribute('capture', 'environment')")],
     ['Original and annotated image versions are kept separately', source.includes('originalData: original.data') && source.includes('annotatedData: annotated.data')],
     ['Bug capture feature has responsive phone and desktop styling', source.includes('.bug-capture-bubble') && source.includes('.bug-editor-overlay') && source.includes('@media (max-width:700px)') && source.includes('@media (max-width:380px)')],
-    ['PWA cache includes the bug capture module', source.includes("'./js/11-bug-capture.js'") && source.includes('bece-v124')],
+    ['PWA cache includes the bug capture module', serviceWorkerSource.includes("'./js/11-bug-capture.js'") && serviceWorkerSource.includes('bece-v124')],
     ['Public GitHub issues keep full descriptions and screenshots private', gemsWorkerSource.includes('The full description and any screenshots are stored in private BECE Hub Firestore') && gemsWorkerSource.includes('They are intentionally not copied into this public issue.')],
     ['GitHub migration is paginated and idempotently linked to Firestore reports', gemsWorkerSource.includes('nextPageToken') && gemsWorkerSource.includes('githubIssueNumber') && gemsWorkerSource.includes('BECE_REPORT_ID:')],
     ['Bug-report sync validates actual Owner/Admin sessions server-side', gemsWorkerSource.includes('verifyBugStaffRole') && gemsWorkerSource.includes('ownerSessions/') && gemsWorkerSource.includes('adminSessions/') && gemsWorkerSource.includes('config/owner')],
