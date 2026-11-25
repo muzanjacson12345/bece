@@ -27,3 +27,38 @@ The Worker caps ordinary operations at 1,000,000 Gems, caps a balance at 1,000,0
 ## Deployment
 
 The app uses `https://bece-hub-gems-api.abeikcrentsil.workers.dev/gems`. Keep that endpoint separate from the existing Cloudflare usage monitor.
+
+## Bug-report GitHub integration
+
+The existing BECE Hub app writes reports to Firestore collection bugReports.
+The Worker adds a separate authenticated POST /bugs route for issue creation
+and legacy migration. It uses the existing GOOGLE_SERVICE_ACCOUNT_JSON
+binding to read and update Firestore, and a separate secret named
+GITHUB_TOKEN to create issues in muzanjacson12345/bece.
+
+Configure GITHUB_TOKEN as a Cloudflare Worker secret (never as a frontend
+variable, repository file, or checked-in Wrangler value). Use a narrowly scoped
+GitHub credential for this repository with Issues read/write permission and
+repository metadata read permission. Do not paste the credential into chat or
+commit it to GitHub.
+
+The route accepts Firebase ID tokens in the Authorization: Bearer ... header:
+
+- POST /bugs with action=syncOne and a reportId creates or reconciles one
+  report issue. The report owner may sync their own report; staff can sync
+  reports they are authorised to manage.
+- POST /bugs with action=migrate and pageSize=10 migrates one Firestore page.
+  This action is restricted to the Owner. The app's Owner tool walks the
+  returned nextPageToken until all existing reports have been checked.
+
+Issue bodies contain report details with basic email/phone/token redaction.
+They do not include the player's display name or Firebase UID. Because the
+repository is public, issue summaries are public. Screenshots are stored in
+private Firestore subcollection documents under
+bugReports/{reportId}/attachments/screenshot; they are not uploaded to public
+GitHub issues.
+
+Before enabling the app integration, add the GITHUB_TOKEN secret to the
+existing bece-hub-gems-api Worker and deploy this Worker version. Without
+that secret the app still stores reports in Firestore, but GitHub sync returns
+GITHUB_SYNC_NOT_CONFIGURED and reports remain pending.
