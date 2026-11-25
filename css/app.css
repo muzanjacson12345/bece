@@ -3622,8 +3622,8 @@ pre, code { overflow-wrap: anywhere; }
 .bug-editor-control input[type='range'], .bug-editor-zoom input { width:100px; accent-color:var(--accent); }
 .bug-editor-zoom { justify-self:end; }
 .bug-editor-viewport {
-  min-height:160px; max-height:64vh; overflow:auto; display:flex; justify-content:center;
-  align-items:flex-start; padding:10px; border:1px solid var(--line); border-radius:12px;
+  min-height:160px; max-height:64vh; overflow:auto; display:block;
+  padding:10px; border:1px solid var(--line); border-radius:12px;
   background:var(--surface-2); overscroll-behavior:contain;
 }
 .bug-editor-stage { position:relative; flex:0 0 auto; margin:auto; line-height:0; }
