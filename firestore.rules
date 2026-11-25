@@ -404,7 +404,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && !isBanned()
         && request.resource.data.keys().hasOnly([
-          'uid', 'name', 'cat', 'text', 'screen', 'device', 'at', 'status'
+          'uid', 'name', 'cat', 'text', 'screen', 'device', 'at', 'status', 'hasScreenshot'
         ])
         && request.resource.data.keys().hasAll([
           'uid', 'name', 'cat', 'text', 'screen', 'device', 'at', 'status'
@@ -422,7 +422,8 @@ service cloud.firestore {
         && request.resource.data.device.size() <= 160
         && request.resource.data.at is timestamp
         && request.resource.data.at == request.time
-        && request.resource.data.status == 'open';
+        && request.resource.data.status == 'open'
+        && request.resource.data.get('hasScreenshot', false) is bool;
 
       allow update: if isStaff()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -434,6 +435,413 @@ service cloud.firestore {
         && request.resource.data.get('replyBy', '') is string
         && request.resource.data.get('replyBy', '').size() <= 40
         && request.resource.data.get('doneAt', 0) is int;
+
+      // A reporter may mark the screenshot as attached only after the private
+      // attachment document exists. All other report edits remain staff-only.
+      allow update: if signedIn()
+        && !isBanned()
+        && resource.data.get('uid', '') == request.auth.uid
+        && resource.data.get('hasScreenshot', false) == false
+        && request.resource.data.get('hasScreenshot', false) == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hasScreenshot'])
+        && exists(/databases/$(database)/documents/bugReports/$(id)/attachments/screenshot);
+
+      match /attachments/{attachmentId} {
+        function parentReportPath() {
+          return /databases/$(database)/documents/bugReports/$(id);
+        }
+        allow read: if signedIn()
+          && exists(parentReportPath())
+          && (get(parentReportPath()).data.get('uid', '') == request.auth.uid || isStaff());
+
+        allow create: if signedIn()
+          && !isBanned()
+          && attachmentId == 'screenshot'
+          && exists(parentReportPath())
+          && get(parentReportPath()).data.get('uid', '') == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'originalData', 'annotatedData', 'mimeType', 'width', 'height', 'createdAt'
+          ])
+          && request.resource.data.keys().hasAll([
+            'originalData', 'annotatedData', 'mimeType', 'width', 'height', 'createdAt'
+          ])
+          && request.resource.data.originalData is string
+          && request.resource.data.originalData.size() <= 320000
+          && request.resource.data.originalData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+
+    }
+
+    // ---------- Private staff-to-player notices ----------
+    match /notices/{id} {
+      allow read: if signedIn() && (request.auth.uid == id || isStaff());
+
+      allow create, update: if isStaff()
+        && (isOwner() || !targetIsOwner(id))
+        && request.resource.data.keys().hasOnly(['text', 'at', 'by', 'byName'])
+        && request.resource.data.keys().hasAll(['text', 'at', 'by', 'byName'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 3
+        && request.resource.data.text.size() <= 200
+        && request.resource.data.at is timestamp
+        && request.resource.data.at == request.time
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.byName is string
+        && request.resource.data.byName.size() <= 40;
+
+      allow delete: if signedIn()
+        && (
+          request.auth.uid == id
+          || isOwner()
+          || (isAdmin() && !targetIsOwner(id))
+        );
+    }
+
+    // ---------- Private staff notes ----------
+    match /adminNotes/{id} {
+      allow read: if isStaff();
+
+      allow create, update: if
+        (isOwner() || (isAdmin() && !targetIsOwner(id)))
+        && request.resource.data.keys().hasOnly(['text', 'by', 'at'])
+        && request.resource.data.keys().hasAll(['text', 'by', 'at'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.by is string
+        && request.resource.data.by.size() <= 40
+        && request.resource.data.at is int;
+
+      allow delete: if isOwner() || (isAdmin() && !targetIsOwner(id));
+    }
+
+    // ---------- Owner audit log ----------
+    match /auditLogs/{id} {
+      allow read: if isOwner();
+
+      allow create: if isStaff()
+        && request.resource.data.keys().hasOnly([
+          'at', 'by', 'byName', 'role', 'action', 'target', 'targetName', 'detail'
+        ])
+        && request.resource.data.keys().hasAll([
+          'at', 'by', 'byName', 'role', 'action', 'target', 'targetName', 'detail'
+        ])
+        && request.resource.data.at is timestamp
+        && request.resource.data.at == request.time
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.byName is string
+        && request.resource.data.byName.size() <= 40
+        && request.resource.data.role in ['owner', 'admin']
+        && (request.resource.data.role != 'owner' || isOwner())
+        && request.resource.data.action is string
+        && request.resource.data.target is string
+        && request.resource.data.targetName is string
+        && request.resource.data.detail is string
+        && request.resource.data.detail.size() <= 200;
+
+      allow update: if false;
+      allow delete: if isOwner();
+    }
+
+    // ---------- Player profiles ----------
+    // Gems and gemOps are reserved for the trusted Gems Worker. Client-side
+    // create/update requests cannot add or change either field. Owner actions
+    // remain allowed for direct Owner management.
+    match /players/{id} {
+      allow read: if signedIn();
+
+      allow create: if isOwner()
+        || (signedIn() && request.auth.uid == id && !isBanned()
+            && !('gems' in request.resource.data)
+            && !('gemOps' in request.resource.data)
+            && !('gemCosmetics' in request.resource.data)
+            && !('equippedGemCosmetic' in request.resource.data));
+
+      allow update: if isOwner()
+        || (signedIn() && request.auth.uid == id && !isBanned()
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(['gems', 'gemOps', 'gemCosmetics'])
+            && (!request.resource.data.diff(resource.data).affectedKeys()
+                   .hasAny(['equippedGemCosmetic'])
+                || request.resource.data.get('equippedGemCosmetic', '') == ''
+                || (request.resource.data.get('equippedGemCosmetic', '') == 'profile-ring-gold'
+                    && resource.data.get('gemCosmetics', {}).get('profile-ring-gold', false) == true)))
+        || (isAdmin() && !targetIsStaff(id)
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(['gems', 'gemOps', 'gemCosmetics', 'equippedGemCosmetic']));
+
+      // The staff UI explicitly prevents self-deletion. Owner may remove
+      // players/admins but not another Owner; Admin may remove ordinary players.
+      allow delete: if
+        (isOwner() && request.auth.uid != id && !targetIsOwner(id))
+        || (isAdmin() && request.auth.uid != id && !targetIsStaff(id));
+    }
+
+    // ---------- 1v1 duels ----------
+    match /duels/{id} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && !isBanned()
+        && (!duelsPaused() || isOwner())
+        && request.resource.data.keys().hasOnly([
+          'host', 'hostName', 'guest', 'guestName', 'subject',
+          'secs', 'vis', 'qids', 'state', 'created', 'hb', 'res'
+        ])
+        && request.resource.data.keys().hasAll([
+          'host', 'hostName', 'guest', 'guestName', 'subject',
+          'secs', 'vis', 'qids', 'state', 'created', 'hb', 'res'
+        ])
+        && request.resource.data.host == request.auth.uid
+        && request.resource.data.hostName is string
+        && request.resource.data.hostName.size() <= 40
+        && request.resource.data.guest == null
+        && request.resource.data.guestName == ''
+        && request.resource.data.subject is string
+        && request.resource.data.secs is int
+        && request.resource.data.secs >= 5
+        && request.resource.data.secs <= 60
+        && request.resource.data.vis in ['public', 'private']
+        && request.resource.data.qids is list
+        && request.resource.data.qids.size() >= 1
+        && request.resource.data.qids.size() <= 50
+        && request.resource.data.state == 'waiting'
+        && request.resource.data.created is int
+        && request.resource.data.hb is int
+        && request.resource.data.res is map;
+
+      allow update: if signedIn() && !isBanned()
+        && (
+          // Host can refresh the waiting-room heartbeat only.
+          (resource.data.host == request.auth.uid
+            && resource.data.state == 'waiting'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hb'])
+            && request.resource.data.hb is int
+            && request.resource.data.hb >= resource.data.hb)
+          ||
+          // A second player can join a waiting duel once.
+          (resource.data.state == 'waiting'
+            && resource.data.guest == null
+            && resource.data.host != request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'guest', 'guestName', 'state', 'startAt'
+            ])
+            && request.resource.data.guest == request.auth.uid
+            && request.resource.data.guestName is string
+            && request.resource.data.guestName.size() <= 40
+            && request.resource.data.state == 'playing'
+            && request.resource.data.startAt is int)
+          ||
+          // Each participant can update only their own result entry.
+          (isDuelParticipant() && validOwnDuelResult())
+          ||
+          // Each participant can mark only their own reward as recorded.
+          (isDuelParticipant() && validOwnDuelRecord())
+        );
+
+      // The host can cancel a waiting duel. The Owner can remove any duel.
+      allow delete: if isOwner()
+        || (signedIn() && resource.data.host == request.auth.uid
+            && resource.data.state == 'waiting');
+    }
+
+    // All other documents are denied by default because no broader wildcard
+    // read/write rule is present here.
+  }
+}
+)
+          && request.resource.data.annotatedData is string
+          && request.resource.data.annotatedData.size() <= 320000
+          && request.resource.data.annotatedData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+
+    }
+
+    // ---------- Private staff-to-player notices ----------
+    match /notices/{id} {
+      allow read: if signedIn() && (request.auth.uid == id || isStaff());
+
+      allow create, update: if isStaff()
+        && (isOwner() || !targetIsOwner(id))
+        && request.resource.data.keys().hasOnly(['text', 'at', 'by', 'byName'])
+        && request.resource.data.keys().hasAll(['text', 'at', 'by', 'byName'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 3
+        && request.resource.data.text.size() <= 200
+        && request.resource.data.at is timestamp
+        && request.resource.data.at == request.time
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.byName is string
+        && request.resource.data.byName.size() <= 40;
+
+      allow delete: if signedIn()
+        && (
+          request.auth.uid == id
+          || isOwner()
+          || (isAdmin() && !targetIsOwner(id))
+        );
+    }
+
+    // ---------- Private staff notes ----------
+    match /adminNotes/{id} {
+      allow read: if isStaff();
+
+      allow create, update: if
+        (isOwner() || (isAdmin() && !targetIsOwner(id)))
+        && request.resource.data.keys().hasOnly(['text', 'by', 'at'])
+        && request.resource.data.keys().hasAll(['text', 'by', 'at'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.by is string
+        && request.resource.data.by.size() <= 40
+        && request.resource.data.at is int;
+
+      allow delete: if isOwner() || (isAdmin() && !targetIsOwner(id));
+    }
+
+    // ---------- Owner audit log ----------
+    match /auditLogs/{id} {
+      allow read: if isOwner();
+
+      allow create: if isStaff()
+        && request.resource.data.keys().hasOnly([
+          'at', 'by', 'byName', 'role', 'action', 'target', 'targetName', 'detail'
+        ])
+        && request.resource.data.keys().hasAll([
+          'at', 'by', 'byName', 'role', 'action', 'target', 'targetName', 'detail'
+        ])
+        && request.resource.data.at is timestamp
+        && request.resource.data.at == request.time
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.byName is string
+        && request.resource.data.byName.size() <= 40
+        && request.resource.data.role in ['owner', 'admin']
+        && (request.resource.data.role != 'owner' || isOwner())
+        && request.resource.data.action is string
+        && request.resource.data.target is string
+        && request.resource.data.targetName is string
+        && request.resource.data.detail is string
+        && request.resource.data.detail.size() <= 200;
+
+      allow update: if false;
+      allow delete: if isOwner();
+    }
+
+    // ---------- Player profiles ----------
+    // Gems and gemOps are reserved for the trusted Gems Worker. Client-side
+    // create/update requests cannot add or change either field. Owner actions
+    // remain allowed for direct Owner management.
+    match /players/{id} {
+      allow read: if signedIn();
+
+      allow create: if isOwner()
+        || (signedIn() && request.auth.uid == id && !isBanned()
+            && !('gems' in request.resource.data)
+            && !('gemOps' in request.resource.data)
+            && !('gemCosmetics' in request.resource.data)
+            && !('equippedGemCosmetic' in request.resource.data));
+
+      allow update: if isOwner()
+        || (signedIn() && request.auth.uid == id && !isBanned()
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(['gems', 'gemOps', 'gemCosmetics'])
+            && (!request.resource.data.diff(resource.data).affectedKeys()
+                   .hasAny(['equippedGemCosmetic'])
+                || request.resource.data.get('equippedGemCosmetic', '') == ''
+                || (request.resource.data.get('equippedGemCosmetic', '') == 'profile-ring-gold'
+                    && resource.data.get('gemCosmetics', {}).get('profile-ring-gold', false) == true)))
+        || (isAdmin() && !targetIsStaff(id)
+            && !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(['gems', 'gemOps', 'gemCosmetics', 'equippedGemCosmetic']));
+
+      // The staff UI explicitly prevents self-deletion. Owner may remove
+      // players/admins but not another Owner; Admin may remove ordinary players.
+      allow delete: if
+        (isOwner() && request.auth.uid != id && !targetIsOwner(id))
+        || (isAdmin() && request.auth.uid != id && !targetIsStaff(id));
+    }
+
+    // ---------- 1v1 duels ----------
+    match /duels/{id} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && !isBanned()
+        && (!duelsPaused() || isOwner())
+        && request.resource.data.keys().hasOnly([
+          'host', 'hostName', 'guest', 'guestName', 'subject',
+          'secs', 'vis', 'qids', 'state', 'created', 'hb', 'res'
+        ])
+        && request.resource.data.keys().hasAll([
+          'host', 'hostName', 'guest', 'guestName', 'subject',
+          'secs', 'vis', 'qids', 'state', 'created', 'hb', 'res'
+        ])
+        && request.resource.data.host == request.auth.uid
+        && request.resource.data.hostName is string
+        && request.resource.data.hostName.size() <= 40
+        && request.resource.data.guest == null
+        && request.resource.data.guestName == ''
+        && request.resource.data.subject is string
+        && request.resource.data.secs is int
+        && request.resource.data.secs >= 5
+        && request.resource.data.secs <= 60
+        && request.resource.data.vis in ['public', 'private']
+        && request.resource.data.qids is list
+        && request.resource.data.qids.size() >= 1
+        && request.resource.data.qids.size() <= 50
+        && request.resource.data.state == 'waiting'
+        && request.resource.data.created is int
+        && request.resource.data.hb is int
+        && request.resource.data.res is map;
+
+      allow update: if signedIn() && !isBanned()
+        && (
+          // Host can refresh the waiting-room heartbeat only.
+          (resource.data.host == request.auth.uid
+            && resource.data.state == 'waiting'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hb'])
+            && request.resource.data.hb is int
+            && request.resource.data.hb >= resource.data.hb)
+          ||
+          // A second player can join a waiting duel once.
+          (resource.data.state == 'waiting'
+            && resource.data.guest == null
+            && resource.data.host != request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'guest', 'guestName', 'state', 'startAt'
+            ])
+            && request.resource.data.guest == request.auth.uid
+            && request.resource.data.guestName is string
+            && request.resource.data.guestName.size() <= 40
+            && request.resource.data.state == 'playing'
+            && request.resource.data.startAt is int)
+          ||
+          // Each participant can update only their own result entry.
+          (isDuelParticipant() && validOwnDuelResult())
+          ||
+          // Each participant can mark only their own reward as recorded.
+          (isDuelParticipant() && validOwnDuelRecord())
+        );
+
+      // The host can cancel a waiting duel. The Owner can remove any duel.
+      allow delete: if isOwner()
+        || (signedIn() && resource.data.host == request.auth.uid
+            && resource.data.state == 'waiting');
+    }
+
+    // All other documents are denied by default because no broader wildcard
+    // read/write rule is present here.
+  }
+}
+)
+          && request.resource.data.mimeType == 'image/jpeg'
+          && request.resource.data.width is int
+          && request.resource.data.width >= 1
+          && request.resource.data.width <= 2000
+          && request.resource.data.height is int
+          && request.resource.data.height >= 1
+          && request.resource.data.height <= 2000
+          && request.resource.data.createdAt is timestamp
+          && request.resource.data.createdAt == request.time;
+
+        allow update: if false;
+        allow delete: if isOwner();
+      }
 
       allow delete: if isOwner();
     }
