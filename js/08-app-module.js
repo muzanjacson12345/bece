@@ -2861,7 +2861,7 @@ const Bugs = (() => {
       remove.onclick = () => { screenshot = null; showShot(); };
       shotPreview.append(preview, elx('div', 'bug-shot-preview-meta',
         elx('strong', '', 'Screenshot ready'),
-        elx('span', 'muted', 'The original and marked-up versions will be kept privately.'), remove));
+        elx('span', 'muted', 'Both versions are private. Any privacy covers are applied to both copies.'), remove));
     };
     const setShot = data => { screenshot = data || null; showShot(); };
     const pickImage = file => {
@@ -2917,7 +2917,8 @@ const Bugs = (() => {
           try {
             await reportRef.collection('attachments').doc('screenshot').set({
               originalData: screenshot.originalData, annotatedData: screenshot.annotatedData,
-              mimeType: 'image/jpeg', width: screenshot.width, height: screenshot.height,
+              mimeType: 'image/jpeg',
+              redactedOriginal: screenshot.redactedOriginal === true, width: screenshot.width, height: screenshot.height,
               createdAt: fsv().FieldValue.serverTimestamp()
             });
             await reportRef.update({ hasScreenshot: true });
