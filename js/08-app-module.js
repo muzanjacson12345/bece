@@ -2797,6 +2797,10 @@ const Bugs = (() => {
     if (!reportId) throw new Error('REPORT_ID_REQUIRED');
     return githubRequest({ action: 'syncOne', reportId: String(reportId) });
   }
+  async function syncStatus(reportId) {
+    if (!reportId) throw new Error('REPORT_ID_REQUIRED');
+    return githubRequest({ action: 'syncStatus', reportId: String(reportId) });
+  }
   async function migrateExisting(onProgress) {
     let pageToken = '', totals = { scanned: 0, synced: 0, skipped: 0, failed: 0 }, pages = 0;
     do {
@@ -2951,7 +2955,7 @@ const Bugs = (() => {
     ov.append(f); document.body.append(ov); setTimeout(() => ta.focus(), 60);
   }
   document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#bug-open')) open(); });
-  return { open, start, syncOne, migrateExisting, viewScreenshot };
+  return { open, start, syncOne, syncStatus, migrateExisting, viewScreenshot };
 })();
 
 const Adm = (() => {
@@ -3301,7 +3305,14 @@ const Adm = (() => {
   const bugCat = c => (BUG_CATS.find(x => x[0] === c) || BUG_CATS[4])[1];
   const bugStatus = b => b.status || 'open';
   async function bugSet(b, status) {
-    if (await run(() => S.db.doc('bugReports/' + b.id).update({ status, replyBy: String(nameOf(S.uid)).slice(0, 40), doneAt: status === 'open' ? 0 : Date.now() }), `Marked: ${BUG_STATUS[status][0]}.`)) logAct('bug-' + status, b.uid, String(b.text || '').slice(0, 80));
+    const saved = await run(() => S.db.doc('bugReports/' + b.id).update({ status, replyBy: String(nameOf(S.uid)).slice(0, 40), doneAt: status === 'open' ? 0 : Date.now() }), `Marked: ${BUG_STATUS[status][0]}.`);
+    if (!saved) return;
+    logAct('bug-' + status, b.uid, String(b.text || '').slice(0, 80));
+    try {
+      await Bugs.syncStatus(b.id);
+    } catch (error) {
+      App.toast('The BECE Hub status changed, but GitHub could not be updated yet. Use Sync status to retry.', 'warn');
+    }
   }
   async function bugReply(b) {
     const v = await ask({ title: `Reply to ${b.name || 'player'}`, intro: 'They see this under their report. Max 300 characters.', fields: [{ key: 't', label: 'Reply', multiline: true, max: 300, value: b.reply || '' }], ok: 'Send reply', validate: x => x.t.trim().length < 2 ? 'Write a reply first.' : '' });
@@ -3359,8 +3370,13 @@ const Adm = (() => {
         acts.push(btn('\u{1F4AC} Reply\u2026', 'btn-ghost btn-sm', () => bugReply(b)));
         if (S.isOwner) acts.push(btn('\u{1F5D1}\uFE0F Delete', 'btn-ghost btn-sm adm-danger', () => bugDelete(b)));
         if (b.hasScreenshot) acts.push(btn('View screenshot', 'btn-ghost btn-sm', () => Bugs.viewScreenshot(b)));
-        if (b.githubIssueUrl) acts.push(btn('GitHub #' + (b.githubIssueNumber || ''), 'btn-ghost btn-sm', () => window.open(b.githubIssueUrl, '_blank', 'noopener,noreferrer')));
-        else acts.push(btn('Sync to GitHub', 'btn-ghost btn-sm', async () => {
+        if (b.githubIssueUrl) {
+          acts.push(btn('GitHub #' + (b.githubIssueNumber || ''), 'btn-ghost btn-sm', () => window.open(b.githubIssueUrl, '_blank', 'noopener,noreferrer')));
+          acts.push(btn('Sync status', 'btn-ghost btn-sm', async () => {
+            try { await Bugs.syncStatus(b.id); App.toast('GitHub status is up to date.', 'good'); }
+            catch (error) { App.toast(error && error.message ? error.message : 'GitHub status sync is not ready.', 'warn'); }
+          }));
+        } else acts.push(btn('Sync to GitHub', 'btn-ghost btn-sm', async () => {
           try { const result = await Bugs.syncOne(b.id); App.toast('Created GitHub issue #' + (result.issueNumber || '') + '.', 'good'); }
           catch (error) { App.toast(error && error.message ? error.message : 'GitHub sync is not ready.', 'warn'); }
         }));
