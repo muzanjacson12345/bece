@@ -11,6 +11,7 @@ on:
       - 'firestore.rules'
       - 'workers/gems-api/src/index.js'
       - '.github/workflows/bug-report-quality.yml'
+      - '.github/scripts/bug-report-guardrails.cjs'
   push:
     branches: [main]
     paths:
@@ -46,3 +47,6 @@ jobs:
 
       - name: Check Cloudflare Worker module syntax
         run: node --input-type=module --check < workers/gems-api/src/index.js
+
+      - name: Check bug-report privacy and idempotency guardrails
+        run: node .github/scripts/bug-report-guardrails.cjs
