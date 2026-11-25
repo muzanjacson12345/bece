@@ -2875,10 +2875,15 @@ const Bugs = (() => {
     cameraBtn.onclick = () => cameraPicker.click();
     showAppBtn.onclick = () => {
       if (!window.BeceBugCapture) return App.toast('App capture is not available. Reload and try again.', 'warn');
+      document.removeEventListener('keydown', esc);
       ov.hidden = true;
+      const restoreReportForm = () => {
+        ov.hidden = false;
+        document.addEventListener('keydown', esc);
+      };
       window.BeceBugCapture.start({
-        onDone: data => { setShot(data); ov.hidden = false; },
-        onCancel: () => { ov.hidden = false; }
+        onDone: data => { setShot(data); restoreReportForm(); },
+        onCancel: restoreReportForm
       });
     };
     cat.className = 'adm-sel'; cat.setAttribute('aria-label', 'What kind of problem'); BUG_CATS.forEach(([v, t]) => cat.append(new Option(t, v)));
