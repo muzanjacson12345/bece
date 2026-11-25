@@ -230,6 +230,27 @@ async function main() {
     ['Players cannot create their own Gem cosmetic ownership', "!('gemCosmetics' in request.resource.data)"],
     ['Players can equip the ring only after server-recorded ownership', "resource.data.get('gemCosmetics', {}).get('profile-ring-gold', false) == true"],
   ];
+  const bugCaptureFeatures = [
+    ['Bug capture module loads before the app module', htmlSource.indexOf('js/11-bug-capture.js') >= 0 && htmlSource.indexOf('js/11-bug-capture.js') < htmlSource.indexOf('js/08-app-module.js')],
+    ['Show on App keeps a floating bubble and opens current-screen capture', source.includes("'Show on App'") && source.includes('window.BeceBugCapture.start') && source.includes('bug-capture-bubble') && source.includes('Capture this screen')],
+    ['Screen capture is limited to the current BECE Hub page and excludes capture controls', source.includes('html2canvas(document.body') && source.includes('ignoreElements: element =>') && source.includes('data-bug-capture-ignore')],
+    ['Screenshot annotation supports pointer input for mouse, finger and stylus', source.includes("canvas.addEventListener('pointerdown'") && source.includes("canvas.addEventListener('pointermove'") && source.includes("canvas.addEventListener('pointerup'") && source.includes('setPointerCapture')],
+    ['Annotation editor includes pen, highlighter, arrows, rectangles, circles and cover', ['pen', 'highlight', 'arrow', 'rect', 'circle', 'cover'].every(tool => source.includes("['" + tool + "'"))],
+    ['Annotation editor supports undo, redo, clear and zoom', source.includes("el('button', 'bug-tool-button', 'Undo')") && source.includes("el('button', 'bug-tool-button', 'Redo')") && source.includes("el('button', 'bug-tool-button', 'Clear')") && source.includes("zoom.addEventListener('input'")],
+    ['Image upload and camera fallback are available', source.includes("filePicker.accept = 'image/*'") && source.includes("cameraPicker.setAttribute('capture', 'environment')")],
+    ['Original and annotated image versions are kept separately', source.includes('originalData: original.data') && source.includes('annotatedData: annotated.data')],
+    ['Bug capture feature has responsive phone and desktop styling', source.includes('.bug-capture-bubble') && source.includes('.bug-editor-overlay') && source.includes('@media (max-width:700px)') && source.includes('@media (max-width:380px)')],
+    ['PWA cache includes the bug capture module', source.includes("'./js/11-bug-capture.js'") && source.includes('bece-v124')],
+    ['Public GitHub issues keep full descriptions and screenshots private', gemsWorkerSource.includes('The full description and any screenshots are stored in private BECE Hub Firestore') && gemsWorkerSource.includes('They are intentionally not copied into this public issue.')],
+    ['GitHub migration is paginated and idempotently linked to Firestore reports', gemsWorkerSource.includes('nextPageToken') && gemsWorkerSource.includes('githubIssueNumber') && gemsWorkerSource.includes('BECE_REPORT_ID:')],
+    ['Bug-report sync validates actual Owner/Admin sessions server-side', gemsWorkerSource.includes('verifyBugStaffRole') && gemsWorkerSource.includes('ownerSessions/') && gemsWorkerSource.includes('adminSessions/') && gemsWorkerSource.includes('config/owner')],
+  ];
+  const bugRulesFeatures = [
+    ['Screenshot attachments are limited to the reporter and authorised staff', firestoreRulesSource.includes('match /attachments/{attachmentId}') && firestoreRulesSource.includes('get(parentReportPath()).data.get(\\'uid\\', \'\') == request.auth.uid || isStaff()')],
+    ['Only the report owner can create the screenshot attachment', firestoreRulesSource.includes('get(parentReportPath()).data.get(\\'uid\\', \'\') == request.auth.uid')],
+    ['Screenshot attachment data has strict JPEG, size and dimension limits', firestoreRulesSource.includes('originalData.size() <= 320000') && firestoreRulesSource.includes('annotatedData.size() <= 320000') && firestoreRulesSource.includes('width <= 2000') && firestoreRulesSource.includes('height <= 2000')],
+    ['Screenshot parent flag can change only after the attachment exists', firestoreRulesSource.includes("affectedKeys().hasOnly(['hasScreenshot'])") && firestoreRulesSource.includes('/attachments/screenshot')],
+  ];
   const rewardVisualChecks = [
     ['Flying Gems use CSS facets and no blue-stroked standard SVG', source.includes("o('span', 'reward-flight-gem-facets')") && source.includes('.reward-flight-token-gems') && source.includes('border: 0 !important') && source.includes('.reward-flight-gem-facets') && !source.includes("App.icon(item.kind === 'gems' ? 'gem' : 'coin'")],
     ['Coin reward travel is deliberately slow on phones and desktops', source.includes('const duration = isCoin ? (mobile ? 2300 : 2200) : (mobile ? 2500 : 2400)') && source.includes('const stagger = isCoin ? (mobile ? 180 : 160) : 0')],
@@ -241,6 +262,8 @@ async function main() {
     ...iconFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
     ...gemWorkerFeatures.map(([label, token]) => ({ label, passed: gemsWorkerSource.includes(token) })),
     ...gemRulesFeatures.map(([label, token]) => ({ label, passed: firestoreRulesSource.includes(token) })),
+    ...bugCaptureFeatures.map(([label, passed]) => ({ label, passed })),
+    ...bugRulesFeatures.map(([label, passed]) => ({ label, passed })),
   ];
   sourceChecks.push({ label: 'Every achievement has a one-time client and server Gem reward', passed: allAchievementRewardsPresent });
   sourceChecks.push({ label: 'Mapped UI glyphs resolve to SVGs while expressive avatars retain native emoji', passed: allUiGlyphsResolve });
