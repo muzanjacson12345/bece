@@ -2889,7 +2889,7 @@ const Bugs = (() => {
     const close = () => { document.removeEventListener('keydown', esc); App.dismissOverlay(ov); }, esc = e => { if (e.key === 'Escape') close(); };
     no.onclick = close; ov.addEventListener('click', e => { if (e.target === ov) close(); }); document.addEventListener('keydown', esc);
     f.append(elx('h3', '', '\u{1F41E} Report a bug'), elx('p', 'muted', 'Tell us what went wrong. A real person reads every report.'), elx('label', 'adm-lbl', 'What kind of problem?'), cat, elx('label', 'adm-lbl', 'What happened?'), ta, cnt, elx('label', 'adm-lbl', 'Add a screenshot (optional)'), shotActions, filePicker, cameraPicker, shotHint, shotPreview,
-      elx('p', 'adm-info', `We also send your name, the page you are on and your device (${deviceInfo()}). The issue description may appear in our public GitHub project tracker, so do not include personal details. Screenshots stay private for the reporter and authorised staff.`), msg, elx('div', 'cz-row pin-row', no, go));
+      elx('p', 'adm-info', `We also send your name, the page you are on and your device (${deviceInfo()}). Only an anonymous tracking summary is sent to our public GitHub project. Your full description and screenshots stay private in BECE Hub and are visible only to you and authorised staff.`), msg, elx('div', 'cz-row pin-row', no, go));
     const mine = S.myBugs.slice(0, 5);
     if (mine.length) {
       const box = elx('div', 'bug-mine'); box.append(elx('label', 'adm-lbl', 'Your recent reports'));
