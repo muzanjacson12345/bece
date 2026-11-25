@@ -299,6 +299,19 @@ function firestoreString(document, key) {
   const field = document && document.fields && document.fields[key];
   return field && typeof field.stringValue === 'string' ? field.stringValue : '';
 }
+function bugBanUntil(document) {
+  const field = document && document.fields && document.fields.until;
+  if (!field) return 0;
+  const raw = field.integerValue !== undefined ? field.integerValue : field.doubleValue;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : 0;
+}
+async function isBugUserBanned(uid, accessToken) {
+  const document = await getDocument('bans/' + encodeURIComponent(uid), accessToken);
+  if (!document) return false;
+  const until = bugBanUntil(document);
+  return until === 0 || until > Date.now();
+}
 async function verifyBugStaffRole(uid, accessToken) {
   const [ownerSession, ownerConfig, adminSession, adminConfig, roster] = await Promise.all([
     getDocument('ownerSessions/' + encodeURIComponent(uid), accessToken),
@@ -444,7 +457,7 @@ async function handleBugSync(payload, identity, env, origin) {
     }, 503, origin);
   }
   const accessToken = await getFirestoreAccessToken(env);
-  if (await isUserBanned(identity.uid, accessToken)) {
+  if (await isBugUserBanned(identity.uid, accessToken)) {
     return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot sync reports while banned.' }, 403, origin);
   }
   const role = await verifyBugStaffRole(identity.uid, accessToken);
