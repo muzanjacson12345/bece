@@ -483,7 +483,12 @@ service cloud.firestore {
           && request.resource.data.createdAt == request.time;
 
         allow update: if false;
-        allow delete: if isOwner();
+        allow delete: if isOwner()
+          || (signedIn()
+            && !isBanned()
+            && exists(parentReportPath())
+            && get(parentReportPath()).data.get('uid', '') == request.auth.uid
+            && get(parentReportPath()).data.get('hasScreenshot', false) == false);
       }
 
       allow delete: if isOwner();
