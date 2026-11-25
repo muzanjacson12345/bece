@@ -48,8 +48,12 @@ The route accepts Firebase ID tokens in the Authorization: Bearer ... header:
   report issue. The report owner may sync their own report; staff can sync
   reports they are authorised to manage.
 - POST /bugs with action=migrate and pageSize=10 migrates one Firestore page.
-  This action is restricted to the Owner. The app's Owner tool walks the
-  returned nextPageToken until all existing reports have been checked.
+  This action is restricted to a live Owner session: the Worker checks
+  ownerSessions/{uid}, the 30-minute timestamp, and both configured Owner
+  password fields. Admin checks use the live two-hour adminSessions/{uid}
+  record and either the appointed staffRoster entry or configured Admin PIN.
+  The app's Owner tool walks the returned nextPageToken until all reports
+  have been checked.
 
 Issue bodies contain only anonymous tracking metadata (report reference,
 category, app section, device/browser and original submission date). They do
