@@ -240,6 +240,7 @@ async function main() {
     ['Annotation editor includes pen, highlighter, arrows, rectangles, circles and cover', ['pen', 'highlight', 'arrow', 'rect', 'circle', 'cover'].every(tool => source.includes("['" + tool + "'"))],
     ['Screenshot editor appends real Cancel and Use screenshot buttons', captureScriptSource.includes('actions.append(cancel, save)')],
     ['Screen capture preserves the app section and route that was captured', captureScriptSource.includes('sourceMeta.screen') && captureScriptSource.includes('sourceMeta.route')],
+    ['Privacy covers are fully opaque and applied to the unmarked original', captureScriptSource.includes('privacyCovers.forEach(stroke => drawStroke(originalContext, stroke))') && captureScriptSource.includes("strokes.filter(stroke => stroke.tool === 'cover')")],
     ['Annotation editor supports undo, redo, clear and zoom', source.includes("el('button', 'bug-tool-button', 'Undo')") && source.includes("el('button', 'bug-tool-button', 'Redo')") && source.includes("el('button', 'bug-tool-button', 'Clear')") && source.includes("zoom.addEventListener('input'")],
     ['Image upload and camera fallback are available', source.includes("filePicker.accept = 'image/*'") && source.includes("cameraPicker.setAttribute('capture', 'environment')")],
     ['Original and annotated image versions are kept separately', source.includes('originalData: original.data') && source.includes('annotatedData: annotated.data')],
@@ -253,6 +254,7 @@ async function main() {
     ['Screenshot attachments are limited to the reporter and authorised staff', firestoreRulesSource.includes('match /attachments/{attachmentId}') && firestoreRulesSource.includes("get(parentReportPath()).data.get('uid', '') == request.auth.uid || isStaff()")],
     ['Only the report owner can create the screenshot attachment', firestoreRulesSource.includes("get(parentReportPath()).data.get('uid', '') == request.auth.uid")],
     ['Screenshot attachment data has strict JPEG, size and dimension limits', firestoreRulesSource.includes('originalData.size() <= 320000') && firestoreRulesSource.includes('annotatedData.size() <= 320000') && firestoreRulesSource.includes('width <= 2000') && firestoreRulesSource.includes('height <= 2000')],
+    ['Screenshot redaction metadata is required and boolean', firestoreRulesSource.includes('redactedOriginal') && firestoreRulesSource.includes('request.resource.data.redactedOriginal is bool')],
     ['Screenshot parent flag can change only after the attachment exists', firestoreRulesSource.includes("affectedKeys().hasOnly(['hasScreenshot'])") && firestoreRulesSource.includes('/attachments/screenshot')],
   ];
   const rewardVisualChecks = [
@@ -1021,6 +1023,10 @@ async function main() {
                 annotated: !!payload.annotatedData && payload.annotatedData.startsWith('data:image/jpeg;base64,'),
                 width: payload.width,
                 height: payload.height,
+                screen: payload.screen,
+                route: payload.route,
+                redactedOriginal: payload.redactedOriginal === true,
+                originalData: payload.originalData,
               };
             },
             onCancel: () => { window.__beceBugCaptureTest.canceled = true; },
@@ -1072,6 +1078,13 @@ async function main() {
         const inkAfterRedo = await countInk();
         if (!inkAfterRedo) throw new Error('Redo did not restore the annotation.');
 
+        bugCaptureStage = 'draw privacy cover';
+        await page.locator('.bug-tool-button[data-tool="cover"]').click({ timeout: 5000 });
+        await page.mouse.move(x1, y1);
+        await page.mouse.down();
+        await page.mouse.move(x2, y2, { steps: 5 });
+        await page.mouse.up();
+
         bugCaptureStage = 'save annotated screenshot';
         await page.getByRole('button', { name: 'Use screenshot', exact: true }).click({ timeout: 5000 });
         await page.waitForFunction(() => window.__beceBugCaptureTest?.done === true, null, { timeout: 12000 });
@@ -1080,14 +1093,39 @@ async function main() {
           throw new Error('Capture did not target the app document or exclude capture controls.');
         }
         if (!outcome.payload?.original || !outcome.payload?.annotated
-          || outcome.payload.width > 1280 || outcome.payload.height > 1280
-          || outcome.payload.screen !== 'shop' || !String(outcome.payload.route || '').includes('#/shop')) {
+          || outcome.payload.width > 1280 || outcome.payload.height > 1280) {
           throw new Error('Original and annotated compressed images were not returned correctly.');
         }
+        if (outcome.payload.screen !== 'shop' || !String(outcome.payload.route || '').includes('#/shop')) {
+          throw new Error('Captured app section and route were not preserved.');
+        }
+        if (!outcome.payload.redactedOriginal || !outcome.payload.originalData) {
+          throw new Error('Privacy-cover metadata or original image is missing.');
+        }
+        const redactionPixel = await page.evaluate(async dataUrl => {
+          const image = new Image();
+          image.src = dataUrl;
+          await image.decode();
+          const surface = document.createElement('canvas');
+          surface.width = image.naturalWidth;
+          surface.height = image.naturalHeight;
+          const ctx = surface.getContext('2d');
+          ctx.drawImage(image, 0, 0);
+          const pixel = ctx.getImageData(50, 50, 1, 1).data;
+          return pixel[0] > 160 && pixel[0] > pixel[1] * 1.4 && pixel[0] > pixel[2] * 1.4;
+        }, outcome.payload.originalData);
+        if (!redactionPixel) throw new Error('Privacy cover was not baked into the unmarked original.');
         report.bugCaptureChecks.push({
           viewport: viewport.name, bubblePersisted, annotationTools: requiredTools,
           pointerDrawing: true, undo: inkAfterUndo === 0, redo: inkAfterRedo > 0,
-          imagePayload: outcome.payload,
+          privacyCoverAppliedToOriginal: redactionPixel,
+          imagePayload: {
+            screen: outcome.payload.screen,
+            route: outcome.payload.route,
+            redactedOriginal: outcome.payload.redactedOriginal,
+            width: outcome.payload.width,
+            height: outcome.payload.height,
+          },
         });
         console.log('Bug capture interaction passed — ' + viewport.name);
       } catch (error) {
