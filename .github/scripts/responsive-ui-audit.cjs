@@ -246,8 +246,8 @@ async function main() {
     ['Bug-report sync validates actual Owner/Admin sessions server-side', gemsWorkerSource.includes('verifyBugStaffRole') && gemsWorkerSource.includes('ownerSessions/') && gemsWorkerSource.includes('adminSessions/') && gemsWorkerSource.includes('config/owner')],
   ];
   const bugRulesFeatures = [
-    ['Screenshot attachments are limited to the reporter and authorised staff', firestoreRulesSource.includes('match /attachments/{attachmentId}') && firestoreRulesSource.includes('get(parentReportPath()).data.get(\\'uid\\', \'\') == request.auth.uid || isStaff()')],
-    ['Only the report owner can create the screenshot attachment', firestoreRulesSource.includes('get(parentReportPath()).data.get(\\'uid\\', \'\') == request.auth.uid')],
+    ['Screenshot attachments are limited to the reporter and authorised staff', firestoreRulesSource.includes('match /attachments/{attachmentId}') && firestoreRulesSource.includes("get(parentReportPath()).data.get('uid', '') == request.auth.uid || isStaff()")],
+    ['Only the report owner can create the screenshot attachment', firestoreRulesSource.includes("get(parentReportPath()).data.get('uid', '') == request.auth.uid")],
     ['Screenshot attachment data has strict JPEG, size and dimension limits', firestoreRulesSource.includes('originalData.size() <= 320000') && firestoreRulesSource.includes('annotatedData.size() <= 320000') && firestoreRulesSource.includes('width <= 2000') && firestoreRulesSource.includes('height <= 2000')],
     ['Screenshot parent flag can change only after the attachment exists', firestoreRulesSource.includes("affectedKeys().hasOnly(['hasScreenshot'])") && firestoreRulesSource.includes('/attachments/screenshot')],
   ];
