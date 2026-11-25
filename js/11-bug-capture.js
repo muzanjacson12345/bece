@@ -154,7 +154,7 @@
     ctx.restore();
   }
 
-  function openEditor(source, onDone, onCancel) {
+  function openEditor(source, onDone, onCancel, sourceMeta = {}) {
     loadImage(source).then(image => {
       const overlay = el('section', 'bug-editor-overlay');
       overlay.setAttribute('role', 'dialog');
@@ -238,7 +238,9 @@
       const cancel = el('button', 'btn btn-ghost', 'Cancel');
       const save = el('button', 'btn btn-primary', 'Use screenshot');
       cancel.type = save.type = 'button';
-      footer.append(note, el('div', 'bug-editor-actions', cancel, save));
+      const actions = el('div', 'bug-editor-actions');
+      actions.append(cancel, save);
+      footer.append(note, actions);
       shell.append(header, toolbar, zoomLabel, viewport, footer);
       overlay.append(shell);
       document.body.append(overlay);
@@ -369,7 +371,9 @@
               annotatedData: annotated.data,
               width: annotated.width,
               height: annotated.height,
-              mimeType: 'image/jpeg'
+              mimeType: 'image/jpeg',
+              screen: String(sourceMeta.screen || '').slice(0, 30),
+              route: String(sourceMeta.route || '').slice(0, 120)
             });
           }
         } catch (error) {
@@ -508,7 +512,11 @@
         if (!current) return;
         root.remove();
         session = null;
-        openEditor(source, payload => current.onDone && current.onDone(payload), () => current.onCancel && current.onCancel());
+        const sourceMeta = {
+          screen: String(document.body && document.body.dataset && document.body.dataset.screen || ''),
+          route: String(window.location.hash || '')
+        };
+        openEditor(source, payload => current.onDone && current.onDone(payload), () => current.onCancel && current.onCancel(), sourceMeta);
       } catch (error) {
         bubble.hidden = false;
         panel.hidden = false;
