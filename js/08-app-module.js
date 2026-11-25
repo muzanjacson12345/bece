@@ -3321,10 +3321,12 @@ const Adm = (() => {
     const ids = S.bugs.filter(b => ['done', 'wontfix'].includes(bugStatus(b))).map(b => b.id);
     if (!ids.length) return App.toast('No fixed or closed reports to clear.', 'warn');
     if (!await ask({ title: `Delete ${ids.length} fixed/closed reports?`, ok: 'Delete them', danger: true })) return;
-    if (await run(() => chunked(ids.map(id => b => {
+    if (await run(() => chunked(ids.flatMap(id => {
       const ref = S.db.doc('bugReports/' + id);
-      b.delete(ref.collection('attachments').doc('screenshot'));
-      b.delete(ref);
+      return [
+        b => b.delete(ref.collection('attachments').doc('screenshot')),
+        b => b.delete(ref)
+      ];
     })), `Deleted ${ids.length} reports.`)) logAct('bug-delete', '', `${ids.length} fixed/closed reports cleared`);
   }
   function bugCsv() {
