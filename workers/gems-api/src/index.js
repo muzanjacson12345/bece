@@ -361,7 +361,6 @@ async function createOrFindGithubBugIssue(reportId, report, githubToken, accessT
     const category = bugStringField(report, 'cat', 'other').toLowerCase();
     const screen = bugStringField(report, 'screen', 'unknown').slice(0, 30);
     const device = bugStringField(report, 'device', 'Not supplied').slice(0, 160);
-    const rawText = safePublicBugText(bugStringField(report, 'text', 'No description supplied.'));
     const createdAt = report && report.fields && report.fields.at && report.fields.at.timestampValue
       ? report.fields.at.timestampValue : 'Unknown';
     const titleCategory = ({
@@ -381,13 +380,9 @@ async function createOrFindGithubBugIssue(reportId, report, githubToken, accessT
       '- Device/browser: ' + device.replace(/[<>]/g, ''),
       '- Originally submitted: ' + createdAt,
       '',
-      '## Description',
+      '## Private report details',
       '',
-      rawText,
-      '',
-      '## Screenshot',
-      '',
-      'Any screenshot or annotation is kept in private BECE Hub storage and is not attached to this public issue.',
+      'The full description and any screenshots are stored in private BECE Hub Firestore. Authorized staff can inspect them in the Admin bug-report queue. They are intentionally not copied into this public issue.',
       '',
       '<!-- ' + marker + ' -->'
     ].join('\n');
