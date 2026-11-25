@@ -249,6 +249,7 @@ async function main() {
     ['PWA cache includes the bug capture module', serviceWorkerSource.includes("'./js/11-bug-capture.js'") && serviceWorkerSource.includes('bece-v124')],
     ['Public GitHub issues keep full descriptions and screenshots private', gemsWorkerSource.includes('The full description and any screenshots are stored in private BECE Hub Firestore') && gemsWorkerSource.includes('They are intentionally not copied into this public issue.')],
     ['GitHub migration is paginated and idempotently linked to Firestore reports', gemsWorkerSource.includes('nextPageToken') && gemsWorkerSource.includes('githubIssueNumber') && gemsWorkerSource.includes('BECE_REPORT_ID:')],
+    ['GitHub Issues preserve and update the BECE report status', gemsWorkerSource.includes("action === 'syncStatus'") && gemsWorkerSource.includes('githubStateForBugStatus') && source.includes('Bugs.syncStatus(b.id)')],
     ['Bug-report sync validates actual Owner/Admin sessions server-side', gemsWorkerSource.includes('verifyBugStaffRole') && gemsWorkerSource.includes('ownerSessions/') && gemsWorkerSource.includes('adminSessions/') && gemsWorkerSource.includes('config/owner')],
   ];
   const bugRulesFeatures = [
