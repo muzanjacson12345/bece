@@ -404,7 +404,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && !isBanned()
         && request.resource.data.keys().hasOnly([
-          'uid', 'name', 'cat', 'text', 'screen', 'device', 'at', 'status'
+          'uid', 'name', 'cat', 'text', 'screen', 'device', 'at', 'status', 'hasScreenshot'
         ])
         && request.resource.data.keys().hasAll([
           'uid', 'name', 'cat', 'text', 'screen', 'device', 'at', 'status'
@@ -422,7 +422,8 @@ service cloud.firestore {
         && request.resource.data.device.size() <= 160
         && request.resource.data.at is timestamp
         && request.resource.data.at == request.time
-        && request.resource.data.status == 'open';
+        && request.resource.data.status == 'open'
+        && request.resource.data.get('hasScreenshot', false) is bool;
 
       allow update: if isStaff()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -434,6 +435,61 @@ service cloud.firestore {
         && request.resource.data.get('replyBy', '') is string
         && request.resource.data.get('replyBy', '').size() <= 40
         && request.resource.data.get('doneAt', 0) is int;
+
+      // A reporter may set this one flag only after the private attachment exists.
+      allow update: if signedIn()
+        && !isBanned()
+        && resource.data.get('uid', '') == request.auth.uid
+        && resource.data.get('hasScreenshot', false) == false
+        && request.resource.data.get('hasScreenshot', false) == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hasScreenshot'])
+        && exists(/databases/$(database)/documents/bugReports/$(id)/attachments/screenshot);
+
+      match /attachments/{attachmentId} {
+        function parentReportPath() {
+          return /databases/$(database)/documents/bugReports/$(id);
+        }
+
+        allow read: if signedIn()
+          && exists(parentReportPath())
+          && (get(parentReportPath()).data.get('uid', '') == request.auth.uid || isStaff());
+
+        allow create: if signedIn()
+          && !isBanned()
+          && attachmentId == 'screenshot'
+          && exists(parentReportPath())
+          && get(parentReportPath()).data.get('uid', '') == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'originalData', 'annotatedData', 'mimeType', 'redactedOriginal', 'width', 'height', 'createdAt'
+          ])
+          && request.resource.data.keys().hasAll([
+            'originalData', 'annotatedData', 'mimeType', 'redactedOriginal', 'width', 'height', 'createdAt'
+          ])
+          && request.resource.data.originalData is string
+          && request.resource.data.originalData.size() <= 320000
+          && request.resource.data.originalData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')
+          && request.resource.data.annotatedData is string
+          && request.resource.data.annotatedData.size() <= 320000
+          && request.resource.data.annotatedData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')
+          && request.resource.data.mimeType == 'image/jpeg'
+          && request.resource.data.redactedOriginal is bool
+          && request.resource.data.width is int
+          && request.resource.data.width >= 1
+          && request.resource.data.width <= 2000
+          && request.resource.data.height is int
+          && request.resource.data.height >= 1
+          && request.resource.data.height <= 2000
+          && request.resource.data.createdAt is timestamp
+          && request.resource.data.createdAt == request.time;
+
+        allow update: if false;
+        allow delete: if isOwner()
+          || (signedIn()
+            && !isBanned()
+            && exists(parentReportPath())
+            && get(parentReportPath()).data.get('uid', '') == request.auth.uid
+            && get(parentReportPath()).data.get('hasScreenshot', false) == false);
+      }
 
       allow delete: if isOwner();
     }

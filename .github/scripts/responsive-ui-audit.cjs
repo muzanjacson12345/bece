@@ -230,6 +230,36 @@ async function main() {
     ['Players cannot create their own Gem cosmetic ownership', "!('gemCosmetics' in request.resource.data)"],
     ['Players can equip the ring only after server-recorded ownership', "resource.data.get('gemCosmetics', {}).get('profile-ring-gold', false) == true"],
   ];
+  const serviceWorkerSource = fs.readFileSync(path.join(process.cwd(), 'sw.js'), 'utf8');
+  const captureScriptSource = fs.readFileSync(path.join(process.cwd(), 'js/11-bug-capture.js'), 'utf8');
+  const bugCaptureFeatures = [
+    ['Bug capture module loads before the app module', htmlSource.indexOf('js/11-bug-capture.js') >= 0 && htmlSource.indexOf('js/11-bug-capture.js') < htmlSource.indexOf('js/08-app-module.js')],
+    ['Show on App keeps a floating bubble and opens current-screen capture', source.includes("'Show on App'") && source.includes('window.BeceBugCapture.start') && source.includes('bug-capture-bubble') && source.includes('Capture this screen')],
+    ['Screen capture is limited to the current BECE Hub page and excludes capture controls', source.includes('html2canvas(document.body') && source.includes('ignoreElements: element =>') && source.includes('data-bug-capture-ignore')],
+    ['Screenshot annotation supports pointer input for mouse, finger and stylus', source.includes("canvas.addEventListener('pointerdown'") && source.includes("canvas.addEventListener('pointermove'") && source.includes("canvas.addEventListener('pointerup'") && source.includes('setPointerCapture')],
+    ['Annotation editor includes pen, highlighter, arrows, rectangles, circles and cover', ['pen', 'highlight', 'arrow', 'rect', 'circle', 'cover'].every(tool => source.includes("['" + tool + "'"))],
+    ['Screenshot editor appends real Cancel and Use screenshot buttons', captureScriptSource.includes('actions.append(cancel, save)')],
+    ['Screen capture preserves the app section and route that was captured', captureScriptSource.includes('sourceMeta.screen') && captureScriptSource.includes('sourceMeta.route')],
+    ['Privacy covers are fully opaque and applied to the unmarked original', captureScriptSource.includes('privacyCovers.forEach(stroke => drawStroke(originalContext, stroke))') && captureScriptSource.includes("strokes.filter(stroke => stroke.tool === 'cover')")],
+    ['Annotation editor supports undo, redo, clear and zoom', source.includes("el('button', 'bug-tool-button', 'Undo')") && source.includes("el('button', 'bug-tool-button', 'Redo')") && source.includes("el('button', 'bug-tool-button', 'Clear')") && source.includes("zoom.addEventListener('input'")],
+    ['Image upload and camera fallback are available', source.includes("filePicker.accept = 'image/*'") && source.includes("cameraPicker.setAttribute('capture', 'environment')")],
+    ['Compatible HEIC and HEIF camera images are accepted when the browser can decode them', captureScriptSource.includes('heic|heif')],
+    ['Original and annotated image versions are kept separately', source.includes('originalData: original.data') && source.includes('annotatedData: annotated.data')],
+    ['Bug capture feature has responsive phone and desktop styling', source.includes('.bug-capture-bubble') && source.includes('.bug-editor-overlay') && source.includes('@media (max-width:700px)') && source.includes('@media (max-width:380px)')],
+    ['PWA cache includes the bug capture module', serviceWorkerSource.includes("'./js/11-bug-capture.js'") && serviceWorkerSource.includes('bece-v124')],
+    ['Public GitHub issues keep full descriptions and screenshots private', gemsWorkerSource.includes('The full description and any screenshots are stored in private BECE Hub Firestore') && gemsWorkerSource.includes('They are intentionally not copied into this public issue.')],
+    ['GitHub migration is paginated and idempotently linked to Firestore reports', gemsWorkerSource.includes('nextPageToken') && gemsWorkerSource.includes('githubIssueNumber') && gemsWorkerSource.includes('BECE_REPORT_ID:')],
+    ['GitHub Issues preserve and update the BECE report status', gemsWorkerSource.includes("action === 'syncStatus'") && gemsWorkerSource.includes('githubStateForBugStatus') && source.includes('Bugs.syncStatus(b.id)')],
+    ['Bug-report sync validates actual Owner/Admin sessions server-side', gemsWorkerSource.includes('verifyBugStaffRole') && gemsWorkerSource.includes('ownerSessions/') && gemsWorkerSource.includes('adminSessions/') && gemsWorkerSource.includes('config/owner')],
+  ];
+  const bugRulesFeatures = [
+    ['Screenshot attachments are limited to the reporter and authorised staff', firestoreRulesSource.includes('match /attachments/{attachmentId}') && firestoreRulesSource.includes("get(parentReportPath()).data.get('uid', '') == request.auth.uid || isStaff()")],
+    ['Only the report owner can create the screenshot attachment', firestoreRulesSource.includes("get(parentReportPath()).data.get('uid', '') == request.auth.uid")],
+    ['Reporter can clean up an incomplete screenshot while the report has no attachment flag', firestoreRulesSource.includes("get('hasScreenshot', false) == false") && firestoreRulesSource.includes('allow delete: if isOwner()')],
+    ['Screenshot attachment data has strict JPEG, size and dimension limits', firestoreRulesSource.includes('originalData.size() <= 320000') && firestoreRulesSource.includes('annotatedData.size() <= 320000') && firestoreRulesSource.includes('width <= 2000') && firestoreRulesSource.includes('height <= 2000')],
+    ['Screenshot redaction metadata is required and boolean', firestoreRulesSource.includes('redactedOriginal') && firestoreRulesSource.includes('request.resource.data.redactedOriginal is bool')],
+    ['Screenshot parent flag can change only after the attachment exists', firestoreRulesSource.includes("affectedKeys().hasOnly(['hasScreenshot'])") && firestoreRulesSource.includes('/attachments/screenshot')],
+  ];
   const rewardVisualChecks = [
     ['Flying Gems use CSS facets and no blue-stroked standard SVG', source.includes("o('span', 'reward-flight-gem-facets')") && source.includes('.reward-flight-token-gems') && source.includes('border: 0 !important') && source.includes('.reward-flight-gem-facets') && !source.includes("App.icon(item.kind === 'gems' ? 'gem' : 'coin'")],
     ['Coin reward travel is deliberately slow on phones and desktops', source.includes('const duration = isCoin ? (mobile ? 2300 : 2200) : (mobile ? 2500 : 2400)') && source.includes('const stagger = isCoin ? (mobile ? 180 : 160) : 0')],
@@ -241,6 +271,8 @@ async function main() {
     ...iconFeatures.map(([label, token]) => ({ label, passed: source.includes(token) })),
     ...gemWorkerFeatures.map(([label, token]) => ({ label, passed: gemsWorkerSource.includes(token) })),
     ...gemRulesFeatures.map(([label, token]) => ({ label, passed: firestoreRulesSource.includes(token) })),
+    ...bugCaptureFeatures.map(([label, passed]) => ({ label, passed })),
+    ...bugRulesFeatures.map(([label, passed]) => ({ label, passed })),
   ];
   sourceChecks.push({ label: 'Every achievement has a one-time client and server Gem reward', passed: allAchievementRewardsPresent });
   sourceChecks.push({ label: 'Mapped UI glyphs resolve to SVGs while expressive avatars retain native emoji', passed: allUiGlyphsResolve });
@@ -411,6 +443,7 @@ async function main() {
     failedRequests: [],
     failures: [],
     motionChecks: [],
+    bugCaptureChecks: [],
   };
 
   try {
@@ -962,6 +995,146 @@ async function main() {
           } catch {}
         }
       }
+      // Exercise the actual floating-bubble -> current page -> editor -> annotation
+      // pipeline at every viewport. html2canvas is stubbed so the test does not
+      // depend on third-party CDN availability or capture CI chrome.
+      let bugCaptureStage = 'setup';
+      try {
+        await page.evaluate(() => {
+          window.__beceBugCaptureTest = { done: false, canceled: false, error: '' };
+          window.html2canvas = async (node, options = {}) => {
+            window.__beceBugCaptureTest.captureTargetIsBody = node === document.body;
+            window.__beceBugCaptureTest.hasIgnoreFilter = typeof options.ignoreElements === 'function';
+            const canvas = document.createElement('canvas');
+            canvas.width = 640;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#f5f7fb';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#4b7bec';
+            ctx.fillRect(24, 24, 150, 70);
+            return canvas;
+          };
+          if (!window.BeceBugCapture || typeof window.BeceBugCapture.start !== 'function') {
+            throw new Error('Bug capture module is not loaded.');
+          }
+          window.BeceBugCapture.start({
+            onDone: payload => {
+              window.__beceBugCaptureTest.done = true;
+              window.__beceBugCaptureTest.payload = {
+                original: !!payload.originalData && payload.originalData.startsWith('data:image/jpeg;base64,'),
+                annotated: !!payload.annotatedData && payload.annotatedData.startsWith('data:image/jpeg;base64,'),
+                width: payload.width,
+                height: payload.height,
+                screen: payload.screen,
+                route: payload.route,
+                redactedOriginal: payload.redactedOriginal === true,
+                originalData: payload.originalData,
+              };
+            },
+            onCancel: () => { window.__beceBugCaptureTest.canceled = true; },
+          });
+        });
+        const bubble = page.locator('.bug-capture-bubble');
+        await bubble.waitFor({ state: 'visible', timeout: 8000 });
+        await page.evaluate(() => { window.location.hash = '#/shop'; });
+        await page.waitForFunction(() => document.body.dataset.screen === 'shop', null, { timeout: 10000 });
+        const bubblePersisted = await bubble.isVisible();
+        if (!bubblePersisted) throw new Error('Floating bubble did not persist after internal tab navigation.');
+        bugCaptureStage = 'open floating bubble';
+        await bubble.click({ timeout: 5000 });
+        bugCaptureStage = 'capture current screen';
+        await page.getByRole('button', { name: 'Capture this screen' }).click({ timeout: 5000 });
+        await page.locator('.bug-editor-overlay').waitFor({ state: 'visible', timeout: 12000 });
+
+        const toolLabels = (await page.locator('.bug-tool-button').allTextContents()).map(value => value.trim());
+        const requiredTools = ['Pen', 'Highlight', 'Arrow', 'Rectangle', 'Circle', 'Cover', 'Undo', 'Redo', 'Clear'];
+        const missingTools = requiredTools.filter(label => !toolLabels.includes(label));
+        if (missingTools.length) throw new Error('Annotation tools missing: ' + missingTools.join(', '));
+
+        const drawing = page.locator('.bug-editor-drawing');
+        const bounds = await drawing.boundingBox();
+        if (!bounds || bounds.width < 20 || bounds.height < 20) throw new Error('Annotation canvas is not visible.');
+        const x1 = bounds.x + Math.min(18, bounds.width / 5);
+        const y1 = bounds.y + Math.min(18, bounds.height / 5);
+        const x2 = bounds.x + Math.min(135, bounds.width / 2);
+        const y2 = bounds.y + Math.min(75, bounds.height / 2);
+        await page.mouse.move(x1, y1);
+        await page.mouse.down();
+        await page.mouse.move(x2, y2, { steps: 5 });
+        await page.mouse.up();
+
+        const countInk = () => drawing.evaluate(canvas => {
+          const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+          let count = 0;
+          for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 0) count++;
+          return count;
+        });
+        const inkAfterDraw = await countInk();
+        if (!inkAfterDraw) throw new Error('Drawing with pointer input did not leave any marks.');
+        bugCaptureStage = 'undo annotation';
+        await page.getByRole('button', { name: 'Undo', exact: true }).click({ timeout: 5000 });
+        const inkAfterUndo = await countInk();
+        if (inkAfterUndo !== 0) throw new Error('Undo did not remove the annotation.');
+        bugCaptureStage = 'redo annotation';
+        await page.getByRole('button', { name: 'Redo', exact: true }).click({ timeout: 5000 });
+        const inkAfterRedo = await countInk();
+        if (!inkAfterRedo) throw new Error('Redo did not restore the annotation.');
+
+        bugCaptureStage = 'draw privacy cover';
+        await page.locator('.bug-tool-button[data-tool="cover"]').click({ timeout: 5000 });
+        await page.mouse.move(x1, y1);
+        await page.mouse.down();
+        await page.mouse.move(x2, y2, { steps: 5 });
+        await page.mouse.up();
+
+        bugCaptureStage = 'save annotated screenshot';
+        await page.getByRole('button', { name: 'Use screenshot', exact: true }).click({ timeout: 5000 });
+        await page.waitForFunction(() => window.__beceBugCaptureTest?.done === true, null, { timeout: 12000 });
+        const outcome = await page.evaluate(() => window.__beceBugCaptureTest);
+        if (!outcome.captureTargetIsBody || !outcome.hasIgnoreFilter) {
+          throw new Error('Capture did not target the app document or exclude capture controls.');
+        }
+        if (!outcome.payload?.original || !outcome.payload?.annotated
+          || outcome.payload.width > 1280 || outcome.payload.height > 1280) {
+          throw new Error('Original and annotated compressed images were not returned correctly.');
+        }
+        if (outcome.payload.screen !== 'shop' || !String(outcome.payload.route || '').includes('#/shop')) {
+          throw new Error('Captured app section and route were not preserved.');
+        }
+        if (!outcome.payload.redactedOriginal || !outcome.payload.originalData) {
+          throw new Error('Privacy-cover metadata or original image is missing.');
+        }
+        const redactionPixel = await page.evaluate(async dataUrl => {
+          const image = new Image();
+          image.src = dataUrl;
+          await image.decode();
+          const surface = document.createElement('canvas');
+          surface.width = image.naturalWidth;
+          surface.height = image.naturalHeight;
+          const ctx = surface.getContext('2d');
+          ctx.drawImage(image, 0, 0);
+          const pixel = ctx.getImageData(50, 50, 1, 1).data;
+          return pixel[0] > 160 && pixel[0] > pixel[1] * 1.4 && pixel[0] > pixel[2] * 1.4;
+        }, outcome.payload.originalData);
+        if (!redactionPixel) throw new Error('Privacy cover was not baked into the unmarked original.');
+        report.bugCaptureChecks.push({
+          viewport: viewport.name, bubblePersisted, annotationTools: requiredTools,
+          pointerDrawing: true, undo: inkAfterUndo === 0, redo: inkAfterRedo > 0,
+          privacyCoverAppliedToOriginal: redactionPixel,
+          imagePayload: {
+            screen: outcome.payload.screen,
+            route: outcome.payload.route,
+            redactedOriginal: outcome.payload.redactedOriginal,
+            width: outcome.payload.width,
+            height: outcome.payload.height,
+          },
+        });
+        console.log('Bug capture interaction passed — ' + viewport.name);
+      } catch (error) {
+        report.failures.push(viewport.name + '/bug-capture [' + bugCaptureStage + ']: ' + String(error));
+      }
+
       await context.close();
     }
 

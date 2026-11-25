@@ -2769,6 +2769,7 @@ function openPin(mode, renew) {
 })();
 
 /* ===== Bug reports: players send them, staff triage them ===== */
+const BUGS_API_URL = 'https://bece-hub-gems-api.abeikcrentsil.workers.dev/bugs';
 const BUG_CATS = [['bug', '\u{1F41E} Something is broken'], ['display', '\u{1F4F1} Looks wrong on my phone'], ['content', '\u{1F4DA} Wrong answer or note'], ['idea', '\u{1F4A1} Idea or suggestion'], ['other', 'Something else']];
 const BUG_STATUS = { open: ['Received', '\u{1F4EC}'], fixing: ['Being fixed', '\u{1F6E0}\uFE0F'], done: ['Fixed', '\u2705'], wontfix: ['Closed', '\u{1F4D5}'] };
 const Bugs = (() => {
@@ -2778,6 +2779,51 @@ const Bugs = (() => {
     const app = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone ? 'app' : 'web';
     return `${os} ${br} ${app} ${innerWidth}x${innerHeight} @${Math.round((devicePixelRatio || 1) * 10) / 10}x v21`.slice(0, 150);
   };
+  async function githubRequest(payload) {
+    const user = firebase.auth().currentUser;
+    if (!user || user.uid !== S.uid) throw new Error('SIGN_IN_REQUIRED');
+    const token = await user.getIdToken();
+    const response = await fetch(BUGS_API_URL, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload), credentials: 'omit', cache: 'no-store'
+    });
+    let data = {};
+    try { data = await response.json(); } catch {}
+    if (!response.ok || !data.ok) throw new Error(data.error || data.code || 'GitHub sync is unavailable.');
+    return data;
+  }
+  async function syncOne(reportId) {
+    if (!reportId) throw new Error('REPORT_ID_REQUIRED');
+    return githubRequest({ action: 'syncOne', reportId: String(reportId) });
+  }
+  async function syncStatus(reportId) {
+    if (!reportId) throw new Error('REPORT_ID_REQUIRED');
+    return githubRequest({ action: 'syncStatus', reportId: String(reportId) });
+  }
+  async function migrateExisting(onProgress) {
+    let pageToken = '', totals = { scanned: 0, synced: 0, skipped: 0, failed: 0 }, pages = 0;
+    do {
+      const result = await githubRequest({ action: 'migrate', pageToken: pageToken || undefined, pageSize: 10 });
+      totals.scanned += Number(result.scanned) || 0;
+      totals.synced += Number(result.synced) || 0;
+      totals.skipped += Number(result.skipped) || 0;
+      totals.failed += Number(result.failed) || 0;
+      pageToken = result.nextPageToken || '';
+      pages++;
+      if (onProgress) onProgress({ ...totals, pages, hasMore: !!pageToken });
+      if (pages > 500) throw new Error('MIGRATION_PAGE_LIMIT');
+    } while (pageToken);
+    return totals;
+  }
+  async function viewScreenshot(report) {
+    if (!report || !report.id) return;
+    try {
+      const snapshot = await S.db.collection('bugReports').doc(report.id).collection('attachments').doc('screenshot').get();
+      if (!snapshot.exists) return App.toast('The screenshot attachment is not available.', 'warn');
+      window.BeceBugCapture.viewAttachment(snapshot.data());
+    } catch (error) { App.toast('Could not load the private screenshot attachment.', 'warn'); }
+  }
   // Watch this player's own reports so they hear back (toast when staff reply or change the status).
   function start() {
     if (!S.db || !S.uid) return;
@@ -2796,8 +2842,54 @@ const Bugs = (() => {
   function open() {
     if ($('bug-ov')) return;
     if (!S.db) return App.toast('Reporting needs an internet connection. Reload and try again.', 'warn');
-    const ov = elx('div', 'pin-ov bug-ov'); ov.id = 'bug-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Report a bug');
+    const ov = elx('div', 'pin-ov bug-ov'); ov.id = 'bug-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Report a bug'); ov.setAttribute('data-bug-capture-ignore', '');
     const f = elx('form', 'card pin-card bug-card'), cat = document.createElement('select'), ta = document.createElement('textarea');
+    let screenshot = null;
+    const filePicker = document.createElement('input');
+    filePicker.type = 'file'; filePicker.accept = 'image/*'; filePicker.hidden = true;
+    const cameraPicker = document.createElement('input');
+    cameraPicker.type = 'file'; cameraPicker.accept = 'image/*'; cameraPicker.setAttribute('capture', 'environment'); cameraPicker.hidden = true;
+    const attachBtn = elx('button', 'btn btn-ghost btn-sm', 'Upload screenshot');
+    const cameraBtn = elx('button', 'btn btn-ghost btn-sm', 'Take photo');
+    const showAppBtn = elx('button', 'btn btn-primary btn-sm', 'Show on App');
+    [attachBtn, cameraBtn, showAppBtn].forEach(button => { button.type = 'button'; });
+    const shotPreview = elx('div', 'bug-shot-preview'); shotPreview.hidden = true;
+    const shotActions = elx('div', 'bug-attach-actions', attachBtn, cameraBtn, showAppBtn);
+    const shotHint = elx('p', 'adm-info bug-shot-hint', 'Upload an image, take a photo, or press Show on App to browse BECE Hub and capture the screen where the problem appears.');
+    const showShot = () => {
+      shotPreview.replaceChildren();
+      if (!screenshot) { shotPreview.hidden = true; return; }
+      shotPreview.hidden = false;
+      const preview = elx('img'); preview.src = screenshot.annotatedData; preview.alt = 'Annotated bug screenshot preview';
+      const remove = elx('button', 'btn btn-ghost btn-sm', 'Remove image'); remove.type = 'button';
+      remove.onclick = () => { screenshot = null; showShot(); };
+      shotPreview.append(preview, elx('div', 'bug-shot-preview-meta',
+        elx('strong', '', 'Screenshot ready'),
+        elx('span', 'muted', 'Both versions are private. Any privacy covers are applied to both copies.'), remove));
+    };
+    const setShot = data => { screenshot = data || null; showShot(); };
+    const pickImage = file => {
+      if (!file) return;
+      if (!window.BeceBugCapture) return App.toast('Screenshot editor is not available. Reload and try again.', 'warn');
+      window.BeceBugCapture.editFile(file, setShot, () => {});
+    };
+    filePicker.addEventListener('change', () => { const selected = filePicker.files && filePicker.files[0]; pickImage(selected); filePicker.value = ''; });
+    cameraPicker.addEventListener('change', () => { const selected = cameraPicker.files && cameraPicker.files[0]; pickImage(selected); cameraPicker.value = ''; });
+    attachBtn.onclick = () => filePicker.click();
+    cameraBtn.onclick = () => cameraPicker.click();
+    showAppBtn.onclick = () => {
+      if (!window.BeceBugCapture) return App.toast('App capture is not available. Reload and try again.', 'warn');
+      document.removeEventListener('keydown', esc);
+      ov.hidden = true;
+      const restoreReportForm = () => {
+        ov.hidden = false;
+        document.addEventListener('keydown', esc);
+      };
+      window.BeceBugCapture.start({
+        onDone: data => { setShot(data); restoreReportForm(); },
+        onCancel: restoreReportForm
+      });
+    };
     cat.className = 'adm-sel'; cat.setAttribute('aria-label', 'What kind of problem'); BUG_CATS.forEach(([v, t]) => cat.append(new Option(t, v)));
     ta.className = 'adm-ta'; ta.rows = 5; ta.maxLength = 600; ta.placeholder = 'What happened? What were you doing when it went wrong?'; ta.setAttribute('aria-label', 'Describe the problem');
     const cnt = elx('span', 'adm-info', '0 / 600'); ta.oninput = () => { cnt.textContent = `${ta.value.length} / 600`; };
@@ -2805,8 +2897,8 @@ const Bugs = (() => {
     const no = elx('button', 'btn btn-ghost', 'Close'), go = elx('button', 'btn btn-primary', 'Send report'); no.type = 'button'; go.type = 'submit';
     const close = () => { document.removeEventListener('keydown', esc); App.dismissOverlay(ov); }, esc = e => { if (e.key === 'Escape') close(); };
     no.onclick = close; ov.addEventListener('click', e => { if (e.target === ov) close(); }); document.addEventListener('keydown', esc);
-    f.append(elx('h3', '', '\u{1F41E} Report a bug'), elx('p', 'muted', 'Tell us what went wrong. A real person reads every report.'), elx('label', 'adm-lbl', 'What kind of problem?'), cat, elx('label', 'adm-lbl', 'What happened?'), ta, cnt,
-      elx('p', 'adm-info', `We also send your name, the page you are on and your device (${deviceInfo()}). No passwords or private data.`), msg, elx('div', 'cz-row pin-row', no, go));
+    f.append(elx('h3', '', '\u{1F41E} Report a bug'), elx('p', 'muted', 'Tell us what went wrong. A real person reads every report.'), elx('label', 'adm-lbl', 'What kind of problem?'), cat, elx('label', 'adm-lbl', 'What happened?'), ta, cnt, elx('label', 'adm-lbl', 'Add a screenshot (optional)'), shotActions, filePicker, cameraPicker, shotHint, shotPreview,
+      elx('p', 'adm-info', `We also send your name, the page you are on and your device (${deviceInfo()}). Only an anonymous tracking summary is sent to our public GitHub project. Your full description and screenshots stay private in BECE Hub and are visible only to you and authorised staff.`), msg, elx('div', 'cz-row pin-row', no, go));
     const mine = S.myBugs.slice(0, 5);
     if (mine.length) {
       const box = elx('div', 'bug-mine'); box.append(elx('label', 'adm-lbl', 'Your recent reports'));
@@ -2822,9 +2914,61 @@ const Bugs = (() => {
       if (day.n >= 5) { msg.textContent = 'You\u2019ve sent 5 reports today. Thank you! Try again tomorrow.'; return; }
       go.disabled = true; go.textContent = 'Sending\u2026'; msg.textContent = '';
       try {
-        await S.db.collection('bugReports').add({ uid: S.uid, name: String(nameOf(S.uid) || 'Player').slice(0, 40), cat: cat.value, text, screen: String(App.screen || '').slice(0, 30), device: deviceInfo(), at: fsv().FieldValue.serverTimestamp(), status: 'open' });
+        const reportRef = S.db.collection('bugReports').doc();
+        const reportData = {
+          uid: S.uid,
+          name: String(nameOf(S.uid) || 'Player').slice(0, 40),
+          cat: cat.value,
+          text,
+          screen: String((screenshot && screenshot.screen) || App.screen || '').slice(0, 30),
+          device: deviceInfo(),
+          at: fsv().FieldValue.serverTimestamp(),
+          status: 'open'
+        };
+        let screenshotSchemaReady = false;
+        if (screenshot) {
+          try {
+            await reportRef.set({ ...reportData, hasScreenshot: false });
+            screenshotSchemaReady = true;
+          } catch (schemaError) {
+            // Keep text-only reporting working during a staged rules rollout.
+            // Screenshot upload remains disabled until the new attachment rules are active.
+            await reportRef.set(reportData);
+          }
+        } else {
+          await reportRef.set(reportData);
+        }
+        let screenshotSaved = !screenshot;
+        if (screenshot && screenshotSchemaReady) {
+          try {
+            await reportRef.collection('attachments').doc('screenshot').set({
+              originalData: screenshot.originalData, annotatedData: screenshot.annotatedData,
+              mimeType: 'image/jpeg',
+              redactedOriginal: screenshot.redactedOriginal === true, width: screenshot.width, height: screenshot.height,
+              createdAt: fsv().FieldValue.serverTimestamp()
+            });
+            await reportRef.update({ hasScreenshot: true });
+            screenshotSaved = true;
+          } catch (imageError) {
+            console.warn('Bug screenshot attachment failed:', imageError && imageError.message);
+            await reportRef.collection('attachments').doc('screenshot').delete().catch(() => {});
+            screenshotSaved = false;
+          }
+        }
         lsSet('bug-last', String(Date.now())); day.n++; lsSet('bug-day', JSON.stringify(day));
-        App.toast('Thanks! Your report was sent.', 'good'); close();
+        let githubSynced = false;
+        try {
+          const issue = await syncOne(reportRef.id);
+          githubSynced = !!issue.issueUrl;
+          if (githubSynced) App.toast('Report sent and added to GitHub #' + (issue.issueNumber || '') + '.', 'good');
+        } catch (syncError) {
+          console.warn('Bug report GitHub sync pending:', syncError && syncError.message);
+        }
+        if (!githubSynced) App.toast(screenshot && !screenshotSaved
+          ? 'Your report was saved, but screenshot storage is not available yet or the upload failed. GitHub sync is pending.'
+          : 'Your report was saved. GitHub sync is pending and can be retried by staff.', 'good');
+        else if (screenshot && !screenshotSaved) App.toast('The report reached GitHub, but its screenshot could not be saved.', 'warn');
+        close();
       } catch (er) {
         msg.textContent = er && er.code === 'permission-denied' ? 'Couldn\u2019t send. Banned accounts can\u2019t send reports, and the newest firestore.rules must be published.' : 'Couldn\u2019t send: ' + ((er && er.message) || 'network problem');
         go.disabled = false; go.textContent = 'Send report';
@@ -2833,7 +2977,7 @@ const Bugs = (() => {
     ov.append(f); document.body.append(ov); setTimeout(() => ta.focus(), 60);
   }
   document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#bug-open')) open(); });
-  return { open, start };
+  return { open, start, syncOne, syncStatus, migrateExisting, viewScreenshot };
 })();
 
 const Adm = (() => {
@@ -3183,7 +3327,14 @@ const Adm = (() => {
   const bugCat = c => (BUG_CATS.find(x => x[0] === c) || BUG_CATS[4])[1];
   const bugStatus = b => b.status || 'open';
   async function bugSet(b, status) {
-    if (await run(() => S.db.doc('bugReports/' + b.id).update({ status, replyBy: String(nameOf(S.uid)).slice(0, 40), doneAt: status === 'open' ? 0 : Date.now() }), `Marked: ${BUG_STATUS[status][0]}.`)) logAct('bug-' + status, b.uid, String(b.text || '').slice(0, 80));
+    const saved = await run(() => S.db.doc('bugReports/' + b.id).update({ status, replyBy: String(nameOf(S.uid)).slice(0, 40), doneAt: status === 'open' ? 0 : Date.now() }), `Marked: ${BUG_STATUS[status][0]}.`);
+    if (!saved) return;
+    logAct('bug-' + status, b.uid, String(b.text || '').slice(0, 80));
+    try {
+      await Bugs.syncStatus(b.id);
+    } catch (error) {
+      App.toast('The BECE Hub status changed, but GitHub could not be updated yet. Use Sync status to retry.', 'warn');
+    }
   }
   async function bugReply(b) {
     const v = await ask({ title: `Reply to ${b.name || 'player'}`, intro: 'They see this under their report. Max 300 characters.', fields: [{ key: 't', label: 'Reply', multiline: true, max: 300, value: b.reply || '' }], ok: 'Send reply', validate: x => x.t.trim().length < 2 ? 'Write a reply first.' : '' });
@@ -3192,17 +3343,29 @@ const Adm = (() => {
   }
   async function bugDelete(b) {
     if (!await ask({ title: 'Delete this report?', intro: 'It disappears for you and for the player. This can\u2019t be undone.', ok: 'Delete', danger: true })) return;
-    if (await run(() => S.db.doc('bugReports/' + b.id).delete(), 'Report deleted.')) logAct('bug-delete', b.uid, String(b.text || '').slice(0, 80));
+    if (await run(() => {
+      const batch = S.db.batch();
+      const ref = S.db.doc('bugReports/' + b.id);
+      batch.delete(ref.collection('attachments').doc('screenshot'));
+      batch.delete(ref);
+      return batch.commit();
+    }, 'Report deleted.')) logAct('bug-delete', b.uid, String(b.text || '').slice(0, 80));
   }
   async function bugClearDone() {
     const ids = S.bugs.filter(b => ['done', 'wontfix'].includes(bugStatus(b))).map(b => b.id);
     if (!ids.length) return App.toast('No fixed or closed reports to clear.', 'warn');
     if (!await ask({ title: `Delete ${ids.length} fixed/closed reports?`, ok: 'Delete them', danger: true })) return;
-    if (await run(() => chunked(ids.map(id => b => b.delete(S.db.doc('bugReports/' + id)))), `Deleted ${ids.length} reports.`)) logAct('bug-delete', '', `${ids.length} fixed/closed reports cleared`);
+    if (await run(() => chunked(ids.flatMap(id => {
+      const ref = S.db.doc('bugReports/' + id);
+      return [
+        b => b.delete(ref.collection('attachments').doc('screenshot')),
+        b => b.delete(ref)
+      ];
+    })), `Deleted ${ids.length} reports.`)) logAct('bug-delete', '', `${ids.length} fixed/closed reports cleared`);
   }
   function bugCsv() {
-    const head = ['when', 'player', 'playerId', 'type', 'status', 'screen', 'device', 'report', 'reply'];
-    const rows = S.bugs.map(b => [new Date(b.at).toISOString(), b.name || '', b.uid || '', b.cat || '', bugStatus(b), b.screen || '', b.device || '', b.text || '', b.reply || '']);
+    const head = ['when', 'player', 'playerId', 'type', 'status', 'screen', 'device', 'report', 'reply', 'hasScreenshot', 'githubIssueNumber', 'githubIssueUrl'];
+    const rows = S.bugs.map(b => [new Date(b.at).toISOString(), b.name || '', b.uid || '', b.cat || '', bugStatus(b), b.screen || '', b.device || '', b.text || '', b.reply || '', !!b.hasScreenshot, b.githubIssueNumber || '', b.githubIssueUrl || '']);
     const blob = new Blob(['\uFEFF' + [head, ...rows].map(r => r.map(csvCell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = `bece-bug-reports-${today()}.csv`; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
     ok('Bug reports exported.'); logAct('export', '', `${rows.length} bug reports to CSV`);
@@ -3228,12 +3391,39 @@ const Adm = (() => {
         if (s0 !== 'open') acts.push(btn('Reopen', 'btn-ghost btn-sm', () => bugSet(b, 'open')));
         acts.push(btn('\u{1F4AC} Reply\u2026', 'btn-ghost btn-sm', () => bugReply(b)));
         if (S.isOwner) acts.push(btn('\u{1F5D1}\uFE0F Delete', 'btn-ghost btn-sm adm-danger', () => bugDelete(b)));
-        card.append(top, chip, elx('p', 'adm-bug-text', b.text), elx('p', 'adm-info', b.device || ''), b.reply ? elx('p', 'adm-info', `Reply by ${b.replyBy || 'staff'}: ${b.reply}`) : null, elx('div', 'adm-btns', ...acts));
+        if (b.hasScreenshot) acts.push(btn('View screenshot', 'btn-ghost btn-sm', () => Bugs.viewScreenshot(b)));
+        if (b.githubIssueUrl) {
+          acts.push(btn('GitHub #' + (b.githubIssueNumber || ''), 'btn-ghost btn-sm', () => window.open(b.githubIssueUrl, '_blank', 'noopener,noreferrer')));
+          acts.push(btn('Sync status', 'btn-ghost btn-sm', async () => {
+            try { await Bugs.syncStatus(b.id); App.toast('GitHub status is up to date.', 'good'); }
+            catch (error) { App.toast(error && error.message ? error.message : 'GitHub status sync is not ready.', 'warn'); }
+          }));
+        } else acts.push(btn('Sync to GitHub', 'btn-ghost btn-sm', async () => {
+          try { const result = await Bugs.syncOne(b.id); App.toast('Created GitHub issue #' + (result.issueNumber || '') + '.', 'good'); }
+          catch (error) { App.toast(error && error.message ? error.message : 'GitHub sync is not ready.', 'warn'); }
+        }));
+        const issueInfo = b.githubIssueUrl
+          ? elx('p', 'adm-info bug-github-link', 'GitHub issue #' + (b.githubIssueNumber || '') + ' · synced')
+          : elx('p', 'adm-info bug-github-pending', 'GitHub issue not linked yet');
+        card.append(top, chip, elx('p', 'adm-bug-text', b.text), elx('p', 'adm-info', b.device || ''), issueInfo, b.reply ? elx('p', 'adm-info', 'Reply by ' + (b.replyBy || 'staff') + ': ' + b.reply) : null, elx('div', 'adm-btns', ...acts));
         return card;
       }) : [elx('p', 'muted', S.bugs.length ? 'No reports match.' : 'No bug reports yet. When players send one it shows up here.')]));
     }
     fill(); w.append(q, chips, info, list);
-    if (S.isOwner && S.bugs.length) w.append(elx('div', 'adm-card', elx('h4', '', '\u{1F451} Owner tools'), elx('div', 'adm-btns', btn('Export CSV', 'btn-ghost btn-sm', bugCsv), btn('Clear fixed/closed\u2026', 'btn-ghost btn-sm adm-danger', bugClearDone))));
+    if (S.isOwner) {
+      const migrate = btn('Migrate existing reports to GitHub', 'btn-primary btn-sm', async () => {
+        migrate.disabled = true; migrate.textContent = 'Migrating…';
+        try {
+          const result = await Bugs.migrateExisting(progress => {
+            migrate.textContent = 'Migrating… ' + progress.scanned + ' checked · ' + progress.synced + ' created';
+          });
+          App.toast('Migration finished: ' + result.synced + ' created, ' + result.skipped + ' already linked, ' + result.failed + ' failed.', result.failed ? 'warn' : 'good');
+        } catch (error) {
+          App.toast(error && error.message ? error.message : 'GitHub migration could not start.', 'warn');
+        } finally { migrate.disabled = false; migrate.textContent = 'Migrate existing reports to GitHub'; }
+      });
+      w.append(elx('div', 'adm-card', elx('h4', '', '\\u{1F451} Owner tools'), elx('div', 'adm-btns', migrate, btn('Export CSV', 'btn-ghost btn-sm', bugCsv), btn('Clear fixed/closed\\u2026', 'btn-ghost btn-sm adm-danger', bugClearDone))));
+    }
     return w;
   }
 

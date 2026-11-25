@@ -1,0 +1,52 @@
+name: Bug reporting code checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'css/**'
+      - 'js/**'
+      - 'sw.js'
+      - 'firestore.rules'
+      - 'workers/gems-api/src/index.js'
+      - '.github/workflows/bug-report-quality.yml'
+      - '.github/scripts/bug-report-guardrails.cjs'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'css/**'
+      - 'js/**'
+      - 'sw.js'
+      - 'firestore.rules'
+      - 'workers/gems-api/src/index.js'
+      - '.github/workflows/bug-report-quality.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  javascript-syntax:
+    name: Validate frontend and Worker JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check app module syntax
+        run: node --check js/08-app-module.js
+
+      - name: Check screenshot capture syntax
+        run: node --check js/11-bug-capture.js
+
+      - name: Check Cloudflare Worker module syntax
+        run: node --input-type=module --check < workers/gems-api/src/index.js
+
+      - name: Check bug-report privacy and idempotency guardrails
+        run: node .github/scripts/bug-report-guardrails.cjs

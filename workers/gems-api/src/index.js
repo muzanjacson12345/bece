@@ -288,6 +288,307 @@ async function userRole(uid, accessToken) {
     ? doc.fields.role.stringValue : null;
 }
 
+// Bug triage follows the same live Firestore sessions as the app.
+// A visible Owner badge or stale roster record is not enough for access.
+function firestoreTimestampMs(document, key) {
+  const raw = document && document.fields && document.fields[key] && document.fields[key].timestampValue;
+  const value = raw ? Date.parse(raw) : NaN;
+  return Number.isFinite(value) ? value : 0;
+}
+function firestoreString(document, key) {
+  const field = document && document.fields && document.fields[key];
+  return field && typeof field.stringValue === 'string' ? field.stringValue : '';
+}
+function bugBanUntil(document) {
+  const field = document && document.fields && document.fields.until;
+  if (!field) return 0;
+  const raw = field.integerValue !== undefined ? field.integerValue : field.doubleValue;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : 0;
+}
+async function isBugUserBanned(uid, accessToken) {
+  const document = await getDocument('bans/' + encodeURIComponent(uid), accessToken);
+  if (!document) return false;
+  const until = bugBanUntil(document);
+  return until === 0 || until > Date.now();
+}
+async function constantTimeStringEqual(left, right) {
+  const encoder = new TextEncoder();
+  const [leftDigest, rightDigest] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(String(left || ''))),
+    crypto.subtle.digest('SHA-256', encoder.encode(String(right || '')))
+  ]);
+  const a = new Uint8Array(leftDigest);
+  const b = new Uint8Array(rightDigest);
+  let mismatch = 0;
+  for (let index = 0; index < a.length; index++) mismatch |= a[index] ^ b[index];
+  return mismatch === 0;
+}
+async function verifyBugStaffRole(uid, accessToken) {
+  const [ownerSession, ownerConfig, adminSession, adminConfig, roster] = await Promise.all([
+    getDocument('ownerSessions/' + encodeURIComponent(uid), accessToken),
+    getDocument('config/owner', accessToken),
+    getDocument('adminSessions/' + encodeURIComponent(uid), accessToken),
+    getDocument('config/admin', accessToken),
+    getDocument('staffRoster/' + encodeURIComponent(uid), accessToken)
+  ]);
+  const now = Date.now();
+  const ownerAt = firestoreTimestampMs(ownerSession, 'at');
+  const ownerPw1 = firestoreString(ownerSession, 'pw1');
+  const ownerPw2 = firestoreString(ownerSession, 'pw2');
+  const configuredPw1 = firestoreString(ownerConfig, 'pw1');
+  const configuredPw2 = firestoreString(ownerConfig, 'pw2');
+  const ownerCredentialMatches = !!ownerConfig && !!ownerPw1 && !!ownerPw2
+    && !!configuredPw1 && !!configuredPw2
+    && (await Promise.all([
+      constantTimeStringEqual(ownerPw1, configuredPw1),
+      constantTimeStringEqual(ownerPw2, configuredPw2)
+    ])).every(Boolean);
+  const ownerActive = !!ownerAt
+    && now - ownerAt >= 0
+    && now - ownerAt < 30 * 60 * 1000
+    && ownerCredentialMatches;
+  if (ownerActive) return 'owner';
+
+  const adminAt = firestoreTimestampMs(adminSession, 'at');
+  const adminActive = !!adminAt && now - adminAt >= 0 && now - adminAt < 2 * 60 * 60 * 1000;
+  const appointed = !!roster
+    && !!(roster.fields && roster.fields.appointed && roster.fields.appointed.booleanValue === true)
+    && firestoreString(roster, 'role') === 'admin';
+  const sessionPin = firestoreString(adminSession, 'pin');
+  const configuredPin = firestoreString(adminConfig, 'pin');
+  const pinMatches = !!adminConfig && !!sessionPin && !!configuredPin
+    && await constantTimeStringEqual(sessionPin, configuredPin);
+  return adminActive && (appointed || pinMatches) ? 'admin' : null;
+}
+
+function bugStringField(document, key, fallback = '') {
+  const field = document && document.fields && document.fields[key];
+  return field && typeof field.stringValue === 'string' ? field.stringValue : fallback;
+}
+function bugIssueNumber(document) {
+  const field = document && document.fields && document.fields.githubIssueNumber;
+  const raw = field && (field.integerValue !== undefined ? field.integerValue : field.doubleValue);
+  const value = Number(raw);
+  return Number.isSafeInteger(value) && value > 0 ? value : 0;
+}
+async function githubJson(path, token, options = {}) {
+  const response = await fetch('https://api.github.com/' + path, {
+    method: options.method || 'GET',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'BECE-Hub-Bug-Reporter',
+      ...(options.body ? { 'Content-Type': 'application/json' } : {})
+    },
+    ...(options.body ? { body: JSON.stringify(options.body) } : {})
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error('GITHUB_API_REQUEST_FAILED');
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+async function saveGithubBugLink(reportId, issue, accessToken) {
+  const mask = new URLSearchParams();
+  ['githubIssueNumber', 'githubIssueUrl', 'githubSyncedAt'].forEach(key => mask.append('updateMask.fieldPaths', key));
+  const path = 'projects/' + PROJECT_ID + '/databases/(default)/documents/bugReports/'
+    + encodeURIComponent(reportId) + '?' + mask.toString();
+  await firestoreRequest(path, accessToken, {
+    method: 'PATCH',
+    body: {
+      fields: {
+        githubIssueNumber: { integerValue: String(issue.number) },
+        githubIssueUrl: { stringValue: issue.html_url },
+        githubSyncedAt: { timestampValue: new Date().toISOString() }
+      }
+    }
+  });
+}
+function safeIssueLine(value, maxLength, fallback = '') {
+  return String(value || fallback)
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/[<>\[\]\x60*_~|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}
+function bugStatusValue(report) {
+  const status = bugStringField(report, 'status', 'open');
+  return ['open', 'fixing', 'done', 'wontfix'].includes(status) ? status : 'open';
+}
+function githubStateForBugStatus(status) {
+  return ['done', 'wontfix'].includes(status) ? 'closed' : 'open';
+}
+async function syncGithubBugStatus(issueNumber, report, githubToken) {
+  const status = bugStatusValue(report);
+  const state = githubStateForBugStatus(status);
+  const path = 'repos/muzanjacson12345/bece/issues/' + Number(issueNumber);
+  const current = await githubJson(path, githubToken);
+  const previousBody = String(current.body || '');
+  const otherLines = previousBody.split('\n')
+    .filter(line => !line.startsWith('- Current BECE status:'));
+  const body = (otherLines.join('\n').trimEnd()
+    + '\n\n- Current BECE status: ' + status + '\n').slice(0, 65000);
+  if (current.state === state && body === previousBody) return current;
+  return githubJson(path, githubToken, {
+    method: 'PATCH',
+    body: { state, body }
+  });
+}
+
+async function createOrFindGithubBugIssue(reportId, report, githubToken, accessToken) {
+  const existingNumber = bugIssueNumber(report);
+  const existingUrl = bugStringField(report, 'githubIssueUrl');
+  if (existingNumber && existingUrl) {
+    return { issueNumber: existingNumber, issueUrl: existingUrl, alreadyLinked: true };
+  }
+  const marker = 'BECE_REPORT_ID:' + reportId;
+  let issue = null;
+
+  // Search by the exact hidden report marker, then verify it in the returned body.
+  // A failed search must stop the request: treating an API/rate-limit failure as
+  // "no match" would create a duplicate issue on retry.
+  const query = 'repo:muzanjacson12345/bece in:body "' + marker + '"';
+  const found = await githubJson('search/issues?q=' + encodeURIComponent(query) + '&per_page=10', githubToken);
+  if (!Array.isArray(found.items)) throw new Error('GITHUB_IDEMPOTENCY_CHECK_FAILED');
+  issue = found.items.find(item => String(item.body || '').includes('<!-- ' + marker + ' -->')) || null;
+
+  if (!issue) {
+    const category = bugStringField(report, 'cat', 'other').toLowerCase();
+    const screen = safeIssueLine(bugStringField(report, 'screen', 'unknown'), 30, 'unknown');
+    const device = safeIssueLine(bugStringField(report, 'device', 'Not supplied'), 160, 'Not supplied');
+    const createdAt = report && report.fields && report.fields.at && report.fields.at.timestampValue
+      ? report.fields.at.timestampValue : 'Unknown';
+    const titleCategory = ({
+      bug: 'Something is broken',
+      display: 'Display or layout problem',
+      content: 'Content problem',
+      idea: 'Suggestion',
+      other: 'Other report'
+    })[category] || 'Other report';
+    const title = '[BECE report] ' + titleCategory + ' — ' + screen;
+    const body = [
+      '## BECE Hub report',
+      '',
+      '- Report reference: ' + marker,
+      '- Category: ' + category,
+      '- App section: ' + screen,
+      '- Device/browser: ' + device.replace(/[<>]/g, ''),
+      '- Originally submitted: ' + createdAt,
+      '- Original BECE status: ' + bugStatusValue(report),
+      '- Current BECE status: ' + bugStatusValue(report),
+      '',
+      '## Private report details',
+      '',
+      'The full description and any screenshots are stored in private BECE Hub Firestore. Authorized staff can inspect them in the Admin bug-report queue. They are intentionally not copied into this public issue.',
+      '',
+      '<!-- ' + marker + ' -->'
+    ].join('\n');
+    issue = await githubJson('repos/muzanjacson12345/bece/issues', githubToken, {
+      method: 'POST',
+      body: {
+        title: title.slice(0, 180),
+        body
+      }
+    });
+  }
+  if (!issue || !Number.isSafeInteger(Number(issue.number)) || typeof issue.html_url !== 'string') {
+    throw new Error('GITHUB_ISSUE_RESPONSE_INVALID');
+  }
+  issue = await syncGithubBugStatus(issue.number, report, githubToken);
+  await saveGithubBugLink(reportId, issue, accessToken);
+  return { issueNumber: Number(issue.number), issueUrl: issue.html_url, alreadyLinked: false };
+}
+
+async function handleBugSync(payload, identity, env, origin) {
+  const action = payload && payload.action;
+  if (!['syncOne', 'syncStatus', 'migrate'].includes(action)) {
+    return json({ ok: false, code: 'INVALID_BUG_ACTION', error: 'Unsupported bug-report action.' }, 400, origin);
+  }
+  if (!env.GITHUB_TOKEN) {
+    return json({
+      ok: false,
+      code: 'GITHUB_SYNC_NOT_CONFIGURED',
+      error: 'The private GitHub integration credential has not been configured on the Worker yet. The report remains safely stored in BECE Hub.'
+    }, 503, origin);
+  }
+  const accessToken = await getFirestoreAccessToken(env);
+  if (await isBugUserBanned(identity.uid, accessToken)) {
+    return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot sync reports while banned.' }, 403, origin);
+  }
+  const role = await verifyBugStaffRole(identity.uid, accessToken);
+  if (action === 'syncOne') {
+    const reportId = typeof payload.reportId === 'string' ? payload.reportId.trim() : '';
+    if (!/^[A-Za-z0-9_-]{1,150}$/.test(reportId)) {
+      return json({ ok: false, code: 'INVALID_REPORT_ID', error: 'The report reference is invalid.' }, 400, origin);
+    }
+    const report = await getDocument('bugReports/' + encodeURIComponent(reportId), accessToken);
+    if (!report) return json({ ok: false, code: 'REPORT_NOT_FOUND', error: 'This bug report could not be found.' }, 404, origin);
+    const reporterUid = bugStringField(report, 'uid');
+    if (reporterUid !== identity.uid && !['admin', 'owner'].includes(role)) {
+      return json({ ok: false, code: 'REPORT_ACCESS_DENIED', error: 'You cannot sync another player report.' }, 403, origin);
+    }
+    const issue = await createOrFindGithubBugIssue(reportId, report, env.GITHUB_TOKEN, accessToken);
+    return json({ ok: true, ...issue }, 200, origin);
+  }
+  if (action === 'syncStatus') {
+    if (!['admin', 'owner'].includes(role)) {
+      return json({ ok: false, code: 'STAFF_REQUIRED', error: 'Only authorised staff can sync a report status.' }, 403, origin);
+    }
+    const reportId = typeof payload.reportId === 'string' ? payload.reportId.trim() : '';
+    if (!/^[A-Za-z0-9_-]{1,150}$/.test(reportId)) {
+      return json({ ok: false, code: 'INVALID_REPORT_ID', error: 'The report reference is invalid.' }, 400, origin);
+    }
+    const report = await getDocument('bugReports/' + encodeURIComponent(reportId), accessToken);
+    if (!report) return json({ ok: false, code: 'REPORT_NOT_FOUND', error: 'This bug report could not be found.' }, 404, origin);
+    const issue = await createOrFindGithubBugIssue(reportId, report, env.GITHUB_TOKEN, accessToken);
+    const updated = await syncGithubBugStatus(issue.issueNumber, report, env.GITHUB_TOKEN);
+    return json({
+      ok: true,
+      issueNumber: issue.issueNumber,
+      issueUrl: issue.issueUrl,
+      status: bugStatusValue(report),
+      state: updated.state
+    }, 200, origin);
+  }
+  if (role !== 'owner') {
+    return json({ ok: false, code: 'OWNER_REQUIRED', error: 'Only the Owner can migrate older reports.' }, 403, origin);
+  }
+  const pageSize = Math.max(1, Math.min(10, Math.floor(Number(payload.pageSize) || 10)));
+  const query = new URLSearchParams({ pageSize: String(pageSize), orderBy: 'at desc' });
+  if (typeof payload.pageToken === 'string' && payload.pageToken.length <= 4096) query.set('pageToken', payload.pageToken);
+  const page = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents/bugReports?' + query.toString(),
+    accessToken
+  );
+  const documents = Array.isArray(page.documents) ? page.documents : [];
+  const totals = { scanned: 0, synced: 0, skipped: 0, failed: 0 };
+  for (const report of documents) {
+    totals.scanned++;
+    const name = String(report.name || '');
+    const reportId = name.split('/').pop();
+    if (!reportId || !/^[A-Za-z0-9_-]{1,150}$/.test(reportId)) {
+      totals.failed++;
+      continue;
+    }
+    if (bugIssueNumber(report) && bugStringField(report, 'githubIssueUrl')) {
+      totals.skipped++;
+      continue;
+    }
+    try {
+      await createOrFindGithubBugIssue(reportId, report, env.GITHUB_TOKEN, accessToken);
+      totals.synced++;
+    } catch (error) {
+      totals.failed++;
+    }
+  }
+  return json({ ok: true, ...totals, nextPageToken: page.nextPageToken || '' }, 200, origin);
+}
+
 async function applyGemCosmeticPurchase(uid, itemId, operationId, accessToken) {
   const item = GEM_COSMETICS[itemId];
   if (!item) throw new Error('INVALID_GEM_ITEM');
@@ -610,13 +911,13 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || url.pathname !== '/gems') {
+    if (request.method !== 'POST' || !['/gems', '/bugs'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
     try {
       const raw = await request.text();
-      if (raw.length > 2048) return json({ ok: false, error: 'REQUEST_TOO_LARGE' }, 413, origin);
+      if (raw.length > (url.pathname === '/bugs' ? 8192 : 2048)) return json({ ok: false, error: 'REQUEST_TOO_LARGE' }, 413, origin);
       payload = JSON.parse(raw);
     } catch {
       return json({ ok: false, error: 'INVALID_JSON' }, 400, origin);
@@ -626,6 +927,7 @@ export default {
     if (!tokenMatch) return json({ ok: false, error: 'UNAUTHORIZED' }, 401, origin);
     try {
       const identity = await verifyFirebaseIdToken(tokenMatch[1]);
+      if (url.pathname === '/bugs') return await handleBugSync(payload, identity, env, origin);
       const action = payload && payload.action;
       const amount = payload && payload.amount;
       const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
