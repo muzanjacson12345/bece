@@ -3353,7 +3353,7 @@ const Adm = (() => {
       }) : [elx('p', 'muted', S.bugs.length ? 'No reports match.' : 'No bug reports yet. When players send one it shows up here.')]));
     }
     fill(); w.append(q, chips, info, list);
-    if (S.isOwner && S.bugs.length) {
+    if (S.isOwner) {
       const migrate = btn('Migrate existing reports to GitHub', 'btn-primary btn-sm', async () => {
         migrate.disabled = true; migrate.textContent = 'Migrating…';
         try {
