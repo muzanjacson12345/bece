@@ -448,13 +448,15 @@ async function createOrFindGithubBugIssue(reportId, report, githubToken, accessT
   }
   const marker = 'BECE_REPORT_ID:' + reportId;
   let issue = null;
-  try {
-    const query = 'repo:muzanjacson12345/bece "' + reportId + '"';
-    const found = await githubJson('search/issues?q=' + encodeURIComponent(query) + '&per_page=1', githubToken);
-    if (Array.isArray(found.items) && found.items.length) issue = found.items[0];
-  } catch (error) {
-    // The issue body retains this stable marker so a later retry can reconcile it.
-  }
+
+  // Search by the exact hidden report marker, then verify it in the returned body.
+  // A failed search must stop the request: treating an API/rate-limit failure as
+  // "no match" would create a duplicate issue on retry.
+  const query = 'repo:muzanjacson12345/bece in:body "' + marker + '"';
+  const found = await githubJson('search/issues?q=' + encodeURIComponent(query) + '&per_page=10', githubToken);
+  if (!Array.isArray(found.items)) throw new Error('GITHUB_IDEMPOTENCY_CHECK_FAILED');
+  issue = found.items.find(item => String(item.body || '').includes('<!-- ' + marker + ' -->')) || null;
+
   if (!issue) {
     const category = bugStringField(report, 'cat', 'other').toLowerCase();
     const screen = safeIssueLine(bugStringField(report, 'screen', 'unknown'), 30, 'unknown');
