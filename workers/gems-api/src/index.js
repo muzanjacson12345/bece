@@ -288,6 +288,182 @@ async function userRole(uid, accessToken) {
     ? doc.fields.role.stringValue : null;
 }
 
+
+function bugStringField(document, key, fallback = '') {
+  const field = document && document.fields && document.fields[key];
+  return field && typeof field.stringValue === 'string' ? field.stringValue : fallback;
+}
+function bugIssueNumber(document) {
+  const field = document && document.fields && document.fields.githubIssueNumber;
+  const raw = field && (field.integerValue !== undefined ? field.integerValue : field.doubleValue);
+  const value = Number(raw);
+  return Number.isSafeInteger(value) && value > 0 ? value : 0;
+}
+function safePublicBugText(value) {
+  return String(value || '')
+    .slice(0, 600)
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[redacted email]')
+    .replace(/\b(?:\+?\d[\d ()-]{7,}\d)\b/g, '[redacted phone]')
+    .replace(/\b(?:AIza[0-9A-Za-z_-]{30,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g, '[redacted secret]');
+}
+async function githubJson(path, token, options = {}) {
+  const response = await fetch('https://api.github.com/' + path, {
+    method: options.method || 'GET',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'BECE-Hub-Bug-Reporter',
+      ...(options.body ? { 'Content-Type': 'application/json' } : {})
+    },
+    ...(options.body ? { body: JSON.stringify(options.body) } : {})
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error('GITHUB_API_REQUEST_FAILED');
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+async function saveGithubBugLink(reportId, issue, accessToken) {
+  const mask = new URLSearchParams();
+  ['githubIssueNumber', 'githubIssueUrl', 'githubSyncedAt'].forEach(key => mask.append('updateMask.fieldPaths', key));
+  const path = 'projects/' + PROJECT_ID + '/databases/(default)/documents/bugReports/'
+    + encodeURIComponent(reportId) + '?' + mask.toString();
+  await firestoreRequest(path, accessToken, {
+    method: 'PATCH',
+    body: {
+      fields: {
+        githubIssueNumber: { integerValue: String(issue.number) },
+        githubIssueUrl: { stringValue: issue.html_url },
+        githubSyncedAt: { timestampValue: new Date().toISOString() }
+      }
+    }
+  });
+}
+async function createOrFindGithubBugIssue(reportId, report, githubToken, accessToken) {
+  const existingNumber = bugIssueNumber(report);
+  const existingUrl = bugStringField(report, 'githubIssueUrl');
+  if (existingNumber && existingUrl) {
+    return { issueNumber: existingNumber, issueUrl: existingUrl, alreadyLinked: true };
+  }
+  const marker = 'BECE_REPORT_ID:' + reportId;
+  let issue = null;
+  try {
+    const query = 'repo:muzanjacson12345/bece "' + marker + '"';
+    const found = await githubJson('search/issues?q=' + encodeURIComponent(query) + '&per_page=1', githubToken);
+    if (Array.isArray(found.items) && found.items.length) issue = found.items[0];
+  } catch (error) {
+    // The issue body retains this stable marker so a later retry can reconcile it.
+  }
+  if (!issue) {
+    const category = bugStringField(report, 'cat', 'other').toLowerCase();
+    const screen = bugStringField(report, 'screen', 'unknown').slice(0, 30);
+    const device = bugStringField(report, 'device', 'Not supplied').slice(0, 160);
+    const rawText = safePublicBugText(bugStringField(report, 'text', 'No description supplied.'));
+    const createdAt = report && report.fields && report.fields.at && report.fields.at.timestampValue
+      ? report.fields.at.timestampValue : 'Unknown';
+    const titleCategory = ({
+      bug: 'Something is broken',
+      display: 'Display or layout problem',
+      content: 'Content problem',
+      idea: 'Suggestion',
+      other: 'Other report'
+    })[category] || 'Other report';
+    const title = '[BECE report] ' + titleCategory + ' — ' + screen;
+    const body = [
+      '## BECE Hub report',
+      '',
+      '- Report reference: ' + reportId,
+      '- Category: ' + category,
+      '- App section: ' + screen,
+      '- Device/browser: ' + device.replace(/[<>]/g, ''),
+      '- Originally submitted: ' + createdAt,
+      '',
+      '## Description',
+      '',
+      rawText,
+      '',
+      '## Screenshot',
+      '',
+      'Any screenshot or annotation is kept in private BECE Hub storage and is not attached to this public issue.',
+      '',
+      '<!-- ' + marker + ' -->'
+    ].join('\n');
+    issue = await githubJson('repos/muzanjacson12345/bece/issues', githubToken, {
+      method: 'POST',
+      body: { title: title.slice(0, 180), body }
+    });
+  }
+  if (!issue || !Number.isSafeInteger(Number(issue.number)) || typeof issue.html_url !== 'string') {
+    throw new Error('GITHUB_ISSUE_RESPONSE_INVALID');
+  }
+  await saveGithubBugLink(reportId, issue, accessToken);
+  return { issueNumber: Number(issue.number), issueUrl: issue.html_url, alreadyLinked: false };
+}
+
+async function handleBugSync(payload, identity, env, origin) {
+  const action = payload && payload.action;
+  if (!['syncOne', 'migrate'].includes(action)) {
+    return json({ ok: false, code: 'INVALID_BUG_ACTION', error: 'Unsupported bug-report action.' }, 400, origin);
+  }
+  if (!env.GITHUB_TOKEN) {
+    return json({
+      ok: false,
+      code: 'GITHUB_SYNC_NOT_CONFIGURED',
+      error: 'The private GitHub integration credential has not been configured on the Worker yet. The report remains safely stored in BECE Hub.'
+    }, 503, origin);
+  }
+  const accessToken = await getFirestoreAccessToken(env);
+  if (await isUserBanned(identity.uid, accessToken)) {
+    return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot sync reports while banned.' }, 403, origin);
+  }
+  const role = await userRole(identity.uid, accessToken);
+  if (action === 'syncOne') {
+    const reportId = typeof payload.reportId === 'string' ? payload.reportId.trim() : '';
+    if (!/^[A-Za-z0-9_-]{1,150}$/.test(reportId)) {
+      return json({ ok: false, code: 'INVALID_REPORT_ID', error: 'The report reference is invalid.' }, 400, origin);
+    }
+    const report = await getDocument('bugReports/' + encodeURIComponent(reportId), accessToken);
+    if (!report) return json({ ok: false, code: 'REPORT_NOT_FOUND', error: 'This bug report could not be found.' }, 404, origin);
+    const reporterUid = bugStringField(report, 'uid');
+    if (reporterUid !== identity.uid && !['admin', 'owner'].includes(role)) {
+      return json({ ok: false, code: 'REPORT_ACCESS_DENIED', error: 'You cannot sync another player report.' }, 403, origin);
+    }
+    const issue = await createOrFindGithubBugIssue(reportId, report, env.GITHUB_TOKEN, accessToken);
+    return json({ ok: true, ...issue }, 200, origin);
+  }
+  if (role !== 'owner') {
+    return json({ ok: false, code: 'OWNER_REQUIRED', error: 'Only the Owner can migrate older reports.' }, 403, origin);
+  }
+  const pageSize = Math.max(1, Math.min(10, Math.floor(Number(payload.pageSize) || 10)));
+  const query = new URLSearchParams({ pageSize: String(pageSize), orderBy: 'at desc' });
+  if (typeof payload.pageToken === 'string' && payload.pageToken.length <= 4096) query.set('pageToken', payload.pageToken);
+  const page = await firestoreRequest(
+    'projects/' + PROJECT_ID + '/databases/(default)/documents/bugReports?' + query.toString(),
+    accessToken
+  );
+  const documents = Array.isArray(page.documents) ? page.documents : [];
+  const totals = { scanned: 0, synced: 0, skipped: 0, failed: 0 };
+  for (const report of documents) {
+    totals.scanned++;
+    const name = String(report.name || '');
+    const reportId = name.split('/').pop();
+    if (!reportId || (bugIssueNumber(report) && bugStringField(report, 'githubIssueUrl'))) {
+      totals.skipped++;
+      continue;
+    }
+    try {
+      await createOrFindGithubBugIssue(reportId, report, env.GITHUB_TOKEN, accessToken);
+      totals.synced++;
+    } catch (error) {
+      totals.failed++;
+    }
+  }
+  return json({ ok: true, ...totals, nextPageToken: page.nextPageToken || '' }, 200, origin);
+}
+
 async function applyGemCosmeticPurchase(uid, itemId, operationId, accessToken) {
   const item = GEM_COSMETICS[itemId];
   if (!item) throw new Error('INVALID_GEM_ITEM');
@@ -610,7 +786,7 @@ export default {
       return json({ ok: true, configured: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, project: PROJECT_ID }, 200, origin);
     }
     if (origin && origin !== APP_ORIGIN) return json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' }, 403, '');
-    if (request.method !== 'POST' || url.pathname !== '/gems') {
+    if (request.method !== 'POST' || !['/gems', '/bugs'].includes(url.pathname)) {
       return json({ ok: false, error: 'NOT_FOUND' }, 404, origin);
     }
     let payload;
@@ -626,6 +802,7 @@ export default {
     if (!tokenMatch) return json({ ok: false, error: 'UNAUTHORIZED' }, 401, origin);
     try {
       const identity = await verifyFirebaseIdToken(tokenMatch[1]);
+      if (url.pathname === '/bugs') return await handleBugSync(payload, identity, env, origin);
       const action = payload && payload.action;
       const amount = payload && payload.amount;
       const operationId = payload && typeof payload.operationId === 'string' ? payload.operationId.trim() : '';
