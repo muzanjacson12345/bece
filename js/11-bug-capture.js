@@ -39,8 +39,8 @@
 
   function readFile(file) {
     return new Promise((resolve, reject) => {
-      if (!file || !/^image\/(jpeg|png|webp|gif|avif)$/i.test(file.type || '')) {
-        reject(new Error('Choose a JPG, PNG, WEBP, GIF or AVIF image.'));
+      if (!file || !/^image\/(jpeg|png|webp|gif|avif|heic|heif)$/i.test(file.type || '')) {
+        reject(new Error('Choose a JPG, PNG, WEBP, GIF, AVIF or compatible HEIC/HEIF image.'));
         return;
       }
       if (file.size > MAX_FILE_BYTES) {
