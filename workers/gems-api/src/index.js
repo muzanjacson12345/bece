@@ -288,6 +288,46 @@ async function userRole(uid, accessToken) {
     ? doc.fields.role.stringValue : null;
 }
 
+// Bug triage follows the same live Firestore sessions as the app.
+// A visible Owner badge or stale roster record is not enough for access.
+function firestoreTimestampMs(document, key) {
+  const raw = document && document.fields && document.fields[key] && document.fields[key].timestampValue;
+  const value = raw ? Date.parse(raw) : NaN;
+  return Number.isFinite(value) ? value : 0;
+}
+function firestoreString(document, key) {
+  const field = document && document.fields && document.fields[key];
+  return field && typeof field.stringValue === 'string' ? field.stringValue : '';
+}
+async function verifyBugStaffRole(uid, accessToken) {
+  const [ownerSession, ownerConfig, adminSession, adminConfig, roster] = await Promise.all([
+    getDocument('ownerSessions/' + encodeURIComponent(uid), accessToken),
+    getDocument('config/owner', accessToken),
+    getDocument('adminSessions/' + encodeURIComponent(uid), accessToken),
+    getDocument('config/admin', accessToken),
+    getDocument('staffRoster/' + encodeURIComponent(uid), accessToken)
+  ]);
+  const now = Date.now();
+  const ownerAt = firestoreTimestampMs(ownerSession, 'at');
+  const ownerActive = !!ownerAt
+    && now - ownerAt >= 0
+    && now - ownerAt < 30 * 60 * 1000
+    && !!ownerConfig
+    && firestoreString(ownerSession, 'pw1') === firestoreString(ownerConfig, 'pw1')
+    && firestoreString(ownerSession, 'pw2') === firestoreString(ownerConfig, 'pw2');
+  if (ownerActive) return 'owner';
+
+  const adminAt = firestoreTimestampMs(adminSession, 'at');
+  const adminActive = !!adminAt && now - adminAt >= 0 && now - adminAt < 2 * 60 * 60 * 1000;
+  const appointed = !!roster
+    && !!(roster.fields && roster.fields.appointed && roster.fields.appointed.booleanValue === true)
+    && firestoreString(roster, 'role') === 'admin';
+  const pinMatches = !!adminConfig
+    && !!firestoreString(adminSession, 'pin')
+    && firestoreString(adminSession, 'pin') === firestoreString(adminConfig, 'pin');
+  return adminActive && (appointed || pinMatches) ? 'admin' : null;
+}
+
 
 function bugStringField(document, key, fallback = '') {
   const field = document && document.fields && document.fields[key];
@@ -298,13 +338,6 @@ function bugIssueNumber(document) {
   const raw = field && (field.integerValue !== undefined ? field.integerValue : field.doubleValue);
   const value = Number(raw);
   return Number.isSafeInteger(value) && value > 0 ? value : 0;
-}
-function safePublicBugText(value) {
-  return String(value || '')
-    .slice(0, 600)
-    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[redacted email]')
-    .replace(/\b(?:\+?\d[\d ()-]{7,}\d)\b/g, '[redacted phone]')
-    .replace(/\b(?:AIza[0-9A-Za-z_-]{30,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g, '[redacted secret]');
 }
 async function githubJson(path, token, options = {}) {
   const response = await fetch('https://api.github.com/' + path, {
@@ -414,7 +447,7 @@ async function handleBugSync(payload, identity, env, origin) {
   if (await isUserBanned(identity.uid, accessToken)) {
     return json({ ok: false, code: 'USER_BANNED', error: 'This account cannot sync reports while banned.' }, 403, origin);
   }
-  const role = await userRole(identity.uid, accessToken);
+  const role = await verifyBugStaffRole(identity.uid, accessToken);
   if (action === 'syncOne') {
     const reportId = typeof payload.reportId === 'string' ? payload.reportId.trim() : '';
     if (!/^[A-Za-z0-9_-]{1,150}$/.test(reportId)) {
