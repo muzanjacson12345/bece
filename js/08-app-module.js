@@ -2911,7 +2911,7 @@ const Bugs = (() => {
       go.disabled = true; go.textContent = 'Sending\u2026'; msg.textContent = '';
       try {
         const reportRef = S.db.collection('bugReports').doc();
-        await reportRef.set({ uid: S.uid, name: String(nameOf(S.uid) || 'Player').slice(0, 40), cat: cat.value, text, screen: String(App.screen || '').slice(0, 30), device: deviceInfo(), at: fsv().FieldValue.serverTimestamp(), status: 'open', hasScreenshot: false });
+        await reportRef.set({ uid: S.uid, name: String(nameOf(S.uid) || 'Player').slice(0, 40), cat: cat.value, text, screen: String((screenshot && screenshot.screen) || App.screen || '').slice(0, 30), device: deviceInfo(), at: fsv().FieldValue.serverTimestamp(), status: 'open', hasScreenshot: false });
         let screenshotSaved = !screenshot;
         if (screenshot) {
           try {
@@ -3308,13 +3308,23 @@ const Adm = (() => {
   }
   async function bugDelete(b) {
     if (!await ask({ title: 'Delete this report?', intro: 'It disappears for you and for the player. This can\u2019t be undone.', ok: 'Delete', danger: true })) return;
-    if (await run(() => S.db.doc('bugReports/' + b.id).delete(), 'Report deleted.')) logAct('bug-delete', b.uid, String(b.text || '').slice(0, 80));
+    if (await run(() => {
+      const batch = S.db.batch();
+      const ref = S.db.doc('bugReports/' + b.id);
+      batch.delete(ref.collection('attachments').doc('screenshot'));
+      batch.delete(ref);
+      return batch.commit();
+    }, 'Report deleted.')) logAct('bug-delete', b.uid, String(b.text || '').slice(0, 80));
   }
   async function bugClearDone() {
     const ids = S.bugs.filter(b => ['done', 'wontfix'].includes(bugStatus(b))).map(b => b.id);
     if (!ids.length) return App.toast('No fixed or closed reports to clear.', 'warn');
     if (!await ask({ title: `Delete ${ids.length} fixed/closed reports?`, ok: 'Delete them', danger: true })) return;
-    if (await run(() => chunked(ids.map(id => b => b.delete(S.db.doc('bugReports/' + id)))), `Deleted ${ids.length} reports.`)) logAct('bug-delete', '', `${ids.length} fixed/closed reports cleared`);
+    if (await run(() => chunked(ids.map(id => b => {
+      const ref = S.db.doc('bugReports/' + id);
+      b.delete(ref.collection('attachments').doc('screenshot'));
+      b.delete(ref);
+    })), `Deleted ${ids.length} reports.`)) logAct('bug-delete', '', `${ids.length} fixed/closed reports cleared`);
   }
   function bugCsv() {
     const head = ['when', 'player', 'playerId', 'type', 'status', 'screen', 'device', 'report', 'reply', 'hasScreenshot', 'githubIssueNumber', 'githubIssueUrl'];
